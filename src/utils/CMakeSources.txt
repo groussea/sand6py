@@ -1,2 +1,8 @@
 utils/Config.cc
 utils/Config.hh
+utils/alg.hh
+utils/scalar.hh
+utils/string.cc
+utils/string.hh
+utils/units.cc
+utils/units.hh

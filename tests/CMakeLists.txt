@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 2.8)
 
 if( TESTS_NAMES )
-	SET( SRC_LIST ${TESTS_NAMES} )
-	MESSAGE( STATUS "Building tests: " ${SRC_LIST} )
+    SET( SRC_LIST ${TESTS_NAMES} )
+    MESSAGE( STATUS "Building tests: " ${SRC_LIST} )
 else()
-	execute_process( COMMAND ../updateCMakeSources.rb WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} )
-	file(STRINGS CMakeSources.txt SRC_LIST)
-	MESSAGE( STATUS "Building all tests" )
+    execute_process( COMMAND ../updateCMakeSources.rb WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} )
+    file(STRINGS CMakeSources.txt SRC_LIST)
+    MESSAGE( STATUS "Building all tests" )
 endif()
 
 include( ExternalProject )
@@ -20,20 +20,21 @@ else()
 endif()
 
 if( MSVC )
-	set( GTEST_CMAKE_ARGS -Dgtest_force_shared_crt=ON )
+    set( GTEST_CMAKE_ARGS -Dgtest_force_shared_crt=ON )
 else()
-	set( GTEST_CMAKE_ARGS )
+    set( GTEST_CMAKE_ARGS )
 endif()
 
 # Add gtest
 ExternalProject_Add(
-	googletest
-	URL https://googletest.googlecode.com/files/gtest-1.7.0.zip
-	CMAKE_ARGS ${GTEST_CMAKE_ARGS}
-	UPDATE_COMMAND ""
-	PATCH_COMMAND ${GTEST_PATCH_COMMAND}
-	INSTALL_COMMAND ""
-	)
+    googletest
+    URL https://github.com/google/googletest/archive/release-1.7.0.tar.gz
+    URL_HASH MD5=4ff6353b2560df0afecfbda3b2763847
+    CMAKE_ARGS ${GTEST_CMAKE_ARGS}
+    UPDATE_COMMAND ""
+    PATCH_COMMAND ${GTEST_PATCH_COMMAND}
+    INSTALL_COMMAND ""
+    )
 
 SET( GTEST_LINK_LIBRARIES gtest gtest_main )
 if(UNIX)
@@ -52,4 +53,5 @@ add_test( ${CMAKE_PROJECT_NAME} test${CMAKE_PROJECT_NAME} )
 add_dependencies(test${CMAKE_PROJECT_NAME} googletest)
 
 target_link_libraries(test${CMAKE_PROJECT_NAME} ${EXTERNAL_LIBRARIES} ${GTEST_LINK_LIBRARIES} )
+target_link_libraries(test${CMAKE_PROJECT_NAME} d6_utils )
 

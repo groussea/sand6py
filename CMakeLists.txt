@@ -59,6 +59,8 @@ if ( GCC OR CLANG )
                 SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}  -march=native -DEIGEN_NO_DEBUG ")
 endif()
 
+include_directories( ${EXTERNAL_INCLUDES} )
+
 if( LIB )
     add_subdirectory( src )
 endif()
