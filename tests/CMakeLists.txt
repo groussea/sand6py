@@ -53,5 +53,5 @@ add_test( ${CMAKE_PROJECT_NAME} test${CMAKE_PROJECT_NAME} )
 add_dependencies(test${CMAKE_PROJECT_NAME} googletest)
 
 target_link_libraries(test${CMAKE_PROJECT_NAME} ${EXTERNAL_LIBRARIES} ${GTEST_LINK_LIBRARIES} )
-target_link_libraries(test${CMAKE_PROJECT_NAME} d6_utils )
+target_link_libraries(test${CMAKE_PROJECT_NAME} d6_utils d6_geo )
 
