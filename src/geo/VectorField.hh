@@ -6,10 +6,7 @@
 namespace d6 {
 
 template < typename MeshT >
-class VectorField ;
-
-template < typename MeshT >
-struct FieldTraits< VectorField< MeshT > >  {
+struct FieldTraits< AbstractVectorField< MeshT > >  {
 
 	typedef MeshT  MeshType ;
 	typedef Vec	   ValueType ;
@@ -17,15 +14,15 @@ struct FieldTraits< VectorField< MeshT > >  {
 };
 
 template < typename MeshT >
-class VectorField : public FieldBase< VectorField< MeshT > >
+class AbstractVectorField : public FieldBase< AbstractVectorField< MeshT > >
 {
-	typedef FieldTraits< VectorField > Traits ;
+	typedef FieldTraits< AbstractVectorField > Traits ;
 	typedef MeshBase< typename Traits::MeshType > MeshType ;
 
-	typedef FieldBase< VectorField > Base ;
+	typedef FieldBase< AbstractVectorField > Base ;
 
 public:
-	VectorField( const MeshType& mesh )
+	AbstractVectorField( const MeshType& mesh )
 		: Base( mesh )
 	{
 

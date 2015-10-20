@@ -6,10 +6,7 @@
 namespace d6 {
 
 template < typename MeshT >
-class ScalarField ;
-
-template < typename MeshT >
-struct FieldTraits< ScalarField< MeshT > >  {
+struct FieldTraits< AbstractScalarField< MeshT > >  {
 
 	typedef MeshT  MeshType ;
 	typedef Scalar ValueType ;
@@ -17,15 +14,15 @@ struct FieldTraits< ScalarField< MeshT > >  {
 };
 
 template < typename MeshT >
-class ScalarField : public FieldBase< ScalarField< MeshT > >
+class AbstractScalarField : public FieldBase< AbstractScalarField< MeshT > >
 {
-	typedef FieldTraits< ScalarField > Traits ;
+	typedef FieldTraits< AbstractScalarField > Traits ;
 	typedef MeshBase< typename Traits::MeshType > MeshType ;
 
-	typedef FieldBase< ScalarField > Base ;
+	typedef FieldBase< AbstractScalarField > Base ;
 
 public:
-	ScalarField( const MeshType& mesh )
+	AbstractScalarField( const MeshType& mesh )
 		: Base( mesh )
 	{
 

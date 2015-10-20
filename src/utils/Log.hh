@@ -15,6 +15,7 @@
 //#define D6_LOG_NO_THREAD_SAFETY
 
 #include "LogLevels.hh"
+#include "string.hh"
 
 #ifndef D6_LOG_NO_THREAD_SAFETY
 #include "Mutex.hh"
@@ -41,9 +42,9 @@ namespace Log
   /*! Should be accessed only through Config::get() */
   struct Config
   {
-	//! Normal output stream ( defaults to Log::Debug() )
+	//! Normal output stream ( defaults to std::cout )
 	std::ostream* out ;
-	//! Error output stream ( defaults to Log::Error() )
+	//! Error output stream ( defaults to std::cerr )
 	std::ostream* err ;
 	//! Output level ( defaults to L_All )
 	Level level ;
@@ -55,6 +56,13 @@ namespace Log
 	{
 	  static Config s_config ;
 	  return s_config ;
+	}
+
+	void setLevel( const std::string& levelStr ) {
+		#define D6_LOG_LEVEL( l ) \
+			if(levelStr == D6_stringify( l ) ) { level = L_##l ; }
+		D6_LOG_LEVELS
+		#undef D6_LOG_LEVEL
 	}
 
   private:

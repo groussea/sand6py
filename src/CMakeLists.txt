@@ -11,6 +11,6 @@ ENDMACRO( ADD_D6_LIB )
 ADD_D6_LIB(utils)
 ADD_D6_LIB(geo)
 #ADD_D6_LIB(solve)
-#ADD_D6_LIB(simu)
+ADD_D6_LIB(simu)
 #ADD_D6_LIB(visu)
 

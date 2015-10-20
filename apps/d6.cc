@@ -1,8 +1,10 @@
 
 #include "utils/Config.hh"
+#include "utils/Log.hh"
+
+#include "simu/Simu.hh"
 
 #include <cstring>
-#include <iostream>
 
 int main( int argc, const char* argv[] )
 {
@@ -19,15 +21,20 @@ int main( int argc, const char* argv[] )
 				case 'i':
 					if( ++i == argc ) break ;
 					if( !config.from_file(argv[i]) ) {
-						std::cerr << "Error reading file " << argv[i] << std::endl ;
+						d6::Log::Error() << "Error reading file " << argv[i] << std::endl ;
 					}
 					break ;
+				case 'v':
+					if( ++i == argc ) break ;
+					d6::Log::Config::get().setLevel( argv[i] ) ;
 				}
 			}
 		}
 	}
 
 	config.internalize();
+
+	d6::Simu( config ).run() ;
 
 	return 0 ;
 }

@@ -7,8 +7,8 @@
 namespace d6
 {
 
-template class FieldBase< TensorField< Grid > > ;
-template class TensorField< Grid > ;
+template class FieldBase< AbstractTensorField< Grid > > ;
+template class AbstractTensorField< Grid > ;
 
 }
 

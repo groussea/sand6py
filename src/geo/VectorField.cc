@@ -7,8 +7,8 @@
 namespace d6
 {
 
-template class FieldBase< VectorField< Grid > > ;
-template class VectorField< Grid > ;
+template class FieldBase< AbstractVectorField< Grid > > ;
+template class AbstractVectorField< Grid > ;
 
 }
 

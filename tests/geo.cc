@@ -40,7 +40,7 @@ TEST( geo, field )
 	Vec   box( 1, 1, 1 ) ;
 	Grid g( box, dim ) ;
 
-	ScalarField< Grid > phi( g ) ;
+	AbstractScalarField< Grid > phi( g ) ;
 	ASSERT_EQ( g.nNodes(), phi.flatten().rows() ) ;
 
 	phi.set_constant( 3 );
@@ -54,7 +54,7 @@ TEST( geo, field )
 	ASSERT_FLOAT_EQ( 0.7,  phi( Vec( 0.3, 0.37, 0.1 ) ) ) ;
 	ASSERT_FLOAT_EQ( 0.5,  phi( Vec( 0.3, 0.4, 0.15 ) ) ) ;
 
-	VectorField< Grid > u( g ) ;
+	AbstractVectorField< Grid > u( g ) ;
 	u.set_constant( Vec(0,1,0) ) ;
 	ASSERT_TRUE( Vec(0,1,0).isApprox( u( Vec( 0.2, 0.7, 0.5 ) ) ) ) ;
 

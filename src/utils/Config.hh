@@ -12,6 +12,7 @@ namespace d6 {
 #define EXPAND_CONFIG \
 	CONFIG_FIELD( fps				, Scalar		,	Units::Frequency	) \
 	CONFIG_FIELD( substeps			, unsigned		,	Units::None			) \
+	CONFIG_FIELD( nFrames			, unsigned		,	Units::None			) \
 	\
 	CONFIG_FIELD( box				, Vec			,	Units::Length		) \
 	CONFIG_FIELD( res				, Vec3i			,	Units::None			) \

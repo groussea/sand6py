@@ -1,7 +1,8 @@
 #ifndef D6_FIELD_BASE_HH
 #define D6_FIELD_BASE_HH
 
-#include "MeshBase.hh"
+#include "utils/alg.hh"
+#include "geo.fwd.hh"
 
 namespace d6 {
 

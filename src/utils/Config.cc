@@ -1,10 +1,10 @@
 #include "Config.hh"
 
 #include "string.hh"
+#include "Log.hh"
 
 #include <cmath>
 
-#include <iostream>
 #include <fstream>
 #include <regex>
 
@@ -20,7 +20,7 @@ void rescale( Eigen::Matrix<Scalar, D, 1> &src, Scalar s ) { src *= s ; }
 
 
 Config::Config() :
-	fps(240), substeps(1),
+	fps(240), substeps(1), nFrames( 1 ),
 	box(1,1,1), res(10,10,10),
 	volMass( 1.5e3 ),
 	viscosity( 1.e-3 ),
@@ -37,21 +37,6 @@ void Config::internalize()
 	#undef CONFIG_FIELD
 }
 
-void show_matches(const std::string& in, const std::string& re)
-{
-	std::smatch m;
-	std::regex_search(in, m, std::regex(re));
-	if(m.empty()) {
-		std::cout << "input=[" << in << "], regex=[" << re << "]: NO MATCH\n";
-	} else {
-		std::cout << "input=[" << in << "], regex=[" << re << "]: ";
-		std::cout << "prefix=[" << m.prefix() << "] ";
-		for(std::size_t n = 0; n < m.size(); ++n)
-			std::cout << " m[" << n << "]=[" << m[n] << "] ";
-		std::cout << "suffix=[" << m.suffix() << "]\n";
-	}
-}
-
 bool Config::from_string(const std::string& key, const std::string &val)
 {
 	std::istringstream iss ( val ) ;
@@ -66,7 +51,7 @@ bool Config::from_string(const std::string& key, std::istringstream &val )
 	EXPAND_CONFIG
 	 #undef CONFIG_FIELD
 
-	if( !f ) std::cerr << "Warning: '" << key << "' is not a valid config field" << std::endl;
+	if( !f ) Log::Warning() << "Warning: '" << key << "' is not a valid config field" << std::endl;
 	return f ;
 }
 
