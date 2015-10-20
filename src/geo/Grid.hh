@@ -5,6 +5,42 @@
 
 namespace d6 {
 
+class Grid ;
+
+struct GridIterator
+{
+	typedef Vec3i Cell ;
+
+	const Grid& grid ;
+	Cell cell ;
+
+	GridIterator( const Grid& g, const Cell& c )
+		: grid(g), cell(c)
+	{}
+
+	GridIterator& operator++() ;
+
+	bool operator==( const GridIterator& o ) const
+	{
+		return cell == o.cell ;
+	}
+	bool operator!=( const GridIterator& o ) const
+	{
+		return cell != o.cell ;
+	}
+
+	Index index() const ;
+
+};
+
+template < >
+struct MeshTraits< Grid > {
+	static constexpr Index NV = 8 ;
+
+	typedef GridIterator CellIterator ;
+};
+
+
 class Grid : public MeshBase< Grid >
 {
 public:
@@ -27,7 +63,19 @@ public:
 
 	void locate( const Vec &x, Location& loc ) const ;
 
+	CellIterator cellBegin() const {
+		return GridIterator( *this, Vec3i::Zero() ) ;
+	}
+	CellIterator cellEnd() const {
+		return GridIterator( *this, Vec3i(m_dim[0],0,0) ) ;
+	}
+
 private:
+
+	const Vec3i& dim() const { return m_dim ; }
+	const Vec&    dx() const { return  m_dx ; }
+	const Vec&   idx() const { return m_idx ; }
+
 
 	Index nodeIndex( const Vertex& node ) const
 	{
@@ -50,6 +98,8 @@ private:
 	Vec3i m_dim ;
 	Vec   m_dx  ;
 	Vec   m_idx  ;
+
+	friend struct GridIterator ;
 } ;
 
 } //d6

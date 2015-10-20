@@ -8,7 +8,6 @@ namespace d6 {
 template <typename Derived >
 struct MeshTraits {
 	static constexpr Index NV = 8 ;
-	typedef Vec3i Cell ;
 };
 
 template <typename Derived>
@@ -17,7 +16,8 @@ class MeshBase {
 public:
 
 	typedef MeshTraits< Derived > Traits ;
-	typedef typename Traits::Cell Cell ;
+	typedef typename Traits::CellIterator CellIterator ;
+	typedef typename CellIterator::Cell Cell ;
 	static constexpr Index NV = Traits::NV ;
 
 	typedef Eigen::Matrix<  Index, NV, 1> NodeList ;
@@ -45,6 +45,9 @@ public:
 	void locate( const Vec &x, Location& loc ) const {
 		derived().locate( x, loc ) ;
 	}
+
+	CellIterator cellBegin() const { return derived().cellBegin() ; }
+	CellIterator cellEnd()   const { return derived().cellEnd() ; }
 
 } ;
 

@@ -32,6 +32,13 @@ TEST( geo, grid )
 
 	ASSERT_EQ( g.nNodes()-1, loc.nodes[7] ) ;
 	ASSERT_DOUBLE_EQ( 1, loc.coeffs[7] ) ;
+
+	Index i = 0 ;
+	for( GridIterator it( g.cellBegin() ) ;  it != g.cellEnd() ; ++it, ++i )
+	{
+		ASSERT_EQ( i, it.index() ) ;
+	}
+	ASSERT_EQ( i, g.nCells() ) ;
 }
 
 TEST( geo, field )

@@ -36,4 +36,23 @@ void Grid::locate(const Vec &x, Location &loc) const
 
 }
 
+GridIterator& GridIterator::operator ++()
+{
+	++cell[2] ;
+	if(cell[2] == grid.dim()[2]) {
+		cell[2] = 0 ;
+		++cell[1] ;
+		if(cell[1] == grid.dim()[1]) {
+			cell[1] = 0 ;
+			++cell[0] ;
+		}
+	}
+
+	return *this ;
+}
+
+Index GridIterator::index() const {
+	return grid.cellIndex( cell ) ;
+}
+
 } //d6
