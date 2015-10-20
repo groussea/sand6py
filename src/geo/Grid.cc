@@ -12,25 +12,23 @@ Grid::Grid(const Vec &box, const Vec3i &res)
 	m_idx.array() = 1./m_dx.array() ;
 }
 
-void Grid::clamp_cell( Vec3i & cell ) const
+void Grid::clamp_cell( Cell & cell ) const
 {
-	cell = Vec3i(0,0,0).cwiseMax(cell).cwiseMin(m_dim-Vec3i(1,1,1)) ;
+	cell = Vec3i::Zero().cwiseMax(cell).cwiseMin(m_dim-Vec3i::Ones()) ;
 }
 
-void Grid::locate(const Vec &x, Location &loc)
+void Grid::locate(const Vec &x, Location &loc) const
 {
-	Vec3i cell = (x.array()*m_idx.array()).matrix().cast< int >();
-	clamp_cell(cell) ;
+	loc.cell = (x.array()*m_idx.array()).matrix().cast< Index >();
+	clamp_cell( loc.cell) ;
 
-	loc.cidx = cellIndex( cell ) ;
-
-	const Vec coo = Vec::Ones().array() - ( x - firstCorner( cell ) ).array() * m_idx.array() ;
+	const Vec coo = Vec::Ones().array() - ( x - firstCorner( loc.cell ) ).array() * m_idx.array() ;
 
 	for( int i = 0 ; i < 2 ; ++i )
 		for( int j = 0 ; j < 2 ; ++j )
 			for( int k = 0 ; k < 2 ; ++k ) {
-				const Vec3i corner (i,j,k) ;
-				loc.nodes[ MK_INDEX(i,j,k) ] = nodeIndex( cell + corner ) ;
+				const Cell corner (i,j,k) ;
+				loc.nodes[ MK_INDEX(i,j,k) ] = nodeIndex( loc.cell + corner ) ;
 				// c_i(x) = i + (1 - 2*i )*x = [ x if i=0, 1 + -x if i = 1 ]
 				Vec coeffs = corner.cast< Scalar >().array() + ( Vec::Ones() - 2*corner.cast< Scalar >() ).array() * coo.array() ;
 				loc.coeffs[ MK_INDEX(i,j,k) ] = coeffs[0]*coeffs[1]*coeffs[2] ;

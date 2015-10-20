@@ -7,7 +7,8 @@ namespace d6 {
 
 template <typename Derived >
 struct MeshTraits {
-	static constexpr unsigned NV = 8 ;
+	static constexpr Index NV = 8 ;
+	typedef Vec3i Cell ;
 };
 
 template <typename Derived>
@@ -16,13 +17,14 @@ class MeshBase {
 public:
 
 	typedef MeshTraits< Derived > Traits ;
-	static constexpr unsigned NV = Traits::NV ;
+	typedef typename Traits::Cell Cell ;
+	static constexpr Index NV = Traits::NV ;
 
-	typedef Eigen::Matrix< size_t, NV, 1> NodeList ;
+	typedef Eigen::Matrix<  Index, NV, 1> NodeList ;
 	typedef Eigen::Matrix< Scalar, NV, 1> CoefList ;
 
 	struct Location {
-		size_t   cidx   ; // Cell index
+		Cell      cell  ; // Cell
 		NodeList nodes  ; // Adjacent node indices
 		CoefList coeffs ; // Coordinates in cell
 	};
@@ -32,15 +34,15 @@ public:
 	const Derived& derived() const
 	{ return static_cast< const Derived& >( *this ) ; }
 
-	size_t nNodes() const { return derived().nNodes() ; }
-	size_t nCells() const { return derived().nCells() ; }
+	Index nNodes() const { return derived().nNodes() ; }
+	Index nCells() const { return derived().nCells() ; }
 
 	Vec box() const { return derived().box() ; }
 	Vec clamp_point( const Vec& p ) const {
-		return Vec(0,0,0).cwiseMax(p).cwiseMin(box()) ;
+		return Vec::Zero().cwiseMax(p).cwiseMin(box()) ;
 	}
 
-	void locate( const Vec &x, Location& loc ) {
+	void locate( const Vec &x, Location& loc ) const {
 		derived().locate( x, loc ) ;
 	}
 

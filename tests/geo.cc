@@ -20,7 +20,6 @@ TEST( geo, grid )
 	Grid::Location loc ;
 	g.locate( Vec(0,0,0), loc );
 
-	ASSERT_EQ( 0, loc.cidx ) ;
 	ASSERT_EQ( 0, loc.nodes[0] ) ;
 	ASSERT_EQ( dim[2]+1, loc.nodes[2] ) ;
 	ASSERT_EQ( (dim[1]+1)*(dim[2]+1), loc.nodes[4] ) ;
@@ -29,7 +28,6 @@ TEST( geo, grid )
 
 	g.locate( Vec(1,1,1), loc );
 
-	ASSERT_EQ( g.nCells()-1, loc.cidx ) ;
 	ASSERT_EQ( g.nNodes()-1, loc.nodes[7] ) ;
 	ASSERT_DOUBLE_EQ( 1, loc.coeffs[7] ) ;
 }
@@ -42,6 +40,17 @@ TEST( geo, field )
 
 	ScalarField< Grid > phi( g ) ;
 	ASSERT_EQ( g.nNodes(), phi.flatten().rows() ) ;
+
+	phi.set_constant( 3 );
+	ASSERT_DOUBLE_EQ( 3., phi( Vec( 0.2, 0.7, 0.5 ) ) ) ;
+
+	phi.set_zero();
+	ASSERT_DOUBLE_EQ( 0., phi( Vec( 0.3, 0.4, 0.1 ) ) ) ;
+	phi.add_at( Vec( 0.3, 0.4, 0.1 ), 1 );
+	ASSERT_FLOAT_EQ( 1,  phi( Vec( 0.3, 0.4, 0.1 ) ) ) ;
+	ASSERT_FLOAT_EQ( 0.3,  phi( Vec( 0.37, 0.4, 0.1 ) ) ) ;
+	ASSERT_FLOAT_EQ( 0.7,  phi( Vec( 0.3, 0.37, 0.1 ) ) ) ;
+	ASSERT_FLOAT_EQ( 0.5,  phi( Vec( 0.3, 0.4, 0.15 ) ) ) ;
 
 }
 

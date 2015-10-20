@@ -11,9 +11,9 @@ class ScalarField ;
 template < typename MeshT >
 struct FieldTraits< ScalarField< MeshT > >  {
 
-	typedef MeshT MeshType ;
+	typedef MeshT  MeshType ;
 	typedef Scalar ValueType ;
-	static constexpr unsigned Dimension = 1 ;
+	static constexpr Index Dimension = 1 ;
 };
 
 template < typename MeshT >

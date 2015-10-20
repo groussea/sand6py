@@ -10,38 +10,41 @@ class Grid : public MeshBase< Grid >
 public:
 	typedef MeshBase< Grid > Base ;
 
+	typedef typename Base::Cell Cell ;
+	typedef Vec3i 				Vertex ;
+
 	Grid( const Vec& box, const Vec3i &res ) ;
 
 
-	size_t nNodes() const
+	Index nNodes() const
 	{ return (m_dim[0]+1) * (m_dim[1]+1) * (m_dim[2] + 1) ; }
 
-	size_t nCells() const
+	Index nCells() const
 	{ return (m_dim[0]) * (m_dim[1]) * (m_dim[2]) ; }
 
 	Vec box() const
 	{ return firstCorner( m_dim ) ; }
 
-	void locate( const Vec &x, Location& loc ) ;
+	void locate( const Vec &x, Location& loc ) const ;
 
 private:
 
-	size_t nodeIndex( const Vec3i & node ) const
+	Index nodeIndex( const Vertex& node ) const
 	{
 		return (m_dim[2]+1) * (m_dim[1]+1) * node[0]
 			+  (m_dim[2]+1) * node[1]
 			+  node[2] ;
 	}
-	size_t cellIndex( const Vec3i & cell ) const
+	Index cellIndex( const Cell& cell ) const
 	{
 		return (m_dim[2]) * (m_dim[1]) * cell[0]
 			+  (m_dim[2]) * cell[1]
 			+  cell[2] ;
 	}
 
-	void clamp_cell( Vec3i & cell ) const ;
+	void clamp_cell( Cell& cell ) const ;
 
-	Vec firstCorner( const Vec3i &cell ) const
+	Vec firstCorner( const Cell &cell ) const
 	{ return (cell.array().cast< Scalar >() * m_dx.array()).matrix() ; }
 
 	Vec3i m_dim ;

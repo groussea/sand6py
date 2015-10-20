@@ -4,6 +4,7 @@
 namespace d6 {
 
 typedef double Scalar ;
+typedef int    Index  ;
 
 }
 

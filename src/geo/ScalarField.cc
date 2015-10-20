@@ -7,6 +7,7 @@
 namespace d6
 {
 
-template <> class ScalarField< Grid > ;
+template class FieldBase< ScalarField< Grid > > ;
+template class ScalarField< Grid > ;
 
 }
