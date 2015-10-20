@@ -110,4 +110,7 @@ NumType to_num ( const std::string& str )
 } //namespace d6
 
 
+#define D6_stringify(s) D6_preproc_str(s)
+#define D6_preproc_str(s) #s
+
 #endif

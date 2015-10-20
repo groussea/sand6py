@@ -22,13 +22,13 @@ template < Index Dimension >
 struct Segmenter {
 
 	typedef typename DynVec::template FixedSegmentReturnType< Dimension >::Type Seg ;
-	typedef typename DynVec::template FixedSegmentReturnType< Dimension >::Type ConstSeg ;
+	typedef typename DynVec::template ConstFixedSegmentReturnType< Dimension >::Type ConstSeg ;
 
-	static Seg segment( DynVec& vec, const Index i ) {
-		return vec.template segment< Dimension >( i ) ;
+	static inline Seg segment( DynVec& vec, const Index i ) {
+		return vec.template segment< Dimension >( i*Dimension ) ;
 	}
-	static ConstSeg segment( const DynVec& vec, const Index i ) {
-		return vec.template segment< Dimension >( i ) ;
+	static inline ConstSeg segment( const DynVec& vec, const Index i ) {
+		return vec.template segment< Dimension >( i*Dimension ) ;
 	}
 };
 template < >
@@ -36,22 +36,21 @@ struct Segmenter< 1 > {
 	typedef Scalar& Seg ;
 	typedef const Scalar& ConstSeg ;
 
-	static Seg segment( DynVec& vec, const Index i ) {
+	static inline Seg segment( DynVec& vec, const Index i ) {
 		return vec[ i ] ;
 	}
-	static ConstSeg segment( const DynVec& vec, const Index i ) {
+	static inline ConstSeg segment( const DynVec& vec, const Index i ) {
 		return vec[ i ] ;
 	}
 
 } ;
 
-template < typename S >
-void set_zero( S &s ) {
-	s = 0 ;
-}
 template < typename Derived >
-void set_zero( Eigen::MatrixBase< Derived > &mat ) {
+inline void set_zero( Eigen::MatrixBase< Derived > &mat ) {
 	mat.setZero() ;
+}
+inline void set_zero( Scalar &s ) {
+	s = 0 ;
 }
 
 } //d6

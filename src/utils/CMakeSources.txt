@@ -1,5 +1,12 @@
 utils/Config.cc
 utils/Config.hh
+utils/File.cc
+utils/File.hh
+utils/Log.hh
+utils/LogLevels.hh
+utils/Mutex.cc
+utils/Mutex.hh
+utils/ThreadLocal.hh
 utils/alg.hh
 utils/scalar.hh
 utils/string.cc

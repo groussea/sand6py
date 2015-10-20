@@ -4,6 +4,8 @@
 #include "geo/Grid.hh"
 
 #include "geo/ScalarField.hh"
+#include "geo/VectorField.hh"
+#include "geo/TensorField.hh"
 
 using namespace d6 ;
 
@@ -52,5 +54,11 @@ TEST( geo, field )
 	ASSERT_FLOAT_EQ( 0.7,  phi( Vec( 0.3, 0.37, 0.1 ) ) ) ;
 	ASSERT_FLOAT_EQ( 0.5,  phi( Vec( 0.3, 0.4, 0.15 ) ) ) ;
 
+	VectorField< Grid > u( g ) ;
+	u.set_constant( Vec(0,1,0) ) ;
+	ASSERT_TRUE( Vec(0,1,0).isApprox( u( Vec( 0.2, 0.7, 0.5 ) ) ) ) ;
+
+	u.add_at( Vec( 0.35, 0.45, 0.15 ), Vec(1,0,0) );
+	ASSERT_TRUE( Vec(0.125,1,0).isApprox( u( Vec( 0.3, 0.4, 0.2 ) ) ) ) ;
 }
 

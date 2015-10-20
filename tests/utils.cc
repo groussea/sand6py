@@ -1,14 +1,19 @@
 
 #include <gtest/gtest.h>
 
+#include "utils/string.hh"
+#include "utils/File.hh"
 #include "utils/Config.hh"
 
 using namespace d6 ;
 
 TEST( utils, config )
 {
+	const std::string &test_scene =
+			FileInfo(__FILE__).parentDirectory().filePath("../scenes/test.conf") ;
+
 	Config c ;
-	ASSERT_TRUE( c.from_file("../scenes/test.conf") ) ;
+	ASSERT_TRUE( c.from_file( test_scene ) ) ;
 
 	ASSERT_EQ( c.res, Vec3i(1, 5, 10) ) ;
 	ASSERT_TRUE( c.gravity.isApprox( Vec(40,0,0) ) ) ;

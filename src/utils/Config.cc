@@ -8,9 +8,6 @@
 #include <fstream>
 #include <regex>
 
-#define stringify(s) preproc_str(s)
-#define preproc_str(s) #s
-
 namespace d6 {
 
 template< typename dest_t >
@@ -65,7 +62,7 @@ bool Config::from_string(const std::string& key, std::istringstream &val )
 {
 	bool f = false ;
 	#define CONFIG_FIELD( name, type, s ) \
-		if(key == stringify(name)) { cast(val, name) ; f = true ; }
+		if(key == D6_stringify(name)) { cast(val, name) ; f = true ; }
 	EXPAND_CONFIG
 	 #undef CONFIG_FIELD
 

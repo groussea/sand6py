@@ -1,7 +1,12 @@
 geo/FieldBase.hh
+geo/FieldBase.impl.hh
 geo/Grid.cc
 geo/Grid.hh
 geo/MeshBase.cc
 geo/MeshBase.hh
 geo/ScalarField.cc
 geo/ScalarField.hh
+geo/TensorField.cc
+geo/TensorField.hh
+geo/VectorField.cc
+geo/VectorField.hh
