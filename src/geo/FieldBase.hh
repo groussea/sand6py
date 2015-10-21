@@ -62,6 +62,12 @@ public:
 	ConstSeg  operator[] ( const Index i ) const { return segment(i) ; }
 	Seg       operator[] ( const Index i )       { return segment(i) ; }
 
+	template < typename Archive >
+	void serialize( Archive &ar, unsigned int ) {
+		ar & m_size ;
+		ar & m_data ;
+	}
+
 protected:
 	const MeshType & m_mesh ;
 	const Index m_size ;

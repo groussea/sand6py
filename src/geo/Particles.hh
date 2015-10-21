@@ -20,6 +20,9 @@ public:
 
 	size_t count() const { return m_count ; }
 
+	template < typename Archive >
+	void serialize( Archive &ar, unsigned int ) ;
+
 private:
 
 	std::size_t m_count ;
@@ -30,7 +33,6 @@ private:
 	Eigen::Matrix< Scalar, 3, Eigen::Dynamic > m_velocities ;
 
 	Eigen::Matrix< Scalar, 6, Eigen::Dynamic > m_frames ;
-
 	Eigen::Matrix< Scalar, 6, Eigen::Dynamic > m_orient ; // Aniso
 
 

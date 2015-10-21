@@ -3,10 +3,16 @@
 
 #include "utils/Config.hh"
 #include "utils/Log.hh"
+#include "utils/File.hh"
 
 #include "geo/Grid.hh"
 
+#include "geo/Particles.io.hh"
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+
 #include <bogus/Core/Utils/Timer.hpp>
+#include <bogus/Core/Eigen/EigenSerialization.hpp>
 
 namespace d6 {
 
@@ -29,6 +35,14 @@ Simu::~Simu()
 
 void Simu::run()
 {
+	m_phase->fraction.set_zero();
+	m_phase->stresses.set_zero();
+	m_phase->velocity.set_zero();
+	m_phase->sym_grad.set_zero();
+	m_phase->spi_grad.set_zero();
+
+	dump( 0 ) ;
+
 	for( unsigned frame = 0 ; frame < m_config.nFrames ; ++ frame ) {
 		bogus::Timer timer ;
 		Log::Info() << "Starting frame " << frame << std::endl ;
@@ -44,7 +58,7 @@ void Simu::run()
 
 		Log::Info() << arg( "Frame done in %1 s", timer.elapsed() ) << std::endl ;
 
-		dump() ;
+		dump( frame+1 ) ;
 	}
 
 	Log::Info() << "All done." << std::endl ;
@@ -53,16 +67,32 @@ void Simu::run()
 
 void Simu::step()
 {
-
 }
 
-void Simu::dump() const
+void Simu::dump( unsigned frame ) const
 {
 	// Dump frame data for viz
+	FileInfo dir( FileInfo("out").filePath( arg("frame-%1", frame ) ) ) ;
+	FileInfo( dir.filePath("file") ).makePath() ;
 
 	// Grid
+	{
+		std::ofstream ofs( dir.filePath("mesh") );
+		boost::archive::binary_oarchive oa(ofs);
+		oa << m_mesh->derived() ;
+	}
 	// Velocity, Stress, Phi
+	{
+		std::ofstream ofs( dir.filePath("fields") );
+		boost::archive::binary_oarchive oa(ofs);
+		oa << *m_phase ;
+	}
 	// Particles
+	{
+		std::ofstream ofs( dir.filePath("particles") );
+		boost::archive::binary_oarchive oa(ofs);
+		oa << m_particles.geo() ;
+	}
 }
 
 

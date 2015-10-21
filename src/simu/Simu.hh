@@ -20,7 +20,7 @@ public:
 
 	void run() ;
 	void step() ;
-	void dump() const ;
+	void dump(unsigned frame) const ;
 
 	MeshType& mesh() { return * m_mesh ;  }
 	const MeshType& mesh() const { return * m_mesh ;  }

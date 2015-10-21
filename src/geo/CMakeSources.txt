@@ -8,6 +8,7 @@ geo/Particles.cc
 geo/Particles.hh
 geo/ScalarField.cc
 geo/ScalarField.hh
+geo/Tensor.hh
 geo/TensorField.cc
 geo/TensorField.hh
 geo/VectorField.cc

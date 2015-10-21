@@ -88,6 +88,13 @@ public:
 		geo.box = m_dx ;
 	}
 
+	template < typename Archive >
+	void serialize( Archive &ar, unsigned int ) {
+		ar & m_dim ;
+		ar &  m_dx ;
+		ar & m_idx ;
+	}
+
 private:
 
 	const Vec3i& dim() const { return m_dim ; }

@@ -24,6 +24,14 @@ struct Phase
 		  spi_grad(mesh)
 	{}
 
+	template < typename Archive >
+	void serialize( Archive &ar, unsigned int ) {
+		ar & fraction ;
+		ar & velocity ;
+		ar & stresses ;
+		ar & sym_grad ;
+		ar & spi_grad ;
+	}
 };
 
 } //d6
