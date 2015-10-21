@@ -2,6 +2,7 @@
 #define D6_VOXEL_HH
 
 #include "utils/alg.hh"
+#include <vector>
 
 namespace d6 {
 
@@ -11,9 +12,11 @@ struct Voxel {
 	static constexpr Index NC = 3 ;
 
 	typedef Eigen::Matrix< Scalar, NC, 1> Coords ;
+	typedef Eigen::Matrix< Scalar, 3, Eigen::Dynamic > Points ;
+	typedef Eigen::Matrix< Scalar, 6, Eigen::Dynamic > Frames ;
 
-	Vec corner ;
-	Vec box    ;
+	Vec corner ;  //!< 3D coords of first corner
+	Vec box    ;  //!< Dimensions of cell
 
 	template < typename Idx >
 	static inline Idx cornerIndex( Idx i, Idx j, Idx k ) {
@@ -27,6 +30,14 @@ struct Voxel {
 		return ( corner.cast< Scalar >().array() + ( Coords::Ones() - 2*corner.cast< Scalar >() ).array()
 				* ( Coords::Ones() - coords ).array() ).prod() ;
 	}
+
+	Vec center() const {
+		return corner + .5*box ;
+	}
+
+	Scalar volume() const { return box.prod() ; }
+
+	Index sample_uniform( const unsigned N, const Index start, Points &points, Frames &frames ) const ;
 
 } ;
 

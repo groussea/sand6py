@@ -31,6 +31,10 @@ struct GridIterator
 		return cell != o.cell ;
 	}
 
+	Cell operator*() const {
+		return cell ;
+	}
+
 	Index index() const ;
 
 };
@@ -79,6 +83,11 @@ public:
 		return GridIterator( *this, Vec3i(m_dim[0],0,0) ) ;
 	}
 
+	void get_geo( const Cell &cell, CellGeo& geo ) const {
+		get_corner( cell, geo.corner );
+		geo.box = m_dx ;
+	}
+
 private:
 
 	const Vec3i& dim() const { return m_dim ; }
@@ -101,11 +110,6 @@ private:
 
 	void get_corner( const Cell &cell, Vec& corner ) const {
 		corner = (cell.array().cast< Scalar >() * m_dx.array()).matrix() ;
-	}
-
-	void get_geo( const Cell &cell, CellGeo& geo ) const {
-		get_corner( cell, geo.corner );
-		geo.box = m_dx ;
 	}
 
 	void clamp_cell( Cell& cell ) const ;

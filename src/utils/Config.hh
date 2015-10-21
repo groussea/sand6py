@@ -16,6 +16,7 @@ namespace d6 {
 	\
 	CONFIG_FIELD( box				, Vec			,	Units::Length		) \
 	CONFIG_FIELD( res				, Vec3i			,	Units::None			) \
+	CONFIG_FIELD( nSamples			, unsigned		,	Units::None			) \
 	\
 	CONFIG_FIELD( volMass			, Scalar		,	Units::VolumicMass	) \
 	CONFIG_FIELD( viscosity			, Scalar		,	Units::Viscosity	) \

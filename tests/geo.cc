@@ -7,6 +7,8 @@
 #include "geo/VectorField.hh"
 #include "geo/TensorField.hh"
 
+#include "geo/Tensor.hh"
+
 using namespace d6 ;
 
 TEST( geo, grid )
@@ -69,3 +71,48 @@ TEST( geo, field )
 	ASSERT_TRUE( Vec(0.125,1,0).isApprox( u( Vec( 0.3, 0.4, 0.2 ) ) ) ) ;
 }
 
+TEST( geo, tensor )
+{
+
+	{
+		Vec6 vec ;
+		tensor_view( vec ).set_diag( Vec(1,1,1) ) ;
+		ASSERT_DOUBLE_EQ( std::sqrt(6.)/2., vec[0] ) ;
+		ASSERT_DOUBLE_EQ( 1.5, vec.squaredNorm() ) ;
+
+		const Vec6 vec2 = vec ;
+		Mat mat ;
+//		tensor_view( vec2 ).set_diag( Vec(1,1,1) ) ; //Compile error
+		tensor_view( vec2 ).get( mat ) ;
+	}
+
+	{
+		DynMat mat(9,9) ;
+		mat.setZero() ;
+		tensor_view( mat.block<1,6>(0,0) ).set_diag( Vec(1,-1,0) ) ;
+		ASSERT_DOUBLE_EQ( 1., mat(0,1) ) ;
+		ASSERT_DOUBLE_EQ( 1., mat.squaredNorm() ) ;
+	}
+
+	{
+		Mat mat, mat2 ;
+		mat.setRandom() ;
+
+		Eigen::Matrix< Scalar, 9, 1 > vec;
+		tensor_view( vec ).set( mat ) ;
+		tensor_view( vec ).get( mat2 ) ;
+
+		ASSERT_TRUE( mat.isApprox(mat2) ) ;
+		ASSERT_DOUBLE_EQ( .5 * mat.squaredNorm(), vec.squaredNorm() ) ;
+
+		Mat sym, sym2 ;
+		sym = .5 * (mat + mat.transpose() ) ;
+		tensor_view( vec.head<6>() ).get( sym2 ) ;
+		ASSERT_TRUE( sym.isApprox(sym2) ) ;
+
+		Mat spi = .5 * ( mat - mat.transpose() ) ;
+		ASSERT_TRUE( spi.isApprox( tensor_view( vec.segment<3>(6) ).as_mat() ) ) ;
+	}
+
+
+}
