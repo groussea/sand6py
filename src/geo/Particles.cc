@@ -1,5 +1,7 @@
 #include "Particles.hh"
 
+#include "Grid.hh"
+
 namespace d6 {
 
 const size_t Particles::s_MAX = 1.e6 ;
@@ -12,6 +14,12 @@ Particles::Particles()
 
 void Particles::generate(const Config &c, const MeshType &mesh)
 {
+	// Uniform gen
+	std::vector< Vec > points ;
+	for( typename MeshType::CellIterator it = mesh.cellBegin() ; it != mesh.cellEnd() ; ++it ) {
+//		mesh.sample( *it, 2, points ) ;
+	}
+
 	m_velocities.leftCols( count() ).setZero() ;
 }
 

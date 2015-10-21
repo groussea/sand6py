@@ -19,19 +19,22 @@ void Grid::clamp_cell( Cell & cell ) const
 
 void Grid::locate(const Vec &x, Location &loc) const
 {
-	loc.cell = (x.array()*m_idx.array()).matrix().cast< Index >();
+	loc.coords = x.array()*m_idx.array() ;
+	loc.cell = loc.coords.cast< Index >();
 	clamp_cell( loc.cell) ;
 
-	const Vec coo = Vec::Ones().array() - ( x - firstCorner( loc.cell ) ).array() * m_idx.array() ;
+	loc.coords -= loc.cell.cast< Scalar >() ;
+}
 
+void Grid::interpolate(const Location &loc, Interpolation &itp) const
+{
 	for( int i = 0 ; i < 2 ; ++i )
 		for( int j = 0 ; j < 2 ; ++j )
 			for( int k = 0 ; k < 2 ; ++k ) {
 				const Cell corner (i,j,k) ;
-				loc.nodes[ MK_INDEX(i,j,k) ] = nodeIndex( loc.cell + corner ) ;
-				// c_i(x) = i + (1 - 2*i )*x = [ x if i=0, 1 + -x if i = 1 ]
-				Vec coeffs = corner.cast< Scalar >().array() + ( Vec::Ones() - 2*corner.cast< Scalar >() ).array() * coo.array() ;
-				loc.coeffs[ MK_INDEX(i,j,k) ] = coeffs[0]*coeffs[1]*coeffs[2] ;
+				const int idx = Voxel::cornerIndex( i, j, k ) ;
+				itp.nodes[ idx ] = nodeIndex( loc.cell + corner ) ;
+				itp.coeffs[ idx ] = Voxel::cornerCoeff( corner, loc.coords );
 			}
 
 }

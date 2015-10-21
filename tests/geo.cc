@@ -19,19 +19,19 @@ TEST( geo, grid )
 	ASSERT_EQ( 11*6*5, g.nNodes() ) ;
 	ASSERT_TRUE( box.isApprox( g.box() ) ) ;
 
-	Grid::Location loc ;
-	g.locate( Vec(0,0,0), loc );
+	Grid::Interpolation itp ;
+	g.interpolate( Vec(0,0,0), itp );
 
-	ASSERT_EQ( 0, loc.nodes[0] ) ;
-	ASSERT_EQ( dim[2]+1, loc.nodes[2] ) ;
-	ASSERT_EQ( (dim[1]+1)*(dim[2]+1), loc.nodes[4] ) ;
-	ASSERT_EQ( (dim[1]+1)*(dim[2]+1)+(dim[2]+1)+1, loc.nodes[7] ) ;
-	ASSERT_DOUBLE_EQ( 1, loc.coeffs[0] ) ;
+	ASSERT_EQ( 0, itp.nodes[0] ) ;
+	ASSERT_EQ( dim[2]+1, itp.nodes[2] ) ;
+	ASSERT_EQ( (dim[1]+1)*(dim[2]+1), itp.nodes[4] ) ;
+	ASSERT_EQ( (dim[1]+1)*(dim[2]+1)+(dim[2]+1)+1, itp.nodes[7] ) ;
+	ASSERT_DOUBLE_EQ( 1, itp.coeffs[0] ) ;
 
-	g.locate( Vec(1,1,1), loc );
+	g.interpolate( Vec(1,1,1), itp );
 
-	ASSERT_EQ( g.nNodes()-1, loc.nodes[7] ) ;
-	ASSERT_DOUBLE_EQ( 1, loc.coeffs[7] ) ;
+	ASSERT_EQ( g.nNodes()-1, itp.nodes[7] ) ;
+	ASSERT_DOUBLE_EQ( 1, itp.coeffs[7] ) ;
 
 	Index i = 0 ;
 	for( GridIterator it( g.cellBegin() ) ;  it != g.cellEnd() ; ++it, ++i )

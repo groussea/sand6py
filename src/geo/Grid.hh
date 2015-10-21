@@ -2,6 +2,7 @@
 #define D6_GRID_HH
 
 #include "MeshBase.hh"
+#include "Voxel.hh"
 
 namespace d6 {
 
@@ -10,6 +11,7 @@ class Grid ;
 struct GridIterator
 {
 	typedef Vec3i Cell ;
+	typedef Voxel CellGeo ;
 
 	const Grid& grid ;
 	Cell cell ;
@@ -35,9 +37,12 @@ struct GridIterator
 
 template < >
 struct MeshTraits< Grid > {
-	static constexpr Index NV = 8 ;
-
 	typedef GridIterator CellIterator ;
+
+	typedef typename CellIterator::CellGeo CellGeo ;
+	static constexpr Index NV = CellGeo::NV ;
+	static constexpr Index NC = CellGeo::NC ;
+
 };
 
 
@@ -47,6 +52,7 @@ public:
 	typedef MeshBase< Grid > Base ;
 
 	typedef typename Base::Cell Cell ;
+	typedef typename Base::CellGeo CellGeo ;
 	typedef Vec3i 				Vertex ;
 
 	Grid( const Vec& box, const Vec3i &res ) ;
@@ -62,6 +68,9 @@ public:
 	{ return firstCorner( m_dim ) ; }
 
 	void locate( const Vec &x, Location& loc ) const ;
+
+	using Base::interpolate ;
+	void interpolate( const Location &loc , Interpolation& itp ) const ;
 
 	CellIterator cellBegin() const {
 		return GridIterator( *this, Vec3i::Zero() ) ;
@@ -90,10 +99,19 @@ private:
 			+  cell[2] ;
 	}
 
+	void get_corner( const Cell &cell, Vec& corner ) const {
+		corner = (cell.array().cast< Scalar >() * m_dx.array()).matrix() ;
+	}
+
+	void get_geo( const Cell &cell, CellGeo& geo ) const {
+		get_corner( cell, geo.corner );
+		geo.box = m_dx ;
+	}
+
 	void clamp_cell( Cell& cell ) const ;
 
 	Vec firstCorner( const Cell &cell ) const
-	{ return (cell.array().cast< Scalar >() * m_dx.array()).matrix() ; }
+	{ Vec corner ; get_corner( cell, corner ) ; return corner ; }
 
 	Vec3i m_dim ;
 	Vec   m_dx  ;

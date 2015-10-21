@@ -12,3 +12,6 @@ geo/TensorField.cc
 geo/TensorField.hh
 geo/VectorField.cc
 geo/VectorField.hh
+geo/Voxel.cc
+geo/Voxel.hh
+geo/geo.fwd.hh

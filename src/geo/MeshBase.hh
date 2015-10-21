@@ -7,7 +7,6 @@ namespace d6 {
 
 template <typename Derived >
 struct MeshTraits {
-	static constexpr Index NV = 8 ;
 };
 
 template <typename Derived>
@@ -17,16 +16,23 @@ public:
 
 	typedef MeshTraits< Derived > Traits ;
 	typedef typename Traits::CellIterator CellIterator ;
-	typedef typename CellIterator::Cell Cell ;
-	static constexpr Index NV = Traits::NV ;
+	typedef typename CellIterator::Cell    Cell ;
+	typedef typename Traits::CellGeo CellGeo ;
 
+	static constexpr Index NV = Traits::NV ;
+	static constexpr Index NC = Traits::NC ;
+
+	typedef Eigen::Matrix< Scalar, NC, 1> Coords ;
 	typedef Eigen::Matrix<  Index, NV, 1> NodeList ;
 	typedef Eigen::Matrix< Scalar, NV, 1> CoefList ;
 
 	struct Location {
 		Cell      cell  ; // Cell
+		Coords   coords ; // Coordinates in cell
+	};
+	struct Interpolation {
 		NodeList nodes  ; // Adjacent node indices
-		CoefList coeffs ; // Coordinates in cell
+		CoefList coeffs ; // Interpolation coeff for nodes
 	};
 
 	Derived& derived()
@@ -45,10 +51,21 @@ public:
 	void locate( const Vec &x, Location& loc ) const {
 		derived().locate( x, loc ) ;
 	}
+	void interpolate( const Location& loc, Interpolation& itp ) const {
+		derived().interpolate( loc, itp ) ;
+	}
+	void interpolate( const Vec &x, Interpolation& itp ) const {
+		Location loc ;
+		derived().locate( x, loc ) ;
+		derived().interpolate( loc, itp ) ;
+	}
 
 	CellIterator cellBegin() const { return derived().cellBegin() ; }
-	CellIterator cellEnd()   const { return derived().cellEnd() ; }
+	CellIterator cellEnd()  const { return derived().cellEnd() ; }
 
+	void get_geo( const Cell &cell, CellGeo& geo ) const {
+		derived().get_geo( cell, geo ) ;
+	}
 } ;
 
 } //d6

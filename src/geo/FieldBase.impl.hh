@@ -2,18 +2,19 @@
 #define D6_FIELD_BASE_IMPL_HH
 
 #include "FieldBase.hh"
+#include "MeshBase.hh"
 
 namespace d6 {
 
 template< typename Derived >
 void FieldBase< Derived >::eval_at( const Vec& x, ValueType& res ) const
 {
-	typename MeshType::Location loc ;
-	m_mesh.locate( x, loc );
+	typename MeshType::Interpolation itp ;
+	m_mesh.interpolate( x, itp );
 
 	d6::set_zero( res ) ;
-	for( Index k = 0 ; k < loc.nodes.rows() ; ++k ) {
-		res += loc.coeffs[k] * segment( loc.nodes[k] ) ;
+	for( Index k = 0 ; k < itp.nodes.rows() ; ++k ) {
+		res += itp.coeffs[k] * segment( itp.nodes[k] ) ;
 	}
 
 }
@@ -21,11 +22,11 @@ void FieldBase< Derived >::eval_at( const Vec& x, ValueType& res ) const
 template< typename Derived >
 void FieldBase< Derived >::add_at( const Vec& x, const ValueType& val )
 {
-	typename MeshType::Location loc ;
-	m_mesh.locate( x, loc );
+	typename MeshType::Interpolation itp ;
+	m_mesh.interpolate( x, itp );
 
-	for( Index k = 0 ; k < loc.nodes.rows() ; ++k ) {
-		segment( loc.nodes[k] ) += loc.coeffs[k] * val ;
+	for( Index k = 0 ; k < itp.nodes.rows() ; ++k ) {
+		segment( itp.nodes[k] ) += itp.coeffs[k] * val ;
 	}
 
 }
