@@ -37,6 +37,29 @@ bool VTKParticlesWriter::dump( unsigned frame, const char*name, const Eigen::Mat
 	return true ;
 }
 
+bool VTKParticlesWriter::dump_all( unsigned frame ) const
+{
+	const char *name = "particles" ;
+
+	File vtk ;
+	if( !open( frame, name, vtk ) )
+		return false ;
+
+	writeHeader( vtk, name ) ;
+	writePoints( vtk );
+
+	vtk << "POINT_DATA " << m_particles.count() << "\n" ;
+	writeDataHeader( vtk, 1, "volume" ) ;
+	write( vtk, m_particles.volumes().data(), 1, m_particles.count() ) ;
+	writeDataHeader( vtk, 3, "velocity" ) ;
+	write( vtk, m_particles.velocities().data(), 3, m_particles.count() ) ;
+	writeDataHeader( vtk, 6, "frames" ) ;
+	write( vtk, m_particles.frames().data(), 6, m_particles.count() ) ;
+	writeDataHeader( vtk, 6, "orient" ) ;
+	write( vtk, m_particles.orient().data(), 6, m_particles.count() ) ;
+
+	return true ;
+}
 
 bool VTKParticlesWriter::dump(unsigned frame, Quantity quantity) const {
 	switch( quantity ) {

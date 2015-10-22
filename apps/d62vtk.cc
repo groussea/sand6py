@@ -30,9 +30,10 @@ int main( int argc, const char* argv[] ) {
 		return 1 ;
 
 	d6::VTKParticlesWriter particlesWriter( base_dir, offline.particles() ) ;
-	particlesWriter.dump( frame, d6::VTKParticlesWriter::Volumes );
-	particlesWriter.dump( frame, d6::VTKParticlesWriter::Velocities );
-	particlesWriter.dump( frame, d6::VTKParticlesWriter::Frames );
+	particlesWriter.dump_all( frame ) ;
+//	particlesWriter.dump( frame, d6::VTKParticlesWriter::Volumes );
+//	particlesWriter.dump( frame, d6::VTKParticlesWriter::Velocities );
+//	particlesWriter.dump( frame, d6::VTKParticlesWriter::Frames );
 
 	return 0 ;
 

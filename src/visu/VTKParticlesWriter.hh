@@ -25,6 +25,7 @@ public:
 	bool dump( unsigned frame, const char* name, const Eigen::MatrixBase< Derived > &data ) const ;
 
 	bool dump( unsigned frame, Quantity quantity ) const ;
+	bool dump_all( unsigned frame ) const ;
 
 private:
 	void writePoints(File &file) const ;
