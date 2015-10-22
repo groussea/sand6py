@@ -22,13 +22,16 @@ public:
 	VTKParticlesWriter( const char* base_dir, const Particles& particles ) ;
 
 	template< typename Derived >
-	bool dump( unsigned frame, const char* name, const Eigen::MatrixBase< Derived > &data ) const ;
+	bool dump( const char* name, const Eigen::MatrixBase< Derived > &data ) ;
 
-	bool dump( unsigned frame, Quantity quantity ) const ;
-	bool dump_all( unsigned frame ) const ;
+	bool dump( Quantity quantity ) ;
+	bool dump_all( ) ;
+
+protected:
+	void writeMesh( File& file ) const ;
+	size_t nDataPoints( ) const ;
 
 private:
-	void writePoints(File &file) const ;
 
 	const Particles& m_particles ;
 

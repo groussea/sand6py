@@ -3,6 +3,9 @@
 
 #include "visu/Offline.hh"
 #include "visu/VTKParticlesWriter.hh"
+#include "visu/VTKFieldWriter.hh"
+
+#include "simu/Phase.hh"
 
 
 int main( int argc, const char* argv[] ) {
@@ -30,10 +33,14 @@ int main( int argc, const char* argv[] ) {
 		return 1 ;
 
 	d6::VTKParticlesWriter particlesWriter( base_dir, offline.particles() ) ;
-	particlesWriter.dump_all( frame ) ;
-//	particlesWriter.dump( frame, d6::VTKParticlesWriter::Volumes );
-//	particlesWriter.dump( frame, d6::VTKParticlesWriter::Velocities );
-//	particlesWriter.dump( frame, d6::VTKParticlesWriter::Frames );
+	particlesWriter.startFile( "particles", frame ) ;
+	particlesWriter.dump_all() ;
+
+	d6::VTKFieldWriter fieldWriter( base_dir, offline.mesh() ) ;
+	fieldWriter.startFile( "fields", frame ) ;
+	fieldWriter.dump(    "phi", offline.phase().fraction ) ;
+	fieldWriter.dump(      "u", offline.phase().velocity ) ;
+	fieldWriter.dump( "lambda", offline.phase().stresses ) ;
 
 	return 0 ;
 

@@ -11,9 +11,21 @@ namespace d6 {
 VTKWriter::VTKWriter(const char *base_dir)
 	: m_base_dir( base_dir ), m_mode( Binary )
 {
-//	if( !FileInfo( m_base_dir ).exists() ) {
-//		Log::Error
-//	}
+}
+
+bool VTKWriter::startFile( const char* name, unsigned frame )
+{
+	assert( !m_file.is_open() ) ;
+
+	if( !open( frame, name ) )
+		return false ;
+
+	writeHeader( m_file, name ) ;
+	writeMesh( m_file );
+
+	m_file << "POINT_DATA " << nDataPoints() << "\n" ;
+
+	return true ;
 }
 
 std::string VTKWriter::fileName(const unsigned frame, const char *dataName) const
@@ -21,12 +33,12 @@ std::string VTKWriter::fileName(const unsigned frame, const char *dataName) cons
 	return FileInfo( FileInfo( m_base_dir ).filePath("vtk") ).filePath( arg("%1-%2.vtk", dataName, frame) ) ;
 }
 
-bool VTKWriter::open(const unsigned frame, const char *dataName, File &file) const
+bool VTKWriter::open(const unsigned frame, const char *dataName )
 {
 	const std::string fn = fileName(frame, dataName) ;
 	FileInfo(fn).makePath() ;
-	if( !file.open(fn , std::ios_base::out ) ) {
-		Log::Error() << "Could not write into " << file.name() <<std::endl ;
+	if( !m_file.open(fn , std::ios_base::out ) ) {
+		Log::Error() << "Could not write into " << m_file.name() <<std::endl ;
 		return false ;
 	}
 
@@ -35,7 +47,7 @@ bool VTKWriter::open(const unsigned frame, const char *dataName, File &file) con
 	return true ;
 }
 
-void VTKWriter::writeHeader( File &file, const char *title ) const
+void VTKWriter::writeHeader( File& file, const char *title ) const
 {
 	file << "# vtk DataFile Version 2.0\n" ;
 	file << title << "\n" ;
@@ -45,7 +57,7 @@ void VTKWriter::writeHeader( File &file, const char *title ) const
 		file << "BINARY\n" ;
 }
 
-void VTKWriter::writeDataHeader( File& file, const int Dim, const char* name) const
+void VTKWriter::writeAttributeHeader( File& file, const int Dim, const char* name) const
 {
 	switch( Dim ) {
 		case 1:
@@ -121,7 +133,7 @@ static void write_tensor_binary( File& file, const Scalar* data, const size_t si
 }
 
 template< typename Scalar >
-void VTKWriter::write( File& file, const Scalar* data, int Dim, const size_t size ) const
+void VTKWriter::write( File &file, const Scalar* data, int Dim, const size_t size ) const
 {
 	if( m_mode == Ascii ) {
 		if( Dim == 6 ) {
@@ -140,6 +152,14 @@ void VTKWriter::write( File& file, const Scalar* data, int Dim, const size_t siz
 	file << "\n" ;
 }
 
-template void VTKWriter::write( File&, const double*, int, size_t) const;
+template< typename Scalar >
+void VTKWriter::writeAttribute( const char *name, const Scalar* data, int Dim )
+{
+	writeAttributeHeader( m_file, Dim, name ) ;
+	write( m_file, data, Dim, nDataPoints() ) ;
+}
+
+template void VTKWriter::write( File &file, const double*, int, size_t) const ;
+template void VTKWriter::writeAttribute( const char* name, const double*, int ) ;
 
 }

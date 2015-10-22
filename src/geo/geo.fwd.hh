@@ -6,6 +6,7 @@ namespace d6 {
 class Grid ;
 template < typename M > class MeshBase ;
 
+template< typename Derived > struct FieldBase ;
 template < typename MeshT > class AbstractScalarField ;
 template < typename MeshT > class AbstractVectorField ;
 template < typename MeshT > class AbstractTensorField ;

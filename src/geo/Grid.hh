@@ -95,11 +95,11 @@ public:
 		ar & m_idx ;
 	}
 
-private:
-
 	const Vec3i& dim() const { return m_dim ; }
 	const Vec&    dx() const { return  m_dx ; }
 	const Vec&   idx() const { return m_idx ; }
+
+private:
 
 
 	Index nodeIndex( const Vertex& node ) const

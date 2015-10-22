@@ -8,6 +8,7 @@ utils/Mutex.cc
 utils/Mutex.hh
 utils/ThreadLocal.hh
 utils/alg.hh
+utils/endian.hh
 utils/scalar.hh
 utils/string.cc
 utils/string.hh
