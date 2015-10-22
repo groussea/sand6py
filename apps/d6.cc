@@ -1,6 +1,7 @@
 
 #include "utils/Config.hh"
 #include "utils/Log.hh"
+#include "utils/File.hh"
 
 #include "simu/Simu.hh"
 
@@ -9,6 +10,8 @@
 int main( int argc, const char* argv[] )
 {
 	d6::Config config ;
+
+	const char * base_dir = "out" ;
 
 	for( int i = 1 ; i < argc ; ++i )
 	{
@@ -29,12 +32,15 @@ int main( int argc, const char* argv[] )
 					d6::Log::Config::get().setLevel( argv[i] ) ;
 				}
 			}
+		} else {
+			base_dir = argv[i] ;
 		}
 	}
 
+	config.dump( d6::FileInfo(base_dir).filePath("config") );
 	config.internalize();
 
-	d6::Simu( config ).run() ;
+	d6::Simu( config, base_dir ).run() ;
 
 	return 0 ;
 }

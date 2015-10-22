@@ -13,6 +13,6 @@ ENDMACRO( ADD_D6_LIB )
 ADD_D6_LIB(utils)
 ADD_D6_LIB(geo)
 #ADD_D6_LIB(solve)
-ADD_D6_LIB(simu d6_utils d6_geo ${EXTERNAL_LIBRARIES}  )
-#ADD_D6_LIB(visu)
+ADD_D6_LIB(simu d6_utils d6_geo ${EXTERNAL_LIBRARIES} )
+ADD_D6_LIB(visu d6_utils d6_geo ${EXTERNAL_LIBRARIES} )
 

@@ -9,7 +9,6 @@
 
 #include "geo/Particles.io.hh"
 #include <boost/archive/binary_oarchive.hpp>
-#include <boost/archive/binary_iarchive.hpp>
 
 #include <bogus/Core/Utils/Timer.hpp>
 #include <bogus/Core/Eigen/EigenSerialization.hpp>
@@ -17,8 +16,8 @@
 namespace d6 {
 
 
-Simu::Simu(const Config &config)
-	: m_config(config)
+Simu::Simu(const Config &config, const char *base_dir)
+	: m_config(config), m_base_dir( base_dir )
 {
 	m_mesh = new MeshImpl( config.box, config.res ) ;
 
@@ -72,8 +71,10 @@ void Simu::step()
 void Simu::dump( unsigned frame ) const
 {
 	// Dump frame data for viz
-	FileInfo dir( FileInfo("out").filePath( arg("frame-%1", frame ) ) ) ;
-	FileInfo( dir.filePath("file") ).makePath() ;
+	FileInfo dir( FileInfo(m_base_dir).filePath( arg("frame-%1", frame ) ) ) ;
+	dir.makePath() ;
+	if( ! dir.exists() )
+		dir.makeDir() ;
 
 	// Grid
 	{

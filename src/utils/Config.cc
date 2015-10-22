@@ -75,5 +75,19 @@ bool Config::from_file(const std::string &file_name)
 	return true ;
 }
 
+bool Config::dump(const std::string &file_name) const
+{
+	std::ofstream out( file_name ) ;
+	if(!out)
+		return false ;
+
+	#define CONFIG_FIELD( name, type, s ) \
+		out << D6_stringify(name) << "\t" ; d6::dump( out, name ) ; out << "\n" ;
+	EXPAND_CONFIG
+	 #undef CONFIG_FIELD
+
+	return true ;
+}
+
 } //ns hyb2d
 

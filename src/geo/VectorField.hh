@@ -22,7 +22,7 @@ class AbstractVectorField : public FieldBase< AbstractVectorField< MeshT > >
 	typedef FieldBase< AbstractVectorField > Base ;
 
 public:
-	AbstractVectorField( const MeshType& mesh )
+	explicit AbstractVectorField( const MeshType& mesh )
 		: Base( mesh )
 	{
 

@@ -22,7 +22,7 @@ class AbstractScalarField : public FieldBase< AbstractScalarField< MeshT > >
 	typedef FieldBase< AbstractScalarField > Base ;
 
 public:
-	AbstractScalarField( const MeshType& mesh )
+	explicit AbstractScalarField( const MeshType& mesh )
 		: Base( mesh )
 	{
 

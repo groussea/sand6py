@@ -28,7 +28,7 @@ public:
 	typedef typename Segmenter< D >::ConstSeg ConstSeg  ;
 
 
-	FieldBase( const MeshType& mesh )
+	explicit FieldBase( const MeshType& mesh )
 		: m_mesh( mesh ), m_size( mesh.nNodes() )
 	{
 		m_data.resize( D * m_size );
@@ -70,7 +70,7 @@ public:
 
 protected:
 	const MeshType & m_mesh ;
-	const Index m_size ;
+	Index m_size ;
 	DynVec   m_data ;
 
 } ;

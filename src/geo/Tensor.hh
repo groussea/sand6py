@@ -87,6 +87,12 @@ private:
 };
 
 template< typename Derived >
+TensorView< Derived > tensor_view( const Eigen::MapBase< Derived, Eigen::ReadOnlyAccessors >& map )
+{
+	return TensorView< Derived > ( map.derived() ) ;
+}
+
+template< typename Derived >
 TensorView< Derived > tensor_view( const Eigen::MapBase< Derived, Eigen::WriteAccessors >& map )
 {
 	return TensorView< Derived > ( map.derived() ) ;

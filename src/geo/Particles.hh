@@ -12,6 +12,12 @@ class Particles {
 
 public:
 
+	template< int D >
+	struct Data {
+		typedef Eigen::Matrix< Scalar, D, Eigen::Dynamic > Type ;
+	};
+
+
 	static const size_t s_MAX ;
 
 	Particles() ;
@@ -23,20 +29,27 @@ public:
 	template < typename Archive >
 	void serialize( Archive &ar, unsigned int ) ;
 
+	const typename Data< 1 >::Type&    volumes() const { return    m_volumes ; }
+	const typename Data< 3 >::Type&    centers() const { return    m_centers ; }
+	const typename Data< 3 >::Type& velocities() const { return m_velocities ; }
+	const typename Data< 6 >::Type&     frames() const { return     m_frames ; }
+	const typename Data< 6 >::Type&     orient() const { return     m_orient ; }
+
 private:
 
 	std::size_t m_count ;
 
-	Eigen::VectorXd m_volumes ;
+	typename Data< 1 >::Type m_volumes ;
 
-	Eigen::Matrix< Scalar, 3, Eigen::Dynamic > m_centers ;
-	Eigen::Matrix< Scalar, 3, Eigen::Dynamic > m_velocities ;
+	typename Data< 3 >::Type m_centers ;
+	typename Data< 3 >::Type m_velocities ;
 
-	Eigen::Matrix< Scalar, 6, Eigen::Dynamic > m_frames ;
-	Eigen::Matrix< Scalar, 6, Eigen::Dynamic > m_orient ; // Aniso
+	typename Data< 6 >::Type m_frames ;
+	typename Data< 6 >::Type m_orient ; // Aniso
 
 
 	void resize( size_t n ) ;
+
 };
 
 } //d6

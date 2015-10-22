@@ -6,6 +6,8 @@
 #include "geo/VectorField.hh"
 #include "geo/TensorField.hh"
 
+#include "geo/Grid.hh"
+
 namespace d6 {
 
 struct Phase

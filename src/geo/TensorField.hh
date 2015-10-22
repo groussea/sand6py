@@ -22,7 +22,7 @@ class AbstractTensorField : public FieldBase< AbstractTensorField< MeshT > >
 	typedef FieldBase< AbstractTensorField > Base ;
 
 public:
-	AbstractTensorField( const MeshType& mesh )
+	explicit AbstractTensorField( const MeshType& mesh )
 		: Base( mesh )
 	{
 

@@ -6,6 +6,7 @@ geo/MeshBase.cc
 geo/MeshBase.hh
 geo/Particles.cc
 geo/Particles.hh
+geo/Particles.io.hh
 geo/ScalarField.cc
 geo/ScalarField.hh
 geo/Tensor.hh
