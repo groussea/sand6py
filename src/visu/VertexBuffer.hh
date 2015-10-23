@@ -69,10 +69,10 @@ public:
 		glVertexPointer(d, Traits< Scalar >::id , stride * sizeof( Scalar ),
 						(GLvoid*) (offset * sizeof( Scalar )));
 	}
-	void set_normal_pointer( GLsizei stride = 0, GLuint offset = 0, unsigned d = Dim ) const
+	void set_normal_pointer( GLsizei stride = 0, GLuint offset = 0 ) const
 	{
 		bind() ;
-		glNormalPointer(d, Traits< Scalar >::id , stride * sizeof( Scalar ),
+		glNormalPointer( Traits< Scalar >::id , stride * sizeof( Scalar ),
 						(GLvoid*)  (offset * sizeof( Scalar )));
 	}
 	void set_color_pointer( GLsizei stride = 0, GLuint offset = 0, unsigned d = 4 ) const
@@ -160,7 +160,11 @@ struct ColorPointer
 };
 
 typedef VertexBuffer< GLfloat, 4, GL_ARRAY_BUFFER > VertexBuffer4f ;
+typedef VertexBuffer< GLfloat, 3, GL_ARRAY_BUFFER > VertexBuffer3f ;
+typedef VertexBuffer< GLfloat,16, GL_ARRAY_BUFFER > VertexBuffer16f ;
+
 typedef VertexBuffer< GLdouble, 3, GL_ARRAY_BUFFER > VertexBuffer3d ;
+
 typedef VertexBuffer< GLuint, 1, GL_ELEMENT_ARRAY_BUFFER > IndexBuffer ;
 
 } //ns gl

@@ -41,6 +41,13 @@ private:
 	gl::VertexBuffer3d m_centers ;
 	gl::VertexBuffer4f m_colors  ;
 
+	gl::VertexBuffer3f m_glyph ;
+	gl::IndexBuffer	   m_glyphQuadIndices ;
+
+	Eigen::Matrix< float, 16, Eigen::Dynamic> m_matrices ; // FIXME
+	Eigen::VectorXd m_densities ;
+//	gl::VertexBuffer16f m_frames  ;
+
 } ;
 
 } //d6

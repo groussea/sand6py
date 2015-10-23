@@ -6,3 +6,4 @@ visu/VTKParticlesWriter.cc
 visu/VTKParticlesWriter.hh
 visu/VTKWriter.cc
 visu/VTKWriter.hh
+visu/VertexBuffer.hh
