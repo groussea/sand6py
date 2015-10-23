@@ -15,12 +15,12 @@ struct Voxel {
 	typedef Eigen::Matrix< Scalar, 3, Eigen::Dynamic > Points ;
 	typedef Eigen::Matrix< Scalar, 6, Eigen::Dynamic > Frames ;
 
-	Vec corner ;  //!< 3D coords of first corner
+	Vec origin ;  //!< 3D coords of first corner
 	Vec box    ;  //!< Dimensions of cell
 
 	template < typename Idx >
 	static inline Idx cornerIndex( Idx i, Idx j, Idx k ) {
-		return (i << 2) + (j << 1) + k ;
+		return (i << 0) + (j << 1) + (k << 2) ;
 	}
 	static inline Index cornerIndex( const Vec3i& corner ) {
 		return cornerIndex< Index >( corner[0], corner[1], corner[2] ) ;
@@ -32,7 +32,12 @@ struct Voxel {
 	}
 
 	Vec center() const {
-		return corner + .5*box ;
+		return origin + .5*box ;
+	}
+
+	Vec vertex( int cornerIndex ) const {
+		const Vec3i corner ( (cornerIndex&1)>>0, (cornerIndex&2)>>1, (cornerIndex&4)>>2 ) ;
+		return origin + ( corner.cast< Scalar >().array() * box.array() ).matrix() ;
 	}
 
 	Scalar volume() const { return box.prod() ; }

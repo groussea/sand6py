@@ -84,7 +84,7 @@ public:
 	}
 
 	void get_geo( const Cell &cell, CellGeo& geo ) const {
-		get_corner( cell, geo.corner );
+		get_corner( cell, geo.origin );
 		geo.box = m_dx ;
 	}
 
@@ -95,11 +95,19 @@ public:
 		ar & m_idx ;
 	}
 
+	void list_nodes( const Cell& cell, NodeList& list ) const {
+		Location loc { cell, Coords::Zero() } ;
+		Interpolation itp ;
+		interpolate( loc, itp );
+		list = itp.nodes ;
+	}
+
+private:
+
 	const Vec3i& dim() const { return m_dim ; }
 	const Vec&    dx() const { return  m_dx ; }
 	const Vec&   idx() const { return m_idx ; }
 
-private:
 
 
 	Index nodeIndex( const Vertex& node ) const

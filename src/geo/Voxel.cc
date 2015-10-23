@@ -21,7 +21,7 @@ Index Voxel::sample_uniform(const unsigned N, const Index start, Points &points,
 	for( int i = 0 ; i < Nsub[0] ; ++i )
 		for( int j = 0 ; j < Nsub[1] ; ++j )
 			for( int k = 0 ; k < Nsub[2] ; ++k ) {
-				points.col(p) = corner + (Vec(i+.5,j+.5,k+.5).array() * subBox.array()).matrix() ;
+				points.col(p) = origin + (Vec(i+.5,j+.5,k+.5).array() * subBox.array()).matrix() ;
 				frames.col(p) = frame ;
 				++p ;
 			}

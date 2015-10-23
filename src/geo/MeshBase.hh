@@ -54,10 +54,14 @@ public:
 	void interpolate( const Location& loc, Interpolation& itp ) const {
 		derived().interpolate( loc, itp ) ;
 	}
+
 	void interpolate( const Vec &x, Interpolation& itp ) const {
 		Location loc ;
 		derived().locate( x, loc ) ;
 		derived().interpolate( loc, itp ) ;
+	}
+	void list_nodes( const Cell& cell, NodeList& list ) const {
+		derived().list_nodes( cell, list ) ;
 	}
 
 	CellIterator cellBegin() const { return derived().cellBegin() ; }

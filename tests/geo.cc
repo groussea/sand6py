@@ -26,7 +26,6 @@ TEST( geo, grid )
 
 	ASSERT_EQ( 0, itp.nodes[0] ) ;
 	ASSERT_EQ( dim[2]+1, itp.nodes[2] ) ;
-	ASSERT_EQ( (dim[1]+1)*(dim[2]+1), itp.nodes[4] ) ;
 	ASSERT_EQ( (dim[1]+1)*(dim[2]+1)+(dim[2]+1)+1, itp.nodes[7] ) ;
 	ASSERT_DOUBLE_EQ( 1, itp.coeffs[0] ) ;
 

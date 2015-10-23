@@ -18,11 +18,36 @@ VTKFieldWriter::VTKFieldWriter( const char* base_dir, const MeshType& mesh )
 
 void VTKFieldWriter::writeMesh( File &vtk ) const
 {
-	vtk << "DATASET STRUCTURED_POINTS\n" ;
-	const Grid& g = m_mesh.derived() ;
-	vtk << "DIMENSIONS " << (g.dim() + Vec3i::Ones()).transpose() << "\n" ;
-	vtk << "ORIGIN " << Vec::Zero().transpose() << "\n" ;
-	vtk << "SPACING " << g.dx().transpose() << "\n" ;
+
+	Eigen::Matrix3Xf vertices( 3, m_mesh.nNodes() ) ;
+
+	Eigen::Matrix<int, MeshType::NV+1, Eigen::Dynamic > nodeIndices( MeshType::NV+1, m_mesh.nCells() ) ;
+	nodeIndices.row(0).setConstant( MeshType::NV ) ;
+
+	const Eigen::VectorXi cellTypes = Eigen::VectorXi::Constant( m_mesh.nCells(), /*VTK_VOXEL*/ 11 ) ;
+
+	typename MeshType::CellGeo cellGeo ;
+	typename MeshType::NodeList cellNodes ;
+
+	for( typename MeshType::CellIterator it = m_mesh.cellBegin() ; it != m_mesh.cellEnd() ; ++it )
+	{
+		m_mesh.get_geo( *it, cellGeo ) ;
+		m_mesh.list_nodes( *it, cellNodes );
+
+		nodeIndices.block< MeshType::NV, 1 >( 1, it.index() ) = cellNodes ;
+
+		for( int k = 0 ; k < MeshType::NV ; ++k ) {
+			vertices.col( cellNodes[k] ) = cellGeo.vertex( k ).cast< float >() ;
+		}
+	}
+
+	vtk << "DATASET UNSTRUCTURED_GRID\n" ;
+	vtk << "POINTS " << vertices.cols() << " float\n" ;
+	write( vtk, vertices.data(), 3, vertices.cols() ) ;
+	vtk << "CELLS " << nodeIndices.cols() << " " << nodeIndices.size() << "\n";
+	write( vtk, nodeIndices.data(), 1, nodeIndices.size() ) ;
+	vtk << "CELL_TYPES " << nodeIndices.cols() << "\n";
+	write( vtk, cellTypes.data(), 1, nodeIndices.cols() ) ;
 }
 
 size_t VTKFieldWriter::nDataPoints() const

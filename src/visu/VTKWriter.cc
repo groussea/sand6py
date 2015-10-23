@@ -51,7 +51,7 @@ void VTKWriter::writeHeader( File& file, const char *title ) const
 {
 	file << "# vtk DataFile Version 2.0\n" ;
 	file << title << "\n" ;
-	if( Ascii )
+	if( m_mode == Ascii )
 		file << "ASCII\n" ;
 	else
 		file << "BINARY\n" ;
@@ -117,7 +117,7 @@ static void write_tensor_ascii( File& file, const Scalar* data, const size_t siz
 {
 	Mat mat ;
 	for( size_t i = 0 ; i < size ; ++ i ) {
-		tensor_view( Vec6::Map( data + 6*i ) ).get( mat ) ;
+		tensor_view( Eigen::Matrix<Scalar,6,1>::Map( data + 6*i ) ).get( mat ) ;
 		write_scalar_ascii( file, mat.data(), mat.size() ) ;
 	}
 }
@@ -127,7 +127,7 @@ static void write_tensor_binary( File& file, const Scalar* data, const size_t si
 {
 	Mat mat ;
 	for( size_t i = 0 ; i < size ; ++ i ) {
-		tensor_view( Vec6::Map( data + 6*i ) ).get( mat ) ;
+		tensor_view( Eigen::Matrix<Scalar,6,1>::Map( data + 6*i ) ).get( mat ) ;
 		write_scalar_binary( file, mat.data(), mat.size() ) ;
 	}
 }
@@ -160,6 +160,8 @@ void VTKWriter::writeAttribute( const char *name, const Scalar* data, int Dim )
 }
 
 template void VTKWriter::write( File &file, const double*, int, size_t) const ;
+template void VTKWriter::write( File &file, const  float*, int, size_t) const ;
+template void VTKWriter::write( File &file, const    int*, int, size_t) const ;
 template void VTKWriter::writeAttribute( const char* name, const double*, int ) ;
 
 }

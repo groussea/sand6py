@@ -37,6 +37,7 @@ int main( int argc, const char* argv[] ) {
 	particlesWriter.dump_all() ;
 
 	d6::VTKFieldWriter fieldWriter( base_dir, offline.mesh() ) ;
+//	fieldWriter.setMode( d6::VTKWriter::Ascii );
 	fieldWriter.startFile( "fields", frame ) ;
 	fieldWriter.dump(    "phi", offline.grains().fraction ) ;
 	fieldWriter.dump(      "u", offline.grains().velocity ) ;
