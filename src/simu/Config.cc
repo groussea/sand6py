@@ -1,7 +1,7 @@
 #include "Config.hh"
 
-#include "string.hh"
-#include "Log.hh"
+#include "utils/string.hh"
+#include "utils/Log.hh"
 
 #include <cmath>
 

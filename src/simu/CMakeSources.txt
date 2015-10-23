@@ -1,3 +1,5 @@
+simu/Config.cc
+simu/Config.hh
 simu/DynParticles.cc
 simu/DynParticles.hh
 simu/Phase.hh

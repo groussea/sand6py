@@ -1,8 +1,8 @@
 #ifndef D6_CONFIG_HH
 #define D6_CONFIG_HH
 
-#include "units.hh"
-#include "alg.hh"
+#include "utils/units.hh"
+#include "utils/alg.hh"
 
 #include <string>
 

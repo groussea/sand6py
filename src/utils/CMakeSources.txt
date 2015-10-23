@@ -1,5 +1,3 @@
-utils/Config.cc
-utils/Config.hh
 utils/File.cc
 utils/File.hh
 utils/Log.hh

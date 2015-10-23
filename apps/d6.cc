@@ -1,9 +1,8 @@
+#include "simu/Config.hh"
+#include "simu/Simu.hh"
 
-#include "utils/Config.hh"
 #include "utils/Log.hh"
 #include "utils/File.hh"
-
-#include "simu/Simu.hh"
 
 #include <cstring>
 

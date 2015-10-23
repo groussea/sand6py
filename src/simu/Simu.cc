@@ -1,7 +1,7 @@
 #include "Simu.hh"
 #include "Phase.hh"
 
-#include "utils/Config.hh"
+#include "simu/Config.hh"
 #include "utils/Log.hh"
 #include "utils/File.hh"
 

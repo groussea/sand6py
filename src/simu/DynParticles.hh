@@ -3,9 +3,9 @@
 
 #include "geo/Particles.hh"
 
-class PhaseDescr ;
-
 namespace d6 {
+
+class Config ;
 
 class DynParticles {
 

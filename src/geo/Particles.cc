@@ -2,7 +2,6 @@
 
 #include "Grid.hh"
 
-#include "utils/Config.hh"
 #include "utils/Log.hh"
 
 #include <bogus/Core/Utils/Timer.hpp>

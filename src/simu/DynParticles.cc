@@ -1,6 +1,6 @@
 #include "DynParticles.hh"
 
-#include "utils/Config.hh"
+#include "simu/Config.hh"
 
 namespace d6 {
 

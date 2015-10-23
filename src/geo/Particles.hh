@@ -5,8 +5,6 @@
 
 namespace d6 {
 
-class Config ;
-
 class Particles {
 
 public:
