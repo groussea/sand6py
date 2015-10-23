@@ -15,7 +15,7 @@ Index Voxel::sample_uniform(const unsigned N, const Index start, Points &points,
 	const Vec subBox = box.array() / Nsub.array().cast< Scalar >() ;
 
 	Vec6 frame ;
-	tensor_view( frame ).set_diag( Vec( subBox.array() * subBox.array() ) ) ;
+	tensor_view( frame ).set_diag( Vec( .25 * subBox.array() * subBox.array() ) ) ;
 
 	Index p = start ;
 	for( int i = 0 ; i < Nsub[0] ; ++i )

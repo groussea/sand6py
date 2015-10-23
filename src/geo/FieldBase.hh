@@ -1,8 +1,7 @@
 #ifndef D6_FIELD_BASE_HH
 #define D6_FIELD_BASE_HH
 
-#include "utils/alg.hh"
-#include "geo.fwd.hh"
+#include "Expr.hh"
 
 namespace d6 {
 
@@ -13,7 +12,7 @@ struct FieldTraits
 };
 
 template< typename Derived >
-struct FieldBase
+struct FieldBase : public Expr< typename FieldTraits< Derived >::ValueType >
 {
 
 public:

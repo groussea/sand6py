@@ -1,8 +1,7 @@
 #ifndef D6_PARTICLES_HH
 #define D6_PARTICLES_HH
 
-#include "geo.fwd.hh"
-#include "utils/alg.hh"
+#include "Expr.hh"
 
 namespace d6 {
 
@@ -22,7 +21,7 @@ public:
 
 	Particles() ;
 
-	void generate( const Config &c, const MeshType& mesh ) ;
+	void generate(const ScalarExpr &expr, const unsigned nSamples, const MeshType& mesh ) ;
 
 	size_t count() const { return m_count ; }
 

@@ -65,8 +65,10 @@ void GLViewer::draw()
 		gl::VertexPointer vp( m_glyph ) ;
 		gl::NormalPointer np( m_glyph ) ;
 
-		glEnable (GL_BLEND);
-		glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		if( m_enableBending ) {
+			glEnable (GL_BLEND);
+			glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		}
 
 		for( int i = 0 ; i < m_matrices.cols() ; ++i ){
 			glPushMatrix();
@@ -150,13 +152,16 @@ void GLViewer::keyPressEvent(QKeyEvent *e)
 	{
 	case Qt::Key_I :
 		next_frame();
-		updateGL() ;
+		break ;
+	case Qt::Key_B:
+		m_enableBending = !m_enableBending ;
 		break ;
 	case Qt::Key_Q :
 		QApplication::exit( 0 ) ;
 	default:
 		QGLViewer::keyPressEvent(e);
 	}
+	updateGL() ;
 }
 
 } //d6

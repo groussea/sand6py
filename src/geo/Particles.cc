@@ -17,7 +17,7 @@ Particles::Particles()
 	resize(s_MAX) ;
 }
 
-void Particles::generate(const Config &c, const MeshType &mesh)
+void Particles::generate(const ScalarExpr &expr, const unsigned nSamples, const MeshType &mesh)
 {
 	bogus::Timer timer ;
 
@@ -29,12 +29,10 @@ void Particles::generate(const Config &c, const MeshType &mesh)
 	for( typename MeshType::CellIterator it = mesh.cellBegin() ; it != mesh.cellEnd() ; ++it ) {
 		mesh.get_geo( *it, cellGeo ) ;
 
-		//For now fill top half of domain
-		//TODO other shapes
-		if( cellGeo.center()[2] < c.box[2] * .5 )
+		if( expr( cellGeo.center() ) == 0. )
 			continue ;
 
-		const Index n = cellGeo.sample_uniform( c.nSamples, m_count, m_centers, m_frames ) ;
+		const Index n = cellGeo.sample_uniform( nSamples, m_count, m_centers, m_frames ) ;
 
 		const Scalar volume = cellGeo.volume() / n ;
 		m_masses.segment( m_count, n ).setConstant( volume ) ;

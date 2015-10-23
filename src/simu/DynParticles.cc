@@ -11,9 +11,9 @@ DynParticles::DynParticles()
 
 void DynParticles::generate(const Config &c, const MeshType &mesh)
 {
-	m_geo.generate( c, mesh );
+	auto phi = [&]( const Vec& x){ return x[2] > .5*c.box[2] ? 1. : 0. ; } ;
 
-	m_geo.m_masses *= c.volMass ;
+	m_geo.generate( make_expr( phi ), c.nSamples, mesh );
 
 	m_affine.leftCols( count() ).setZero() ;
 }

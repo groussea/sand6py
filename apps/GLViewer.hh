@@ -14,7 +14,8 @@ class GLViewer : public QGLViewer
 public:
 
 	GLViewer( Offline & offline ) :
-		m_offline( offline ), m_currentFrame(-1)
+		m_offline( offline ), m_currentFrame(-1),
+		m_enableBending( false )
 	{
 
 	}
@@ -37,6 +38,8 @@ private:
 
 	Offline& m_offline ;
 	unsigned m_currentFrame ;
+
+	bool m_enableBending ;
 
 	gl::VertexBuffer3d m_centers ;
 	gl::VertexBuffer4f m_colors  ;
