@@ -18,12 +18,12 @@ Offline::Offline(const char *base_dir)
 	: m_base_dir( base_dir )
 {
 	m_mesh = new MeshImpl( Vec::Ones(), Vec3i::Ones() ) ;
-	m_phase = new Phase( *m_mesh ) ;
+	m_grains = new Phase( *m_mesh ) ;
 }
 
 Offline::~Offline(){
 	delete m_mesh ;
-	delete m_phase ;
+	delete m_grains ;
 }
 
 bool Offline::load_frame(unsigned frame )
@@ -44,7 +44,7 @@ bool Offline::load_frame(unsigned frame )
 	{
 		std::ifstream ifs( dir.filePath("fields") );
 		boost::archive::binary_iarchive ia(ifs);
-		ia >> *m_phase ;
+		ia >> *m_grains ;
 	}
 	// Particles
 	{
@@ -52,6 +52,8 @@ bool Offline::load_frame(unsigned frame )
 		boost::archive::binary_iarchive ia(ifs);
 		ia >> m_particles ;
 	}
+
+	Log::Info() << "Load frame " << frame << std::endl ;
 
 	return true ;
 

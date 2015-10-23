@@ -13,7 +13,7 @@ class VTKParticlesWriter : public VTKWriter
 
 public:
 	enum Quantity {
-		Volumes,
+		Masses,
 		Velocities,
 		Frames,
 		Orientations

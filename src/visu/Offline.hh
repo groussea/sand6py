@@ -20,14 +20,14 @@ public:
 	const Particles &particles() const { return m_particles ; }
 
 	const MeshType &mesh() const { return *m_mesh ; }
-	const Phase &phase() const { return *m_phase ; }
+	const Phase &grains() const { return *m_grains ; }
 
 private:
 	const char* m_base_dir ;
 
 	Particles  m_particles ;
 	MeshType*  m_mesh ;
-	Phase*     m_phase ;
+	Phase*     m_grains ;
 } ;
 
 } //d6

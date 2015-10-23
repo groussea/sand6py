@@ -1,6 +1,7 @@
 visu/Offline.cc
 visu/Offline.hh
 visu/VTKFieldWriter.cc
+visu/VTKFieldWriter.hh
 visu/VTKParticlesWriter.cc
 visu/VTKParticlesWriter.hh
 visu/VTKWriter.cc

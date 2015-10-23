@@ -38,9 +38,9 @@ int main( int argc, const char* argv[] ) {
 
 	d6::VTKFieldWriter fieldWriter( base_dir, offline.mesh() ) ;
 	fieldWriter.startFile( "fields", frame ) ;
-	fieldWriter.dump(    "phi", offline.phase().fraction ) ;
-	fieldWriter.dump(      "u", offline.phase().velocity ) ;
-	fieldWriter.dump( "lambda", offline.phase().stresses ) ;
+	fieldWriter.dump(    "phi", offline.grains().fraction ) ;
+	fieldWriter.dump(      "u", offline.grains().velocity ) ;
+	fieldWriter.dump( "lambda", offline.grains().stresses ) ;
 
 	return 0 ;
 

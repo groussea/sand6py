@@ -12,7 +12,7 @@ void Particles::serialize( Archive &ar, unsigned int ) {
 	using boost::serialization::make_array ;
 
 	ar & m_count ;
-	ar & make_array( m_volumes.data(),      m_count ) ;
+	ar & make_array(  m_masses.data(),      m_count ) ;
 	ar & make_array( m_centers.data(),    3*m_count ) ;
 	ar & make_array( m_velocities.data(), 3*m_count ) ;
 	ar & make_array( m_frames.data(),     6*m_count ) ;

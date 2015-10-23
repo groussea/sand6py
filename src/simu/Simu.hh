@@ -37,7 +37,7 @@ private:
 
 	DynParticles  m_particles ;
 	MeshType*  m_mesh ;
-	Phase*     m_phase ;
+	Phase*     m_grains ;
 };
 
 } //d6

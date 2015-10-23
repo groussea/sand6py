@@ -23,22 +23,22 @@ Simu::Simu(const Config &config, const char *base_dir)
 
 	m_particles.generate( config, mesh() );
 
-	m_phase = new Phase( mesh() ) ;
+	m_grains = new Phase( mesh() ) ;
 }
 
 Simu::~Simu()
 {
 	delete m_mesh ;
-	delete m_phase  ;
+	delete m_grains  ;
 }
 
 void Simu::run()
 {
-	m_phase->fraction.set_zero();
-	m_phase->stresses.set_zero();
-	m_phase->velocity.set_zero();
-	m_phase->sym_grad.set_zero();
-	m_phase->spi_grad.set_zero();
+	m_grains->fraction.set_zero();
+	m_grains->stresses.set_zero();
+	m_grains->velocity.set_zero();
+	m_grains->sym_grad.set_zero();
+	m_grains->spi_grad.set_zero();
 
 	dump( 0 ) ;
 
@@ -86,7 +86,7 @@ void Simu::dump( unsigned frame ) const
 	{
 		std::ofstream ofs( dir.filePath("fields") );
 		boost::archive::binary_oarchive oa(ofs);
-		oa << *m_phase ;
+		oa << *m_grains ;
 	}
 	// Particles
 	{

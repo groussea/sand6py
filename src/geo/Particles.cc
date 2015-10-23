@@ -37,7 +37,7 @@ void Particles::generate(const Config &c, const MeshType &mesh)
 		const Index n = cellGeo.sample_uniform( c.nSamples, m_count, m_centers, m_frames ) ;
 
 		const Scalar volume = cellGeo.volume() / n ;
-		m_volumes.segment( m_count, n ).setConstant( volume ) ;
+		m_masses.segment( m_count, n ).setConstant( volume ) ;
 
 		m_orient.block( 0, m_count, 1, n ).setConstant( 3 ) ; // Isotropic ori
 
@@ -51,7 +51,7 @@ void Particles::generate(const Config &c, const MeshType &mesh)
 
 void Particles::resize(size_t n)
 {
-	m_volumes.resize( n );
+	m_masses.resize( n );
 
 	m_centers.resize( 3, n);
 	m_velocities.resize( 3, n);

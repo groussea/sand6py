@@ -40,7 +40,7 @@ bool VTKParticlesWriter::dump( const char *name, const Eigen::MatrixBase< Derive
 bool VTKParticlesWriter::dump_all( )
 {
 	return
-			dump( Volumes ) &&
+			dump( Masses ) &&
 			dump( Velocities ) &&
 			dump( Frames ) &&
 			dump( Orientations ) ;
@@ -50,8 +50,8 @@ bool VTKParticlesWriter::dump_all( )
 
 bool VTKParticlesWriter::dump( Quantity quantity) {
 	switch( quantity ) {
-	case Volumes:
-		return dump( "volumes", m_particles.volumes() ) ;
+	case Masses:
+		return dump( "masses", m_particles.masses() ) ;
 	case Velocities:
 		return dump( "velocities", m_particles.velocities() ) ;
 	case Frames:
