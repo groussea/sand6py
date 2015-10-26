@@ -36,6 +36,8 @@ public:
 	const DynVec& flatten() const { return m_data ; }
 	DynVec& flatten() { return m_data ; }
 
+	const MeshType& mesh() const { return m_mesh ; }
+
 	//
 	void set_zero() ;
 	void set_constant( const ValueType& val ) ;

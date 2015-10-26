@@ -31,6 +31,19 @@ struct Voxel {
 				* ( Coords::Ones() - coords ).array() ).prod() ;
 	}
 
+	// \warning lacs scaling by 1./box
+	template < typename Res >
+	static void getCornerDerivatives( const Vec3i& corner, const Coords &coords, Res res ) {
+		const Vec coeffs =  ( corner.cast< Scalar >().array() + ( Coords::Ones() - 2*corner.cast< Scalar >() ).array()
+				* ( Coords::Ones() - coords ).array() ) ;
+		Vec copy ;
+		for( int k = 0 ; k < 3 ; ++k ) {
+			// d (c^k_i(x)) /dx _k = (2 * i - 1)
+			copy = coeffs ; copy[k] = 2*corner[k] - 1 ;
+			res[k] = copy.prod() ;
+		}
+	}
+
 	Vec center() const {
 		return origin + .5*box ;
 	}

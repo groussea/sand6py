@@ -55,14 +55,19 @@ struct TensorView
 	}
 
 	void get( Mat& mat ) const {
+		mat.setZero() ;
+		add( mat ) ;
+	}
+	void add( Mat& mat ) const {
+
 		if ( HasSymPart ) {
-			mat(0,0) = 2./s_sqrt_6 * m_map[0] + m_map[1] - 1./s_sqrt_3 * m_map[2] ;
-			mat(1,1) = 2./s_sqrt_6 * m_map[0] - m_map[1] - 1./s_sqrt_3 * m_map[2] ;
-			mat(2,2) = 2./s_sqrt_6 * m_map[0]            + 2./s_sqrt_3 * m_map[2] ;
-			mat(0,1) = mat(1,0) = m_map[3] ;
-			mat(0,2) = mat(2,0) = m_map[4] ;
-			mat(1,2) = mat(2,1) = m_map[5] ;
-		} else mat.setZero() ;
+			mat(0,0) += 2./s_sqrt_6 * m_map[0] + m_map[1] - 1./s_sqrt_3 * m_map[2] ;
+			mat(1,1) += 2./s_sqrt_6 * m_map[0] - m_map[1] - 1./s_sqrt_3 * m_map[2] ;
+			mat(2,2) += 2./s_sqrt_6 * m_map[0]            + 2./s_sqrt_3 * m_map[2] ;
+			mat(0,1) += mat(1,0) = m_map[3] ;
+			mat(0,2) += mat(2,0) = m_map[4] ;
+			mat(1,2) += mat(2,1) = m_map[5] ;
+		}
 
 		if( HasSpiPart ) {
 			mat(0,1) += m_map[SpiOff+0] ;

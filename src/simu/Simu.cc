@@ -1,7 +1,7 @@
 #include "Simu.hh"
 #include "Phase.hh"
 
-#include "simu/Config.hh"
+#include "Config.hh"
 #include "utils/Log.hh"
 #include "utils/File.hh"
 
@@ -17,7 +17,7 @@ namespace d6 {
 
 
 Simu::Simu(const Config &config, const char *base_dir)
-	: m_config(config), m_base_dir( base_dir )
+	: m_config(config), m_base_dir( base_dir ), m_solver( m_particles )
 {
 	m_mesh = new MeshImpl( config.box, config.res ) ;
 
@@ -66,6 +66,11 @@ void Simu::run()
 
 void Simu::step()
 {
+	// TODO adapt mesh
+
+	m_solver.step( m_config, *m_mesh, *m_grains ) ;
+
+	m_particles.update( m_config, *m_grains ) ;
 }
 
 void Simu::dump( unsigned frame ) const

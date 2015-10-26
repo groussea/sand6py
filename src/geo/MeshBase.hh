@@ -25,6 +25,7 @@ public:
 	typedef Eigen::Matrix< Scalar, NC, 1> Coords ;
 	typedef Eigen::Matrix<  Index, NV, 1> NodeList ;
 	typedef Eigen::Matrix< Scalar, NV, 1> CoefList ;
+	typedef Eigen::Matrix< Scalar, NV, 3> Derivatives ;
 
 	struct Location {
 		Cell      cell  ; // Cell
@@ -53,6 +54,9 @@ public:
 	}
 	void interpolate( const Location& loc, Interpolation& itp ) const {
 		derived().interpolate( loc, itp ) ;
+	}
+	void get_derivatives( const Location& loc, Derivatives& dc_dx ) const {
+		derived().get_derivatives( loc, dc_dx ) ;
 	}
 
 	void interpolate( const Vec &x, Interpolation& itp ) const {

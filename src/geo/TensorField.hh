@@ -28,6 +28,9 @@ public:
 
 	}
 
+	void add_sym_tensor( const Vec& x, Mat& tensor ) const ;
+	void get_sym_tensor( const Vec& x, Mat& tensor ) const ;
+
 };
 
 

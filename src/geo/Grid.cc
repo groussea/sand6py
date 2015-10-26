@@ -39,6 +39,20 @@ void Grid::interpolate(const Location &loc, Interpolation &itp) const
 
 }
 
+void Grid::get_derivatives( const Location& loc, Derivatives& dc_dx ) const
+{
+	for( int i = 0 ; i < 2 ; ++i )
+		for( int j = 0 ; j < 2 ; ++j )
+			for( int k = 0 ; k < 2 ; ++k ) {
+				const Cell corner (i,j,k) ;
+				const int idx = Voxel::cornerIndex( i, j, k ) ;
+				Voxel::getCornerDerivatives( corner, loc.coords, dc_dx.row( idx ) );
+			}
+
+	for (int k = 0 ; k < 3 ; ++k)
+		dc_dx.col( k ) *= m_idx[k] ;
+}
+
 GridIterator& GridIterator::operator ++()
 {
 	++cell[2] ;

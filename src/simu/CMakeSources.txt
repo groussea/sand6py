@@ -3,5 +3,7 @@ simu/Config.hh
 simu/DynParticles.cc
 simu/DynParticles.hh
 simu/Phase.hh
+simu/PhaseSolver.cc
+simu/PhaseSolver.hh
 simu/Simu.cc
 simu/Simu.hh

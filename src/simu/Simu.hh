@@ -3,6 +3,7 @@
 
 #include "geo/geo.fwd.hh"
 #include "simu/DynParticles.hh"
+#include "simu/PhaseSolver.hh"
 
 namespace d6 {
 
@@ -38,6 +39,8 @@ private:
 	DynParticles  m_particles ;
 	MeshType*  m_mesh ;
 	Phase*     m_grains ;
+
+	PhaseSolver m_solver ;
 };
 
 } //d6

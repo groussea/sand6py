@@ -3,6 +3,8 @@
 
 #include "FieldBase.hh"
 
+#include "Tensor.hh"
+
 namespace d6 {
 
 template < typename MeshT >
@@ -27,6 +29,9 @@ public:
 	{
 
 	}
+
+	void get_spi_tensor( const Vec& x, Mat& tensor ) const ;
+	void add_spi_tensor( const Vec& x, Mat& tensor ) const ;
 
 };
 

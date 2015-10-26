@@ -8,6 +8,7 @@
 #include "geo/TensorField.hh"
 
 #include "geo/Tensor.hh"
+#include "geo/Voxel.hh"
 
 using namespace d6 ;
 
@@ -40,6 +41,30 @@ TEST( geo, grid )
 		ASSERT_EQ( i, it.index() ) ;
 	}
 	ASSERT_EQ( i, g.nCells() ) ;
+
+	Voxel vx ;
+	g.get_geo( Vec3i(1,2,3), vx );
+	const Vec x1 = vx.center() + 1.e-2 * Vec(1,-2,3) ;
+
+	Grid::Derivatives dc_dx ;
+	Grid::Location loc ;
+	g.locate( x1, loc );
+	g.interpolate( loc, itp ) ;
+	g.get_derivatives( loc, dc_dx );
+
+	for( unsigned i = 0 ; i < 3 ; ++i ) {
+		Vec dx ( Vec::Zero() ) ;
+		dx[i] = 1.e-2 ;
+
+		Grid::CoefList coeffs_pred = itp.coeffs + ( dc_dx * dx ) ;
+
+		const Vec x2 = x1 + dx ;
+		Grid::Interpolation itp2 ;
+		g.interpolate( x2, itp2 ) ;
+
+		ASSERT_TRUE( coeffs_pred.isApprox( itp2.coeffs ) ) ;
+	}
+
 }
 
 TEST( geo, field )

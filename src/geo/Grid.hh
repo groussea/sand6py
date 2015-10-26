@@ -76,6 +76,8 @@ public:
 	using Base::interpolate ;
 	void interpolate( const Location &loc , Interpolation& itp ) const ;
 
+	void get_derivatives( const Location& loc, Derivatives& dc_dx ) const ;
+
 	CellIterator cellBegin() const {
 		return GridIterator( *this, Vec3i::Zero() ) ;
 	}
