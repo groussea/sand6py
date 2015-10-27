@@ -26,11 +26,12 @@ public:
 
 	static constexpr Index NV = Traits::NV ;
 	static constexpr Index NC = Traits::NC ;
+	static constexpr Index NQ = Traits::NQ ;
 
-	typedef Eigen::Matrix< Scalar, NC, 1> Coords ;
-	typedef Eigen::Matrix<  Index, NV, 1> NodeList ;
-	typedef Eigen::Matrix< Scalar, NV, 1> CoefList ;
-	typedef Eigen::Matrix< Scalar, NV, 3> Derivatives ;
+	typedef Eigen::Matrix< Scalar, NC, 1 > Coords ;
+	typedef Eigen::Matrix<  Index, NV, 1 > NodeList ;
+	typedef Eigen::Matrix< Scalar, NV, 1 > CoefList ;
+	typedef Eigen::Matrix< Scalar, NV, 3 > Derivatives ;
 
 
 	struct Location {

@@ -13,6 +13,7 @@ namespace d6 {
 class DynParticles ;
 class Config ;
 struct Phase ;
+struct PhaseMatrices ;
 
 class PhaseSolver {
 
@@ -25,6 +26,11 @@ private:
 
 	void computeActiveNodes(const MeshType &mesh,
 							const std::vector< bool >& activeCells ) ;
+
+	void computeProjectors( PhaseMatrices& matrices ) const ;
+
+	void assembleMatrices( const Config& c, const ScalarField &phiInt,
+						   PhaseMatrices& matrices ) const ;
 
 	struct Active {
 

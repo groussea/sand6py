@@ -6,6 +6,10 @@
 
 #include "simu/Config.hh"
 
+#include "geo/Grid.hh"
+#include "simu/FormBuilder.hh"
+#include "simu/FormBuilder.impl.hh"
+
 using namespace d6 ;
 
 TEST( simu, config )
@@ -36,4 +40,43 @@ TEST( simu, config )
 
 	ASSERT_DOUBLE_EQ( c.viscosity, 1./Re ) ;
 
+}
+
+
+TEST( simu, quad ) {
+
+	Vec3i dim( 10, 5, 15 ) ;
+	Vec   box( 1, 1, 2 ) ;
+	Grid g( box, dim ) ;
+
+	Grid::Cells cells ;
+	for( Grid::CellIterator it = g.cellBegin() ; it != g.cellEnd() ; ++it )
+		cells.push_back( * it ) ;
+
+	ASSERT_EQ( cells.size(), g.nCells() ) ;
+
+//	std::vector< Index > indices ( g.nNodes() ) ;
+//	std::iota( indices.begin(), indices.end(), 0 );
+//	for( unsigned i = 0 ; i < indices.size() ; ++i ) std::cout << indices[i] << " " ;
+
+	typedef const typename Grid::Location& Loc ;
+	typedef const typename Grid::Interpolation& Itp ;
+	typedef const typename Grid::Derivatives& Dcdx ;
+
+	Scalar f_cst  = 0. ;
+	Scalar f_lin  = 0. ;
+	Scalar f_quad = 0. ;
+
+	FormBuilder builder( g ) ;
+	builder.integrate_qp( cells, [&]( Scalar w, Loc loc, Itp , Dcdx ) {
+		Grid::CellGeo geo ;
+		g.get_geo( loc.cell, geo );
+		f_cst += w ;
+		f_lin += w * geo.pos( loc.coords ).prod() ;
+		f_quad += w * geo.pos( loc.coords ).prod()  * geo.pos( loc.coords ).prod() ;
+	} ) ;
+
+	ASSERT_FLOAT_EQ( g.box().prod() , f_cst  ) ;
+	ASSERT_FLOAT_EQ( g.box().prod() * g.box().prod() / 8 , f_lin  ) ;
+	ASSERT_FLOAT_EQ( g.box().prod() * g.box().prod() * g.box().prod() / 27,  f_quad ) ;
 }

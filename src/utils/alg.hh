@@ -18,6 +18,9 @@ typedef Eigen::Matrix< Index, 3, 1 > Vec3i ;
 typedef Eigen::Matrix< Scalar, 6, 6 > Mat66 ;
 typedef Eigen::Matrix< Scalar, 6, 1 > Vec6 ;
 
+typedef Eigen::Matrix< Scalar, 3, Eigen::Dynamic > DynMat3 ;
+typedef Eigen::Matrix< Scalar, 6, Eigen::Dynamic > DynMat6 ;
+
 template < Index Dimension >
 struct Segmenter {
 

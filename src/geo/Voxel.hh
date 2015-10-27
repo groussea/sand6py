@@ -9,8 +9,11 @@ struct Voxel {
 
 	static constexpr Index NV = 8 ;
 	static constexpr Index NC = 3 ;
+	static constexpr Index NQ = 8 ;
 
-	typedef Eigen::Matrix< Scalar, NC, 1> Coords ;
+	typedef Eigen::Matrix< Scalar, NC, 1 > Coords ;
+	typedef Eigen::Matrix< Scalar, NC, NQ> QuadPoints ;
+	typedef Eigen::Matrix< Scalar,  1, NQ> QuadWeights ;
 	typedef Eigen::Matrix< Scalar, 3, Eigen::Dynamic > Points ;
 	typedef Eigen::Matrix< Scalar, 6, Eigen::Dynamic > Frames ;
 
@@ -47,6 +50,11 @@ struct Voxel {
 		return origin + .5*box ;
 	}
 
+	Vec pos( const Coords& coords ) const {
+		return origin.array() + coords.array()*box.array() ;
+	}
+
+
 	Vec vertex( int cornerIndex ) const {
 		const Vec3i corner ( (cornerIndex&1)>>0, (cornerIndex&2)>>1, (cornerIndex&4)>>2 ) ;
 		return origin + ( corner.cast< Scalar >().array() * box.array() ).matrix() ;
@@ -55,6 +63,29 @@ struct Voxel {
 	Scalar volume() const { return box.prod() ; }
 
 	Index sample_uniform( const unsigned N, const Index start, Points &points, Frames &frames ) const ;
+
+	static QuadPoints Qps() {
+		// .5 * ( 1 +- 1./sqrt(3) )
+		const Vec qp0 = Vec::Constant( .5 * ( 1. - 1./sqrt(3.) ) );
+		const Vec dqp = Vec::Constant( 1./sqrt(3.) );
+
+		QuadPoints qps ;
+		for( int i = 0 ; i < 2 ; ++i ) {
+			for( int j = 0 ; j < 2 ; ++j ) {
+				for( int k = 0 ; k < 2 ; ++k ) {
+					Vec3i corner ( i, j, k) ;
+					qps.col( cornerIndex(corner) ) = qp0.array() + corner.cast< Scalar >().array()*dqp.array() ;
+				}
+			}
+		}
+		return qps ;
+	}
+
+	void get_qp( QuadPoints& qp, QuadWeights& weights ) const {
+		static const QuadPoints s_qps = Qps() ;
+		qp = s_qps ;
+		weights.setConstant( volume() / NQ ) ;
+	}
 
 } ;
 
