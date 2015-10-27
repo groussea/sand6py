@@ -34,7 +34,7 @@ void Particles::generate(const ScalarExpr &expr, const unsigned nSamples, const 
 		const Index n = cellGeo.sample_uniform( nSamples, m_count, m_centers, m_frames ) ;
 
 		const Scalar volume = cellGeo.volume() / n ;
-		m_masses.segment( m_count, n ).setConstant( volume ) ;
+		m_volumes.segment( m_count, n ).setConstant( volume ) ;
 
 		m_orient.block( 0, m_count, 1, n ).setConstant( 3 ) ; // Isotropic ori
 
@@ -48,7 +48,7 @@ void Particles::generate(const ScalarExpr &expr, const unsigned nSamples, const 
 
 void Particles::resize(size_t n)
 {
-	m_masses.resize( n );
+	m_volumes.resize( n );
 
 	m_centers.resize( 3, n);
 	m_velocities.resize( 3, n);

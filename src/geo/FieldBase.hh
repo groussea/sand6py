@@ -45,6 +45,7 @@ public:
 	// Interpolation
 
 	void  add_at( const Vec& x, const ValueType& val ) ;
+	void  add_at( const typename MeshType::Interpolation &itp, const ValueType& val ) ;
 	void eval_at( const Vec& x, ValueType& res ) const ;
 
 	ValueType eval_at( const Vec& x ) const {

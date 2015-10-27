@@ -1,8 +1,26 @@
 #include "Grid.hh"
-
-#define MK_INDEX(i,j,k) (((i)<<2) + ((j)<<1) + (k))
+#include "BoundaryInfo.hh"
 
 namespace d6 {
+
+GridIterator& GridIterator::operator ++()
+{
+	++cell[2] ;
+	if(cell[2] == grid.dim()[2]) {
+		cell[2] = 0 ;
+		++cell[1] ;
+		if(cell[1] == grid.dim()[1]) {
+			cell[1] = 0 ;
+			++cell[0] ;
+		}
+	}
+
+	return *this ;
+}
+
+Index GridIterator::index() const {
+	return grid.cellIndex( cell ) ;
+}
 
 Grid::Grid(const Vec &box, const Vec3i &res)
 	: Base()
@@ -53,23 +71,27 @@ void Grid::get_derivatives( const Location& loc, Derivatives& dc_dx ) const
 		dc_dx.col( k ) *= m_idx[k] ;
 }
 
-GridIterator& GridIterator::operator ++()
+void Grid::make_bc( const BoundaryMapper& mapper, BoundaryConditions &bc ) const
 {
-	++cell[2] ;
-	if(cell[2] == grid.dim()[2]) {
-		cell[2] = 0 ;
-		++cell[1] ;
-		if(cell[1] == grid.dim()[1]) {
-			cell[1] = 0 ;
-			++cell[0] ;
+	bc.resize( nNodes() );
+	for( Index i = 0 ; i <= m_dim[1] ; ++i ) {
+		for( Index j = 0 ; j <= m_dim[2] ; ++j ) {
+			bc[ nodeIndex( Vertex(0       , i, j) ) ].set( mapper( "left"), Vec(-1,0,0) ) ;
+			bc[ nodeIndex( Vertex(m_dim[0], i, j) ) ].set( mapper("right"), Vec( 1,0,0) ) ;
 		}
 	}
-
-	return *this ;
-}
-
-Index GridIterator::index() const {
-	return grid.cellIndex( cell ) ;
+	for( Index i = 0 ; i <= m_dim[0] ; ++i ) {
+		for( Index j = 0 ; j <= m_dim[2] ; ++j ) {
+			bc[ nodeIndex( Vertex(i, 0       , j) ) ].set( mapper("front"), Vec(0,-1,0) ) ;
+			bc[ nodeIndex( Vertex(i, m_dim[1], j) ) ].set( mapper( "back"), Vec(0, 1,0) ) ;
+		}
+	}
+	for( Index i = 0 ; i <= m_dim[0] ; ++i ) {
+		for( Index j = 0 ; j <= m_dim[1] ; ++j ) {
+			bc[ nodeIndex( Vertex(i, j, 0       ) ) ].set( mapper("bottom"), Vec(0,0,-1) ) ;
+			bc[ nodeIndex( Vertex(i, j, m_dim[2]) ) ].set( mapper(   "top"), Vec(0,0, 1) ) ;
+		}
+	}
 }
 
 } //d6

@@ -125,7 +125,7 @@ void GLViewer::update_buffers()
 		mat.block<3,1>(0,3) = p.centers().col(i).cast < GLfloat >() ;
 
 		m_matrices.col(i) = Eigen::Matrix< GLfloat, 16, 1 >::Map( mat.data(), mat.size() ) ;
-		m_densities[i] = p.masses()[i] / vol ;
+		m_densities[i] = p.volumes()[i] / vol ;
 	}
 
 

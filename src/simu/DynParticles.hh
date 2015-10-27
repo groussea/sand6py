@@ -16,6 +16,10 @@ public:
 	void generate( const Config &c, const MeshType& mesh ) ;
 
 	void update( const Config&c, const Phase& phase ) ;
+	void read(std::vector< bool > &activeCells,
+			   ScalarField &phi, VectorField &phiVel,
+			   ScalarField &phiInertia, TensorField &phiOrient
+			   ) const ;
 
 	const Particles &geo() const { return m_geo ; }
 	size_t count() const { return m_geo.count() ; }

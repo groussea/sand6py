@@ -5,6 +5,9 @@
 
 #include "geo/Tensor.hh"
 
+#include "utils/Log.hh"
+#include <bogus/Core/Utils/Timer.hpp>
+
 namespace d6 {
 
 DynParticles::DynParticles()
@@ -37,6 +40,8 @@ void DynParticles::clamp_particle(size_t i, const MeshType &mesh)
 
 void DynParticles::update(const Config &config, const Phase &phase )
 {
+	bogus::Timer timer ;
+
 	const Scalar dt = config.dt() ;
 	const std::size_t n = count() ;
 
@@ -67,7 +72,7 @@ void DynParticles::update(const Config &config, const Phase &phase )
 
 			Mat Bp = Mat::Zero() ;
 
-			for( Index k = 0 ; k < itp.nodes.size() ; ++k ) {
+			for( Index k = 0 ; k < MeshType::NV ; ++k ) {
 				Bp += phase.velocity[ itp.nodes[k] ] * derivatives.row(k) ;
 			}
 
@@ -118,6 +123,53 @@ void DynParticles::update(const Config &config, const Phase &phase )
 
 	}
 
+	Log::Debug() << "Particles advection time: " << timer.elapsed() << std::endl ;
+
+}
+
+void DynParticles::read(std::vector<bool> &activeCells,
+						ScalarField &phi, VectorField &phiVel,
+						ScalarField &phiInertia, TensorField &phiOrient) const
+{
+	const MeshType& mesh = phi.mesh() ;
+	activeCells.assign( mesh.nCells(), false );
+
+	phi.set_zero();
+	phiVel.set_zero();
+	phiInertia.set_zero();
+	phiOrient.set_zero();
+
+	for ( size_t i = 0 ; i < count() ; ++i ) {
+
+		const Scalar m = m_geo.volumes()[i] ;
+		const Vec p0 = m_geo.centers().col(i) ;
+
+		typename MeshType::Location loc ;
+		typename MeshType::Interpolation itp ;
+		mesh.locate( p0, loc );
+		mesh.interpolate( loc, itp );
+
+		activeCells[ mesh.cellIndex( loc.cell ) ] = true ;
+
+			   phi.add_at( itp, m );
+			phiVel.add_at( itp, m * m_geo.velocities().col(i) );
+		phiInertia.add_at( itp, m * m_inertia[i] );
+		phiOrient .add_at( itp, m * m_geo.orient().col(i) );
+
+
+		// APIC
+		{
+			Mat affine ;
+			tensor_view( m_affine.col(i) ).get( affine ) ;
+
+			typename MeshType::CellGeo cellGeo ;
+			mesh.get_geo( loc.cell, cellGeo );
+
+			for( Index k = 0 ; k < MeshType::NV ; ++k ) {
+				phiVel[ itp.nodes[k] ] += m * itp.coeffs[k] * ( affine * ( cellGeo.vertex( k ) - p0 ) ) ;
+			}
+		}
+	}
 }
 
 void DynParticles::resize( size_t n )

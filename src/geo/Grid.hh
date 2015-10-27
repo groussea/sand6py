@@ -10,8 +10,9 @@ class Grid ;
 
 struct GridIterator
 {
-	typedef Vec3i Cell ;
-	typedef Voxel CellGeo ;
+	typedef MeshTraits< Grid > Traits ;
+	typedef typename Traits::Cell    Cell ;
+	typedef typename Traits::CellGeo CellGeo ;
 
 	const Grid& grid ;
 	Cell cell ;
@@ -39,16 +40,6 @@ struct GridIterator
 
 };
 
-template < >
-struct MeshTraits< Grid > {
-	typedef GridIterator CellIterator ;
-
-	typedef typename CellIterator::CellGeo CellGeo ;
-	static constexpr Index NV = CellGeo::NV ;
-	static constexpr Index NC = CellGeo::NC ;
-
-};
-
 
 class Grid : public MeshBase< Grid >
 {
@@ -67,6 +58,13 @@ public:
 
 	Index nCells() const
 	{ return (m_dim[0]) * (m_dim[1]) * (m_dim[2]) ; }
+
+	Index cellIndex( const Cell& cell ) const
+	{
+		return (m_dim[2]) * (m_dim[1]) * cell[0]
+			+  (m_dim[2]) * cell[1]
+			+  cell[2] ;
+	}
 
 	Vec box() const
 	{ return firstCorner( m_dim ) ; }
@@ -104,6 +102,8 @@ public:
 		list = itp.nodes ;
 	}
 
+	void make_bc( const BoundaryMapper& mapper, BoundaryConditions &bc ) const ;
+
 private:
 
 	const Vec3i& dim() const { return m_dim ; }
@@ -117,12 +117,6 @@ private:
 		return (m_dim[2]+1) * (m_dim[1]+1) * node[0]
 			+  (m_dim[2]+1) * node[1]
 			+  node[2] ;
-	}
-	Index cellIndex( const Cell& cell ) const
-	{
-		return (m_dim[2]) * (m_dim[1]) * cell[0]
-			+  (m_dim[2]) * cell[1]
-			+  cell[2] ;
 	}
 
 	void get_corner( const Cell &cell, Vec& corner ) const {

@@ -24,7 +24,12 @@ void FieldBase< Derived >::add_at( const Vec& x, const ValueType& val )
 {
 	typename MeshType::Interpolation itp ;
 	m_mesh.interpolate( x, itp );
+	add_at( itp, val ) ;
+}
 
+template< typename Derived >
+void FieldBase< Derived >::add_at( const typename MeshType::Interpolation &itp, const ValueType& val )
+{
 	for( Index k = 0 ; k < itp.nodes.rows() ; ++k ) {
 		segment( itp.nodes[k] ) += itp.coeffs[k] * val ;
 	}

@@ -1,3 +1,5 @@
+geo/BoundaryInfo.cc
+geo/BoundaryInfo.hh
 geo/Expr.hh
 geo/FieldBase.hh
 geo/FieldBase.impl.hh

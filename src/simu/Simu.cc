@@ -68,7 +68,7 @@ void Simu::step()
 {
 	// TODO adapt mesh
 
-	m_solver.step( m_config, *m_mesh, *m_grains ) ;
+	m_solver.step( m_config, *m_grains ) ;
 
 	m_particles.update( m_config, *m_grains ) ;
 }

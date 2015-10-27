@@ -2,7 +2,6 @@
 #define D6_VOXEL_HH
 
 #include "utils/alg.hh"
-#include <vector>
 
 namespace d6 {
 

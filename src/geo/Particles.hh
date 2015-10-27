@@ -26,7 +26,7 @@ public:
 	template < typename Archive >
 	void serialize( Archive &ar, unsigned int ) ;
 
-	const typename Data< 1 >::Type&     masses() const { return     m_masses ; }
+	const typename Data< 1 >::Type&    volumes() const { return    m_volumes ; }
 	const typename Data< 3 >::Type&    centers() const { return    m_centers ; }
 	const typename Data< 3 >::Type& velocities() const { return m_velocities ; }
 	const typename Data< 6 >::Type&     frames() const { return     m_frames ; }
@@ -36,7 +36,7 @@ private:
 
 	std::size_t m_count ;
 
-	typename Data< 1 >::Type m_masses ;
+	typename Data< 1 >::Type m_volumes ;
 
 	typename Data< 3 >::Type m_centers ;
 	typename Data< 3 >::Type m_velocities ;
