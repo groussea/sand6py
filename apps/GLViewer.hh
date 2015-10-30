@@ -22,14 +22,17 @@ public:
 
 	void set_frame( unsigned frame )  ;
 
-	void next_frame() {
-		set_frame( m_currentFrame + 1 ) ;
+	bool next_frame() {
+		unsigned nextFrame = m_currentFrame + 1  ;
+		set_frame( nextFrame ) ;
+		return nextFrame == m_currentFrame ;
 	}
 
 protected :
   virtual void fastDraw();
   virtual void draw();
   virtual void init();
+  virtual void animate();
 
   virtual void keyPressEvent(QKeyEvent *e);
 

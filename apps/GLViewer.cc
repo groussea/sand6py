@@ -99,6 +99,12 @@ void GLViewer::init()
   update_buffers();
 }
 
+void GLViewer::animate()
+{
+	if( ! next_frame() )
+		stopAnimation();
+}
+
 void GLViewer::update_buffers()
 {
 	const Particles &p = m_offline.particles() ;
