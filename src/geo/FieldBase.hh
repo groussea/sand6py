@@ -57,12 +57,18 @@ public:
 	Seg      segment( const Index i ) { return Segmenter< D >::segment( m_data, i) ; }
 	ConstSeg segment( const Index i ) const { return Segmenter< D >::segment(m_data, i) ; }
 
-	Index size() { return m_size ; }
+	Index size() const { return m_size ; }
 
 	// Operators
 	ValueType operator() ( const Vec&  x ) const { return eval_at(x) ; }
 	ConstSeg  operator[] ( const Index i ) const { return segment(i) ; }
 	Seg       operator[] ( const Index i )       { return segment(i) ; }
+
+
+	// Info
+	Scalar max_abs() const { return m_data.lpNorm< Eigen::Infinity >() ; }
+
+	// Serialization
 
 	template < typename Archive >
 	void serialize( Archive &ar, unsigned int ) {

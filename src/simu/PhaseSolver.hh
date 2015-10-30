@@ -29,7 +29,8 @@ private:
 
 	void computeProjectors( PhaseMatrices& matrices ) const ;
 
-	void assembleMatrices( const Config& c, const ScalarField &phiInt,
+	void assembleMatrices( const Config& c, const MeshType& mesh,
+						   const DynVec &phiInt,
 						   PhaseMatrices& matrices ) const ;
 
 	struct Active {
@@ -50,8 +51,13 @@ private:
 		}
 
 		Index count() const { return nNodes ; }
-	};
+		Index origSize() const { return indices.size() ; }
 
+		template < typename Derived >
+		void field2var( const FieldBase<Derived> &field, DynVec & var ) const ;
+		template < typename Derived >
+		void var2field( const DynVec & var, FieldBase<Derived> &field ) const ;
+	};
 
 	const DynParticles& m_particles ;
 

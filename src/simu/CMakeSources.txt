@@ -4,6 +4,9 @@ simu/DynParticles.cc
 simu/DynParticles.hh
 simu/FormBuilder.cc
 simu/FormBuilder.hh
+simu/FormBuilder.impl.hh
+simu/LinearSolver.cc
+simu/LinearSolver.hh
 simu/Phase.hh
 simu/PhaseSolver.cc
 simu/PhaseSolver.hh

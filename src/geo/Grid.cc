@@ -73,7 +73,6 @@ void Grid::get_derivatives( const Location& loc, Derivatives& dc_dx ) const
 
 void Grid::make_bc( const BoundaryMapper& mapper, BoundaryConditions &bc ) const
 {
-	bc.resize( nNodes() );
 	for( Index i = 0 ; i <= m_dim[1] ; ++i ) {
 		for( Index j = 0 ; j <= m_dim[2] ; ++j ) {
 			bc[ nodeIndex( Vertex(0       , i, j) ) ].set( mapper( "left"), Vec(-1,0,0) ) ;

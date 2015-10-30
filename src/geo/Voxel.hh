@@ -66,8 +66,9 @@ struct Voxel {
 
 	static QuadPoints Qps() {
 		// .5 * ( 1 +- 1./sqrt(3) )
-		const Vec qp0 = Vec::Constant( .5 * ( 1. - 1./sqrt(3.) ) );
 		const Vec dqp = Vec::Constant( 1./sqrt(3.) );
+//		const Vec dqp = Vec::Constant( 1. );
+		const Vec qp0 = .5 * ( Vec::Ones() - dqp );
 
 		QuadPoints qps ;
 		for( int i = 0 ; i < 2 ; ++i ) {

@@ -65,6 +65,9 @@ TEST( geo, grid )
 		ASSERT_TRUE( coeffs_pred.isApprox( itp2.coeffs ) ) ;
 	}
 
+	Vec red = dc_dx.colwise().sum() ;
+	ASSERT_TRUE( red.isZero() ) ;
+
 }
 
 TEST( geo, field )

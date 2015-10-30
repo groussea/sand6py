@@ -13,9 +13,9 @@ struct BoundaryInfo {
 	enum Bc {
 		Interior,
 		Stick,   // u = 0
-		Slip,    // u.n = 0, d( (I - nn') u ).n = 0
-		Normal,  // (I -nn') u = 0, d ( u.n ).n = 0
-		Free     // d( u ).n = 0
+		Slip,    // u.n = 0, d( (I - nn') u ).n = 0, (I - nn')sn = 0
+		Normal,  // (I -nn') u = 0, d ( u.n ).n = 0, (nn')sn = 0
+		Free     // d( u ).n = 0, sn = 0
 	};
 
 	Bc bc ;

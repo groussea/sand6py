@@ -25,6 +25,11 @@ class FormBuilder {
 	typedef typename FormMat< 3,3 >::Type::MajorIndexType          CompressedIndexType ;
 	typedef typename CompressedIndexType::Index BgIndex ;
 
+	typedef const std::vector< Index > &Indices ;
+	typedef const typename MeshType::Interpolation& Itp ;
+	typedef const typename MeshType::Derivatives& Dcdx ;
+
+
 public:
 
 	FormBuilder( const MeshType& mesh )
@@ -35,9 +40,7 @@ public:
 
 	void addToIndex(
 			const typename MeshType::Cells& cells,
-			const std::vector< Index > &rowIndices,
-			const std::vector< Index > &colIndices
-					 ) ;
+			Indices rowIndices, Indices colIndices	 ) ;
 
 	void makeCompressed() ;
 
@@ -48,9 +51,12 @@ public:
 	template < typename Func >
 	void integrate_particle( const Particles& particles, Func func ) const  ;
 
+	static void addDuDv( FormMat<3,3>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
+
 	const CompressedIndexType& index() { return m_compressed ; }
 
 private:
+
 	const MeshType &m_mesh ;
 
 	CompressedIndexType m_compressed ;
