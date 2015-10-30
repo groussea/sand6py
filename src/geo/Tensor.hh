@@ -5,9 +5,11 @@
 
 namespace d6 {
 
-static constexpr Scalar s_sqrt_2 = std::sqrt(2.) ;
-static constexpr Scalar s_sqrt_3 = std::sqrt(3.) ;
-static constexpr Scalar s_sqrt_6 = std::sqrt(6.) ;
+static constexpr Scalar s_sqrt_2  = std::sqrt(2.) ;
+static constexpr Scalar s_sqrt_3  = std::sqrt(3.) ;
+static constexpr Scalar s_sqrt_6  = std::sqrt(6.) ;
+static constexpr Scalar s_isqrt_3 = std::sqrt(1./3.) ;
+static constexpr Scalar s_sqrt_23 = std::sqrt(2./3.) ;
 
 template< typename Derived >
 struct TensorView

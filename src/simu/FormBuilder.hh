@@ -2,22 +2,13 @@
 #define D6_FORM_BUILDER_HH
 
 #include "geo/geo.fwd.hh"
-#include "utils/alg.hh"
-
 #include "geo/MeshBase.hh"
 
-#include <bogus/Core/Block.hpp>
+#include "utils/block_mat.hh"
 
 namespace d6 {
 
 class Particles ;
-
-template < Index Rows, Index Cols >
-struct FormMat {
-	typedef Eigen::Matrix< Scalar, Rows, Cols > BlockT ;
-	typedef bogus::SparseBlockMatrix< BlockT > Type ;
-	typedef bogus::SparseBlockMatrix< BlockT, bogus::SYMMETRIC > SymType ;
-};
 
 
 class FormBuilder {
@@ -51,7 +42,10 @@ public:
 	template < typename Func >
 	void integrate_particle( const Particles& particles, Func func ) const  ;
 
-	static void addDuDv( FormMat<3,3>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
+	static void addDuDv ( FormMat<3,3>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
+	static void addVDsig( FormMat<3,6>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
+	static void addTauDu( FormMat<6,3>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
+	static void addTauWu( FormMat<3,3>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
 
 	const CompressedIndexType& index() { return m_compressed ; }
 

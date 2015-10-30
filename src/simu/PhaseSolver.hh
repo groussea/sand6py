@@ -33,6 +33,9 @@ private:
 						   const DynVec &phiInt,
 						   PhaseMatrices& matrices ) const ;
 
+	void solveComplementarity(const Config&c, const PhaseMatrices& matrices , const DynVec &fraction,
+							  DynVec &u, Phase &phase) const ;
+
 	struct Active {
 
 		static const Index s_Inactive  ;

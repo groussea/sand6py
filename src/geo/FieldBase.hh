@@ -68,6 +68,11 @@ public:
 	// Info
 	Scalar max_abs() const { return m_data.lpNorm< Eigen::Infinity >() ; }
 
+	//Operations
+
+	Derived& multiply_by( const ScalarField& field ) ;
+	Derived&   divide_by( const ScalarField& field ) ;
+
 	// Serialization
 
 	template < typename Archive >
@@ -75,6 +80,11 @@ public:
 		ar & m_size ;
 		ar & m_data ;
 	}
+
+	Derived& derived()
+	{ return static_cast< Derived& >( *this ) ; }
+	const Derived& derived() const
+	{ return static_cast< const Derived& >( *this ) ; }
 
 protected:
 	const MeshType & m_mesh ;

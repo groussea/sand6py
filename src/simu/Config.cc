@@ -24,7 +24,8 @@ Config::Config() :
 	box(1,1,1), res(10,10,10), nSamples(2),
 	volMass( 1.5e3 ),
 	viscosity( 1.e3 ),
-	gravity( 0, 0, -9.81 )
+	gravity( 0, 0, -9.81 ),
+	phiMax(1)
 {
 }
 

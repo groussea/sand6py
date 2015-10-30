@@ -9,6 +9,8 @@
 
 #include "LinearSolver.hh"
 
+#include "solve/Primal.hh"
+
 #include "utils/Log.hh"
 
 #include <bogus/Core/Block.impl.hpp>
@@ -60,13 +62,17 @@ struct PhaseMatrices
 	DynVec S6 ;
 
 	typename FormMat<3,3>::SymType M_lumped ;
-	typename FormMat<3,3>::SymType    M_lumped_inv ;
+	typename FormMat<3,3>::SymType M_lumped_inv ;
+	typename FormMat<3,3>::SymType M_lumped_inv_sqrt ;
+
 	typename FormMat<3,3>::Type A ; //Could be Symmetric when FormBuilder has sym index
 
-	typename FormMat<3,3>::Type B ;
+	typename FormMat<6,3>::Type B ;
+	typename FormMat<3,3>::Type J ;
 
 	typename FormMat<3,3>::SymType Pvel ;
 	typename FormMat<6,6>::SymType Pstress ;
+
 };
 
 PhaseSolver::PhaseSolver(const DynParticles &particles)
@@ -121,10 +127,12 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 	mats.M_lumped.setIdentity() ;
 	mats.M_lumped_inv.setRows( m );
 	mats.M_lumped_inv.setIdentity() ;
+	mats.M_lumped_inv_sqrt.setRows( m );
+	mats.M_lumped_inv_sqrt.setIdentity() ;
 
 #pragma omp parallel for
 	for( Index i = 0 ; i < m ; ++i ) {
-		mats.M_lumped.block( i ) *= ( regul + phiInt[i] ) ;
+		mats.M_lumped.block( i ) *= phiInt[i] ;
 	}
 
 	FormBuilder builder( mesh ) ;
@@ -142,9 +150,24 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 	mats.A.setCols( m );
 	mats.A.cloneIndex( builder.index() ) ;
 	mats.A.setBlocksToZero() ;
+
+	// B
+	mats.B.clear();
+	mats.B.setRows( m );
+	mats.B.setCols( m );
+	mats.B.cloneIndex( builder.index() ) ;
+	mats.B.setBlocksToZero() ;
+
+	// J
+	mats.J.clear();
+	mats.J.setRows( m );
+	mats.J.setCols( m );
+	mats.J.cloneIndex( builder.index() ) ;
+	mats.J.setBlocksToZero() ;
+
 	builder.integrate_qp( m_phaseNodes.cells, [&]( Scalar w, Loc, Itp itp, Dcdx dc_dx )
 		{
-			FormBuilder::addDuDv( mats.A, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
+			FormBuilder:: addDuDv( mats.A, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
 			for( Index k = 0 ; k < MeshType::NQ ; ++k ) {
 										mats.S[ m_phaseNodes.indices[itp.nodes[k]] ] += w / MeshType::NQ ;
 				Segmenter<6>::segment( mats.S6, m_phaseNodes.indices[itp.nodes[k]] ) += Vec6::Constant( w / MeshType::NQ ) ;
@@ -153,11 +176,16 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 		}
 	);
 
-
+	builder.integrate_particle( m_particles.geo(), [&]( Scalar w, Loc, Itp itp, Dcdx dc_dx )
+		{
+			FormBuilder::addTauDu( mats.B, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
+			FormBuilder::addTauWu( mats.J, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
+		}
+	);
 
 	/////////////////
 #ifndef FULL_FEM
-	mats.M_lumped *= config.inv_dt() ;
+	mats.M_lumped *= config.volMass * config.inv_dt() ;
 
 	mats.A *= 2 * config.viscosity ;
 	mats.A += mats.M_lumped ;
@@ -167,17 +195,34 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 
 	// Projections
 	const typename FormMat<3,3>::SymType IP = mats.Pvel.Identity() - mats.Pvel ;
-	mats.A        = mats.Pvel * ( mats.A        * mats.Pvel ) + IP ;
-	mats.M_lumped = mats.Pvel * ( mats.M_lumped * mats.Pvel ) + IP ;
+	mats.A = mats.Pvel * ( mats.A * mats.Pvel ) + IP ;
 
-#pragma omp parallel for
+//#pragma omp parallel for
 	for( Index i = 0 ; i < m ; ++i ) {
-		mats.M_lumped_inv.block(i) = mats.M_lumped.block(i).inverse() ;
+		const Scalar m = mats.M_lumped.block(i).trace() / 3 ;
+		mats.M_lumped         .block(i) = mats.Pvel.block(i) * m
+				+ Mat::Identity() - mats.Pvel.block(i) ;
+		mats.M_lumped_inv     .block(i) = mats.Pvel.block(i) * 1./( regul + m )
+				+ Mat::Identity() - mats.Pvel.block(i) ;
+		mats.M_lumped_inv_sqrt.block(i) = mats.Pvel.block(i) * 1./std::sqrt( regul + m )
+				+ Mat::Identity() - mats.Pvel.block(i) ;
 	}
-
 
 }
 
+struct CuveBoundary: public BoundaryMapper
+{
+	virtual BoundaryInfo::Bc operator() ( const std::string & domain ) const
+	{
+		if( domain == "top")
+			return BoundaryInfo::Normal ;
+		if( domain == "bottom")
+			return BoundaryInfo::Stick ;
+
+		return BoundaryInfo::Slip ;
+	}
+
+};
 
 void PhaseSolver::step( const Config &config, Phase &phase)
 {
@@ -216,6 +261,7 @@ void PhaseSolver::step( const Config &config, Phase &phase)
 	// Matrices
 
 	BoundaryMapper mapper ;
+//	CuveBoundary mapper ;
 	mesh.make_bc( mapper, m_surfaceNodes ) ;
 	PhaseMatrices matrices ;
 	assembleMatrices( config, mesh, phi_int, matrices );
@@ -231,18 +277,34 @@ void PhaseSolver::step( const Config &config, Phase &phase)
 		DynVec rhs ;
 		{
 			DynVec grav ;	m_phaseNodes.field2var( gravity, grav ) ;
-			rhs = matrices.Pvel * DynVec( config.inv_dt() * phiu_int + config.dt() * matrices.M_lumped * grav ) ;
+			rhs = matrices.Pvel * DynVec( config.inv_dt() * config.volMass * phiu_int
+										  + config.dt() * matrices.M_lumped * grav ) ;
 		}
 
-		DynVec u = matrices.M_lumped * rhs ;
-		solveSDP( matrices.A, matrices.M_lumped, rhs, u ) ;
+		DynVec u = matrices.M_lumped_inv * rhs ;
+		solveSDP( matrices.A, matrices.M_lumped_inv, rhs, u ) ;
 
+		Log::Debug() << "Linear solve at " << timer.elapsed() << std::endl ;
+
+		solveComplementarity( config, matrices, fraction, u, phase );
+
+		Log::Debug() << "Complementarity solve at " << timer.elapsed() << std::endl ;
 
 		m_phaseNodes.var2field( u, phase.velocity ) ;
+
+		{
+			// Velocities gradient
+			DynVec int_phiDu = matrices.Pstress * DynVec( matrices.B * u ) ;
+			m_phaseNodes.var2field( int_phiDu, phase.sym_grad ) ;
+			phase.sym_grad.divide_by( intPhi ) ;
+
+			DynVec int_phiWu = matrices.J * u ;
+			m_phaseNodes.var2field( int_phiWu, phase.spi_grad ) ;
+			phase.spi_grad.divide_by( intPhi ) ;
+		}
 	}
 
 	Log::Debug() << "Max vel: " << phase.velocity.max_abs() << std::endl ;
-	Log::Debug() << "Linear solve at " << timer.elapsed() << std::endl ;
 }
 
 void PhaseSolver::computeActiveNodes(
@@ -289,6 +351,40 @@ void PhaseSolver::computeActiveNodes(
 			}
 		}
 	}
+
+}
+
+void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &matrices,
+									   const DynVec &fraction,
+									   DynVec &u, Phase& phase ) const
+{
+	PrimalData	data ;
+
+	data.H = matrices.Pstress * ( matrices.B * matrices.M_lumped_inv_sqrt ) ;
+	data.w = matrices.Pstress * DynVec( matrices.B * u ) ;
+
+	data.mu.setConstant( data.n(), c.mu ) ;
+
+	{
+		// Compressability
+		DynVec q =  c.phiMax * matrices.S ;
+		q.array() -= fraction.array() * matrices.S.array();
+		q *= c.inv_dt() ;
+
+		q = q.cwiseMax( 0 ) ;
+
+		DynMat6::Map( data.w.data(), 6, data.n() ).row( 0 )	+= q ;
+	}
+
+	DynVec x( data.w.rows() ), y( data.w.rows() ) ;
+	m_phaseNodes.field2var( phase.stresses, x ) ;
+
+	Primal primal( data ) ;
+	primal.solve( x, y ) ;
+
+	u += matrices.M_lumped_inv_sqrt * DynVec( data.H.transpose() * x ) ;
+
+	m_phaseNodes.var2field( x, phase.stresses ) ;
 
 }
 

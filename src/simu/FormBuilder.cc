@@ -1,6 +1,7 @@
 #include "FormBuilder.hh"
 
 #include "geo/Grid.hh"
+#include "geo/Tensor.hh"
 
 #include <bogus/Core/Block.impl.hpp>
 #include <algorithm>
@@ -99,5 +100,103 @@ void FormBuilder::addDuDv( FormMat<3,3>::Type& A, Scalar w, Itp itp, Dcdx dc_dx,
 		}
 	}
 }
+
+void FormBuilder::addTauDu( FormMat<6,3>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices )
+{
+	typedef FormMat<6,3>::Type::BlockType Block ;
+
+	for( int j = 0 ; j < MeshType::NV ; ++j ) {
+		for( int k = 0 ; k < MeshType::NV ; ++k ) {
+			Block &b = A.block( rowIndices[itp.nodes[k]], colIndices[itp.nodes[j]] ) ;
+
+			// a * sqrt2_3 * (dux_dx + duy_dy + duz_dz)
+			b(0,0) += w * s_sqrt_23 * itp.coeffs[k] * dc_dx(j, 0) ;
+			b(0,1) += w * s_sqrt_23 * itp.coeffs[k] * dc_dx(j, 1) ;
+			b(0,2) += w * s_sqrt_23 * itp.coeffs[k] * dc_dx(j, 2) ;
+
+			// b * (dux_dx - duy_dy )
+			b(1,0) += w * itp.coeffs[k] * dc_dx(j, 0) ;
+			b(1,1) -= w * itp.coeffs[k] * dc_dx(j, 1) ;
+
+			// c * isqrt_3 * ( -dux_dx - duy_dy + 2*duz_dz)
+			b(2,0) -= w * s_isqrt_3 * itp.coeffs[k] * dc_dx(j, 0) ;
+			b(2,1) -= w * s_isqrt_3 * itp.coeffs[k] * dc_dx(j, 1) ;
+			b(2,2) += w * s_isqrt_3 * itp.coeffs[k] * dc_dx(j, 2) * 2;
+
+			// d * ( dux_dy + duy_dx )
+			b(3,0) += w * itp.coeffs[k] * dc_dx(j, 1) ;
+			b(3,1) += w * itp.coeffs[k] * dc_dx(j, 0) ;
+
+			// e * ( dux_dz + duz_dx )
+			b(4,0) += w * itp.coeffs[k] * dc_dx(j, 2) ;
+			b(4,2) += w * itp.coeffs[k] * dc_dx(j, 0) ;
+
+			// f * ( duz_dy + duy_dz )
+			b(5,2) += w * itp.coeffs[k] * dc_dx(j, 1) ;
+			b(5,1) += w * itp.coeffs[k] * dc_dx(j, 2) ;
+		}
+	}
+}
+
+void FormBuilder::addVDsig( FormMat<3,6>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices )
+{
+	typedef FormMat<3,6>::Type::BlockType Block ;
+
+	for( int j = 0 ; j < MeshType::NV ; ++j ) {
+		for( int k = 0 ; k < MeshType::NV ; ++k ) {
+			Block &b = A.block( rowIndices[itp.nodes[k]], colIndices[itp.nodes[j]] ) ;
+
+			// sqrt2_3 * ( vx da_dx + vy da_dy + vz da_dz)
+			b(0,0) += w * s_sqrt_23 * itp.coeffs[k] * dc_dx(j, 0) ;
+			b(1,0) += w * s_sqrt_23 * itp.coeffs[k] * dc_dx(j, 1) ;
+			b(2,0) += w * s_sqrt_23 * itp.coeffs[k] * dc_dx(j, 2) ;
+
+			// ( vx db_dx - vy db_dy )
+			b(0,1) += w * itp.coeffs[k] * dc_dx(j, 0) ;
+			b(1,1) -= w * itp.coeffs[k] * dc_dx(j, 1) ;
+
+			// isqrt_3 * ( - vx dc_dx - vy dc_dy + 2 * vz dc_dz)
+			b(0,2) -= w * s_isqrt_3 * itp.coeffs[k] * dc_dx(j, 0) ;
+			b(1,2) -= w * s_isqrt_3 * itp.coeffs[k] * dc_dx(j, 1) ;
+			b(2,2) += w * s_isqrt_3 * itp.coeffs[k] * dc_dx(j, 2) * 2 ;
+
+			// ( vx dd_dy + vy dd_dx )
+			b(0,3) += w * itp.coeffs[k] * dc_dx(j, 1) ;
+			b(1,3) += w * itp.coeffs[k] * dc_dx(j, 0) ;
+
+			// ( vx de_dz + vy de_dz )
+			b(0,4) += w * itp.coeffs[k] * dc_dx(j, 2) ;
+			b(2,4) += w * itp.coeffs[k] * dc_dx(j, 0) ;
+
+			// ( vz df_dy + vy df_dz )
+			b(2,5) += w * itp.coeffs[k] * dc_dx(j, 1) ;
+			b(1,5) += w * itp.coeffs[k] * dc_dx(j, 2) ;
+		}
+	}
+}
+
+void FormBuilder::addTauWu( FormMat<3,3>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices )
+{
+	typedef FormMat<3,3>::Type::BlockType Block ;
+
+	for( int j = 0 ; j < MeshType::NV ; ++j ) {
+		for( int k = 0 ; k < MeshType::NV ; ++k ) {
+			Block &b = A.block( rowIndices[itp.nodes[k]], colIndices[itp.nodes[j]] ) ;
+
+			// i * ( dux_dy - duy_dx )
+			b(0,0) += w * itp.coeffs[k] * dc_dx(j, 1) ;
+			b(0,1) -= w * itp.coeffs[k] * dc_dx(j, 0) ;
+
+			// j * ( dux_dz - duz_dx )
+			b(1,0) += w * itp.coeffs[k] * dc_dx(j, 2) ;
+			b(1,2) -= w * itp.coeffs[k] * dc_dx(j, 0) ;
+
+			// k * ( duy_dz - duz_dy )
+			b(2,1) += w * itp.coeffs[k] * dc_dx(j, 2) ;
+			b(2,2) -= w * itp.coeffs[k] * dc_dx(j, 1) ;
+		}
+	}
+}
+
 
 } //d6

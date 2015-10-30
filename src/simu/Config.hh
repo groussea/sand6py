@@ -21,6 +21,8 @@ namespace d6 {
 	CONFIG_FIELD( volMass			, Scalar		,	Units::VolumicMass	) \
 	CONFIG_FIELD( viscosity			, Scalar		,	Units::Viscosity	) \
 	CONFIG_FIELD( gravity			, Vec			,	Units::Acceleration	) \
+	CONFIG_FIELD( phiMax			, Scalar		,	Units::None			) \
+	CONFIG_FIELD( mu				, Scalar		,	Units::None			) \
 	\
 	CONFIG_FIELD( scenario			, std::string	,	Units::None			) \
 

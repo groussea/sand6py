@@ -1,5 +1,6 @@
 
 #include "BoundaryInfo.hh"
+#include "Tensor.hh"
 
 namespace d6 {
 
@@ -25,9 +26,6 @@ void BoundaryInfo::velProj( Mat &proj ) const
 
 void BoundaryInfo::stressProj( Mat66 &proj ) const
 {
-	static constexpr Scalar s_sqrt23 = std::sqrt(2.)/std::sqrt(3.) ;
-	static constexpr Scalar s_isqrt3 = 1./std::sqrt(3.) ;
-
 	proj.setIdentity() ;
 
 	/*
@@ -65,23 +63,23 @@ void BoundaryInfo::stressProj( Mat66 &proj ) const
 		// [ sqrt2_3 n1 ; -n1 ; -1/sqrt3 n1 ; n0 ;  0 ; n2 ] . taubar = 0
 		// [ sqrt2_3 n2 ;   0 ;  2/sqrt3 n2 ;  0 ; n0 ; n1 ] . taubar = 0
 	{
-		N1 << s_sqrt23 * n[0],  n[0],  -s_isqrt3 * n[0], n[1], n[2],   0  ;
-		N2 << s_sqrt23 * n[1], -n[1],  -s_isqrt3 * n[1], n[0],   0 , n[2] ;
-		N3 << s_sqrt23 * n[2],    0 , 2*s_isqrt3 * n[2],   0 , n[0], n[1] ;
+		N1 << s_sqrt_23 * n[0],  n[0],  -s_isqrt_3 * n[0], n[1], n[2],   0  ;
+		N2 << s_sqrt_23 * n[1], -n[1],  -s_isqrt_3 * n[1], n[0],   0 , n[2] ;
+		N3 << s_sqrt_23 * n[2],    0 , 2*s_isqrt_3 * n[2],   0 , n[0], n[1] ;
 
 		proj -= N1*N1.transpose() + N2*N2.transpose() + N3*N3.transpose() ;
 		break ;
 	}
 	case BoundaryInfo::Normal:
 		// nn' (\tau n) = 0
-		N1 << s_sqrt23,  n[0]*n[0]-n[1]*n[1], s_isqrt3 * (3*n[2]*n[2]-1), 2*n[0]*n[1], 2*n[0]*n[2],   2*n[1]*n[2]  ;
+		N1 << s_sqrt_23,  n[0]*n[0]-n[1]*n[1], s_isqrt_3 * (3*n[2]*n[2]-1), 2*n[0]*n[1], 2*n[0]*n[2],   2*n[1]*n[2]  ;
 		proj -= N1*N1.transpose()  ;
 		break ;
 	case BoundaryInfo::Slip:
 		// (\tau n) - nn' (\tau n) = 0
-		N1 << 0,  n[0]*( 1 -n[0]*n[0] +n[1]*n[1]), -s_isqrt3 * n[0] * 3*n[2]*n[2], n[1] * ( 1 - 2*n[0]*n[0]), n[2] * (1 - 2*n[0]*n[0]), -2*n[0]*n[1]*n[2]  ;
-		N2 << 0,  n[1]*(-1 -n[0]*n[0] +n[1]*n[1]), -s_isqrt3 * n[1] * 3*n[2]*n[2], n[0] * ( 1 - 2*n[1]*n[1]), -2*n[0]*n[1]*n[2] , n[2] * (1 - n[1]*n[1]) ;
-		N3 << 0,  n[2]*(   -n[0]*n[0] +n[1]*n[1]),3*s_isqrt3 * n[2] *(1-n[2]*n[2]),-2*n[0]*n[1]*n[2] , n[0]*(1 - 2*n[2]*n[2]), n[1]*( 1 - 2*n[2]*n[2] ) ;
+		N1 << 0,  n[0]*( 1 -n[0]*n[0] +n[1]*n[1]), -s_isqrt_3 * n[0] * 3*n[2]*n[2], n[1] * ( 1 - 2*n[0]*n[0]), n[2] * (1 - 2*n[0]*n[0]), -2*n[0]*n[1]*n[2]  ;
+		N2 << 0,  n[1]*(-1 -n[0]*n[0] +n[1]*n[1]), -s_isqrt_3 * n[1] * 3*n[2]*n[2], n[0] * ( 1 - 2*n[1]*n[1]), -2*n[0]*n[1]*n[2] , n[2] * (1 - n[1]*n[1]) ;
+		N3 << 0,  n[2]*(   -n[0]*n[0] +n[1]*n[1]),3*s_isqrt_3 * n[2] *(1-n[2]*n[2]),-2*n[0]*n[1]*n[2] , n[0]*(1 - 2*n[2]*n[2]), n[1]*( 1 - 2*n[2]*n[2] ) ;
 
 		// 1 : n0 ; 2 : n1 ; 3 : n2
 		// n0n0 * (( 1 -n[0]*n[0] +n[1]*n[1])) + n1*n1*(-1 -n[0]*n[0] +n[1]*n[1] + n2*n2*(n[1]*n[1] -n[0]*n[0])
