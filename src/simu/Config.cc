@@ -25,13 +25,13 @@ Config::Config() :
 	volMass( 1.5e3 ),
 	viscosity( 1.e3 ),
 	gravity( 0, 0, -9.81 ),
-	phiMax(1)
+	phiMax(1), mu(0)
 {
 }
 
 void Config::internalize()
 {
-	m_units.setTypical( box.minCoeff(), gravity.norm(), volMass );
+	m_units.setTypical( box.minCoeff()/res.maxCoeff(), gravity.norm(), volMass );
 
 	#define CONFIG_FIELD( name, type, u ) rescale( name, m_units.fromSI( u ) ) ;
 	EXPAND_CONFIG

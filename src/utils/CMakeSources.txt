@@ -6,6 +6,7 @@ utils/Mutex.cc
 utils/Mutex.hh
 utils/ThreadLocal.hh
 utils/alg.hh
+utils/block_mat.hh
 utils/endian.hh
 utils/scalar.hh
 utils/string.cc

@@ -89,6 +89,8 @@ void GLViewer::init()
   // Restore previous viewer state.
   restoreStateFromFile();
 
+  camera()->setZClippingCoefficient(50.0);
+
   // Gen glyph vertices
   Eigen::Matrix3Xf sphereVertices ;
   std::vector< GLuint > quadIndices ;
@@ -115,11 +117,11 @@ void GLViewer::update_buffers()
 
 	// Compute movel-view matrix from tensor
 	Eigen::Matrix4f mat ;
-	mat.setIdentity()  ;
 	Mat tensor ;
 
-//#pragma omp parallel for private(mat, tensor)
+#pragma omp parallel for private(mat, tensor)
 	for( size_t i = 0 ; i < p.count() ; ++i ) {
+		mat.setIdentity()  ;
 
 		tensor_view( p.frames().col( i ) ).get( tensor ) ;
 		Eigen::SelfAdjointEigenSolver<Mat> es( tensor );
@@ -133,7 +135,6 @@ void GLViewer::update_buffers()
 		m_matrices.col(i) = Eigen::Matrix< GLfloat, 16, 1 >::Map( mat.data(), mat.size() ) ;
 		m_densities[i] = p.volumes()[i] / vol ;
 	}
-
 
 	// Colors
 	Eigen::Matrix4Xf colors( 4, p.count() ) ;

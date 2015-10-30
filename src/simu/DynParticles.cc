@@ -87,7 +87,10 @@ void DynParticles::update(const Config &config, const Phase &phase )
 		{
 			Mat Du ;
 			phase.sym_grad.get_sym_tensor( p0, Du );
-			grad = Du ;
+
+			//FIXME
+			//grad = Du ;
+			grad.setZero() ;
 			phase.spi_grad.add_spi_tensor( p0, grad );
 
 			const Scalar DuT = ( Du - 1./3. * Du.trace() * Mat::Identity() ).norm()  ;

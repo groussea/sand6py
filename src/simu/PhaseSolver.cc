@@ -29,7 +29,7 @@ void PhaseSolver::Active::field2var( const FieldBase<Derived> &field, DynVec & v
 	const Index n = field.size() ;
 	constexpr Index D = FieldBase<Derived>::D ;
 
-	var.resize( n * D ) ;
+	var.resize( count() * D ) ;
 #pragma omp parallel for
 	for( Index i = 0 ; i < n ; ++ i) {
 		const Index idx = indices[ i ] ;
@@ -260,8 +260,8 @@ void PhaseSolver::step( const Config &config, Phase &phase)
 
 	// Matrices
 
-	BoundaryMapper mapper ;
-//	CuveBoundary mapper ;
+//	BoundaryMapper mapper ;
+	CuveBoundary mapper ;
 	mesh.make_bc( mapper, m_surfaceNodes ) ;
 	PhaseMatrices matrices ;
 	assembleMatrices( config, mesh, phi_int, matrices );
@@ -294,11 +294,11 @@ void PhaseSolver::step( const Config &config, Phase &phase)
 
 		{
 			// Velocities gradient
-			DynVec int_phiDu = matrices.Pstress * DynVec( matrices.B * u ) ;
+			DynVec int_phiDu = .5 * matrices.Pstress * DynVec( matrices.B * u ) ;
 			m_phaseNodes.var2field( int_phiDu, phase.sym_grad ) ;
 			phase.sym_grad.divide_by( intPhi ) ;
 
-			DynVec int_phiWu = matrices.J * u ;
+			DynVec int_phiWu = .5 * matrices.J * u ;
 			m_phaseNodes.var2field( int_phiWu, phase.spi_grad ) ;
 			phase.spi_grad.divide_by( intPhi ) ;
 		}

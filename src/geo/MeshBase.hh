@@ -24,9 +24,11 @@ public:
 	typedef typename Traits::Cells   Cells ;
 	typedef typename Traits::CellGeo CellGeo ;
 
-	static constexpr Index NV = Traits::NV ;
-	static constexpr Index NC = Traits::NC ;
-	static constexpr Index NQ = Traits::NQ ;
+	enum {
+		NV = Traits::NV ,
+		NC = Traits::NC ,
+		NQ = Traits::NQ
+	} ;
 
 	typedef Eigen::Matrix< Scalar, NC, 1 > Coords ;
 	typedef Eigen::Matrix<  Index, NV, 1 > NodeList ;
