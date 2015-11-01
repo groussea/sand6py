@@ -52,8 +52,10 @@ private:
 	gl::IndexBuffer	   m_glyphQuadIndices ;
 
 	Eigen::Matrix< float, 16, Eigen::Dynamic> m_matrices ; // FIXME
-	Eigen::VectorXd m_densities ;
-//	gl::VertexBuffer16f m_frames  ;
+	gl::VertexBuffer16f m_frames  ;
+
+	Eigen::VectorXf m_densities ;
+	gl::ArrayBufferf m_alpha ;
 
 	Shader m_shader ;
 

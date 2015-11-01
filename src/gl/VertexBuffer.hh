@@ -183,6 +183,7 @@ private:
 typedef VertexBuffer< GLfloat, 4, GL_ARRAY_BUFFER > VertexBuffer4f ;
 typedef VertexBuffer< GLfloat, 3, GL_ARRAY_BUFFER > VertexBuffer3f ;
 typedef VertexBuffer< GLfloat,16, GL_ARRAY_BUFFER > VertexBuffer16f ;
+typedef VertexBuffer< GLfloat, 1, GL_ARRAY_BUFFER > ArrayBufferf;
 
 typedef VertexBuffer< GLdouble, 3, GL_ARRAY_BUFFER > VertexBuffer3d ;
 

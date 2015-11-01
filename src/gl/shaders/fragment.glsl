@@ -3,13 +3,13 @@
 
 varying vec3 normal;
 varying vec3 pos ;
+varying float alpha ;
 
 void main (void)
 {
-	gl_FragColor = vec4( 1, 0, 0, 1) ;
-	vec4 ambientMat = vec4(1.,0.,0.,1.);
-	vec4 diffuseMat = vec4(0.,1.,0.,1.);
-	vec4 specMat    = vec4( 0., 0., 1., 0. );
+	vec4 ambientMat = vec4(1.,0.,0., alpha );
+	vec4 diffuseMat = vec4(0.,1.,0., alpha );
+	vec4 specMat    = vec4( 0., 0., 1., alpha );
 	float specPow = 15.0;
 
 	vec4 diffuse;

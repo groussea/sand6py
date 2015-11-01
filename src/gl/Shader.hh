@@ -27,7 +27,9 @@ public:
 	GLuint vertex_shader, fragment_shader, program;
 
 	struct {
-		GLint vertex ;
+		GLint vertex  ;
+		GLint frame   ;
+		GLint alpha   ;
 	} attributes ;
 
 	struct {

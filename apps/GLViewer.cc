@@ -63,6 +63,11 @@ void GLViewer::draw()
 	{
 		m_glyphQuadIndices.bind();
 
+		if( m_enableBending ) {
+			glEnable (GL_BLEND);
+			glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		}
+
 		if( m_shader.ok() ) {
 
 			float modelview[16];
@@ -76,18 +81,33 @@ void GLViewer::draw()
 			glUniformMatrix4fv(m_shader.uniforms.projection, 1, GL_FALSE, projection );
 
 			gl::VertexAttribPointer vap( m_glyph, m_shader.attributes.vertex ) ;
-			gl::VertexPointer vp( m_glyph ) ;
+			gl::VertexAttribPointer  ap( m_alpha, m_shader.attributes.alpha ) ;
+			glVertexAttribDivisor( m_shader.attributes.alpha, 1 ) ;
+
+			glEnableVertexAttribArray( m_shader.attributes.frame+0) ;
+			glEnableVertexAttribArray( m_shader.attributes.frame+1) ;
+			glEnableVertexAttribArray( m_shader.attributes.frame+2) ;
+			glEnableVertexAttribArray( m_shader.attributes.frame+3) ;
+			m_frames.set_vertex_attrib_pointer( m_shader.attributes.frame+0, false, 16, 4*0, 4 ) ;
+			m_frames.set_vertex_attrib_pointer( m_shader.attributes.frame+1, false, 16, 4*1, 4 ) ;
+			m_frames.set_vertex_attrib_pointer( m_shader.attributes.frame+2, false, 16, 4*2, 4 ) ;
+			m_frames.set_vertex_attrib_pointer( m_shader.attributes.frame+3, false, 16, 4*3, 4 ) ;
+			glVertexAttribDivisor( m_shader.attributes.frame+0, 1 ) ;
+			glVertexAttribDivisor( m_shader.attributes.frame+1, 1 ) ;
+			glVertexAttribDivisor( m_shader.attributes.frame+2, 1 ) ;
+			glVertexAttribDivisor( m_shader.attributes.frame+3, 1 ) ;
+
 			glDrawElementsInstanced( GL_QUADS, m_glyphQuadIndices.size(), GL_UNSIGNED_INT, 0, m_matrices.cols() );
+
+			glDisableVertexAttribArray( m_shader.attributes.frame+3) ;
+			glDisableVertexAttribArray( m_shader.attributes.frame+2) ;
+			glDisableVertexAttribArray( m_shader.attributes.frame+1) ;
+			glDisableVertexAttribArray( m_shader.attributes.frame+0) ;
 
 		} else {
 
 			gl::VertexPointer vp( m_glyph ) ;
 			gl::NormalPointer np( m_glyph ) ;
-
-			if( m_enableBending ) {
-				glEnable (GL_BLEND);
-				glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			}
 
 			for( int i = 0 ; i < m_matrices.cols() ; ++i ){
 				glPushMatrix();
@@ -99,8 +119,9 @@ void GLViewer::draw()
 				glPopMatrix();
 			}
 
-			glDisable (GL_BLEND);
 		}
+
+		glDisable (GL_BLEND);
 	}
 
 }
@@ -158,6 +179,8 @@ void GLViewer::update_buffers()
 		m_matrices.col(i) = Eigen::Matrix< GLfloat, 16, 1 >::Map( mat.data(), mat.size() ) ;
 		m_densities[i] = p.volumes()[i] / vol ;
 	}
+	m_frames.reset( p.count(), m_matrices.data(), GL_STATIC_DRAW )  ;
+	m_alpha.reset ( p.count(), m_densities.data(), GL_STATIC_DRAW )  ;
 
 	// Colors
 	Eigen::Matrix4Xf colors( 4, p.count() ) ;

@@ -56,6 +56,9 @@ bool Shader::load(const char *vertex, const char *fragment)
 
 	if( program ) {
 		attributes.vertex = glGetAttribLocation( program, "vertex");
+		attributes.alpha  = glGetAttribLocation( program, "density");
+		attributes.frame  = glGetAttribLocation( program, "frame");
+
 		uniforms.model_view = glGetUniformLocation( program, "model_view");
 		uniforms.projection = glGetUniformLocation( program, "projection");
 	}
