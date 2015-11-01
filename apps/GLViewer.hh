@@ -32,6 +32,7 @@ public:
 protected :
   virtual void fastDraw();
   virtual void draw();
+  virtual void drawWithNames();
   virtual void init();
   virtual void animate();
 

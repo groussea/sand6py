@@ -79,13 +79,18 @@ void GLViewer::draw()
 
 			UsingShader sh( m_shader ) ;
 
+			// Model-view
 			glUniformMatrix4fv(m_shader.uniforms.model_view, 1, GL_FALSE, modelview );
 			glUniformMatrix4fv(m_shader.uniforms.projection, 1, GL_FALSE, projection );
 
+			//Vertices
 			gl::VertexAttribPointer vap( m_glyph, m_shader.attributes.vertex ) ;
+
+			// Densities
 			gl::VertexAttribPointer  ap( m_alpha, m_shader.attributes.alpha ) ;
 			glVertexAttribDivisor( m_shader.attributes.alpha, 1 ) ;
 
+			//Frames
 			glEnableVertexAttribArray( m_shader.attributes.frame+0) ;
 			glEnableVertexAttribArray( m_shader.attributes.frame+1) ;
 			glEnableVertexAttribArray( m_shader.attributes.frame+2) ;
@@ -128,12 +133,36 @@ void GLViewer::draw()
 
 }
 
+void GLViewer::drawWithNames()
+{
+
+	m_glyphQuadIndices.bind();
+
+	gl::VertexPointer vp( m_glyph ) ;
+
+	for( int i = 0 ; i < m_matrices.cols() ; ++i ){
+		glPushMatrix();
+		glMultMatrixf( m_matrices.col(i).data() );
+		glPushName(i) ;
+
+		glDrawElements( GL_QUADS, m_glyphQuadIndices.size(), GL_UNSIGNED_INT, 0 );
+
+		glPopName() ;
+		glPopMatrix();
+	}
+
+}
+
 void GLViewer::init()
 {
   // Restore previous viewer state.
   restoreStateFromFile();
 
-  camera()->setZClippingCoefficient( m_offline.mesh().box().maxCoeff() );
+  const Vec& box = m_offline.mesh().box() ;
+  const qglviewer::Vec qgl_box( box[0], box[1], box[2] ) ;
+  const qglviewer::Vec qgl_ori(0,0,0) ;
+  setSceneBoundingBox( qgl_ori, qgl_box) ;
+  camera()->setZClippingCoefficient( box.maxCoeff() );
 
   // Gen glyph vertices
   Eigen::Matrix3Xf sphereVertices ;
