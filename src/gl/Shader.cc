@@ -14,7 +14,6 @@ namespace d6 {
 { \
 	GLint log_length; \
 	glGet__iv(object, GL_INFO_LOG_LENGTH, &log_length); \
-	std::cout << log_length << std::endl ; \
 	char * log = new char[log_length]; \
 	glGet__InfoLog(object, log_length, NULL, log); \
 	Log::Error() << log << std::endl ; \

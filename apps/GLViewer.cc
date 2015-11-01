@@ -3,6 +3,7 @@
 #include "visu/Offline.hh"
 #include "geo/Particles.hh"
 #include "geo/Tensor.hh"
+#include "geo/Grid.hh"
 
 #include <Eigen/Eigenvalues>
 
@@ -48,6 +49,7 @@ static void genSphere( const unsigned parallels, const unsigned meridians,
 
 void GLViewer::fastDraw()
 {
+//	draw() ; return ;
 	{
 		glPointSize( 3 );
 		gl::VertexPointer vp( m_centers ) ;
@@ -131,7 +133,7 @@ void GLViewer::init()
   // Restore previous viewer state.
   restoreStateFromFile();
 
-  camera()->setZClippingCoefficient(50.0);
+  camera()->setZClippingCoefficient( m_offline.mesh().box().maxCoeff() );
 
   // Gen glyph vertices
   Eigen::Matrix3Xf sphereVertices ;
