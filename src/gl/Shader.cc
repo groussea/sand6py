@@ -10,22 +10,15 @@
 
 namespace d6 {
 
-static void show_info_log(
-		GLuint object,
-		PFNGLGETSHADERIVPROC glGet__iv,
-		PFNGLGETSHADERINFOLOGPROC glGet__InfoLog
-		)
-{
-	GLint log_length;
-	glGet__iv(object, GL_INFO_LOG_LENGTH, &log_length);
-
-	char * log = new char[log_length];
-
-	glGet__InfoLog(object, log_length, NULL, log);
-
-	Log::Error() << log << std::endl ;
-
-	delete[] log;
+#define show_info_log( object, glGet__iv, glGet__InfoLog ) \
+{ \
+	GLint log_length; \
+	glGet__iv(object, GL_INFO_LOG_LENGTH, &log_length); \
+	std::cout << log_length << std::endl ; \
+	char * log = new char[log_length]; \
+	glGet__InfoLog(object, log_length, NULL, log); \
+	Log::Error() << log << std::endl ; \
+	delete[] log; \
 }
 
 GLuint Shader::make_program(GLuint vertex_shader, GLuint fragment_shader)
@@ -59,6 +52,13 @@ bool Shader::load(const char *vertex, const char *fragment)
 
 	if( vertex_shader && fragment_shader )
 		program = make_program( vertex_shader, fragment_shader ) ;
+
+
+	if( program ) {
+		attributes.vertex = glGetAttribLocation( program, "vertex");
+		uniforms.model_view = glGetUniformLocation( program, "model_view");
+		uniforms.projection = glGetUniformLocation( program, "projection");
+	}
 
 	return program != 0 ;
 }

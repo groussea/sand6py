@@ -80,6 +80,12 @@ public:
 		glColorPointer(d, Traits< Scalar >::id , stride * sizeof( Scalar ),
 					   (GLvoid*) (offset * sizeof( Scalar )));
 	}
+	void set_vertex_attrib_pointer( GLint attribute, bool normalized = false, GLsizei stride = 0, GLuint offset = 0, unsigned d = Dim  ) const
+	{
+		bind() ;
+		glVertexAttribPointer(attribute, d, Traits< Scalar >::id , normalized?GL_TRUE:GL_FALSE, stride * sizeof( Scalar ),
+						(GLvoid*) (offset * sizeof( Scalar )));
+	}
 
 	void reset( GLuint size, const Scalar * data, GLenum usage = GL_STATIC_DRAW )
 	{
@@ -156,6 +162,22 @@ struct ColorPointer
 	{
 		glDisableClientState( GL_COLOR_ARRAY );
 	}
+};
+struct VertexAttribPointer
+{
+	template< typename Scalar, unsigned Dim, int Type >
+	VertexAttribPointer( const VertexBuffer< Scalar, Dim, Type > &vb, GLint attrib, bool normalized = false )
+		: m_attrib( attrib )
+	{
+		vb.set_vertex_attrib_pointer( attrib, normalized );
+		glEnableVertexAttribArray( attrib );
+	}
+	~VertexAttribPointer()
+	{
+		glDisableVertexAttribArray( m_attrib );
+	}
+private:
+	GLint m_attrib ;
 };
 
 typedef VertexBuffer< GLfloat, 4, GL_ARRAY_BUFFER > VertexBuffer4f ;

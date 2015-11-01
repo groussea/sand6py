@@ -26,9 +26,15 @@ public:
 
 	GLuint vertex_shader, fragment_shader, program;
 
-	struct attributes {
+	struct {
+		GLint vertex ;
+	} attributes ;
 
-	};
+	struct {
+		GLint model_view  ;
+		GLint projection ;
+	} uniforms ;
+
 
 };
 

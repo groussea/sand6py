@@ -1,5 +1,6 @@
 gl/Shader.cc
 gl/Shader.hh
 gl/VertexBuffer.hh
+gl/opengl.hh
 gl/shaders/fragment.glsl
 gl/shaders/vertex.glsl

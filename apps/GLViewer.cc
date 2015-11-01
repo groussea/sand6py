@@ -62,22 +62,28 @@ void GLViewer::draw()
 
 	{
 		m_glyphQuadIndices.bind();
-		gl::VertexPointer vp( m_glyph ) ;
-		gl::NormalPointer np( m_glyph ) ;
 
 		if( m_shader.ok() ) {
+
+			float modelview[16];
+			glGetFloatv(GL_MODELVIEW_MATRIX, modelview);
+			float projection[16];
+			glGetFloatv(GL_PROJECTION_MATRIX, projection);
+
 			UsingShader sh( m_shader ) ;
 
-			for( int i = 0 ; i < m_matrices.cols() ; ++i ){
-				glPushMatrix();
-				glMultMatrixf( m_matrices.col(i).data() );
+			glUniformMatrix4fv(m_shader.uniforms.model_view, 1, GL_FALSE, modelview );
+			glUniformMatrix4fv(m_shader.uniforms.projection, 1, GL_FALSE, projection );
 
-				glColor4f(1., 0, 0, m_densities[i]);
-				glDrawElements( GL_QUADS, m_glyphQuadIndices.size(), GL_UNSIGNED_INT, 0 );
+			gl::VertexAttribPointer vap( m_glyph, m_shader.attributes.vertex ) ;
+			gl::VertexPointer vp( m_glyph ) ;
+			glDrawElementsInstanced( GL_QUADS, m_glyphQuadIndices.size(), GL_UNSIGNED_INT, 0, m_matrices.cols() );
 
-				glPopMatrix();
-			}
 		} else {
+
+			gl::VertexPointer vp( m_glyph ) ;
+			gl::NormalPointer np( m_glyph ) ;
+
 			if( m_enableBending ) {
 				glEnable (GL_BLEND);
 				glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
