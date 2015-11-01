@@ -55,7 +55,7 @@ TEST( simu, quad ) {
 	for( Grid::CellIterator it = g.cellBegin() ; it != g.cellEnd() ; ++it )
 		cells.push_back( * it ) ;
 
-	ASSERT_EQ( cells.size(), g.nCells() ) ;
+	ASSERT_EQ( (Index) cells.size(), g.nCells() ) ;
 
 //	std::vector< Index > indices ( g.nNodes() ) ;
 //	std::iota( indices.begin(), indices.end(), 0 );

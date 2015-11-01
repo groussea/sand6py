@@ -80,16 +80,16 @@ std::string arg3( const std::string &src, const T1 &r1, const T2& r2, const T3& 
 template< typename T >
 bool cast ( std::istringstream& stream, T& res )
 {
-	return ( stream >> res ) ;
+	return static_cast<bool>( stream >> res ) ;
 }
 
 template< typename Scalar, int Rows, int Cols >
 bool cast ( std::istringstream& stream, Eigen::Matrix<Scalar, Rows, Cols>& res )
 {
-	for( size_t k = 0 ; stream && k < res.size() ; ++ k) {
+	for( Eigen::Index k = 0 ; stream && ( k < res.size() ) ; ++ k) {
 		stream >> res.data()[k] ;
 	}
-	return stream ;
+	return static_cast<bool>( stream ) ;
 }
 
 template< typename T >
@@ -108,7 +108,7 @@ std::ostream& dump ( std::ostream& stream, const T& val )
 template< typename Scalar, int Rows, int Cols >
 std::ostream& dump ( std::ostream& stream, const Eigen::Matrix<Scalar, Rows, Cols>& val )
 {
-	for( size_t k = 0 ; stream && k < val.size() ; ++ k) {
+	for( Eigen::Index k = 0 ; stream && ( k < val.size() ) ; ++ k) {
 		stream << val.data()[k] << "\t" ;
 	}
 	return stream ;

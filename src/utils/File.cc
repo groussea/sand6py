@@ -33,8 +33,7 @@ bool File::exists( ) const
 
 bool File::exists( const std::string& path )
 {
-	std::ifstream ifs( path.c_str() ) ;
-	return NULL != ifs ;
+	return FileInfo( path ).exists() ;
 }
 
 bool File::open( std::ios_base::openmode mode )
