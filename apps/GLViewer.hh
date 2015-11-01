@@ -2,7 +2,8 @@
 #define D6_GLVIEWER_HH
 
 #include "visu/Offline.hh"
-#include "visu/VertexBuffer.hh"
+#include "gl/VertexBuffer.hh"
+#include "gl/Shader.hh"
 
 #include <QGLViewer/qglviewer.h>
 
@@ -53,6 +54,8 @@ private:
 	Eigen::Matrix< float, 16, Eigen::Dynamic> m_matrices ; // FIXME
 	Eigen::VectorXd m_densities ;
 //	gl::VertexBuffer16f m_frames  ;
+
+	Shader m_shader ;
 
 } ;
 

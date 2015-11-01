@@ -47,6 +47,8 @@ public :
 
 	static bool exists( const std::string& name ) ;
 
+	bool get_contents( std::string& contents ) ;
+
 private:
 	std::string _name ;
 	std::ios_base::openmode _mode ;

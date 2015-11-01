@@ -52,6 +52,24 @@ bool File::open( const std::string& name, const std::ios_base::openmode mode )
 	return open( mode ) ;
 }
 
+bool File::get_contents( string &contents)
+{
+	if( !*this )
+		return false ;
+
+	std::stringstream sstr ;
+	std::string line ;
+	while( std::getline( *this, line ))
+	{
+		sstr << line << '\n' ;
+	}
+
+	contents = sstr.str() ;
+
+	return true ;
+}
+
+
 #ifdef WIN32
 const char* FileInfo::DIR_SEP = "\\" ;
 #else

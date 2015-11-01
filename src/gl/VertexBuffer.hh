@@ -1,8 +1,7 @@
 #ifndef D6_GL_VERTEX_BUFFER_HH
 #define D6_GL_VERTEX_BUFFER_HH
 
-#define GL_GLEXT_PROTOTYPES
-#include <GL/gl.h>
+#include "opengl.hh"
 
 #include <iostream>
 #include <cassert>

@@ -65,21 +65,36 @@ void GLViewer::draw()
 		gl::VertexPointer vp( m_glyph ) ;
 		gl::NormalPointer np( m_glyph ) ;
 
-		if( m_enableBending ) {
-			glEnable (GL_BLEND);
-			glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		if( m_shader.ok() ) {
+			UsingShader sh( m_shader ) ;
+
+			for( int i = 0 ; i < m_matrices.cols() ; ++i ){
+				glPushMatrix();
+				glMultMatrixf( m_matrices.col(i).data() );
+
+				glColor4f(1., 0, 0, m_densities[i]);
+				glDrawElements( GL_QUADS, m_glyphQuadIndices.size(), GL_UNSIGNED_INT, 0 );
+
+				glPopMatrix();
+			}
+		} else {
+			if( m_enableBending ) {
+				glEnable (GL_BLEND);
+				glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			}
+
+			for( int i = 0 ; i < m_matrices.cols() ; ++i ){
+				glPushMatrix();
+				glMultMatrixf( m_matrices.col(i).data() );
+
+				glColor4f(1., 0, 0, m_densities[i]);
+				glDrawElements( GL_QUADS, m_glyphQuadIndices.size(), GL_UNSIGNED_INT, 0 );
+
+				glPopMatrix();
+			}
+
+			glDisable (GL_BLEND);
 		}
-
-		for( int i = 0 ; i < m_matrices.cols() ; ++i ){
-			glPushMatrix();
-			glMultMatrixf( m_matrices.col(i).data() );
-
-			glColor4f(1., 0, 0, m_densities[i]);
-			glDrawElements( GL_QUADS, m_glyphQuadIndices.size(), GL_UNSIGNED_INT, 0 );
-
-			glPopMatrix();
-		}
-		glDisable (GL_BLEND);
 	}
 
 }
@@ -99,6 +114,8 @@ void GLViewer::init()
   m_glyphQuadIndices.reset( quadIndices.size(), quadIndices.data() );
 
   update_buffers();
+
+  m_shader.load() ;
 }
 
 void GLViewer::animate()
