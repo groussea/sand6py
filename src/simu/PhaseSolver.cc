@@ -260,8 +260,8 @@ void PhaseSolver::step( const Config &config, Phase &phase)
 
 	// Matrices
 
-	BoundaryMapper mapper ;
-//	CuveBoundary mapper ;
+//	BoundaryMapper mapper ;
+	CuveBoundary mapper ;
 	mesh.make_bc( mapper, m_surfaceNodes ) ;
 	PhaseMatrices matrices ;
 	assembleMatrices( config, mesh, phi_int, matrices );

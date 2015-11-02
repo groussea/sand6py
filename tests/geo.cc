@@ -170,3 +170,30 @@ TEST( geo, quad ) {
 	ASSERT_DOUBLE_EQ( ( vx.box / 3 ).prod(), f_quad ) ;
 
 }
+
+TEST( geo, field_func )
+{
+	Vec3i dim( 10, 10, 10 ) ;
+	Vec   box( 1, 1, 1 ) ;
+	Grid g( box, dim ) ;
+
+	TensorField tf( g ) ;
+
+	Vec6 sym ( Vec6::Zero() ) ;
+	sym[0] = 3. ;
+	sym[3] = 4. ;
+
+	tf.set_constant( sym );
+
+	ScalarField sf ( tf.trace() );
+
+	for( Index i = 0 ; i < sf.size() ; ++i ) {
+		ASSERT_DOUBLE_EQ( 3., sf[i] ) ;
+	}
+
+	sf = tf.norm() ;
+	for( Index i = 0 ; i < sf.size() ; ++i ) {
+		ASSERT_DOUBLE_EQ( 5., sf[i] ) ;
+	}
+
+}

@@ -28,6 +28,18 @@ public:
 
 	}
 
+	template <typename Func>
+	AbstractScalarField( const FieldFuncBase< Func, Base::D, MeshT > & func )
+		: Base( func.mesh() )
+	{
+		Base::operator=( func );
+	}
+	template <typename Func>
+	AbstractScalarField& operator= ( const FieldFuncBase< Func, Base::D, MeshT > & func )
+	{
+		return Base::operator=( func );
+	}
+
 };
 
 

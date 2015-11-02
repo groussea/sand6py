@@ -2,6 +2,7 @@
 #define D6_VECTOR_FIELD_HH
 
 #include "FieldBase.hh"
+#include "FieldFuncs.hh"
 
 #include "Tensor.hh"
 
@@ -28,6 +29,21 @@ public:
 		: Base( mesh )
 	{
 
+	}
+	template <typename Func>
+	AbstractVectorField( const FieldFuncBase< Func, Base::D, MeshT > & func )
+		: Base( func.mesh() )
+	{
+		Base::operator=( func );
+	}
+	template <typename Func>
+	AbstractVectorField& operator=( const FieldFuncBase< Func, Base::D, MeshT > & func )
+	{
+		return Base::operator=( func );
+	}
+
+	FieldNorm< d6::AbstractVectorField, MeshT > norm() const {
+		return FieldNorm< d6::AbstractVectorField, MeshT >( *this ) ;
 	}
 
 	void get_spi_tensor( const Vec& x, Mat& tensor ) const ;

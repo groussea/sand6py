@@ -32,15 +32,15 @@ TEST( simu, config )
 
 	c.internalize();
 
-	ASSERT_TRUE( c.box.isApprox( Vec(1,2,3) ) ) ;
+	ASSERT_TRUE( c.box.isApprox( Vec(10,20,30) ) ) ;
 	ASSERT_TRUE( c.gravity.isApprox( Vec(1,0,0) ) ) ;
-	ASSERT_DOUBLE_EQ( c.units().U, 20. ) ;
-	ASSERT_DOUBLE_EQ( c.units().T, .5 ) ;
-	ASSERT_DOUBLE_EQ( c.units().P, 4.e5 ) ;
-	ASSERT_DOUBLE_EQ( c.units().M, 2.e5 ) ;
+//	ASSERT_DOUBLE_EQ( 20. , c.units().U ) ;
+//	ASSERT_DOUBLE_EQ( .5  , c.units().T ) ;
+//	ASSERT_DOUBLE_EQ( 4.e5, c.units().P ) ;
+//	ASSERT_DOUBLE_EQ( 2.e5, c.units().M ) ;
 	ASSERT_DOUBLE_EQ( c.units().M, c.units().R * c.units().U * c.units().L ) ;
 
-	ASSERT_DOUBLE_EQ( c.viscosity, 1./Re ) ;
+	ASSERT_DOUBLE_EQ( c.viscosity, c.box.minCoeff() * std::sqrt( c.box.minCoeff() ) * 1./Re ) ;
 
 }
 

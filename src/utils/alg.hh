@@ -23,6 +23,7 @@ typedef Eigen::Matrix< Scalar, 6, Eigen::Dynamic > DynMat6 ;
 
 template < Index Dimension >
 struct Segmenter {
+	typedef Eigen::Matrix< Scalar, Dimension, 1 > ValueType ;
 
 	typedef typename DynVec::template FixedSegmentReturnType< Dimension >::Type Seg ;
 	typedef typename DynVec::template ConstFixedSegmentReturnType< Dimension >::Type ConstSeg ;
@@ -33,9 +34,13 @@ struct Segmenter {
 	static inline ConstSeg segment( const DynVec& vec, const Index i ) {
 		return vec.template segment< Dimension >( i*Dimension ) ;
 	}
+
+	Seg val2seg( ValueType & v) { return v.segment< Dimension >(0) ; }
 };
 template < >
 struct Segmenter< 1 > {
+	typedef Scalar ValueType ;
+
 	typedef Scalar& Seg ;
 	typedef const Scalar& ConstSeg ;
 
@@ -46,6 +51,7 @@ struct Segmenter< 1 > {
 		return vec[ i ] ;
 	}
 
+	Seg val2seg( ValueType& v) { return v ; }
 } ;
 
 template < typename Derived >

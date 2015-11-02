@@ -2,6 +2,7 @@
 #define D6_FIELD_BASE_HH
 
 #include "Expr.hh"
+#include "FieldFuncBase.hh"
 
 namespace d6 {
 
@@ -10,6 +11,7 @@ struct FieldTraits
 {
 
 };
+
 
 template< typename Derived >
 struct FieldBase : public Expr< typename FieldTraits< Derived >::ValueType >
@@ -25,7 +27,6 @@ public:
 
 	typedef typename Segmenter< D >::Seg Seg  ;
 	typedef typename Segmenter< D >::ConstSeg ConstSeg  ;
-
 
 	explicit FieldBase( const MeshType& mesh )
 		: m_mesh( mesh ), m_size( mesh.nNodes() )
@@ -64,6 +65,16 @@ public:
 	ConstSeg  operator[] ( const Index i ) const { return segment(i) ; }
 	Seg       operator[] ( const Index i )       { return segment(i) ; }
 
+	template < typename Func >
+	Derived& operator= ( const FieldFuncBase< Func, D, typename Traits::MeshType > & f )
+	{
+		assert( f.field.size() == size() ) ;
+		#pragma omp parallel for
+		for( Index  i = 0 ; i < size() ; ++i ) {
+			f.eval_at_node( i, segment(i) );
+		}
+		return derived();
+	}
 
 	// Info
 	Scalar max_abs() const { return m_data.lpNorm< Eigen::Infinity >() ; }
