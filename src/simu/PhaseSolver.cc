@@ -18,6 +18,7 @@
 #include <bogus/Core/Utils/Timer.hpp>
 
 //#define FULL_FEM
+#define FULL_VOLUME_COMP
 
 namespace d6 {
 
@@ -59,7 +60,6 @@ void PhaseSolver::Active::var2field( const DynVec & var,  FieldBase<Derived> &fi
 struct PhaseMatrices
 {
 	DynVec S  ;
-	DynVec S6 ;
 
 	typename FormMat<3,3>::SymType M_lumped ;
 	typename FormMat<3,3>::SymType M_lumped_inv ;
@@ -141,8 +141,9 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 	builder.makeCompressed();
 
 	// S
+#ifndef FULL_VOLUME_COMP
 	mats.S .resize(   m ); mats.S .setZero();
-	mats.S6.resize( 6*m ); mats.S6.setZero();
+#endif
 
 	// A
 	mats.A.clear();
@@ -168,10 +169,11 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 	builder.integrate_qp( m_phaseNodes.cells, [&]( Scalar w, Loc, Itp itp, Dcdx dc_dx )
 		{
 			FormBuilder:: addDuDv( mats.A, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
+#ifndef FULL_VOLUME_COMP
 			for( Index k = 0 ; k < MeshType::NQ ; ++k ) {
-										mats.S[ m_phaseNodes.indices[itp.nodes[k]] ] += w / MeshType::NQ ;
-				Segmenter<6>::segment( mats.S6, m_phaseNodes.indices[itp.nodes[k]] ) += Vec6::Constant( w / MeshType::NQ ) ;
+				mats.S[ m_phaseNodes.indices[itp.nodes[k]] ] += w / MeshType::NQ ;
 			}
+#endif
 
 		}
 	);
@@ -217,6 +219,22 @@ void PhaseSolver::step( const Config &config, Phase &phase)
 	const MeshType& mesh = phase.fraction.mesh() ;
 	m_surfaceNodes.resize( mesh.nNodes() );
 
+#ifdef FULL_VOLUME_COMP
+	ScalarField volumes(mesh) ; volumes.set_zero();
+	for( typename MeshType::CellIterator it = mesh.cellBegin() ; it != mesh.cellEnd() ; ++it ) {
+		typename MeshType::CellGeo geo ;
+		typename MeshType::NodeList nodes ;
+
+		mesh.get_geo( *it, geo );
+		const Scalar vol = geo.volume() / MeshType::NV ;
+
+		mesh.list_nodes( *it, nodes );
+		for( Index k = 0 ; k < MeshType::NV ; ++k ) {
+			volumes[nodes[k]] += vol ;
+		}
+	}
+#endif
+
 	VectorField gravity ( mesh ) ;
 	gravity.set_constant( config.gravity );
 
@@ -248,6 +266,9 @@ void PhaseSolver::step( const Config &config, Phase &phase)
 
 	mesh.make_bc( StrBoundaryMapper( config.boundary ), m_surfaceNodes ) ;
 	PhaseMatrices matrices ;
+#ifdef FULL_VOLUME_COMP
+	m_phaseNodes.field2var( volumes, matrices.S ) ;
+#endif
 	assembleMatrices( config, mesh, phi_int, matrices );
 
 	Log::Debug() << "Matrices assembled  at " << timer.elapsed() << std::endl ;
@@ -357,7 +378,7 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 
 		q = q.cwiseMax( 0 ) ;
 
-		DynMat6::Map( data.w.data(), 6, data.n() ).row( 0 )	+= q ;
+		component< 6 >( data.w, 0 ) += q ;
 	}
 
 	DynVec x( data.w.rows() ), y( data.w.rows() ) ;

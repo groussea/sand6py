@@ -36,6 +36,7 @@ struct Segmenter {
 	}
 
 	Seg val2seg( ValueType & v) { return v.segment< Dimension >(0) ; }
+
 };
 template < >
 struct Segmenter< 1 > {
@@ -61,6 +62,32 @@ inline void set_zero( Eigen::MatrixBase< Derived > &mat ) {
 inline void set_zero( Scalar &s ) {
 	s = 0 ;
 }
+
+template < Index Dimension >
+void mul_compwise( DynVec& vec, const DynVec & scalar ) {
+	assert( vec.rows() == scalar.rows() * Dimension ) ;
+	Eigen::Matrix< Scalar, Dimension, Eigen::Dynamic >::Map( vec.data(), Dimension, scalar.rows() )
+			*= scalar.asDiagonal() ;
+}
+template < Index Dimension >
+void div_compwise( DynVec& vec, const DynVec & scalar ) {
+	assert( vec.rows() == scalar.rows() * Dimension ) ;
+	Eigen::Matrix< Scalar, Dimension, Eigen::Dynamic >::Map( vec.data(), Dimension, scalar.rows() )
+			*= (1./scalar.array()).matrix().asDiagonal() ;
+}
+template < Index Dimension >
+void set_compwise( DynVec& vec, const DynVec & scalar ) {
+	vec.setOnes( Dimension * scalar.rows() ) ;
+	mul_compwise< Dimension >( vec, scalar ) ;
+}
+template < Index Dimension >
+typename Eigen::Matrix< Scalar, Dimension, Eigen::Dynamic >::MapType::RowXpr component( DynVec& vec, Index row ) {
+	 return Eigen::Matrix< Scalar, Dimension, Eigen::Dynamic >::Map( vec.data(), Dimension, vec.rows()/Dimension ).row( row ) ;
+ }
+template < Index Dimension >
+typename Eigen::Matrix< Scalar, Dimension, Eigen::Dynamic >::ConstMapType::ConstRowXpr component( const DynVec& vec, Index row ) {
+	 return Eigen::Matrix< Scalar, Dimension, Eigen::Dynamic >::Map( vec.data(), Dimension, vec.rows()/Dimension ).row( row ) ;
+ }
 
 } //d6
 

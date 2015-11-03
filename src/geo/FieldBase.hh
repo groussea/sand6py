@@ -39,9 +39,21 @@ public:
 
 	const MeshType& mesh() const { return m_mesh ; }
 
-	//
-	void set_zero() ;
-	void set_constant( const ValueType& val ) ;
+	//Global setters
+
+	Derived& set_zero() ;
+	Derived& set_constant( const ValueType& val ) ;
+
+	template < typename Func >
+	Derived& operator= ( const FieldFuncBase< Func, D, typename Traits::MeshType > & f )
+	{
+		assert( f.field.size() == size() ) ;
+		#pragma omp parallel for
+		for( Index  i = 0 ; i < size() ; ++i ) {
+			f.eval_at_node( i, segment(i) );
+		}
+		return derived();
+	}
 
 	// Interpolation
 
@@ -64,17 +76,6 @@ public:
 	ValueType operator() ( const Vec&  x ) const { return eval_at(x) ; }
 	ConstSeg  operator[] ( const Index i ) const { return segment(i) ; }
 	Seg       operator[] ( const Index i )       { return segment(i) ; }
-
-	template < typename Func >
-	Derived& operator= ( const FieldFuncBase< Func, D, typename Traits::MeshType > & f )
-	{
-		assert( f.field.size() == size() ) ;
-		#pragma omp parallel for
-		for( Index  i = 0 ; i < size() ; ++i ) {
-			f.eval_at_node( i, segment(i) );
-		}
-		return derived();
-	}
 
 	// Info
 	Scalar max_abs() const { return m_data.lpNorm< Eigen::Infinity >() ; }

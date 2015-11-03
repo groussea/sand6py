@@ -39,27 +39,27 @@ void FieldBase< Derived >::add_at( const typename MeshType::Interpolation &itp, 
 }
 
 template< typename Derived >
-void FieldBase< Derived >::set_zero() {
+Derived& FieldBase< Derived >::set_zero() {
 	m_data.setZero() ;
+	return derived() ;
 }
 
 template< typename Derived >
-void FieldBase< Derived >::set_constant(const ValueType &val) {
+Derived& FieldBase< Derived >::set_constant(const ValueType &val) {
 #pragma omp parallel for
 	for( Index i = 0 ; i < m_size ; ++i ) {
 		segment(i) = val ;
 	}
+	return derived() ;
 }
 template< typename Derived >
 Derived& FieldBase< Derived >::multiply_by(const ScalarField &field) {
-	Eigen::Matrix< Scalar, D, Eigen::Dynamic >::Map( m_data.data(), D, size() )
-			*= field.flatten().asDiagonal() ;
+	mul_compwise< D >( m_data, field.flatten() ) ;
 	return derived() ;
 }
 template< typename Derived >
 Derived& FieldBase< Derived >::divide_by(const ScalarField &field) {
-	Eigen::Matrix< Scalar, D, Eigen::Dynamic >::Map( m_data.data(), D, size() )
-			*= (1. / field.flatten().array()).matrix().asDiagonal() ;
+	div_compwise< D >( m_data, field.flatten() ) ;
 	return derived() ;
 }
 
