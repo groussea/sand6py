@@ -25,6 +25,7 @@ namespace d6 {
 	CONFIG_FIELD( mu				, Scalar		,	Units::None			) \
 	\
 	CONFIG_FIELD( scenario			, std::string	,	Units::None			) \
+	CONFIG_FIELD( output			, bool			,	Units::None			) \
 
 
 struct Config

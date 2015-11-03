@@ -197,7 +197,7 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 	const typename FormMat<3,3>::SymType IP = mats.Pvel.Identity() - mats.Pvel ;
 	mats.A = mats.Pvel * ( mats.A * mats.Pvel ) + IP ;
 
-//#pragma omp parallel for
+#pragma omp parallel for
 	for( Index i = 0 ; i < m ; ++i ) {
 		const Scalar m = mats.M_lumped.block(i).trace() / 3 ;
 		mats.M_lumped         .block(i) = mats.Pvel.block(i) * m
@@ -205,7 +205,7 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 		mats.M_lumped_inv     .block(i) = mats.Pvel.block(i) * 1./( regul + m )
 				+ Mat::Identity() - mats.Pvel.block(i) ;
 		mats.M_lumped_inv_sqrt.block(i) = mats.Pvel.block(i) * 1./std::sqrt( regul + m )
-				+ Mat::Identity() - mats.Pvel.block(i) ;
+				; //+ Mat::Identity() - mats.Pvel.block(i) ;
 	}
 
 }

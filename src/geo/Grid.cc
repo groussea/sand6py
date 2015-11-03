@@ -91,6 +91,25 @@ void Grid::make_bc( const BoundaryMapper& mapper, BoundaryConditions &bc ) const
 			bc[ nodeIndex( Vertex(i, j, m_dim[2]) ) ].set( mapper(   "top"), Vec(0,0, 1) ) ;
 		}
 	}
+
+	for( Index i = 0 ; i <= m_dim[0] ; ++i ) {
+		bc[ nodeIndex( Vertex(i,        0,        0 ) ) ].normal = Vec(0,-1,-1).normalized() ;
+		bc[ nodeIndex( Vertex(i,        0, m_dim[2] ) ) ].normal = Vec(0,-1, 1).normalized() ;
+		bc[ nodeIndex( Vertex(i, m_dim[1],        0 ) ) ].normal = Vec(0, 1,-1).normalized() ;
+		bc[ nodeIndex( Vertex(i, m_dim[1], m_dim[2] ) ) ].normal = Vec(0, 1, 1).normalized() ;
+	}
+	for( Index i = 0 ; i <= m_dim[1] ; ++i ) {
+		bc[ nodeIndex( Vertex(       0, i,        0 ) ) ].normal = Vec(-1,0,-1).normalized() ;
+		bc[ nodeIndex( Vertex(       0, i, m_dim[2] ) ) ].normal = Vec(-1,0, 1).normalized() ;
+		bc[ nodeIndex( Vertex(m_dim[0], i,        0 ) ) ].normal = Vec( 1,0,-1).normalized() ;
+		bc[ nodeIndex( Vertex(m_dim[0], i, m_dim[2] ) ) ].normal = Vec( 1,0, 1).normalized() ;
+	}
+	for( Index i = 0 ; i <= m_dim[2] ; ++i ) {
+		bc[ nodeIndex( Vertex(       0,        0, i ) ) ].normal = Vec(-1,-1,0).normalized() ;
+		bc[ nodeIndex( Vertex(       0, m_dim[1], i ) ) ].normal = Vec(-1, 1,0).normalized() ;
+		bc[ nodeIndex( Vertex(m_dim[0],        0, i ) ) ].normal = Vec( 1,-1,0).normalized() ;
+		bc[ nodeIndex( Vertex(m_dim[0], m_dim[1], i ) ) ].normal = Vec( 1, 1,0).normalized() ;
+	}
 }
 
 } //d6

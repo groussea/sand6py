@@ -25,7 +25,8 @@ Config::Config() :
 	volMass( 1.5e3 ),
 	viscosity( 1.e3 ),
 	gravity( 0, 0, -9.81 ),
-	phiMax(1), mu(0)
+	phiMax(1), mu(0),
+	output( true )
 {
 }
 

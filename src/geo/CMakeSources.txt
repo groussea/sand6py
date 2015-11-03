@@ -3,6 +3,8 @@ geo/BoundaryInfo.hh
 geo/Expr.hh
 geo/FieldBase.hh
 geo/FieldBase.impl.hh
+geo/FieldFuncBase.hh
+geo/FieldFuncs.hh
 geo/Grid.cc
 geo/Grid.hh
 geo/MeshBase.cc

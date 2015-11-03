@@ -86,7 +86,7 @@ bool cast ( std::istringstream& stream, T& res )
 template< typename Scalar, int Rows, int Cols >
 bool cast ( std::istringstream& stream, Eigen::Matrix<Scalar, Rows, Cols>& res )
 {
-	for( Eigen::Index k = 0 ; stream && ( k < res.size() ) ; ++ k) {
+	for( int k = 0 ; stream && ( k < res.size() ) ; ++ k) {
 		stream >> res.data()[k] ;
 	}
 	return static_cast<bool>( stream ) ;
@@ -108,7 +108,7 @@ std::ostream& dump ( std::ostream& stream, const T& val )
 template< typename Scalar, int Rows, int Cols >
 std::ostream& dump ( std::ostream& stream, const Eigen::Matrix<Scalar, Rows, Cols>& val )
 {
-	for( Eigen::Index k = 0 ; stream && ( k < val.size() ) ; ++ k) {
+	for( int k = 0 ; stream && ( k < val.size() ) ; ++ k) {
 		stream << val.data()[k] << "\t" ;
 	}
 	return stream ;

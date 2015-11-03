@@ -40,7 +40,8 @@ void Simu::run()
 	m_grains->sym_grad.set_zero();
 	m_grains->spi_grad.set_zero();
 
-	dump( 0 ) ;
+	if( m_config.output )
+		dump( 0 ) ;
 
 	for( unsigned frame = 0 ; frame < m_config.nFrames ; ++ frame ) {
 		bogus::Timer timer ;
@@ -57,7 +58,8 @@ void Simu::run()
 
 		Log::Info() << arg( "Frame done in %1 s", timer.elapsed() ) << std::endl ;
 
-		dump( frame+1 ) ;
+		if( m_config.output )
+			dump( frame+1 ) ;
 	}
 
 	Log::Info() << "All done." << std::endl ;
