@@ -37,6 +37,7 @@ protected :
   virtual void animate();
 
   virtual void keyPressEvent(QKeyEvent *e);
+  virtual void postSelection(const QPoint& ) ;
 
 private:
 	void update_buffers() ;

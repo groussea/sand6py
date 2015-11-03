@@ -242,7 +242,7 @@ void PhaseSolver::step( const Config &config, Phase &phase)
 	std::vector< bool > activeCells ;
 	m_particles.read( activeCells, intPhi, intPhiVel, intPhiInertia, intPhiOrient ) ;
 
-#ifdef FULL_FEM
+#if defined(FULL_FEM)
 	activeCells.assign( activeCells.size(), true ) ;
 #endif
 

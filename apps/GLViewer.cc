@@ -1,9 +1,12 @@
 #include "GLViewer.hh"
 
 #include "visu/Offline.hh"
+
 #include "geo/Particles.hh"
 #include "geo/Tensor.hh"
 #include "geo/Grid.hh"
+
+#include "utils/Log.hh"
 
 #include <Eigen/Eigenvalues>
 
@@ -204,11 +207,12 @@ void GLViewer::update_buffers()
 		const Vec ev = es.eigenvalues().array().max(0).sqrt() ;
 		const Scalar vol = 8 * ev.prod() ;
 
-		mat.block<3,3>(0,0) = ( ev.asDiagonal() * es.eigenvectors() ).cast< GLfloat >()  ;
+		mat.block<3,3>(0,0) = ( es.eigenvectors() * ev.asDiagonal() ).cast< GLfloat >()  ;
 		mat.block<3,1>(0,3) = p.centers().col(i).cast < GLfloat >() ;
 
 		m_matrices.col(i) = Eigen::Matrix< GLfloat, 16, 1 >::Map( mat.data(), mat.size() ) ;
 		m_densities[i] = p.volumes()[i] / vol ;
+
 	}
 	m_frames.reset( p.count(), m_matrices.data(), GL_STATIC_DRAW )  ;
 	m_alpha.reset ( p.count(), m_densities.data(), GL_STATIC_DRAW )  ;
@@ -221,6 +225,12 @@ void GLViewer::update_buffers()
 	m_colors.reset( p.count(), colors.data(), GL_STATIC_DRAW )  ;
 
 }
+
+void GLViewer::postSelection(const QPoint& )
+{
+	Log::Info() << "Selected particle: " << selectedName() << std::endl ;
+}
+
 
 void GLViewer::set_frame(unsigned frame)
 {

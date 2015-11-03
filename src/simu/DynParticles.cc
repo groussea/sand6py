@@ -6,7 +6,11 @@
 #include "geo/Tensor.hh"
 
 #include "utils/Log.hh"
+
 #include <bogus/Core/Utils/Timer.hpp>
+
+#include <Eigen/Eigenvalues>
+
 
 namespace d6 {
 
@@ -17,7 +21,8 @@ DynParticles::DynParticles()
 
 void DynParticles::generate(const Config &c, const MeshType &mesh)
 {
-	auto phi = [&]( const Vec& x){ return x[2] > .5*c.box[2] ? 1. : 0. ; } ;
+	auto phi = [&]( const Vec& x){ return ( x[0] > .75*c.box[0] ) ? 1. : 0. ; } ;
+//	auto phi = [&]( const Vec& x){ return ( x[2] > .5*c.box[2] ) ? 1. : 0. ; } ;
 
 	m_geo.generate( make_expr( phi ), c.nSamples, mesh );
 
@@ -47,6 +52,7 @@ void DynParticles::update(const Config &config, const Phase &phase )
 
 	const MeshType& mesh = phase.velocity.mesh() ;
 
+#pragma omp parallel for
 	for( size_t i = 0 ; i < n ; ++i ) {
 
 		const Vec &p0 =  m_geo.m_centers.col(i) ;
@@ -89,7 +95,7 @@ void DynParticles::update(const Config &config, const Phase &phase )
 			phase.sym_grad.get_sym_tensor( p0, Du );
 
 			grad = Du ;
-			// grad.setZero() ; //FIXME
+//			grad.setZero() ; //FIXME
 			phase.spi_grad.add_spi_tensor( p0, grad );
 
 			const Scalar DuT = ( Du - 1./3. * Du.trace() * Mat::Identity() ).norm()  ;
