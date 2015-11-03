@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+#include <unordered_map>
+
 namespace d6 {
 
 struct BoundaryInfo {
@@ -42,6 +44,22 @@ typedef std::vector< BoundaryInfo > BoundaryConditions ;
 struct BoundaryMapper {
 	virtual BoundaryInfo::Bc operator() ( const std::string &/*domain*/ ) const
 	{ return BoundaryInfo::Stick ; }
+};
+
+class StrBoundaryMapper : public BoundaryMapper
+{
+public:
+
+	explicit StrBoundaryMapper( const std::string & str ) ;
+
+	virtual BoundaryInfo::Bc operator() ( const std::string &domain ) const ;
+
+private:
+
+	BoundaryInfo::Bc from_string( const std::string &bc ) ;
+
+	typedef std::unordered_map< std::string, BoundaryInfo::Bc > Map ;
+	Map m_bc ;
 };
 
 } //ns d6

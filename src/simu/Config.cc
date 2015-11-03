@@ -23,9 +23,10 @@ Config::Config() :
 	fps(240), substeps(1), nFrames( 1 ),
 	box(1,1,1), res(10,10,10), nSamples(2),
 	volMass( 1.5e3 ),
-	viscosity( 1.e3 ),
+	viscosity( 1.e-3 ),
 	gravity( 0, 0, -9.81 ),
 	phiMax(1), mu(0),
+	boundary("cuve"),
 	output( true )
 {
 }

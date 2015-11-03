@@ -10,6 +10,8 @@
 #include "geo/Tensor.hh"
 #include "geo/Voxel.hh"
 
+#include "geo/BoundaryInfo.hh"
+
 using namespace d6 ;
 
 TEST( geo, grid )
@@ -197,3 +199,24 @@ TEST( geo, field_func )
 	}
 
 }
+
+TEST( geo, bc )
+{
+	{
+		StrBoundaryMapper mapper(" left:Slip  right:norMal \t bottom:free ") ;
+		EXPECT_EQ( BoundaryInfo::Stick, mapper("top") ) ;
+		EXPECT_EQ( BoundaryInfo::Slip, mapper("left") ) ;
+		EXPECT_EQ( BoundaryInfo::Normal, mapper("right") ) ;
+		EXPECT_EQ( BoundaryInfo::Free, mapper("bottom") ) ;
+	}
+	{
+		StrBoundaryMapper mapper("cuve") ;
+		EXPECT_EQ( BoundaryInfo::Normal, mapper("top") ) ;
+		EXPECT_EQ( BoundaryInfo::Slip, mapper("left") ) ;
+		EXPECT_EQ( BoundaryInfo::Slip, mapper("right") ) ;
+		EXPECT_EQ( BoundaryInfo::Slip, mapper("front") ) ;
+		EXPECT_EQ( BoundaryInfo::Slip, mapper("back") ) ;
+		EXPECT_EQ( BoundaryInfo::Stick, mapper("bottom") ) ;
+	}
+}
+

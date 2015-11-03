@@ -210,20 +210,6 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 
 }
 
-struct CuveBoundary: public BoundaryMapper
-{
-	virtual BoundaryInfo::Bc operator() ( const std::string & domain ) const
-	{
-		if( domain == "top")
-			return BoundaryInfo::Normal ;
-		if( domain == "bottom")
-			return BoundaryInfo::Stick ;
-
-		return BoundaryInfo::Slip ;
-	}
-
-};
-
 void PhaseSolver::step( const Config &config, Phase &phase)
 {
 	bogus::Timer timer ;
@@ -260,9 +246,7 @@ void PhaseSolver::step( const Config &config, Phase &phase)
 
 	// Matrices
 
-//	BoundaryMapper mapper ;
-	CuveBoundary mapper ;
-	mesh.make_bc( mapper, m_surfaceNodes ) ;
+	mesh.make_bc( StrBoundaryMapper( config.boundary ), m_surfaceNodes ) ;
 	PhaseMatrices matrices ;
 	assembleMatrices( config, mesh, phi_int, matrices );
 
