@@ -65,4 +65,10 @@ void Particles::resize(size_t n)
 	m_orient.resize( 6, n);
 }
 
+void Particles::log(const Event& event)
+{
+	LockGuard lock( m_log_mutex ) ;
+	m_log.push_back( event );
+}
+
 } //d6

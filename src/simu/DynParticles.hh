@@ -22,6 +22,8 @@ public:
 			   ) const ;
 
 	const Particles &geo() const { return m_geo ; }
+	Particles &geo() { return m_geo ; }
+
 	size_t count() const { return m_geo.count() ; }
 
 	void clamp_particle( size_t i, const MeshType &mesh ) ;

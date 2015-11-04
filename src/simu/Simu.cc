@@ -60,6 +60,7 @@ void Simu::run()
 
 		if( m_config.output )
 			dump( frame+1 ) ;
+		m_particles.geo().clear_log();
 	}
 
 	Log::Info() << "All done." << std::endl ;

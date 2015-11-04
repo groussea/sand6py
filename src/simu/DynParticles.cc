@@ -14,6 +14,7 @@
 #include <Eigen/Eigenvalues>
 
 #define SPLIT
+#define MERGE
 
 
 namespace d6 {
@@ -184,6 +185,12 @@ void DynParticles::read(std::vector<bool> &activeCells,
 	}
 }
 
+struct MergeInfo {
+	size_t  pid ;
+	Scalar  len ;
+	Vec		dir ;
+};
+
 void DynParticles::splitMerge( const MeshType & mesh )
 {
 
@@ -191,8 +198,12 @@ void DynParticles::splitMerge( const MeshType & mesh )
 	const std::size_t n = count() ;
 	const Scalar defLength = std::pow( m_meanVolume, 1./3 ) ;
 
+#ifdef MERGE
+	std::vector< std::vector< MergeInfo > > mg_hash( mesh.nCells() ) ;
+#endif
+
 #pragma omp parallel for
-	for(unsigned i = 0 ; i < n ; ++i)
+	for(size_t i = 0 ; i < n ; ++i)
 	{
 		if( m_geo.volumes()[i] < m_meanVolume / 64 )
 			continue ;
@@ -244,7 +255,18 @@ void DynParticles::splitMerge( const MeshType & mesh )
 					tensor_view( m_geo.m_frames.col(i) ).set( frame ) ;
 					tensor_view( m_geo.m_frames.col(j) ).set( frame ) ;
 
+					m_geo.log( Particles::Event{ Particles::Event::Split, i, j } );
+
 			}
+		} else if( evMax > 2*evMin ) {
+#ifdef MERGE
+			typename MeshType::Location loc ;
+			mesh.locate( m_geo.centers().col(i), loc );
+			MergeInfo mgi { i, evMin, es.eigenvectors().col(kMin) }  ;
+#pragma omp critical
+			mg_hash[ mesh.cellIndex( loc.cell ) ].push_back( mgi ) ;
+#endif
+
 		}
 
 	}
@@ -253,6 +275,87 @@ void DynParticles::splitMerge( const MeshType & mesh )
 		m_geo.m_count = Particles::s_MAX  ;
 
 	Log::Verbose() << arg( "Split: added %1 particles, tot %2", count()-n, count() ) << std::endl ;
+
+#ifdef MERGE
+
+	const size_t n_before_merge = count() ;
+	const size_t None = -1 ;
+	std::vector< size_t > mg_indices( count(), None ) ;
+	std::vector< size_t > mg_reloc( count() ) ;
+	std::iota(mg_reloc.begin(), mg_reloc.end(), 0);
+
+//	const Scalar dMin = .5 * m_diameter * m_diameter / 4 ;
+
+	for( size_t cidx = 0 ; cidx < mg_hash.size() ; ++ cidx ) {
+		const std::vector< MergeInfo >& list = mg_hash[cidx] ;
+		const unsigned m = list.size() ;
+		for( unsigned k = 0 ; k < m ; ++k ) {
+			if( mg_indices[list[k].pid] != None ) continue ;
+			for( unsigned l = 0 ; l < k ; ++ l ) {
+				if( mg_indices[list[l].pid] != None ) continue ;
+
+				const Vec pk = m_geo.centers().col( list[k].pid ) ;
+				const Vec pl = m_geo.centers().col( list[l].pid ) ;
+
+				const Scalar depl = std::fabs( list[k].dir.dot( list[l].dir ) ) * ( list[k].len + list[l].len ) ;
+
+				if( (pk - pl).squaredNorm() < depl*depl ) {
+					m_geo.log( Particles::Event{ Particles::Event::Merge, list[k].pid, list[l].pid } );
+					mg_indices[ list[k].pid ] = list[l].pid ;
+					break ;
+				}
+			}
+		}
+	}
+
+	for( size_t i = 0 ; i < mg_indices.size() ; ++ i ) {
+		if ( mg_indices[i] != None ) {
+			const size_t j = mg_indices[i] ;
+
+			const Vec pi = m_geo.centers().col( i ) ;
+			const Vec pj = m_geo.centers().col( j ) ;
+			const Scalar vi = m_geo.volumes()[i] ;
+			const Scalar vj = m_geo.volumes()[j] ;
+			const Vec bary = ( vi * pi + vj * pj ) / ( vi + vj ) ;
+
+			Mat fi, fj ;
+			tensor_view( m_geo.m_frames.col(i) ).get( fi ) ;
+			tensor_view( m_geo.m_frames.col(j) ).get( fj ) ;
+
+			Mat frame = ( ( fi + (pi - bary)*(pi - bary).transpose() ) * vi +
+						  ( fj + (pj - bary)*(pj - bary).transpose() ) * vj )
+					/ ( vi + vj ) ;
+			tensor_view( m_geo.m_frames.col(i) ).set( frame ) ;
+
+			m_geo.m_orient.col(i) = ( vi * m_geo.orient().col(i) + vj * m_geo.orient().col(j) ) / ( vi + vj ) ;
+
+//			m_velocities.col(i) = ( m_masses[i] * m_velocities.col(i) + m_masses[j] * m_velocities.col(j) ) / ( m_masses[i] + m_masses[j ] ) ;
+//			m_affine.col(i) = ( m_masses[i] * m_affine.col(i) + m_masses[j] * m_affine.col(j) ) / ( m_masses[i] + m_masses[j ] ) ;
+//			m_inertia[i] = ( m_masses[i] * m_inertia[i] + m_masses[j] * m_inertia[j] ) / ( m_masses[i] + m_masses[j ] ) ;
+
+			m_geo.m_volumes[i] += vj ;
+			m_geo.m_centers.col(i) = bary;
+
+			--m_geo.m_count ;
+
+			mg_reloc[ j ] = mg_reloc[ m_geo.m_count ] ;
+		}
+	}
+
+	for( size_t j = 0 ; j < m_geo.m_count ; ++ j ) {
+		size_t k = mg_reloc[j] ;
+
+		m_geo.m_volumes[j] = m_geo.m_volumes[k] ;
+		m_geo.m_centers.col(j) = m_geo.m_centers.col(k) ;
+		m_geo.m_orient.col(j) = m_geo.m_orient.col(k) ;
+		m_geo.m_frames.col(j) = m_geo.m_frames.col(k) ;
+
+	}
+
+	Log::Verbose() << arg( "Merge: removed %1 particles, tot %2", (n_before_merge-count()), count() ) << std::endl ;
+
+#endif
+
 #endif
 }
 
