@@ -372,11 +372,10 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 
 	{
 		// Compressability
-		DynVec q =  c.phiMax * matrices.S ;
-		q.array() -= fraction.array() * matrices.S.array();
-		q *= c.inv_dt() ;
-
-		q = q.cwiseMax( 0 ) ;
+		const DynVec q = ( ( c.phiMax - fraction.array() )
+						   * s_sqrt_23 * matrices.S.array()    // 1/d * Tr \tau = \sqrt{2}{d} \tau_N
+						   * c.inv_dt()
+						   ).max( 0 ) ;
 
 		component< 6 >( data.w, 0 ) += q ;
 	}
