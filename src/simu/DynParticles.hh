@@ -28,10 +28,12 @@ public:
 
 private:
 
+	void splitMerge( const MeshType & mesh ) ;
+
 	void resize( size_t n ) ;
 
 	Particles m_geo ;
-
+	Scalar m_meanVolume ;
 
 	Eigen::Matrix< Scalar, 9, Eigen::Dynamic > m_affine ;
 	Eigen::Matrix< Scalar, 1, Eigen::Dynamic > m_inertia ;

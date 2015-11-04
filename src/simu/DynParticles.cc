@@ -13,6 +13,8 @@
 
 #include <Eigen/Eigenvalues>
 
+#define SPLIT
+
 
 namespace d6 {
 
@@ -26,6 +28,8 @@ void DynParticles::generate(const Config &c, const MeshType &mesh)
 	m_geo.generate( Scenario::make( c )->generator(), c.nSamples, mesh );
 
 	m_affine.leftCols( count() ).setZero() ;
+
+	m_meanVolume = m_geo.volumes().segment( 0, m_geo.count() ).sum() / m_geo.count() ;
 }
 
 void DynParticles::clamp_particle(size_t i, const MeshType &mesh)
@@ -50,6 +54,7 @@ void DynParticles::update(const Config &config, const Phase &phase )
 	const std::size_t n = count() ;
 
 	const MeshType& mesh = phase.velocity.mesh() ;
+	splitMerge( mesh );
 
 #pragma omp parallel for
 	for( size_t i = 0 ; i < n ; ++i ) {
@@ -177,6 +182,78 @@ void DynParticles::read(std::vector<bool> &activeCells,
 			}
 		}
 	}
+}
+
+void DynParticles::splitMerge( const MeshType & mesh )
+{
+
+#ifdef SPLIT
+	const std::size_t n = count() ;
+	const Scalar defLength = std::pow( m_meanVolume, 1./3 ) ;
+
+#pragma omp parallel for
+	for(unsigned i = 0 ; i < n ; ++i)
+	{
+		if( m_geo.volumes()[i] < m_meanVolume / 64 )
+			continue ;
+		if( m_geo.m_count + 1 == Particles::s_MAX )
+			continue ;
+
+		Mat frame ;
+		tensor_view( m_geo.m_frames.col(i) ).get( frame ) ;
+
+		Eigen::SelfAdjointEigenSolver<Mat> es(frame);
+		Vec ev = es.eigenvalues().array().max(0).sqrt() ;
+
+		typename Mat::Index kMax = 0, kMin = 0 ;
+		const Scalar evMin = ev.minCoeff(&kMin) ;
+		const Scalar evMax = ev.maxCoeff(&kMax) ;
+
+		if( //ev.minCoeff() < 1.e-6
+				   evMax > evMin * 4.
+				&& evMax > 2 * defLength
+				)
+		{
+			// Split
+			size_t j = 0 ;
+#pragma omp atomic capture
+			j = m_geo.m_count++ ;
+
+			if( j < Particles::s_MAX ) {
+
+					m_geo.m_volumes[i] *= .5 ;
+					m_geo.m_volumes[j] = m_geo.m_volumes[i] ;
+
+					ev[kMax] *= .5 ;
+//					ev[kMin] = std::max( defLength / 64, ev[kMin] ) ;
+					ev[kMin] = std::max( evMin, evMax/4 ) ;
+
+					m_geo.m_centers.col(j) = m_geo.m_centers.col(i) - ev[kMax] * es.eigenvectors().col(kMax).normalized() ;
+					m_geo.m_centers.col(i) = m_geo.m_centers.col(i) + ev[kMax] * es.eigenvectors().col(kMax).normalized() ;
+
+					m_geo.m_velocities.col(j) = m_geo.m_velocities.col(i) ;
+					m_geo.m_orient.col(j) = m_geo.m_orient.col(i) ;
+					m_affine.col(j) = m_affine.col(i) ;
+					m_inertia(j) = m_inertia(i) ;
+
+					clamp_particle( i, mesh );
+					clamp_particle( j, mesh );
+
+					frame = es.eigenvectors() * ev.asDiagonal() * ev.asDiagonal() * es.eigenvectors().transpose() ;
+
+					tensor_view( m_geo.m_frames.col(i) ).set( frame ) ;
+					tensor_view( m_geo.m_frames.col(j) ).set( frame ) ;
+
+			}
+		}
+
+	}
+
+	if( m_geo.m_count > Particles::s_MAX )
+		m_geo.m_count = Particles::s_MAX  ;
+
+	Log::Verbose() << arg( "Split: added %1 particles, tot %2", count()-n, count() ) << std::endl ;
+#endif
 }
 
 void DynParticles::resize( size_t n )
