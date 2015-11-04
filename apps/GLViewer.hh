@@ -28,6 +28,12 @@ public:
 		set_frame( nextFrame ) ;
 		return nextFrame == m_currentFrame ;
 	}
+	bool prev_frame() {
+		unsigned nextFrame = m_currentFrame - 1  ;
+		if( m_currentFrame > 0 )
+			set_frame( nextFrame ) ;
+		return nextFrame == m_currentFrame ;
+	}
 
 protected :
   virtual void fastDraw();

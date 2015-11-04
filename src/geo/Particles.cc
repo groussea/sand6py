@@ -28,12 +28,20 @@ void Particles::generate(const ScalarExpr &expr, const unsigned nSamples, const 
 	for( typename MeshType::CellIterator it = mesh.cellBegin() ; it != mesh.cellEnd() ; ++it ) {
 		mesh.get_geo( *it, cellGeo ) ;
 
-		if( expr( cellGeo.center() ) == 0. )
-			continue ;
+//		if( expr( cellGeo.center() ) == 0. )
+//			continue ;
 
-		const Index n = cellGeo.sample_uniform( nSamples, m_count, m_centers, m_frames ) ;
-
+		Index n = cellGeo.sample_uniform( nSamples, m_count, m_centers, m_frames ) ;
 		const Scalar volume = cellGeo.volume() / n ;
+
+		for( size_t i = m_count ; i < m_count+n ; ) {
+			if( expr( m_centers.col(i) ) == 0. ) {
+				-- n ;
+				m_centers.col(i) = m_centers.col(m_count+n) ;
+				m_frames .col(i) = m_frames .col(m_count+n) ;
+			} else ++i ;
+		}
+
 		m_volumes.segment( m_count, n ).setConstant( volume ) ;
 
 		m_orient.block( 0, m_count, 1, n ).setConstant( 3 ) ; // Isotropic ori

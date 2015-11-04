@@ -10,5 +10,7 @@ simu/LinearSolver.hh
 simu/Phase.hh
 simu/PhaseSolver.cc
 simu/PhaseSolver.hh
+simu/Scenario.cc
+simu/Scenario.hh
 simu/Simu.cc
 simu/Simu.hh

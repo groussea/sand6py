@@ -245,7 +245,14 @@ void GLViewer::keyPressEvent(QKeyEvent *e)
 	switch (e->key())
 	{
 	case Qt::Key_I :
+	case Qt::Key_Period :
 		next_frame();
+		break ;
+	case Qt::Key_P :
+		prev_frame();
+		break ;
+	case Qt::Key_Home :
+		set_frame(0);
 		break ;
 	case Qt::Key_B:
 		m_enableBending = !m_enableBending ;

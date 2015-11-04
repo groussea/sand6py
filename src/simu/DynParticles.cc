@@ -3,6 +3,8 @@
 #include "Config.hh"
 #include "Phase.hh"
 
+#include "Scenario.hh"
+
 #include "geo/Tensor.hh"
 
 #include "utils/Log.hh"
@@ -21,10 +23,7 @@ DynParticles::DynParticles()
 
 void DynParticles::generate(const Config &c, const MeshType &mesh)
 {
-	auto phi = [&]( const Vec& x){ return ( x[0] > .75*c.box[0] ) ? 1. : 0. ; } ;
-//	auto phi = [&]( const Vec& x){ return ( x[2] > .5*c.box[2] ) ? 1. : 0. ; } ;
-
-	m_geo.generate( make_expr( phi ), c.nSamples, mesh );
+	m_geo.generate( Scenario::make( c )->generator(), c.nSamples, mesh );
 
 	m_affine.leftCols( count() ).setZero() ;
 }

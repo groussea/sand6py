@@ -10,12 +10,15 @@
 #include "geo/ScalarField.hh"
 #include "geo/TensorField.hh"
 
-void dump_frame( const d6::Offline& offline, const char* base_dir, unsigned frame )
+void dump_frame( const d6::Offline& offline, bool particles,
+				 const char* base_dir, unsigned frame )
 {
 
-	d6::VTKParticlesWriter particlesWriter( base_dir, offline.particles() ) ;
-	particlesWriter.startFile( "particles", frame ) ;
-	particlesWriter.dump_all() ;
+	if(particles) {
+		d6::VTKParticlesWriter particlesWriter( base_dir, offline.particles() ) ;
+		particlesWriter.startFile( "particles", frame ) ;
+		particlesWriter.dump_all() ;
+	}
 
 	d6::VTKFieldWriter fieldWriter( base_dir, offline.mesh() ) ;
 //	fieldWriter.setMode( d6::VTKWriter::Ascii );
@@ -41,12 +44,17 @@ int main( int argc, const char* argv[] ) {
 
 	bool all = false ;
 
+	bool particles = false ;
+
 	for( int i = 1 ; i < argc ; ++i )
 	{
 		if( argv[i][0] == '-' ){
 			switch(argv[i][1]) {
 			case 'a':
 				all = true ;
+				break ;
+			case 'p':
+				particles = true ;
 				break ;
 			case 'n':
 				if( ++i == argc ) break ;
@@ -66,7 +74,7 @@ int main( int argc, const char* argv[] ) {
 		if(! offline.load_frame( cur_frame ) )
 			return all?0:1 ;
 
-		dump_frame( offline, base_dir, cur_frame++ ) ;
+		dump_frame( offline, particles, base_dir, cur_frame++ ) ;
 
 	} while( all ) ;
 
