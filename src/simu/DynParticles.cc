@@ -236,8 +236,8 @@ void DynParticles::splitMerge( const MeshType & mesh )
 					m_geo.m_volumes[j] = m_geo.m_volumes[i] ;
 
 					ev[kMax] *= .5 ;
-//					ev[kMin] = std::max( defLength / 64, ev[kMin] ) ;
-					ev[kMin] = std::max( evMin, evMax/4 ) ;
+					ev[kMin] = std::max( defLength / 64, ev[kMin] ) ;
+//					ev[kMin] = std::max( evMin, evMax/4 ) ;
 
 					m_geo.m_centers.col(j) = m_geo.m_centers.col(i) - ev[kMax] * es.eigenvectors().col(kMax).normalized() ;
 					m_geo.m_centers.col(i) = m_geo.m_centers.col(i) + ev[kMax] * es.eigenvectors().col(kMax).normalized() ;
@@ -283,8 +283,6 @@ void DynParticles::splitMerge( const MeshType & mesh )
 	std::vector< size_t > mg_indices( count(), None ) ;
 	std::vector< size_t > mg_reloc( count() ) ;
 	std::iota(mg_reloc.begin(), mg_reloc.end(), 0);
-
-//	const Scalar dMin = .5 * m_diameter * m_diameter / 4 ;
 
 	for( size_t cidx = 0 ; cidx < mg_hash.size() ; ++ cidx ) {
 		const std::vector< MergeInfo >& list = mg_hash[cidx] ;

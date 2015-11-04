@@ -4,6 +4,8 @@
 
 #include "string.hh"
 
+#include <Eigen/Geometry>
+
 namespace d6 {
 
 void BoundaryInfo::velProj( Mat &proj ) const
@@ -17,13 +19,58 @@ void BoundaryInfo::velProj( Mat &proj ) const
 		proj = Mat::Identity() - normal * normal.transpose() ;
 		break ;
 	case BoundaryInfo::Normal:
-		proj = normal * normal.transpose() ;
+	case BoundaryInfo::Corner:
+		proj = normal.normalized() * normal.normalized().transpose() ;
 		break ;
 	case BoundaryInfo::Interior:
 	case BoundaryInfo::Free:
 		proj.setIdentity() ;
 		break ;
 	}
+}
+
+BoundaryInfo BoundaryInfo::combine( const BoundaryInfo& b1, const BoundaryInfo& b2 )
+{
+	if( b1.bc == Interior )	return b2 ;
+	if( b2.bc == Interior )	return b1 ;
+	if( b1.bc == Free )		return b2 ;
+	if( b2.bc == Free )		return b1 ;
+
+	if( b1.bc == Stick )	return b1 ;
+	if( b2.bc == Stick )	return b2 ;
+
+	const Scalar nd = std::fabs( b1.normal.dot(b2.normal) ) ;
+
+	if( b1.bc == b2.bc ||
+			(b1.bc == Normal && b2.bc == Corner) ||
+			(b1.bc == Corner && b2.bc == Normal)
+			) {
+		// Same constraints
+		if( std::fabs( 1-nd ) < 1.e-6 )
+			return b1 ;
+
+		// Incompatible free direction
+		if( b1.bc == Normal || b1.bc == Corner )
+			return BoundaryInfo( Stick, b1.normal ) ;
+
+		return BoundaryInfo( Corner, - b1.normal.cross( b2.normal ).normalized() ) ;
+	} else {
+
+		// Incompatible free direction
+		if( nd > 1.e-6 )
+			return BoundaryInfo( Stick, b1.normal ) ;
+
+		if( b1.bc == Normal || b1.bc == Corner )
+			return b1 ;
+
+		return b2 ;
+	}
+
+}
+
+void BoundaryInfo::combine( const Bc bc_, const Vec n )
+{
+	*this = combine( *this, BoundaryInfo( bc_, n ) ) ;
 }
 
 void BoundaryInfo::stressProj( Mat66 &proj ) const
@@ -97,6 +144,7 @@ void BoundaryInfo::stressProj( Mat66 &proj ) const
 
 		proj -= N1*N1.transpose() + N2*N2.transpose() + N3*N3.transpose() ;
 		break ;
+	case BoundaryInfo::Corner:
 	case BoundaryInfo::Interior:
 	case BoundaryInfo::Stick:
 		break ;

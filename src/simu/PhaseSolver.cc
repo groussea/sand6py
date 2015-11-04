@@ -217,6 +217,7 @@ void PhaseSolver::step( const Config &config, Phase &phase)
 	bogus::Timer timer ;
 
 	const MeshType& mesh = phase.fraction.mesh() ;
+	m_surfaceNodes.clear();
 	m_surfaceNodes.resize( mesh.nNodes() );
 
 #ifdef FULL_VOLUME_COMP

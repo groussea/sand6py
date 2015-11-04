@@ -17,7 +17,8 @@ struct BoundaryInfo {
 		Stick,   // u = 0
 		Slip,    // u.n = 0, d( (I - nn') u ).n = 0, (I - nn')sn = 0
 		Normal,  // (I -nn') u = 0, d ( u.n ).n = 0, (nn')sn = 0
-		Free     // d( u ).n = 0, sn = 0
+		Free,    // d( u ).n = 0, sn = 0
+		Corner
 	};
 
 	Bc bc ;
@@ -27,11 +28,18 @@ struct BoundaryInfo {
 		bc( Interior )
 	{}
 
+	BoundaryInfo( const Bc bc_, const Vec n )
+		: bc(bc_), normal(n)
+	{}
+
 	void set( const Bc bc_, const Vec n )
 	{
 		bc = bc_ ;
 		normal = n ;
 	}
+
+	void combine( const Bc bc_, const Vec n ) ;
+	static BoundaryInfo combine(const BoundaryInfo &b1, const BoundaryInfo &b2 ) ;
 
 	void    velProj( Mat &proj ) const ;
 	void   spinProj( Mat &proj ) const ;
