@@ -1,6 +1,8 @@
 #ifndef D6_PHASE_SOLVE_HH
 #define D6_PHASE_SOLVE_HH
 
+#include "ActiveIndices.hh"
+
 #include "geo/BoundaryInfo.hh"
 #include "geo/MeshBase.hh"
 
@@ -14,13 +16,22 @@ class DynParticles ;
 class Config ;
 struct Phase ;
 struct PhaseMatrices ;
+class RigidBody ;
+struct RigidBodyData ;
 
 class PhaseSolver {
 
 public:
-	explicit PhaseSolver( const DynParticles& particles ) ;
+	explicit PhaseSolver(
+			const DynParticles& particles
+			) ;
 
-	void step(const Config &config, Phase& phase ) ;
+	~PhaseSolver() ;
+
+	void step(const Config &config, Phase& phase,
+			  std::vector<RigidBody> &rigidBodies,
+			  std::vector<TensorField> &rbStresses
+			  ) ;
 
 private:
 
@@ -36,31 +47,11 @@ private:
 	void solveComplementarity(const Config&c, const PhaseMatrices& matrices , const DynVec &fraction,
 							  DynVec &u, Phase &phase) const ;
 
-	struct Active {
+	Index nSuppNodes() const
+	{
+		return m_totRbNodes ;
+	}
 
-		static const Index s_Inactive  ;
-
-		Index nNodes ;
-		typename MeshType::Cells cells ;
-		std::vector< Index > indices ;
-
-		Active()	 : nNodes( 0 ) {}
-
-		void reset( Index totNodes )
-		{
-			nNodes = 0 ;
-			cells.clear();
-			indices.assign( totNodes, s_Inactive );
-		}
-
-		Index count() const { return nNodes ; }
-		Index origSize() const { return indices.size() ; }
-
-		template < typename Derived >
-		void field2var( const FieldBase<Derived> &field, DynVec & var ) const ;
-		template < typename Derived >
-		void var2field( const DynVec & var, FieldBase<Derived> &field ) const ;
-	};
 
 	const DynParticles& m_particles ;
 
@@ -68,6 +59,9 @@ private:
 	Active m_couplingNodes ;
 
 	BoundaryConditions m_surfaceNodes ;
+
+	std::vector< RigidBodyData > m_rbData ;
+	Index m_totRbNodes ;
 };
 
 

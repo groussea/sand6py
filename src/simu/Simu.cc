@@ -2,10 +2,13 @@
 #include "Phase.hh"
 
 #include "Config.hh"
+#include "RigidBody.hh"
+
 #include "utils/Log.hh"
 #include "utils/File.hh"
 
 #include "geo/Grid.hh"
+#include "geo/LevelSet.hh"
 
 #include "geo/Particles.io.hh"
 #include <boost/archive/binary_oarchive.hpp>
@@ -24,6 +27,17 @@ Simu::Simu(const Config &config, const char *base_dir)
 	m_particles.generate( config, mesh() );
 
 	m_grains = new Phase( mesh() ) ;
+
+	// Rigid bodies
+//	LevelSet::Ptr plane = LevelSet::make_plane() ;
+//	plane->set_origin( Vec(0,0,1) ) ;
+
+//	m_rigidBodies.emplace_back( plane );
+
+	for( unsigned i = 0 ; i < m_rigidBodies.size() ; ++i ) {
+		m_rbStresses.emplace_back( mesh() );
+		m_rbStresses.back().set_zero() ;
+	}
 }
 
 Simu::~Simu()
@@ -71,7 +85,7 @@ void Simu::step()
 {
 	// TODO adapt mesh
 
-	m_solver.step( m_config, *m_grains ) ;
+	m_solver.step( m_config, *m_grains, m_rigidBodies, m_rbStresses ) ;
 
 	m_particles.update( m_config, *m_grains ) ;
 }

@@ -4,11 +4,13 @@
 #include "DynParticles.hh"
 #include "Config.hh"
 
+#include "RigidBody.hh"
+#include "RigidBodyData.hh"
+
 #include "FormBuilder.hh"
 #include "FormBuilder.impl.hh"
 
 #include "LinearSolver.hh"
-
 #include "solve/Primal.hh"
 
 #include "utils/Log.hh"
@@ -21,40 +23,6 @@
 
 namespace d6 {
 
-const Index PhaseSolver::Active::s_Inactive = -1 ;
-
-template < typename Derived >
-void PhaseSolver::Active::field2var( const FieldBase<Derived> &field, DynVec & var ) const
-{
-	const Index n = field.size() ;
-	constexpr Index D = FieldBase<Derived>::D ;
-
-	var.resize( count() * D ) ;
-#pragma omp parallel for
-	for( Index i = 0 ; i < n ; ++ i) {
-		const Index idx = indices[ i ] ;
-		if( idx != Active::s_Inactive ) {
-			Segmenter<D>::segment( var, idx ) = field[ i ] ;
-		}
-	}
-}
-
-template < typename Derived >
-void PhaseSolver::Active::var2field( const DynVec & var,  FieldBase<Derived> &field ) const
-{
-	const Index n = field.mesh().nNodes() ;
-	constexpr Index D = FieldBase<Derived>::D ;
-
-	field.set_zero();
-
-#pragma omp parallel for
-	for( Index i = 0 ; i < n ; ++ i) {
-		const Index idx = indices[ i ] ;
-		if( idx != Active::s_Inactive ) {
-			field[ i ] = Segmenter<D>::segment( var, idx ) ;
-		}
-	}
-}
 
 struct PhaseMatrices
 {
@@ -80,21 +48,34 @@ PhaseSolver::PhaseSolver(const DynParticles &particles)
 
 }
 
+PhaseSolver::~PhaseSolver()
+{
+}
+
 void PhaseSolver::computeProjectors( PhaseMatrices& mats ) const
 {
-	const Index m = m_phaseNodes.count() ;
+	const Index m  = m_phaseNodes.count() ;
+	const Index mc = nSuppNodes() ;
 
 	mats.Pvel.setRows( m );
 	mats.Pvel.reserve( m );
 
-	mats.Pstress.setRows( m );
-	mats.Pstress.reserve( m );
+	mats.Pstress.setRows( m+mc );
+	mats.Pstress.reserve( m+mc );
 
-	for( size_t i = 0 ; i < m_surfaceNodes.size() ; ++i  ) {
-		const Index idx = m_phaseNodes.indices[ i ] ;
-		if( idx != Active::s_Inactive ) {
-			m_surfaceNodes[i].   velProj( mats.   Pvel.insertBack( idx,idx ) ) ;
-			m_surfaceNodes[i].stressProj( mats.Pstress.insertBack( idx,idx ) ) ;
+	for( Index i = 0 ; i < m_phaseNodes.count() ; ++i  ) {
+		const Index idx = m_phaseNodes.revIndices[ i ] ;
+
+		m_surfaceNodes[idx].   velProj( mats.   Pvel.insertBack( i,i ) ) ;
+		m_surfaceNodes[idx].stressProj( mats.Pstress.insertBack( i,i ) ) ;
+	}
+
+	for( unsigned k = 0 ; k < m_rbData.size() ; ++k ) {
+		for( Index i = 0 ; i < m_rbData[k].nodes.count() ; ++i  ) {
+			const Index idx = m_rbData[k].nodes.revIndices[ i ] ;
+
+			m_surfaceNodes[idx].   velProj( mats.   Pvel.insertBack( i,i ) ) ;
+			m_surfaceNodes[idx].stressProj( mats.Pstress.insertBack( i,i ) ) ;
 		}
 	}
 
@@ -111,18 +92,11 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 	typedef const typename MeshType::Interpolation& Itp ;
 	typedef const typename MeshType::Derivatives& Dcdx ;
 
-	const Index m = m_phaseNodes.count() ;
+	const Index m  = m_phaseNodes.count() ;
 
 	const Scalar regul = 1.e-8 ;
 
 	computeProjectors( mats ) ;
-
-	// M_lumped
-//	mats.M_lumped.resize( 3*m ) ;
-//	DynMat3::MapType M_map( mats.M_lumped.data(), 3, m ) ;
-//	M_map.row( 0 ) = phiInt.flatten() ;
-//	M_map.row( 1 ) = phiInt.flatten() ;
-//	M_map.row( 2 ) = phiInt.flatten() ;
 
 	mats.M_lumped.setRows( m );
 	mats.M_lumped.setIdentity() ;
@@ -216,7 +190,9 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 
 }
 
-void PhaseSolver::step( const Config &config, Phase &phase)
+void PhaseSolver::step(const Config &config, Phase &phase,
+					   std::vector< RigidBody   >& rigidBodies,
+					   std::vector<TensorField > &rbStresses)
 {
 	bogus::Timer timer ;
 
@@ -265,13 +241,34 @@ void PhaseSolver::step( const Config &config, Phase &phase)
 	phiu_int.setZero() ;
 #endif
 
-	// Matrices
+	//Rigid bodies
+	m_rbData.clear();
+	for( unsigned i = 0 ; i < rigidBodies.size() ; ++i ) {
+		m_rbData.emplace_back( rigidBodies[i], rbStresses[i] );
+	}
 
+#pragma omp parallel for
+	for( unsigned i = 0 ; i < rigidBodies.size() ; ++i ) {
+		m_rbData[i].compute_active( m_phaseNodes, m_surfaceNodes ) ;
+	}
+
+	m_totRbNodes = 0 ;
+	for( unsigned i = 0 ; i < rigidBodies.size() ; ++i )
+	{
+		m_rbData[i].nodes.offset( m_totRbNodes + m_phaseNodes.count() ) ;
+		m_rbData[i].nodes.computeRevIndices() ;
+		m_totRbNodes += m_rbData.back().nodes.count() ;
+	}
+
+	// Matrices
 	mesh.make_bc( StrBoundaryMapper( config.boundary ), m_surfaceNodes ) ;
 	PhaseMatrices matrices ;
 	assembleMatrices( config, mesh, phi_int, matrices );
 
 	Log::Debug() << "Matrices assembled  at " << timer.elapsed() << std::endl ;
+
+
+
 	{
 #ifdef FULL_FEM
 		phi_int = matrices.S ;
@@ -351,8 +348,7 @@ void PhaseSolver::computeActiveNodes(
 	for( size_t i = 0 ; i < activeNodes.size() ; ++i ) {
 		if( activeNodes[i] > 0 ) {
 
-			m_phaseNodes.indices[i] = m_phaseNodes.nNodes ;
-			++ m_phaseNodes.nNodes ;
+			m_phaseNodes.indices[i] = m_phaseNodes.nNodes++ ;
 
 			m_surfaceNodes[i].bc = BoundaryInfo::Interior ;
 
@@ -365,6 +361,7 @@ void PhaseSolver::computeActiveNodes(
 		}
 	}
 
+	m_phaseNodes.computeRevIndices();
 }
 
 void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &matrices,

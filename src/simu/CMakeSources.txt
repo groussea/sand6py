@@ -1,3 +1,4 @@
+simu/ActiveIndices.cc
 simu/Config.cc
 simu/Config.hh
 simu/DynParticles.cc
@@ -10,6 +11,10 @@ simu/LinearSolver.hh
 simu/Phase.hh
 simu/PhaseSolver.cc
 simu/PhaseSolver.hh
+simu/RigidBody.cc
+simu/RigidBody.hh
+simu/RigidBodyData.cc
+simu/RigidBodyData.hh
 simu/Scenario.cc
 simu/Scenario.hh
 simu/Simu.cc

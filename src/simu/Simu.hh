@@ -9,6 +9,7 @@ namespace d6 {
 
 class Config ;
 struct Phase ;
+class RigidBody ;
 
 class Simu {
 
@@ -37,8 +38,12 @@ private:
 	const char* m_base_dir ;
 
 	DynParticles  m_particles ;
+
+	std::vector< RigidBody   > m_rigidBodies ;
+
 	MeshType*  m_mesh ;
 	Phase*     m_grains ;
+	std::vector< TensorField > m_rbStresses  ;
 
 	PhaseSolver m_solver ;
 };
