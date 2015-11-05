@@ -274,7 +274,7 @@ void DynParticles::splitMerge( const MeshType & mesh )
 	if( m_geo.m_count > Particles::s_MAX )
 		m_geo.m_count = Particles::s_MAX  ;
 
-	Log::Verbose() << arg( "Split: added %1 particles, tot %2", count()-n, count() ) << std::endl ;
+	Log::Debug() << arg( "Split: added %1 particles, tot %2", count()-n, count() ) << std::endl ;
 
 #ifdef MERGE
 
@@ -350,7 +350,7 @@ void DynParticles::splitMerge( const MeshType & mesh )
 
 	}
 
-	Log::Verbose() << arg( "Merge: removed %1 particles, tot %2", (n_before_merge-count()), count() ) << std::endl ;
+	Log::Debug() << arg( "Merge: removed %1 particles, tot %2", (n_before_merge-count()), count() ) << std::endl ;
 
 #endif
 

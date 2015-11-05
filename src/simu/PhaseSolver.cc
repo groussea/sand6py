@@ -18,7 +18,7 @@
 #include <bogus/Core/Utils/Timer.hpp>
 
 //#define FULL_FEM
-#define FULL_VOLUME_COMP
+//#define FULL_VOLUME_COMP
 
 namespace d6 {
 
@@ -106,6 +106,8 @@ void PhaseSolver::computeProjectors( PhaseMatrices& mats ) const
 void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, const DynVec &phiInt,
 								   PhaseMatrices& mats ) const
 {
+	bogus::Timer timer;
+
 	typedef const typename MeshType::Location& Loc ;
 	typedef const typename MeshType::Interpolation& Itp ;
 	typedef const typename MeshType::Derivatives& Dcdx ;
@@ -135,10 +137,14 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 		mats.M_lumped.block( i ) *= phiInt[i] ;
 	}
 
+	timer.reset() ;
+
 	FormBuilder builder( mesh ) ;
 	builder.reset( m );
 	builder.addToIndex( m_phaseNodes.cells, m_phaseNodes.indices, m_phaseNodes.indices );
 	builder.makeCompressed();
+
+	Log::Debug() << "Index computation: " << timer.elapsed() << std::endl ;
 
 	// S
 #ifndef FULL_VOLUME_COMP
@@ -166,6 +172,7 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 	mats.J.cloneIndex( builder.index() ) ;
 	mats.J.setBlocksToZero() ;
 
+	timer.reset() ;
 	builder.integrate_qp( m_phaseNodes.cells, [&]( Scalar w, Loc, Itp itp, Dcdx dc_dx )
 		{
 			FormBuilder:: addDuDv( mats.A, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
@@ -177,13 +184,16 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 
 		}
 	);
+	Log::Debug() << "Integrate grid: " << timer.elapsed() << std::endl ;
 
+	timer.reset() ;
 	builder.integrate_particle( m_particles.geo(), [&]( Scalar w, Loc, Itp itp, Dcdx dc_dx )
 		{
 			FormBuilder::addTauDu( mats.B, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
 			FormBuilder::addTauWu( mats.J, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
 		}
 	);
+	Log::Debug() << "Integrate particle: " << timer.elapsed() << std::endl ;
 
 	/////////////////
 #ifndef FULL_FEM
