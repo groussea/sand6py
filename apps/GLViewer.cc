@@ -7,6 +7,7 @@
 #include "geo/Grid.hh"
 
 #include "utils/Log.hh"
+#include "utils/File.hh"
 
 #include <Eigen/Eigenvalues>
 
@@ -14,6 +15,8 @@
 
 #include <QKeyEvent>
 #include <QApplication>
+
+#include <iomanip>
 
 namespace d6 {
 
@@ -134,6 +137,11 @@ void GLViewer::draw()
 		glDisable (GL_BLEND);
 	}
 
+	if( m_snapshotting )
+		snap() ;
+
+//	Log::Debug() << "Current fps " << currentFPS() << std::endl ;
+
 }
 
 void GLViewer::drawWithNames()
@@ -161,6 +169,7 @@ void GLViewer::init()
   // Restore previous viewer state.
   restoreStateFromFile();
 
+  // Camera
   const Vec& box = m_offline.mesh().box() ;
   const qglviewer::Vec qgl_box( box[0], box[1], box[2] ) ;
   const qglviewer::Vec qgl_ori(0,0,0) ;
@@ -257,12 +266,38 @@ void GLViewer::keyPressEvent(QKeyEvent *e)
 	case Qt::Key_B:
 		m_enableBending = !m_enableBending ;
 		break ;
+	case Qt::Key_R:
+		m_snapshotting = !m_snapshotting ;
+		break ;
 	case Qt::Key_Q :
 		QApplication::exit( 0 ) ;
 	default:
 		QGLViewer::keyPressEvent(e);
 	}
 	updateGL() ;
+}
+
+void GLViewer::snap() {
+	if( m_lastSnapped != m_currentFrame ) {
+
+		//Snaps
+		FileInfo snap_dir( FileInfo( m_offline.base_dir() ).filePath("snaps") ) ;
+		FileInfo snap_file( snap_dir.filePath("qgl-%1.png") ) ;
+		snap_file.makePath() ;
+
+		std::stringstream num ;
+		num << std::setfill('0') << std::setw(4) <<  m_currentFrame ;
+		const std::string fileName = arg(snap_file.path(),  num.str() ) ;
+
+		QImage snapshot = grabFrameBuffer( true );
+		bool ok = snapshot.save( QString( fileName.c_str() ), "PNG" );
+		if( ok ) {
+			Log::Verbose() << "Saved snap of frame " << m_currentFrame << " on " << fileName << std::endl ;
+		} else {
+			Log::Error() << "Failed snapping frame " << m_currentFrame << " on " << fileName << std::endl ;
+		}
+		m_lastSnapped = m_currentFrame ;
+	}
 }
 
 } //d6

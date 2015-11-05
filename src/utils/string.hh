@@ -50,29 +50,48 @@ bool split_on_next_marker ( const std::string &src, std::string &first_part, std
 
 //!
 template< typename T >
-std::string arg( const std::string &src, const T &replacement )
+std::ostream& farg( std::ostream &os, const std::string &src, const T &replacement )
 {
 	std::string p1, p2 ;
 	if( split_on_next_marker( src, p1, p2 ) )
 	{
-		std::stringstream os( std::stringstream::out ) ;
 		os << p1 << replacement << p2 ;
-		return os.str() ;
 	}
-	return src ;
+	return os ;
+}
+
+template< typename T >
+std::stringstream& farg( std::stringstream &os, const T &replacement )
+{
+	std::string src = os.str() ;
+	os.str("") ;
+	farg< T >( os, src, replacement ) ;
+	return os ;
+}
+
+template< typename T >
+std::string arg( const std::string &src, const T &replacement )
+{
+	std::stringstream os( std::stringstream::out ) ;
+	os.str( src );
+	return farg<T>( os, replacement).str() ;
 }
 //! Same with two arguments
 template< typename T1, typename T2 >
 std::string arg( const std::string &src, const T1 &r1, const T2& r2 )
 {
-  return arg< T2 >(arg< T1 >( src, r1 ), r2 ) ;
+	std::stringstream os( std::stringstream::out ) ;
+	os.str( src );
+	return farg< T2 >( farg< T1 >( os, r1 ), r2 ).str() ;
 }
 
 //! Same with three arguments
 template< typename T1, typename T2, typename T3 >
 std::string arg3( const std::string &src, const T1 &r1, const T2& r2, const T3& r3 )
 {
-  return arg< T3 >(arg< T1 >( src, r1, r2 ), r3 ) ;
+	std::stringstream os( std::stringstream::out ) ;
+	os.str( src );
+	return farg< T3 >( farg< T2 >( farg< T1 >( os, r1 ), r2 ), r3 ).str() ;
 }
 
 // Templated comversion functions using operator>>

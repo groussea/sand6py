@@ -16,7 +16,8 @@ public:
 
 	GLViewer( Offline & offline ) :
 		m_offline( offline ), m_currentFrame(-1),
-		m_enableBending( false )
+		m_enableBending( false ), m_snapshotting(false),
+		m_lastSnapped( m_currentFrame )
 	{
 
 	}
@@ -48,10 +49,14 @@ protected :
 private:
 	void update_buffers() ;
 
+	void snap() ;
+
 	Offline& m_offline ;
 	unsigned m_currentFrame ;
 
-	bool m_enableBending ;
+	bool 	 m_enableBending ;
+	bool 	 m_snapshotting ;
+	unsigned m_lastSnapped ;
 
 	gl::VertexBuffer3d m_centers ;
 	gl::VertexBuffer4f m_colors  ;

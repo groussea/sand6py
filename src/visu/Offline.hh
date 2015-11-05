@@ -22,6 +22,10 @@ public:
 	const MeshType &mesh() const { return *m_mesh ; }
 	const Phase &grains() const { return *m_grains ; }
 
+	const char* base_dir() const {
+		return m_base_dir ;
+	}
+
 private:
 	const char* m_base_dir ;
 
