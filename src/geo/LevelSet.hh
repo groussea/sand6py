@@ -20,6 +20,10 @@ public:
 	Scalar eval_at( const Vec& x ) const ;
 	void   grad_at( const Vec& x, Vec& grad ) const ;
 
+	const Vec& origin() const {
+		return m_origin ;
+	}
+
 	//Constructors
 	static Ptr make_sphere( ) ;
 	static Ptr make_plane( ) ;

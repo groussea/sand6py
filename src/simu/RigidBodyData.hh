@@ -18,7 +18,7 @@ struct RigidBodyData
 	void grad_phi( const Vec &x, Vec &grad ) const ;
 
 	void compute_active( const Active& phaseNodes, BoundaryConditions &bc ) ;
-	void compute_fraction( ) ;
+	void assemble_matrices( const Active& phaseNodes, Index totNodes ) ;
 
 	RigidBody&   rb ;
 	TensorField& stresses ;
@@ -29,6 +29,9 @@ struct RigidBodyData
 	FormMat<6,3>::Type	projection ;
 
 	DynVec fraction ;
+
+private:
+	void integrate(const Active& phaseNodes, Index totNodes  ) ;
 
 };
 

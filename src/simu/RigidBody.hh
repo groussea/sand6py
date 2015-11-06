@@ -28,6 +28,10 @@ public:
 
 	void move( const Scalar dt ) const ;
 
+	const Vec6 &velocities() const {
+		return m_velocity ;
+	}
+
 private:
 	std::unique_ptr< LevelSet > m_levelSet ;
 

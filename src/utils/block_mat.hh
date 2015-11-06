@@ -10,6 +10,7 @@ template < Index Rows, Index Cols >
 struct FormMat {
 	typedef Eigen::Matrix< Scalar, Rows, Cols > BlockT ;
 	typedef bogus::SparseBlockMatrix< BlockT > Type ;
+	typedef bogus::SparseBlockMatrix< BlockT, bogus::UNCOMPRESSED > UncompressedType ;
 	typedef bogus::SparseBlockMatrix< BlockT, bogus::SYMMETRIC > SymType ;
 };
 

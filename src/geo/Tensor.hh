@@ -117,6 +117,24 @@ TensorView< typename Derived::ConstMapType > tensor_view( const Eigen::MatrixBas
 	return TensorView< typename Derived::ConstMapType >( Derived::Map(vec.derived().data(), vec.size()) ) ;
 }
 
+// mat * a == a ^ x
+template <typename Derived>
+void make_cross_mat( const Vec& x, const Eigen::MapBase< Derived, Eigen::WriteAccessors >& map )
+{
+	Derived mat = map.derived() ;
+	mat(0,0) =  0. ;
+	mat(1,0) = -x[2] ;
+	mat(2,0) =  x[1] ;
+	mat(0,1) =  x[2] ;
+	mat(1,1) =  0. ;
+	mat(2,1) = -x[0] ;
+	mat(0,2) = -x[1] ;
+	mat(1,2) =  x[0] ;
+	mat(2,2) =  0. ;
+}
+inline void make_cross_mat( const Vec& x, Mat& mat ) {
+	return make_cross_mat( x, mat.block<3,3>(0,0) ) ;
+}
 
 } //d6
 

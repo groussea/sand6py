@@ -62,8 +62,10 @@ void Simu::run()
 
 		for( unsigned s = 0 ; s < m_config.substeps ; ++ s ) {
 			bogus::Timer timer ;
-			Log::Verbose() << arg( "Step %1/%2", s+1, m_config.substeps ) << std::endl ;
+			const Scalar t = (frame * m_config.substeps + s ) * m_config.dt() ;
+			Log::Verbose() << arg3( "Step %1/%2 \t t=%3", s+1, m_config.substeps, t ) << std::endl ;
 
+			Scenario::parse( m_config )->update( *this, t ) ;
 			step() ;
 
 			Log::Verbose() << arg( "Step done in %1 s", timer.elapsed() ) << std::endl ;
@@ -87,6 +89,10 @@ void Simu::step()
 	m_solver.step( m_config, *m_grains, m_rigidBodies, m_rbStresses ) ;
 
 	m_particles.update( m_config, *m_grains ) ;
+
+	for( RigidBody& rb: m_rigidBodies ) {
+		rb.move( m_config.dt() );
+	}
 }
 
 void Simu::dump( unsigned frame ) const

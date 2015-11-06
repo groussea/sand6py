@@ -12,6 +12,8 @@
 
 #include "geo/BoundaryInfo.hh"
 
+#include <Eigen/Geometry>
+
 using namespace d6 ;
 
 TEST( geo, grid )
@@ -220,3 +222,14 @@ TEST( geo, bc )
 	}
 }
 
+TEST( geo, cross )
+{
+	const Vec x ( 1, 2, 3 ) ;
+	Mat mat ;
+	make_cross_mat( x, mat ) ;
+
+	ASSERT_DOUBLE_EQ( (mat*x).norm(), 0. ) ;
+
+	Vec test( -5, 12, 4) ;
+	ASSERT_TRUE( (mat * test).isApprox( test.cross(x) ) ) ;
+}

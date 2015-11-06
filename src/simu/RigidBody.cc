@@ -10,6 +10,10 @@ RigidBody::RigidBody(std::unique_ptr<LevelSet> &ls )
 	m_velocity.setZero() ;
 }
 
+Vec RigidBody::velocity_at(const Vec &x) const
+{
+	return m_velocity.head<3>() + m_velocity.tail<3>().cross( x ) ;
+}
 
 void RigidBody::move(const Scalar dt) const
 {

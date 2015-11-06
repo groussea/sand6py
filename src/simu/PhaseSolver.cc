@@ -176,29 +176,7 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 #pragma omp parallel for if( rbData.size() > 1)
 	for( unsigned k = 0 ; k < rbData.size() ; ++k )
 	{
-		RigidBodyData& rb = rbData[k] ;
-
-		FormBuilder builder( mesh ) ;
-		builder.reset( m+mc );
-		builder.addToIndex( rb.nodes.cells, m_phaseNodes.indices, m_phaseNodes.indices );
-		builder.addToIndex( rb.nodes.cells,     rb.nodes.indices, m_phaseNodes.indices );
-		builder.makeCompressed();
-
-		rb.jacobian.clear() ;
-		rb.jacobian.setRows( m+mc );
-		rb.jacobian.setCols(m);
-		rb.jacobian.cloneIndex( builder.index() ) ;
-		rb.jacobian.setBlocksToZero() ;
-
-		builder.integrate_qp( rb.nodes.cells, [&]( Scalar w, Loc loc, Itp itp, Dcdx )
-		{
-			Vec dphi_dx ;
-			rb.grad_phi( mesh.pos( loc ), dphi_dx ) ;
-
-			FormBuilder:: addUTauGphi( rb.jacobian, w, itp, dphi_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
-			FormBuilder:: addUTauGphi( rb.jacobian, w, itp, dphi_dx,     rb.nodes.indices, m_phaseNodes.indices ) ;
-		}
-	);
+		rbData[k].assemble_matrices( m_phaseNodes, m+mc ) ;
 	}
 	Log::Debug() << "Integrate rbs: " << timer.elapsed() << std::endl ;
 
@@ -290,7 +268,6 @@ void PhaseSolver::step(const Config &config, Phase &phase,
 #pragma omp parallel for
 	for( unsigned i = 0 ; i < rigidBodies.size() ; ++i ) {
 		rbData[i].compute_active( m_phaseNodes, m_surfaceNodes ) ;
-		rbData[i].compute_fraction() ;
 		rbData[i].nodes.computeRevIndices() ;
 	}
 
@@ -423,11 +400,13 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 
 		// FIXME bogus-bug
 //		data.H -= matrices.Pstress * ( rb.jacobian * matrices.M_lumped_inv_sqrt ) ;
-
 		typename FormMat<6,3>::Type JM =
 				matrices.Pstress * ( rb.jacobian * matrices.M_lumped_inv_sqrt )  ;
 		data.H -= JM ;
-		data.w -= matrices.Pstress * DynVec( rb.jacobian * u ) ;
+
+		const DynVec delta_u = u - rb.projection.transpose() * rb.rb.velocities() ;
+
+		data.w -= matrices.Pstress * DynVec( rb.jacobian * delta_u ) ;
 
 		for( Index i = 0 ; i < rb.nodes.count() ; ++i ) {
 			totFraction( m_phaseNodes.indices[ rb.nodes.revIndices[i] ] ) += rb.fraction[i] ;
