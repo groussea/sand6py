@@ -11,6 +11,10 @@
 
 namespace d6 {
 
+RigidBodyData::RigidBodyData( RigidBody& rb_, TensorField &s )
+	: rb(rb_), stresses(s)
+{
+}
 
 Scalar RigidBodyData::phi( const Vec &x ) const
 {

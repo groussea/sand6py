@@ -259,6 +259,7 @@ void PhaseSolver::step(const Config &config, Phase &phase,
 		m_rbData[i].nodes.computeRevIndices() ;
 		m_totRbNodes += m_rbData.back().nodes.count() ;
 	}
+	Log::Debug() << "Tot coupling nodes: " << nSuppNodes() << std::endl ;
 
 	// Matrices
 	mesh.make_bc( StrBoundaryMapper( config.boundary ), m_surfaceNodes ) ;

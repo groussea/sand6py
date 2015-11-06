@@ -1,4 +1,5 @@
 simu/ActiveIndices.cc
+simu/ActiveIndices.hh
 simu/Config.cc
 simu/Config.hh
 simu/DynParticles.cc

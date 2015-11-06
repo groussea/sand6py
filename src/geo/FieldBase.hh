@@ -47,7 +47,7 @@ public:
 	template < typename Func >
 	Derived& operator= ( const FieldFuncBase< Func, D, typename Traits::MeshType > & f )
 	{
-		assert( f.field.size() == size() ) ;
+		assert( f.size() == size() ) ;
 		#pragma omp parallel for
 		for( Index  i = 0 ; i < size() ; ++i ) {
 			f.eval_at_node( i, segment(i) );

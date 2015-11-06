@@ -27,7 +27,8 @@ void Active::offset(const Index o)
 {
 #pragma omp parallel for
 	for( size_t i = 0 ; i < indices.size() ; ++i  ) {
-		indices[i] += o ;
+		if( indices[i] != Active::s_Inactive )
+			indices[i] += o ;
 	}
 }
 

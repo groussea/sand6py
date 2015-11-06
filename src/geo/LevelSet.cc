@@ -15,11 +15,11 @@ struct SphereLevelSet : public LevelSet
 struct PlaneLevelSet : public LevelSet
 {
 	virtual Scalar eval_local(const Vec &x) const {
-		return - x[0] ;
+		return - x[2] ;
 	}
 
-	virtual Vec grad_local(const Vec &x) const {
-		return Vec(-1, 0, 0) ;
+	virtual Vec grad_local(const Vec & ) const {
+		return Vec(0, 0, -1) ;
 	}
 };
 

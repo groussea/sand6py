@@ -12,9 +12,11 @@ class RigidBody ;
 
 struct RigidBodyData
 {
-	RigidBodyData( RigidBody& rb_, TensorField &s )
-		: rb(rb_), stresses(s)
-	{}
+	RigidBodyData( RigidBody& rb_, TensorField &s ) ;
+
+	Scalar phi( const Vec &x ) const ;
+
+	void compute_active( const Active& phaseNodes, BoundaryConditions &bc ) ;
 
 	RigidBody&   rb ;
 	TensorField& stresses ;
@@ -24,9 +26,6 @@ struct RigidBodyData
 	FormMat<6,3>::Type	m_jacobian ;
 	FormMat<6,3>::Type	m_projection ;
 
-	Scalar phi( const Vec &x ) const ;
-
-	void compute_active( const Active& phaseNodes, BoundaryConditions &bc ) ;
 };
 
 } //d6

@@ -21,6 +21,10 @@ struct UnaryFieldFunc : public FieldFuncBase< Derived, D, MeshT >
 		: Base( field.mesh() ), m_field(field)
 	{}
 
+	Index size( ) const {
+		return m_field.size() ;
+	}
+
 protected:
 	const FieldType& m_field  ;
 };

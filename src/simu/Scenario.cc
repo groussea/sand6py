@@ -52,7 +52,7 @@ struct RbTestScenar : public Scenario {
 	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const
 	{
 		LevelSet::Ptr plane = LevelSet::make_plane() ;
-		plane->set_origin( Vec(0,0,1) ) ;
+		plane->set_origin( Vec(0,0,0) ) ;
 
 		rbs.emplace_back( plane );
 	}
@@ -91,8 +91,8 @@ struct ScenarioBuilder {
 
 	std::unique_ptr< Scenario > make( const std::string& str ) const {
 		std::unique_ptr< Scenario > ptr ;
-		for( unsigned k = m_factories.size() - 1; k >= 0 ; --k ) {
-			ptr = m_factories[k]->make( str ) ;
+		for( unsigned k = m_factories.size(); k ; --k ) {
+			ptr = m_factories[k-1]->make( str ) ;
 			if( ptr )
 				break ;
 		}

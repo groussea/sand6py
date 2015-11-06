@@ -27,6 +27,10 @@ struct FieldFuncBase
 	{
 		return static_cast< const Derived& >(*this).eval_at_node(i, v) ;
 	}
+	Index size( ) const
+	{
+		return static_cast< const Derived& >(*this).size() ;
+	}
 
 	const MeshType& mesh() const { return m_mesh ; }
 
