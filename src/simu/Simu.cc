@@ -2,6 +2,7 @@
 #include "Phase.hh"
 
 #include "Config.hh"
+#include "Scenario.hh"
 #include "RigidBody.hh"
 
 #include "utils/Log.hh"
@@ -29,10 +30,7 @@ Simu::Simu(const Config &config, const char *base_dir)
 	m_grains = new Phase( mesh() ) ;
 
 	// Rigid bodies
-//	LevelSet::Ptr plane = LevelSet::make_plane() ;
-//	plane->set_origin( Vec(0,0,1) ) ;
-
-//	m_rigidBodies.emplace_back( plane );
+	Scenario::parse( config )->add_rigid_bodies( m_rigidBodies ) ;
 
 	for( unsigned i = 0 ; i < m_rigidBodies.size() ; ++i ) {
 		m_rbStresses.emplace_back( mesh() );

@@ -26,7 +26,7 @@ DynParticles::DynParticles()
 
 void DynParticles::generate(const Config &c, const MeshType &mesh)
 {
-	m_geo.generate( Scenario::make( c )->generator(), c.nSamples, mesh );
+	m_geo.generate( Scenario::parse( c )->generator(), c.nSamples, mesh );
 
 	m_affine.leftCols( count() ).setZero() ;
 

@@ -1,11 +1,16 @@
 #include "Scenario.hh"
 
 #include "Config.hh"
+#include "RigidBody.hh"
+
+#include "geo/LevelSet.hh"
 
 #include "utils/string.hh"
 #include "utils/Log.hh"
 
 namespace d6 {
+
+// Default scenars
 
 struct RayleighScenar : public Scenario {
 	Scalar particle_density( const Vec &x ) const {
@@ -28,8 +33,7 @@ struct BridsonScenar : public Scenario {
 	Vec center ;
 	Scalar radius ;
 
-	virtual void set_params( const Params& params ) {
-		Scenario::set_params( params ) ;
+	virtual void init( const Params& ) {
 		center = Vec( .75*m_config->box[0], .75*m_config->box[1], .5*m_config->box[2] ) ;
 		radius = .125 * m_config->box[0] ;
 	}
@@ -40,19 +44,73 @@ struct BridsonScenar : public Scenario {
 	}
 };
 
-std::unique_ptr< Scenario > Scenario::make( const std::string& str )
+struct RbTestScenar : public Scenario {
+	Scalar particle_density( const Vec &x ) const {
+		return ( x[2] >  .5*m_config->box[2] ) ? 1. : 0. ;
+	}
+
+	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const
+	{
+		LevelSet::Ptr plane = LevelSet::make_plane() ;
+		plane->set_origin( Vec(0,0,1) ) ;
+
+		rbs.emplace_back( plane );
+	}
+};
+
+
+// Factories & stuff
+
+struct DefaultScenarioFactory : public ScenarioFactory
 {
-	if( str == "rayleigh")
-		return std::unique_ptr< Scenario >( new RayleighScenar() ) ;
-	if( str == "collapse")
-		return std::unique_ptr< Scenario >( new CollapseScenar() ) ;
-	if( str == "bridson")
-		return std::unique_ptr< Scenario >( new BridsonScenar() ) ;
+	std::unique_ptr< Scenario > make( const std::string & str ) const
+	{
+		if( str == "rayleigh")
+			return std::unique_ptr< Scenario >( new RayleighScenar() ) ;
+		if( str == "collapse")
+			return std::unique_ptr< Scenario >( new CollapseScenar() ) ;
+		if( str == "bridson")
+			return std::unique_ptr< Scenario >( new BridsonScenar() ) ;
+		if( str == "rb_test")
+			return std::unique_ptr< Scenario >( new RbTestScenar() ) ;
 
-	return std::unique_ptr< Scenario >( new BedScenar() ) ;
-}
+		return std::unique_ptr< Scenario >( new BedScenar() ) ;
+	}
+} ;
 
-std::unique_ptr< Scenario > Scenario::make( const Config& config )
+struct ScenarioBuilder {
+
+	static ScenarioBuilder& instance() {
+		static ScenarioBuilder s_instance ;
+		return s_instance ;
+	}
+
+	void add( const ScenarioFactory& factory ) {
+		m_factories.push_back( &factory );
+	}
+
+	std::unique_ptr< Scenario > make( const std::string& str ) const {
+		std::unique_ptr< Scenario > ptr ;
+		for( unsigned k = m_factories.size() - 1; k >= 0 ; --k ) {
+			ptr = m_factories[k]->make( str ) ;
+			if( ptr )
+				break ;
+		}
+		assert( ptr ) ;
+		return ptr ;
+	}
+
+private:
+	ScenarioBuilder()
+	{
+		add(m_defaultFactory) ;
+	}
+
+	DefaultScenarioFactory m_defaultFactory ;
+	std::vector< const ScenarioFactory* > m_factories ;
+};
+
+std::unique_ptr< Scenario > Scenario::parse( const Config& config )
 {
 
 	std::istringstream in( config.scenario ) ;
@@ -61,7 +119,7 @@ std::unique_ptr< Scenario > Scenario::make( const Config& config )
 
 	in >> line ;
 
-	std::unique_ptr< Scenario > pScenar = make(canonicalize(line)) ;
+	std::unique_ptr< Scenario > pScenar = ScenarioBuilder::instance().make( canonicalize(line) ) ;
 	pScenar->m_config = &config ;
 
 	Params params ;
@@ -73,9 +131,14 @@ std::unique_ptr< Scenario > Scenario::make( const Config& config )
 		}
 	}
 
-	pScenar->set_params( params ) ;
+	pScenar->init( params ) ;
 
 	return pScenar ;
+}
+
+void Scenario::register_factory( const ScenarioFactory& factory )
+{
+	ScenarioBuilder::instance().add( factory ) ;
 }
 
 } //d6
