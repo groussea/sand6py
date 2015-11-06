@@ -55,6 +55,27 @@ void FormBuilder::makeCompressed()
 	}
 }
 
+void FormBuilder::reset(Index rows)
+{
+	m_data.clear();
+	m_data.resize( rows );
+	m_compressed.outer.clear() ;
+}
+
+void FormBuilder::addRows( Index rows )
+{
+	m_data.resize( m_data.size() + rows );
+
+	const Index old = m_compressed.outer.size() ;
+	if( old > 0  )
+	{
+		m_compressed.outer.resize( old + rows ) ;
+		for( Index i = 0 ; i < rows ; ++i  ) {
+			m_compressed.outer[ old+i ] = m_compressed.outer[ old-1 ] ;
+		}
+	}
+}
+
 /*
  *
  * D( u )
@@ -107,34 +128,35 @@ void FormBuilder::addTauDu( FormMat<6,3>::Type& A, Scalar w, Itp itp, Dcdx dc_dx
 
 #pragma omp parallel for
 	for( int k = 0 ; k < MeshType::NV ; ++k ) {
+		const Scalar m = w * itp.coeffs[k] ;
 		for( int j = 0 ; j < MeshType::NV ; ++j ) {
 			Block &b = A.block( rowIndices[itp.nodes[k]], colIndices[itp.nodes[j]] ) ;
 
 			// a * sqrt2_3 * (dux_dx + duy_dy + duz_dz)
-			b(0,0) += w * s_sqrt_23 * itp.coeffs[k] * dc_dx(j, 0) ;
-			b(0,1) += w * s_sqrt_23 * itp.coeffs[k] * dc_dx(j, 1) ;
-			b(0,2) += w * s_sqrt_23 * itp.coeffs[k] * dc_dx(j, 2) ;
+			b(0,0) += m * s_sqrt_23 * dc_dx(j, 0) ;
+			b(0,1) += m * s_sqrt_23 * dc_dx(j, 1) ;
+			b(0,2) += m * s_sqrt_23 * dc_dx(j, 2) ;
 
 			// b * (dux_dx - duy_dy )
-			b(1,0) += w * itp.coeffs[k] * dc_dx(j, 0) ;
-			b(1,1) -= w * itp.coeffs[k] * dc_dx(j, 1) ;
+			b(1,0) += m * dc_dx(j, 0) ;
+			b(1,1) -= m * dc_dx(j, 1) ;
 
 			// c * isqrt_3 * ( -dux_dx - duy_dy + 2*duz_dz)
-			b(2,0) -= w * s_isqrt_3 * itp.coeffs[k] * dc_dx(j, 0) ;
-			b(2,1) -= w * s_isqrt_3 * itp.coeffs[k] * dc_dx(j, 1) ;
-			b(2,2) += w * s_isqrt_3 * itp.coeffs[k] * dc_dx(j, 2) * 2;
+			b(2,0) -= m * s_isqrt_3 * dc_dx(j, 0) ;
+			b(2,1) -= m * s_isqrt_3 * dc_dx(j, 1) ;
+			b(2,2) += m * s_isqrt_3 * dc_dx(j, 2) * 2;
 
 			// d * ( dux_dy + duy_dx )
-			b(3,0) += w * itp.coeffs[k] * dc_dx(j, 1) ;
-			b(3,1) += w * itp.coeffs[k] * dc_dx(j, 0) ;
+			b(3,0) += m * dc_dx(j, 1) ;
+			b(3,1) += m * dc_dx(j, 0) ;
 
 			// e * ( dux_dz + duz_dx )
-			b(4,0) += w * itp.coeffs[k] * dc_dx(j, 2) ;
-			b(4,2) += w * itp.coeffs[k] * dc_dx(j, 0) ;
+			b(4,0) += m * dc_dx(j, 2) ;
+			b(4,2) += m * dc_dx(j, 0) ;
 
 			// f * ( duz_dy + duy_dz )
-			b(5,2) += w * itp.coeffs[k] * dc_dx(j, 1) ;
-			b(5,1) += w * itp.coeffs[k] * dc_dx(j, 2) ;
+			b(5,2) += m * dc_dx(j, 1) ;
+			b(5,1) += m * dc_dx(j, 2) ;
 		}
 	}
 }
@@ -145,34 +167,35 @@ void FormBuilder::addVDsig( FormMat<3,6>::Type& A, Scalar w, Itp itp, Dcdx dc_dx
 
 #pragma omp parallel for
 	for( int k = 0 ; k < MeshType::NV ; ++k ) {
+		const Scalar m = w * itp.coeffs[k] ;
 		for( int j = 0 ; j < MeshType::NV ; ++j ) {
 			Block &b = A.block( rowIndices[itp.nodes[k]], colIndices[itp.nodes[j]] ) ;
 
 			// sqrt2_3 * ( vx da_dx + vy da_dy + vz da_dz)
-			b(0,0) += w * s_sqrt_23 * itp.coeffs[k] * dc_dx(j, 0) ;
-			b(1,0) += w * s_sqrt_23 * itp.coeffs[k] * dc_dx(j, 1) ;
-			b(2,0) += w * s_sqrt_23 * itp.coeffs[k] * dc_dx(j, 2) ;
+			b(0,0) += m * s_sqrt_23 * dc_dx(j, 0) ;
+			b(1,0) += m * s_sqrt_23 * dc_dx(j, 1) ;
+			b(2,0) += m * s_sqrt_23 * dc_dx(j, 2) ;
 
 			// ( vx db_dx - vy db_dy )
-			b(0,1) += w * itp.coeffs[k] * dc_dx(j, 0) ;
-			b(1,1) -= w * itp.coeffs[k] * dc_dx(j, 1) ;
+			b(0,1) += m * dc_dx(j, 0) ;
+			b(1,1) -= m * dc_dx(j, 1) ;
 
 			// isqrt_3 * ( - vx dc_dx - vy dc_dy + 2 * vz dc_dz)
-			b(0,2) -= w * s_isqrt_3 * itp.coeffs[k] * dc_dx(j, 0) ;
-			b(1,2) -= w * s_isqrt_3 * itp.coeffs[k] * dc_dx(j, 1) ;
-			b(2,2) += w * s_isqrt_3 * itp.coeffs[k] * dc_dx(j, 2) * 2 ;
+			b(0,2) -= m * s_isqrt_3 * dc_dx(j, 0) ;
+			b(1,2) -= m * s_isqrt_3 * dc_dx(j, 1) ;
+			b(2,2) += m * s_isqrt_3 * dc_dx(j, 2) * 2 ;
 
 			// ( vx dd_dy + vy dd_dx )
-			b(0,3) += w * itp.coeffs[k] * dc_dx(j, 1) ;
-			b(1,3) += w * itp.coeffs[k] * dc_dx(j, 0) ;
+			b(0,3) += m * dc_dx(j, 1) ;
+			b(1,3) += m * dc_dx(j, 0) ;
 
 			// ( vx de_dz + vy de_dz )
-			b(0,4) += w * itp.coeffs[k] * dc_dx(j, 2) ;
-			b(2,4) += w * itp.coeffs[k] * dc_dx(j, 0) ;
+			b(0,4) += m * dc_dx(j, 2) ;
+			b(2,4) += m * dc_dx(j, 0) ;
 
 			// ( vz df_dy + vy df_dz )
-			b(2,5) += w * itp.coeffs[k] * dc_dx(j, 1) ;
-			b(1,5) += w * itp.coeffs[k] * dc_dx(j, 2) ;
+			b(2,5) += m * dc_dx(j, 1) ;
+			b(1,5) += m * dc_dx(j, 2) ;
 		}
 	}
 }
@@ -183,23 +206,63 @@ void FormBuilder::addTauWu( FormMat<3,3>::Type& A, Scalar w, Itp itp, Dcdx dc_dx
 
 #pragma omp parallel for
 	for( int k = 0 ; k < MeshType::NV ; ++k ) {
+		const Scalar m = w * itp.coeffs[k] ;
 		for( int j = 0 ; j < MeshType::NV ; ++j ) {
 			Block &b = A.block( rowIndices[itp.nodes[k]], colIndices[itp.nodes[j]] ) ;
 
 			// i * ( dux_dy - duy_dx )
-			b(0,0) += w * itp.coeffs[k] * dc_dx(j, 1) ;
-			b(0,1) -= w * itp.coeffs[k] * dc_dx(j, 0) ;
+			b(0,0) += m * dc_dx(j, 1) ;
+			b(0,1) -= m * dc_dx(j, 0) ;
 
 			// j * ( dux_dz - duz_dx )
-			b(1,0) += w * itp.coeffs[k] * dc_dx(j, 2) ;
-			b(1,2) -= w * itp.coeffs[k] * dc_dx(j, 0) ;
+			b(1,0) += m * dc_dx(j, 2) ;
+			b(1,2) -= m * dc_dx(j, 0) ;
 
 			// k * ( duy_dz - duz_dy )
-			b(2,1) += w * itp.coeffs[k] * dc_dx(j, 2) ;
-			b(2,2) -= w * itp.coeffs[k] * dc_dx(j, 1) ;
+			b(2,1) += m * dc_dx(j, 2) ;
+			b(2,2) -= m * dc_dx(j, 1) ;
 		}
 	}
 }
 
+void FormBuilder::addUTauGphi( FormMat<6,3>::Type& A, Scalar w, Itp itp, const Vec& dphi_dx, Indices rowIndices, Indices colIndices )
+{
+	typedef FormMat<6,3>::Type::BlockType Block ;
+
+#pragma omp parallel for
+	for( int k = 0 ; k < MeshType::NV ; ++k ) {
+		for( int j = 0 ; j < MeshType::NV ; ++j ) {
+			Block &b = A.block( rowIndices[itp.nodes[k]], colIndices[itp.nodes[j]] ) ;
+			const Scalar m = w * itp.coeffs[k] * itp.coeffs[j] ;
+
+			// a * sqrt2_3 * (dphi_dx ux + dphi_dy uy + dphi_dz uz)
+			b(0,0) += m * s_sqrt_23 * dphi_dx(0) ;
+			b(0,1) += m * s_sqrt_23 * dphi_dx(1) ;
+			b(0,2) += m * s_sqrt_23 * dphi_dx(2) ;
+
+			// b * (dphi_dx ux - dphi_dy uy )
+			b(1,0) += m * dphi_dx(0) ;
+			b(1,1) -= m * dphi_dx(1) ;
+
+			// c * isqrt_3 * ( -dux_dx - duy_dy + 2*duz_dz)
+			b(2,0) -= m * s_isqrt_3 * dphi_dx(0) ;
+			b(2,1) -= m * s_isqrt_3 * dphi_dx(1) ;
+			b(2,2) += m * s_isqrt_3 * dphi_dx(2) * 2;
+
+			// d * ( dux_dy + duy_dx )
+			b(3,0) += m * dphi_dx(1) ;
+			b(3,1) += m * dphi_dx(0) ;
+
+			// e * ( dux_dz + duz_dx )
+			b(4,0) += m * dphi_dx(2) ;
+			b(4,2) += m * dphi_dx(0) ;
+
+			// f * ( duz_dy + duy_dz )
+			b(5,2) += m * dphi_dx(1) ;
+			b(5,1) += m * dphi_dx(2) ;
+		}
+	}
+
+}
 
 } //d6

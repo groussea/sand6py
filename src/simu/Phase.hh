@@ -35,7 +35,6 @@ struct Phase
 		ar & stresses ;
 		ar & sym_grad ;
 		ar & spi_grad ;
-		ar & geo_proj ;
 	}
 };
 

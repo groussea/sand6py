@@ -44,12 +44,13 @@ void Particles::generate(const ScalarExpr &expr, const unsigned nSamples, const 
 
 		m_volumes.segment( m_count, n ).setConstant( volume ) ;
 
-		m_orient.block( 0, m_count, 1, n ).setConstant( 3 ) ; // Isotropic ori
-
 		m_count += n ;
 	}
 
 	m_velocities.leftCols( count() ).setZero() ;
+
+	m_orient.leftCols( count() ).setZero( ) ;
+	m_orient.leftCols( count() ).row(0).setConstant( 1./std::sqrt(6.) ) ; // Isotropic ori
 
 	Log::Verbose() << arg( "Generated %1 particles in %2 s ", m_count, timer.elapsed() ) << std::endl ;
 }

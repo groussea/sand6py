@@ -28,7 +28,8 @@ void DynParticles::generate(const Config &c, const MeshType &mesh)
 {
 	m_geo.generate( Scenario::parse( c )->generator(), c.nSamples, mesh );
 
-	m_affine.leftCols( count() ).setZero() ;
+	 m_affine.leftCols( count() ).setZero() ;
+	m_inertia.leftCols( count() ).setZero() ;
 
 	m_meanVolume = m_geo.volumes().segment( 0, m_geo.count() ).sum() / m_geo.count() ;
 }

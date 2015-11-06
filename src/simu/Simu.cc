@@ -51,6 +51,7 @@ void Simu::run()
 	m_grains->velocity.set_zero();
 	m_grains->sym_grad.set_zero();
 	m_grains->spi_grad.set_zero();
+	m_grains->geo_proj.set_zero();
 
 	if( m_config.output )
 		dump( 0 ) ;

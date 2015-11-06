@@ -52,7 +52,7 @@ struct RbTestScenar : public Scenario {
 	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const
 	{
 		LevelSet::Ptr plane = LevelSet::make_plane() ;
-		plane->set_origin( Vec(0,0,0) ) ;
+		plane->set_origin( Vec(0,0,.25*m_config->box[2]) ) ;
 
 		rbs.emplace_back( plane );
 	}

@@ -27,11 +27,13 @@ public:
 		: m_mesh(mesh)
 	{}
 
-	void reset( Index rows ) { m_data.clear(); m_data.resize( rows ); }
+	void reset( Index rows ) ;
 
 	void addToIndex(
 			const typename MeshType::Cells& cells,
 			Indices rowIndices, Indices colIndices	 ) ;
+
+	void addRows( Index rows ) ;
 
 	void makeCompressed() ;
 
@@ -44,8 +46,11 @@ public:
 
 	static void addDuDv ( FormMat<3,3>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
 	static void addVDsig( FormMat<3,6>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
+
 	static void addTauDu( FormMat<6,3>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
 	static void addTauWu( FormMat<3,3>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
+
+	static void addUTauGphi( FormMat<6,3>::Type& A, Scalar w, Itp itp, const Vec& dphi_dx, Indices rowIndices, Indices colIndices ) ;
 
 	const CompressedIndexType& index() { return m_compressed ; }
 

@@ -38,13 +38,19 @@ private:
 	void computeActiveNodes(const MeshType &mesh,
 							const std::vector< bool >& activeCells ) ;
 
-	void computeProjectors( PhaseMatrices& matrices ) const ;
+	void computeProjectors( PhaseMatrices& matrices,
+							const std::vector< RigidBodyData >& rbData
+							) const ;
 
 	void assembleMatrices( const Config& c, const MeshType& mesh,
 						   const DynVec &phiInt,
-						   PhaseMatrices& matrices ) const ;
+						   PhaseMatrices& matrices,
+						   std::vector< RigidBodyData >& rbData
+						   ) const ;
 
-	void solveComplementarity(const Config&c, const PhaseMatrices& matrices , const DynVec &fraction,
+	void solveComplementarity(const Config&c, const PhaseMatrices& matrices ,
+							  std::vector< RigidBodyData >& rbData,
+							  const DynVec &fraction,
 							  DynVec &u, Phase &phase) const ;
 
 	Index nSuppNodes() const
@@ -60,7 +66,6 @@ private:
 
 	BoundaryConditions m_surfaceNodes ;
 
-	std::vector< RigidBodyData > m_rbData ;
 	Index m_totRbNodes ;
 };
 

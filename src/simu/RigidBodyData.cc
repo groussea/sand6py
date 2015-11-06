@@ -20,6 +20,10 @@ Scalar RigidBodyData::phi( const Vec &x ) const
 {
 	return 1. + rb.levelSet().eval_at( x ) ;
 }
+void RigidBodyData::grad_phi(const Vec &x, Vec &grad) const
+{
+	rb.levelSet().grad_at( x, grad );
+}
 
 void RigidBodyData::compute_active( const Active& phaseNodes, BoundaryConditions& bc )
 {
@@ -38,6 +42,7 @@ void RigidBodyData::compute_active( const Active& phaseNodes, BoundaryConditions
 
 		for( Index k = 0 ; k < MeshType::NV ; ++k  ) {
 			if( phi( geo.vertex(k) ) >= 1. ) {
+//			if( phi( geo.vertex(k) ) >  0. ) {
 				boundary = true ;
 				break ;
 			}
@@ -57,5 +62,24 @@ void RigidBodyData::compute_active( const Active& phaseNodes, BoundaryConditions
 	}
 }
 
+void RigidBodyData::compute_fraction( )
+{
+	const MeshType &mesh = stresses.mesh() ;
+
+	typename MeshType::NodeList nodelist ;
+	typename MeshType::CellGeo geo ;
+
+	fraction.resize( nodes.count() );
+
+	for( const typename MeshType::Cell& cell : nodes.cells )
+	{
+		mesh.get_geo( cell, geo );
+		mesh.list_nodes( cell, nodelist );
+
+		for( Index k = 0 ; k < MeshType::NV ; ++k  ) {
+			fraction( nodes.indices[nodelist[k]] ) = phi( geo.vertex(k) ) ;
+		}
+	}
+}
 
 } //d6

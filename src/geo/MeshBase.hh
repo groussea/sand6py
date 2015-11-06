@@ -92,6 +92,8 @@ public:
 	}
 
 	Index nAdjacent( Index ) const { return NV ; }
+
+	Vec pos( const Location& loc ) const ;
 } ;
 
 } //d6
