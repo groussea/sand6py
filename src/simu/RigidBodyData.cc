@@ -18,7 +18,7 @@ RigidBodyData::RigidBodyData( RigidBody& rb_, TensorField &s )
 
 Scalar RigidBodyData::phi( const Vec &x ) const
 {
-	return 1. + rb.levelSet().eval_at( x ) ;
+	return std::min( 1., std::max(0., 1. + rb.levelSet().eval_at( x ) ) );
 }
 void RigidBodyData::grad_phi(const Vec &x, Vec &grad) const
 {

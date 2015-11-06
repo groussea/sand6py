@@ -58,7 +58,7 @@ void Simu::run()
 
 	for( unsigned frame = 0 ; frame < m_config.nFrames ; ++ frame ) {
 		bogus::Timer timer ;
-		Log::Info() << "Starting frame " << frame << std::endl ;
+		Log::Info() << "Starting frame " << (frame+1) << std::endl ;
 
 		for( unsigned s = 0 ; s < m_config.substeps ; ++ s ) {
 			bogus::Timer timer ;

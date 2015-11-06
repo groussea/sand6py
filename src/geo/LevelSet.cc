@@ -9,7 +9,7 @@ struct SphereLevelSet : public LevelSet
 	}
 
 	virtual Vec grad_local(const Vec &x) const {
-		return x / ( 1.e-12 + x.norm() ) ;
+		return -x / ( 1.e-12 + x.norm() ) ;
 	}
 };
 struct PlaneLevelSet : public LevelSet

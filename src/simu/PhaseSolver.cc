@@ -73,9 +73,10 @@ void PhaseSolver::computeProjectors(PhaseMatrices& mats,
 
 	for( unsigned k = 0 ; k < rbData.size() ; ++k ) {
 		for( Index i = 0 ; i < rbData[k].nodes.count() ; ++i  ) {
-			const Index idx = rbData[k].nodes.revIndices[ i ] ;
 			const Index   j = rbData[k].nodes.offset + i ;
-			m_surfaceNodes[idx].stressProj( mats.Pstress.insertBack( j,j ) ) ;
+//			const Index idx = rbData[k].nodes.revIndices[ i ] ;
+//			m_surfaceNodes[idx].stressProj( mats.Pstress.insertBack( j,j ) ) ;
+			mats.Pstress.insertBack( j,j ).setIdentity() ;
 		}
 	}
 
@@ -416,9 +417,17 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 	data.w = matrices.Pstress * DynVec( matrices.B * u ) ;
 
 	DynVec totFraction = fraction ;
+
 	for( unsigned k = 0 ; k < rbData.size() ; ++k ) {
 		RigidBodyData& rb = rbData[k] ;
-		data.H += ( rb.jacobian * matrices.M_lumped_inv_sqrt ) ;
+
+		// FIXME bogus-bug
+//		data.H -= matrices.Pstress * ( rb.jacobian * matrices.M_lumped_inv_sqrt ) ;
+
+		typename FormMat<6,3>::Type JM =
+				matrices.Pstress * ( rb.jacobian * matrices.M_lumped_inv_sqrt )  ;
+		data.H -= JM ;
+		data.w -= matrices.Pstress * DynVec( rb.jacobian * u ) ;
 
 		for( Index i = 0 ; i < rb.nodes.count() ; ++i ) {
 			totFraction( m_phaseNodes.indices[ rb.nodes.revIndices[i] ] ) += rb.fraction[i] ;
