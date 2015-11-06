@@ -301,14 +301,16 @@ void DynParticles::splitMerge( const MeshType & mesh )
 				if( (pk - pl).squaredNorm() < depl*depl ) {
 					m_geo.log( Particles::Event{ Particles::Event::Merge, list[k].pid, list[l].pid } );
 					mg_indices[ list[k].pid ] = list[l].pid ;
+					mg_indices[ list[l].pid ] = list[k].pid ;
 					break ;
 				}
 			}
 		}
 	}
 
+#pragma omp parallel for
 	for( size_t i = 0 ; i < mg_indices.size() ; ++ i ) {
-		if ( mg_indices[i] != None ) {
+		if ( mg_indices[i] != None && mg_indices[i]>i ) {
 			const size_t j = mg_indices[i] ;
 
 			const Vec pi = m_geo.centers().col( i ) ;
@@ -335,9 +337,11 @@ void DynParticles::splitMerge( const MeshType & mesh )
 			m_geo.m_volumes[i] += vj ;
 			m_geo.m_centers.col(i) = bary;
 
-			--m_geo.m_count ;
+			size_t reloc_src = -1 ;
+#pragma omp atomic capture
+			reloc_src = --m_geo.m_count ;
 
-			mg_reloc[ j ] = mg_reloc[ m_geo.m_count ] ;
+			mg_reloc[ j ] = mg_reloc[ reloc_src ] ;
 		}
 	}
 
