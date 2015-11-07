@@ -11,17 +11,22 @@ class LevelSet ;
 class RigidBody
 {
 public:
+	typedef typename Vec6::     FixedSegmentReturnType< 3 >::Type      VelComp ;
+	typedef typename Vec6::ConstFixedSegmentReturnType< 3 >::Type ConstVelComp ;
+
 	explicit RigidBody( std::unique_ptr< LevelSet > &ls ) ;
 
 	Vec velocity_at( const Vec& x ) const ;
 
 	const LevelSet& levelSet() const
 	{ return *m_levelSet ; }
+	const LevelSet* levelSetPtr() const
+	{ return m_levelSet.get() ; }
 
-	void set_velocity( const Vec& velocity, const Vec& angularVelocity )
+	void set_velocity( const Vec& vel, const Vec& angularVel )
 	{
-		m_velocity.head<3>() = velocity ;
-		m_velocity.tail<3>() = angularVelocity ;
+		velocity() = vel ;
+		angularVelocity() = angularVel ;
 	}
 
 	void predict_velocity( const Scalar dt, const Vec6& forces ) const ;
@@ -31,6 +36,13 @@ public:
 	const Vec6 &velocities() const {
 		return m_velocity ;
 	}
+
+
+	VelComp velocity() { return m_velocity.head<3>() ; }
+	VelComp angularVelocity() { return m_velocity.tail<3>() ; }
+
+	ConstVelComp velocity() const { return m_velocity.head<3>() ; }
+	ConstVelComp angularVelocity() const { return m_velocity.tail<3>() ; }
 
 private:
 	std::unique_ptr< LevelSet > m_levelSet ;

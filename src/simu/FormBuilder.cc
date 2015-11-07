@@ -126,7 +126,7 @@ void FormBuilder::addTauDu( FormMat<6,3>::Type& A, Scalar w, Itp itp, Dcdx dc_dx
 {
 	typedef FormMat<6,3>::Type::BlockType Block ;
 
-#pragma omp parallel for
+//#pragma omp parallel for
 	for( int k = 0 ; k < MeshType::NV ; ++k ) {
 		const Scalar m = w * itp.coeffs[k] ;
 		for( int j = 0 ; j < MeshType::NV ; ++j ) {
@@ -165,7 +165,7 @@ void FormBuilder::addVDsig( FormMat<3,6>::Type& A, Scalar w, Itp itp, Dcdx dc_dx
 {
 	typedef FormMat<3,6>::Type::BlockType Block ;
 
-#pragma omp parallel for
+//#pragma omp parallel for
 	for( int k = 0 ; k < MeshType::NV ; ++k ) {
 		const Scalar m = w * itp.coeffs[k] ;
 		for( int j = 0 ; j < MeshType::NV ; ++j ) {
@@ -204,7 +204,7 @@ void FormBuilder::addTauWu( FormMat<3,3>::Type& A, Scalar w, Itp itp, Dcdx dc_dx
 {
 	typedef FormMat<3,3>::Type::BlockType Block ;
 
-#pragma omp parallel for
+//#pragma omp parallel for
 	for( int k = 0 ; k < MeshType::NV ; ++k ) {
 		const Scalar m = w * itp.coeffs[k] ;
 		for( int j = 0 ; j < MeshType::NV ; ++j ) {
@@ -229,7 +229,7 @@ void FormBuilder::addUTauGphi( FormMat<6,3>::Type& A, Scalar w, Itp itp, const V
 {
 	typedef FormMat<6,3>::Type::BlockType Block ;
 
-#pragma omp parallel for
+//#pragma omp parallel for
 	for( int k = 0 ; k < MeshType::NV ; ++k ) {
 		for( int j = 0 ; j < MeshType::NV ; ++j ) {
 			Block &b = A.block( rowIndices[itp.nodes[k]], colIndices[itp.nodes[j]] ) ;

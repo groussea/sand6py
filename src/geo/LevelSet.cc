@@ -1,28 +1,10 @@
 #include "LevelSet.hh"
 
+#include "LevelSet.impl.hh"
+
+#include <iostream>
+
 namespace d6 {
-
-struct SphereLevelSet : public LevelSet
-{
-	virtual Scalar eval_local(const Vec &x) const {
-		return 1. - x.norm() ;
-	}
-
-	virtual Vec grad_local(const Vec &x) const {
-		return -x / ( 1.e-12 + x.norm() ) ;
-	}
-};
-struct PlaneLevelSet : public LevelSet
-{
-	virtual Scalar eval_local(const Vec &x) const {
-		return - x[2] ;
-	}
-
-	virtual Vec grad_local(const Vec & ) const {
-		return Vec(0, 0, -1) ;
-	}
-};
-
 
 LevelSet::LevelSet()
 	: m_origin(Vec::Zero()), m_frame( Quaternion::Identity() )
@@ -52,7 +34,9 @@ void LevelSet::grad_at(const Vec &x, Vec &grad) const
 
 void LevelSet::to_local(const Vec &world, Vec &local) const
 {
-	local = ( m_frame.inverse() * ( world - m_origin ) ) / m_scale  ;
+//	const Quaternion &fi = m_frame.inverse() ;
+	Quaternion fi = m_frame ; fi.w() = -fi.w() ;
+	local = ( fi * ( world - m_origin ) ) / m_scale  ;
 }
 
 //LevelSet::Ptr LevelSet::make_cube() { return Ptr( new CubeLevelSet() ) ; }

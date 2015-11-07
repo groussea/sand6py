@@ -398,6 +398,9 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 	for( unsigned k = 0 ; k < rbData.size() ; ++k ) {
 		RigidBodyData& rb = rbData[k] ;
 
+		if( rb.nodes.count() == 0 )
+			continue ;
+
 		// FIXME bogus-bug
 //		data.H -= matrices.Pstress * ( rb.jacobian * matrices.M_lumped_inv_sqrt ) ;
 		typename FormMat<6,3>::Type JM =
