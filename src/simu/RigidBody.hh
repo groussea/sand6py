@@ -11,8 +11,13 @@ class LevelSet ;
 class RigidBody
 {
 public:
-	typedef typename Vec6::     FixedSegmentReturnType< 3 >::Type      VelComp ;
-	typedef typename Vec6::ConstFixedSegmentReturnType< 3 >::Type ConstVelComp ;
+
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+	typedef Eigen::Matrix< Scalar, 6, 1, Eigen::DontAlign > Vel ;
+
+	typedef typename Vel::     FixedSegmentReturnType< 3 >::Type      VelComp ;
+	typedef typename Vel::ConstFixedSegmentReturnType< 3 >::Type ConstVelComp ;
 
 	explicit RigidBody( std::unique_ptr< LevelSet > &ls ) ;
 
@@ -33,7 +38,7 @@ public:
 
 	void move( const Scalar dt ) const ;
 
-	const Vec6 &velocities() const {
+	const Vel &velocities() const {
 		return m_velocity ;
 	}
 
@@ -47,7 +52,7 @@ public:
 private:
 	std::unique_ptr< LevelSet > m_levelSet ;
 
-	Vec6 m_velocity ;
+	Vel m_velocity ;
 
 } ;
 

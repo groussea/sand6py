@@ -34,8 +34,8 @@ void LevelSet::grad_at(const Vec &x, Vec &grad) const
 
 void LevelSet::to_local(const Vec &world, Vec &local) const
 {
-//	const Quaternion &fi = m_frame.inverse() ;
-	Quaternion fi = m_frame ; fi.w() = -fi.w() ;
+	const Quaternion &fi = m_frame.inverse() ;
+//	Quaternion fi = m_frame ; fi.w() = -fi.w() ;
 	local = ( fi * ( world - m_origin ) ) / m_scale  ;
 }
 
