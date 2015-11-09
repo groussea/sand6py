@@ -61,9 +61,16 @@ struct RbPlaneTestScenar : public Scenario {
 	}
 };
 
-struct RbSphereTestScenar : public Scenario {
+struct ImpactScenar : public Scenario {
+
 	Scalar particle_density( const Vec &x ) const {
 		return ( x[2] <  .5*m_config->box[2] ) ? 1. : 0. ;
+	}
+
+	virtual void init( const Params& params ) {
+		volMass = scalar_param( params, "vm", Units::VolumicMass, 1.5*m_config->units().R ) ;
+		zvel = scalar_param( params, "zvel", Units::Velocity, 0. ) ;
+		avel = scalar_param( params, "avel", Units::Frequency, 0. ) ;
 	}
 
 	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const
@@ -71,8 +78,8 @@ struct RbSphereTestScenar : public Scenario {
 		LevelSet::Ptr ls = LevelSet::make_sphere() ;
 		ls->scale(.125*m_config->box[2]).set_origin( .5 * m_config->box + Vec(0,0,.25*m_config->box[2]) ) ;
 
-		rbs.emplace_back( ls, 10. );
-//		rbs.back().set_velocity( Vec(0,0,1.e-1), Vec(0,0,0) ) ;
+		rbs.emplace_back( ls, volMass );
+		rbs.back().set_velocity( Vec(0,0,-zvel), Vec(avel,0,0) ) ;
 	}
 
 	void update( Simu& simu, Scalar /*time*/ ) const
@@ -82,6 +89,11 @@ struct RbSphereTestScenar : public Scenario {
 		}
 
 	}
+
+private:
+	Scalar volMass ;
+	Scalar zvel ;
+	Scalar avel ;
 };
 
 
@@ -100,8 +112,8 @@ struct DefaultScenarioFactory : public ScenarioFactory
 			return std::unique_ptr< Scenario >( new BridsonScenar() ) ;
 		if( str == "rb_plane_test")
 			return std::unique_ptr< Scenario >( new RbPlaneTestScenar() ) ;
-		if( str == "rb_sphere_test")
-			return std::unique_ptr< Scenario >( new RbSphereTestScenar() ) ;
+		if( str == "impact")
+			return std::unique_ptr< Scenario >( new ImpactScenar() ) ;
 
 		return std::unique_ptr< Scenario >( new BedScenar() ) ;
 	}
@@ -141,7 +153,6 @@ private:
 
 std::unique_ptr< Scenario > Scenario::parse( const Config& config )
 {
-
 	std::istringstream in( config.scenario ) ;
 	std::string line ;
 	std::vector< std::string > tok ;
@@ -168,6 +179,18 @@ std::unique_ptr< Scenario > Scenario::parse( const Config& config )
 void Scenario::register_factory( const ScenarioFactory& factory )
 {
 	ScenarioBuilder::instance().add( factory ) ;
+}
+
+Scalar Scenario::scalar_param(const Params& params, const std::string& key, Units::Unit unit, Scalar def ) const
+{
+	Scalar s = def ;
+	Params::const_iterator it = params.find(key) ;
+	if( it != params.end() ) {
+		cast( it->second, s ) ;
+	}
+
+	return s * m_config->units().fromSI( unit ) ;
+
 }
 
 } //d6

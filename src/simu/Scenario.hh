@@ -2,6 +2,7 @@
 #define D6_SCENARIO_HH
 
 #include "utils/scalar.hh"
+#include "utils/units.hh"
 #include "geo/Expr.hh"
 
 #include <memory>
@@ -40,7 +41,11 @@ protected:
 	typedef std::unordered_map< std::string, std::string > Params ;
 
 	Scenario() : m_config(0) {}
+
 	virtual void init( const Params& /*params*/ ) {}
+	Scalar scalar_param( const Params& params, const std::string& key,
+						 Units::Unit unit = Units::None,
+						 Scalar def = 0. ) const ;
 
 	const Config* m_config ;
 

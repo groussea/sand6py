@@ -102,6 +102,13 @@ bool cast ( std::istringstream& stream, T& res )
 	return static_cast<bool>( stream >> res ) ;
 }
 
+template< >
+inline bool cast ( std::istringstream& stream, std::string& res )
+{
+	res = trim( stream.str() );
+	return true ;
+}
+
 template< typename Scalar, int Rows, int Cols >
 bool cast ( std::istringstream& stream, Eigen::Matrix<Scalar, Rows, Cols>& res )
 {
