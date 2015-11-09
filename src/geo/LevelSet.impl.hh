@@ -3,6 +3,8 @@
 
 #include "LevelSet.hh"
 
+#include <limits>
+
 namespace d6 {
 
 struct SphereLevelSet : public LevelSet
@@ -13,6 +15,14 @@ struct SphereLevelSet : public LevelSet
 
 	virtual Vec grad_local(const Vec &x) const {
 		return -x / ( 1.e-12 + x.norm() ) ;
+	}
+
+	virtual void local_inv_inertia( Mat& I ) const {
+		I = Mat::Identity() / ( volume() * 2./5. ) ;
+	}
+
+	virtual Scalar local_volume() const {
+		return 4./3 * M_PI ;
 	}
 
 	template<class Archive>
@@ -26,6 +36,14 @@ struct PlaneLevelSet : public LevelSet
 
 	virtual Vec grad_local(const Vec & ) const {
 		return Vec(0, 0, -1) ;
+	}
+
+	virtual void local_inv_inertia( Mat& I ) const {
+		I.setZero() ;
+	}
+
+	virtual Scalar local_volume() const {
+		return std::numeric_limits<Scalar>::infinity() ;
 	}
 
 	template<class Archive>

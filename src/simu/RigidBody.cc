@@ -2,10 +2,12 @@
 
 #include "LevelSet.hh"
 
+#include <iostream>
+
 namespace d6 {
 
-RigidBody::RigidBody(std::unique_ptr<LevelSet> &ls )
-		: m_levelSet ( std::move(ls) )
+RigidBody::RigidBody(std::unique_ptr<LevelSet> &ls, Scalar volMass )
+		: m_levelSet ( std::move(ls) ), m_volumicMass( volMass )
 {
 	m_velocity.setZero() ;
 }
@@ -15,12 +17,21 @@ Vec RigidBody::velocity_at(const Vec &x) const
 	return velocity() + angularVelocity().cross( x ) ;
 }
 
-void RigidBody::predict_velocity(const Scalar dt, const Vec6 &forces)
+void RigidBody::integrate_forces(const Scalar dt, const Vec6 &forces)
 {
-	Vec6 acc = forces ;
-	acc.setZero() ;
+	Mat66 Mi ;
+	inv_inertia( Mi );
 
-	m_velocity += dt * acc ;
+	m_velocity += dt * Mi * forces ;
+}
+
+void RigidBody::integrate_gravity(const Scalar dt, const Vec &gravity)
+{
+	Vec6 forces ;
+	forces.head<3>() = m_volumicMass * m_levelSet->volume() * gravity ;
+	forces.tail<3>().setZero() ;
+
+	integrate_forces( dt, forces );
 }
 
 void RigidBody::move(const Scalar dt) const
@@ -35,5 +46,10 @@ void RigidBody::move(const Scalar dt) const
 	m_levelSet->move( dt * velocity(), Quaternion( aa ) );
 }
 
+void RigidBody::inv_inertia( Mat66& Mi ) const
+{
+	m_levelSet->inv_inertia( Mi ) ;
+	Mi /= m_volumicMass ;
+}
 
 } //d6

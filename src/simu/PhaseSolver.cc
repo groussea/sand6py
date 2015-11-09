@@ -419,11 +419,16 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 			totFraction( m_phaseNodes.indices[ rb.nodes.revIndices[i] ] ) += rb.fraction[i] ;
 		}
 
+//		continue ;
+
 		Mat66 inv_inertia ;
-		inv_inertia.setZero() ; // FIXME  + if norm() ...
+		rb.rb.inv_inertia( inv_inertia ) ;
+//		if( inv_inertia.squaredNorm() < 1.e-16 )
+//			continue ;
+//		inv_inertia.setZero() ; // FIXME  + if norm() ...
 
 		coupledRbIndices.push_back( k ) ;
-		data.inv_inertia_matrices.block<6,6>( 0, 6*data.jacobians.size() ) = inv_inertia ;
+		data.inv_inertia_matrices.block<6,6>( 0, 6*data.jacobians.size() ) = inv_inertia * c.dt() ;
 		data.jacobians.emplace_back( J * rb.projection.transpose() );
 
 	}
@@ -466,7 +471,7 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 	for( unsigned k = 0 ; k < coupledRbIndices.size() ; ++k ) {
 		RigidBodyData& rb = rbData[ coupledRbIndices[k] ] ;
 		const Vec6 forces = data.jacobians[k].transpose() * x ;
-		rb.rb.predict_velocity( c.dt(), forces );
+		rb.rb.integrate_forces( c.dt(), forces );
 	}
 
 }

@@ -19,29 +19,15 @@ public:
 	typedef typename Vel::     FixedSegmentReturnType< 3 >::Type      VelComp ;
 	typedef typename Vel::ConstFixedSegmentReturnType< 3 >::Type ConstVelComp ;
 
-	explicit RigidBody( std::unique_ptr< LevelSet > &ls ) ;
+	RigidBody( std::unique_ptr< LevelSet > &ls, Scalar volMass ) ;
+
+	// Accessors
 
 	Vec velocity_at( const Vec& x ) const ;
-
-	const LevelSet& levelSet() const
-	{ return *m_levelSet ; }
-	const LevelSet* levelSetPtr() const
-	{ return m_levelSet.get() ; }
-
-	void set_velocity( const Vec& vel, const Vec& angularVel )
-	{
-		velocity() = vel ;
-		angularVelocity() = angularVel ;
-	}
-
-	void predict_velocity( const Scalar dt, const Vec6& forces ) ;
-
-	void move( const Scalar dt ) const ;
 
 	const Vel &velocities() const {
 		return m_velocity ;
 	}
-
 
 	VelComp velocity() { return m_velocity.head<3>() ; }
 	VelComp angularVelocity() { return m_velocity.tail<3>() ; }
@@ -49,8 +35,36 @@ public:
 	ConstVelComp velocity() const { return m_velocity.head<3>() ; }
 	ConstVelComp angularVelocity() const { return m_velocity.tail<3>() ; }
 
+	const LevelSet& levelSet() const
+	{ return *m_levelSet ; }
+	const LevelSet* levelSetPtr() const
+	{ return m_levelSet.get() ; }
+
+	Scalar volumicMass() const
+	{
+		return m_volumicMass ;
+	}
+
+	void inv_inertia( Mat66& Mi ) const ;
+
+	// Modifiers
+
+	void set_velocity( const Vec& vel, const Vec& angularVel )
+	{
+		velocity() = vel ;
+		angularVelocity() = angularVel ;
+	}
+
+	void integrate_gravity( const Scalar dt, const Vec& gravity ) ;
+	void integrate_forces( const Scalar dt, const Vec6& forces ) ;
+
+	void move( const Scalar dt ) const ;
+
+
 private:
 	std::unique_ptr< LevelSet > m_levelSet ;
+
+	Scalar m_volumicMass ;
 
 	Vel m_velocity ;
 

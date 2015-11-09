@@ -189,7 +189,7 @@ void GLViewer::drawObject(const LevelSet &ls)
 	{
 		m_glyphQuadIndices.bind();
 		gl::VertexPointer vp( m_glyph ) ;
-		gl::NormalPointer np( m_glyph ) ;
+//		gl::NormalPointer np( m_glyph ) ;
 		glDrawElements( GL_QUADS, m_glyphQuadIndices.size(), GL_UNSIGNED_INT, 0 );
 	}
 	else if ( dynamic_cast<const PlaneLevelSet*>(&ls) )

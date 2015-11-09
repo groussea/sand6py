@@ -1,6 +1,7 @@
 #include "Scenario.hh"
 
 #include "Config.hh"
+#include "Simu.hh"
 #include "RigidBody.hh"
 
 #include "geo/LevelSet.hh"
@@ -44,7 +45,7 @@ struct BridsonScenar : public Scenario {
 	}
 };
 
-struct RbTestScenar : public Scenario {
+struct RbPlaneTestScenar : public Scenario {
 	Scalar particle_density( const Vec &x ) const {
 		return ( x[2] >  .5*m_config->box[2] ) ? 1. : 0. ;
 	}
@@ -55,13 +56,34 @@ struct RbTestScenar : public Scenario {
 		ls->set_origin( .5 * m_config->box - Vec(0,0,.25*m_config->box[2]) ) ;
 		ls->set_rotation( Vec(1,0,0), M_PI/8 ) ;
 
-//		LevelSet::Ptr ls = LevelSet::make_sphere() ;
-//		ls->scale(.125*m_config->box[2]).set_origin( .5 * m_config->box - Vec(0,0,.25*m_config->box[2]) ) ;
-
-		rbs.emplace_back( ls );
-//		rbs.back().set_velocity( Vec(0,0,1.e-1), Vec(0,0,0) ) ;
+		rbs.emplace_back( ls, 1. );
+		rbs.back().set_velocity( Vec(0,0,1.e-1), Vec(0,0,0) ) ;
 	}
 };
+
+struct RbSphereTestScenar : public Scenario {
+	Scalar particle_density( const Vec &x ) const {
+		return ( x[2] <  .5*m_config->box[2] ) ? 1. : 0. ;
+	}
+
+	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const
+	{
+		LevelSet::Ptr ls = LevelSet::make_sphere() ;
+		ls->scale(.125*m_config->box[2]).set_origin( .5 * m_config->box + Vec(0,0,.25*m_config->box[2]) ) ;
+
+		rbs.emplace_back( ls, 10. );
+//		rbs.back().set_velocity( Vec(0,0,1.e-1), Vec(0,0,0) ) ;
+	}
+
+	void update( Simu& simu, Scalar /*time*/ ) const
+	{
+		for( RigidBody& rb: simu.rigidBodies() ) {
+			rb.integrate_gravity( m_config->dt(), m_config->gravity );
+		}
+
+	}
+};
+
 
 
 // Factories & stuff
@@ -76,8 +98,10 @@ struct DefaultScenarioFactory : public ScenarioFactory
 			return std::unique_ptr< Scenario >( new CollapseScenar() ) ;
 		if( str == "bridson")
 			return std::unique_ptr< Scenario >( new BridsonScenar() ) ;
-		if( str == "rb_test")
-			return std::unique_ptr< Scenario >( new RbTestScenar() ) ;
+		if( str == "rb_plane_test")
+			return std::unique_ptr< Scenario >( new RbPlaneTestScenar() ) ;
+		if( str == "rb_sphere_test")
+			return std::unique_ptr< Scenario >( new RbSphereTestScenar() ) ;
 
 		return std::unique_ptr< Scenario >( new BedScenar() ) ;
 	}

@@ -34,9 +34,28 @@ void LevelSet::grad_at(const Vec &x, Vec &grad) const
 
 void LevelSet::to_local(const Vec &world, Vec &local) const
 {
-	const Quaternion &fi = m_frame.inverse() ;
 //	Quaternion fi = m_frame ; fi.w() = -fi.w() ;
-	local = ( fi * ( world - m_origin ) ) / m_scale  ;
+	local = ( m_frame.inverse() * ( world - m_origin ) ) / m_scale  ;
+}
+void LevelSet::to_local_mat( Mat &mat) const
+{
+	mat = m_frame.inverse().matrix() / m_scale ;
+}
+
+void LevelSet::inv_inertia(Mat66 &Mi) const
+{
+	Mi.setIdentity() ;
+	Mi.diagonal().head<3>() /= local_volume() ;
+
+	Mat I ;
+	local_inv_inertia( I );
+	Mat w2l ;
+	to_local_mat( w2l );
+
+	Mi.block<3,3>(3,3) = w2l.transpose() * I * w2l ;
+
+
+	Mi *= std::pow( m_scale, -3. ) ;
 }
 
 //LevelSet::Ptr LevelSet::make_cube() { return Ptr( new CubeLevelSet() ) ; }

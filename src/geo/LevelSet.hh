@@ -57,6 +57,12 @@ public:
 		return *this ;
 	}
 
+	void inv_inertia( Mat66 & Mi ) const ;
+
+	Scalar volume() const {
+		return local_volume() * std::pow( m_scale, 3. ) ;
+	}
+
 	//Movement
 	void move( const Vec& depl, const Quaternion& rot ) ;
 
@@ -68,11 +74,14 @@ public:
 protected:
 
 	void to_local( const Vec &world, Vec &local) const ;
+	void to_local_mat ( Mat &mat ) const ;
 
 	LevelSet() ;
 
 	virtual Scalar eval_local( const Vec&x ) const = 0 ;
 	virtual Vec    grad_local( const Vec&x ) const = 0 ;
+	virtual Scalar local_volume( ) const = 0 ;
+	virtual void local_inv_inertia( Mat &I ) const = 0 ;
 
 private:
 	Vec 	   m_origin ;

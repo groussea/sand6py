@@ -27,6 +27,15 @@ public:
 	MeshType& mesh() { return * m_mesh ;  }
 	const MeshType& mesh() const { return * m_mesh ;  }
 
+	std::vector< RigidBody > &rigidBodies ()
+	{
+		return m_rigidBodies ;
+	}
+	const std::vector< RigidBody > &rigidBodies () const
+	{
+		return m_rigidBodies ;
+	}
+
 private:
 
 	class Fields ;
