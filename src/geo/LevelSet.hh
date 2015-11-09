@@ -14,6 +14,8 @@ class LevelSet {
 
 public:
 
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
 	typedef std::unique_ptr< LevelSet > Ptr ;
 
 	// Accessors
@@ -45,6 +47,11 @@ public:
 
 	//Movement
 	void move( const Vec& depl, const Quaternion& rot ) ;
+
+	template<class Archive>
+	static void register_derived(Archive &ar) ;
+	template<class Archive>
+	void serialize(Archive &ar, const unsigned int version) ;
 
 protected:
 

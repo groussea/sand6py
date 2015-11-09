@@ -78,13 +78,13 @@ void RigidBodyData::integrate(const Active &phaseNodes, Index totNodes)
 
 	const MeshType &mesh = stresses.mesh() ;
 	FormBuilder builder( mesh ) ;
-	builder.reset( m+totNodes );
+	builder.reset( totNodes );
 	builder.addToIndex( nodes.cells, phaseNodes.indices, phaseNodes.indices );
 	builder.addToIndex( nodes.cells,      nodes.indices, phaseNodes.indices );
 	builder.makeCompressed();
 
 	jacobian.clear() ;
-	jacobian.setRows( m+totNodes );
+	jacobian.setRows( totNodes );
 	jacobian.setCols( m );
 	jacobian.cloneIndex( builder.index() ) ;
 	jacobian.setBlocksToZero() ;

@@ -10,6 +10,7 @@
 
 #include "geo/Grid.hh"
 #include "geo/LevelSet.hh"
+#include "geo/LevelSet.impl.hh"
 
 #include "geo/Particles.io.hh"
 #include <boost/archive/binary_oarchive.hpp>
@@ -120,6 +121,19 @@ void Simu::dump( unsigned frame ) const
 		std::ofstream ofs( dir.filePath("particles") );
 		boost::archive::binary_oarchive oa(ofs);
 		oa << m_particles.geo() ;
+	}
+	// Objects
+	{
+		std::ofstream ofs( dir.filePath("objects") );
+		boost::archive::binary_oarchive oa(ofs);
+
+		unsigned n = m_rigidBodies.size() ;
+		oa << n ;
+		LevelSet::register_derived(oa) ;
+		for( unsigned i = 0 ; i < n ; ++i ) {
+			const LevelSet* ptr = m_rigidBodies[i].levelSetPtr() ;
+			oa << ptr ;
+		}
 	}
 }
 
