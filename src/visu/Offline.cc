@@ -8,6 +8,8 @@
 #include "utils/File.hh"
 
 #include "geo/Particles.io.hh"
+#include "geo/LevelSet.io.hh"
+
 #include <boost/archive/binary_iarchive.hpp>
 
 #include <bogus/Core/Eigen/EigenSerialization.hpp>
@@ -51,6 +53,24 @@ bool Offline::load_frame(unsigned frame )
 		std::ifstream ifs( dir.filePath("particles") );
 		boost::archive::binary_iarchive ia(ifs);
 		ia >> m_particles ;
+	}
+
+	//Objects
+	{
+		m_levelSets.clear();
+
+		std::ifstream ifs( dir.filePath("objects") );
+		boost::archive::binary_iarchive ia(ifs);
+
+		unsigned n = 0 ;
+		ia >> n ;
+		LevelSet::register_derived(ia) ;
+		for( unsigned i = 0 ; i < n ; ++i ) {
+			LevelSet* ptr ;
+			ia >> ptr ;
+			m_levelSets.emplace_back( ptr ) ;
+		}
+
 	}
 
 	Log::Info() << "Load frame " << frame << std::endl ;

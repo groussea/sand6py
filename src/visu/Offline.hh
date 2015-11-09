@@ -4,9 +4,12 @@
 #include "geo/geo.fwd.hh"
 #include "geo/Particles.hh"
 
+#include <memory>
+
 namespace d6 {
 
 struct Phase ;
+class LevelSet ;
 
 class Offline
 {
@@ -22,8 +25,14 @@ public:
 	const MeshType &mesh() const { return *m_mesh ; }
 	const Phase &grains() const { return *m_grains ; }
 
-	const char* base_dir() const {
+	const char* base_dir() const
+	{
 		return m_base_dir ;
+	}
+
+	const std::vector< std::unique_ptr< LevelSet > >& levelSets() const
+	{
+		return m_levelSets ;
 	}
 
 private:
@@ -32,6 +41,8 @@ private:
 	Particles  m_particles ;
 	MeshType*  m_mesh ;
 	Phase*     m_grains ;
+
+	std::vector< std::unique_ptr< LevelSet > > m_levelSets ;
 } ;
 
 } //d6

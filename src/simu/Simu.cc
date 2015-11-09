@@ -10,9 +10,10 @@
 
 #include "geo/Grid.hh"
 #include "geo/LevelSet.hh"
-#include "geo/LevelSet.impl.hh"
 
+#include "geo/LevelSet.io.hh"
 #include "geo/Particles.io.hh"
+
 #include <boost/archive/binary_oarchive.hpp>
 
 #include <bogus/Core/Utils/Timer.hpp>

@@ -22,8 +22,16 @@ public:
 	Scalar eval_at( const Vec& x ) const ;
 	void   grad_at( const Vec& x, Vec& grad ) const ;
 
-	const Vec& origin() const {
+	const Vec& origin() const
+	{
 		return m_origin ;
+	}
+	const Quaternion& rotation() const
+	{
+		return m_frame ;
+	}
+	Scalar scale() const {
+		return m_scale ;
 	}
 
 	//Constructors

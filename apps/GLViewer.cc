@@ -5,6 +5,7 @@
 #include "geo/Particles.hh"
 #include "geo/Tensor.hh"
 #include "geo/Grid.hh"
+#include "geo/LevelSet.impl.hh"
 
 #include "utils/Log.hh"
 #include "utils/File.hh"
@@ -61,6 +62,10 @@ void GLViewer::fastDraw()
 		gl::VertexPointer vp( m_centers ) ;
 		gl::ColorPointer  cp( m_colors ) ;
 		glDrawArrays( GL_POINTS, 0, m_centers.size() );
+	}
+
+	for( const LevelSet::Ptr& ls: m_offline.levelSets() ) {
+		drawObject( *ls );
 	}
 
 }
@@ -137,6 +142,10 @@ void GLViewer::draw()
 		glDisable (GL_BLEND);
 	}
 
+	for( const LevelSet::Ptr& ls: m_offline.levelSets() ) {
+		drawObject( *ls );
+	}
+
 	if( m_snapshotting )
 		snap() ;
 
@@ -161,6 +170,44 @@ void GLViewer::drawWithNames()
 		glPopName() ;
 		glPopMatrix();
 	}
+
+}
+
+void GLViewer::drawObject(const LevelSet &ls)
+{
+	Eigen::Matrix4f mat ;
+	mat.setIdentity() ;
+	mat.block<3,3>(0,0) = ls.rotation().matrix().cast < GLfloat >() * ls.scale()  ;
+	mat.block<3,1>(0,3) = ls.origin().cast < GLfloat >() ;
+
+	glPushMatrix();
+	glMultMatrixf( mat.data() );
+
+	glColor4f(1., .8, .8, 1);
+
+	if( dynamic_cast<const SphereLevelSet*>(&ls) )
+	{
+		m_glyphQuadIndices.bind();
+		gl::VertexPointer vp( m_glyph ) ;
+		gl::NormalPointer np( m_glyph ) ;
+		glDrawElements( GL_QUADS, m_glyphQuadIndices.size(), GL_UNSIGNED_INT, 0 );
+	}
+	else if ( dynamic_cast<const PlaneLevelSet*>(&ls) )
+	{
+		const Vec& box = m_offline.mesh().box() ;
+		glBegin( GL_QUADS );
+		glNormal3f( 0.f, 0.f, 1.f );
+		glVertex3d( -box[0], -box[1], 0 );
+		glNormal3f( 0.f, 0.f, 1.f );
+		glVertex3d( -box[0],  box[1], 0 );
+		glNormal3f( 0.f, 0.f, 1.f );
+		glVertex3d(  box[0],  box[1], 0 );
+		glNormal3f( 0.f, 0.f, 1.f );
+		glVertex3d(  box[0], -box[1], 0 );
+		glEnd( ) ;
+	}
+
+	glPopMatrix();
 
 }
 

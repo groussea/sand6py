@@ -47,8 +47,9 @@ protected :
   virtual void postSelection(const QPoint& ) ;
 
 private:
-	void update_buffers() ;
 
+	void update_buffers() ;
+	void drawObject( const LevelSet& ls ) ;
 	void snap() ;
 
 	Offline& m_offline ;
