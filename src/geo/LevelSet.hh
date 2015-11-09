@@ -48,8 +48,12 @@ public:
 		m_origin = pos ;
 		return *this ;
 	}
-	LevelSet& set_frame( const Quaternion& frame ) {
+	LevelSet& set_rotation( const Quaternion& frame ) {
 		m_frame = frame ;
+		return *this ;
+	}
+	LevelSet& set_rotation( const Vec& axis, Scalar angle ) {
+		m_frame = Eigen::AngleAxis< Scalar >( angle, axis )  ;
 		return *this ;
 	}
 

@@ -15,6 +15,14 @@ Vec RigidBody::velocity_at(const Vec &x) const
 	return velocity() + angularVelocity().cross( x ) ;
 }
 
+void RigidBody::predict_velocity(const Scalar dt, const Vec6 &forces)
+{
+	Vec6 acc = forces ;
+	acc.setZero() ;
+
+	m_velocity += dt * acc ;
+}
+
 void RigidBody::move(const Scalar dt) const
 {
 

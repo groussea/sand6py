@@ -33,7 +33,23 @@ void ackResidual( unsigned iter, Scalar res ) {
 Scalar Primal::solve(DynVec &lambda, DynVec &gamma) const
 {
 	typedef typename FormMat<6,6>::SymType WType ;
-	const WType W = m_data.H * m_data.H.transpose() ;
+	WType W = m_data.H * m_data.H.transpose() ;
+
+	// Add rigid bodies jacobians
+	bogus::SparseBlockMatrix< Mat66, bogus::SYMMETRIC > Mi ;
+	Mi.setRows(1) ;
+	Mi.insertBack(0,0) ;
+	Mi.finalize();
+
+	for( unsigned i = 0 ; i < m_data.jacobians.size() ; ++i ) {
+
+		Mi.block(0) = m_data.inv_inertia_matrices.block<6,6>(0, 6*i );
+
+		const PrimalData::JacobianType &JM = m_data.jacobians[i] ;
+
+		W +=  JM * Mi * JM.transpose() ;
+	}
+
 
 	bogus::SOCLaw< 6, Scalar, true > law( m_data.n(), m_data.mu.data() ) ;
 

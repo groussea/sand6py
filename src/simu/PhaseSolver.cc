@@ -393,6 +393,10 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 	data.H = matrices.Pstress * ( matrices.B * matrices.M_lumped_inv_sqrt ) ;
 	data.w = matrices.Pstress * DynVec( matrices.B * u ) ;
 
+	data.jacobians.reserve( rbData.size() ) ;
+	data.inv_inertia_matrices.resize( 6, 6*rbData.size() ) ;
+	std::vector< unsigned > coupledRbIndices ;
+
 	DynVec totFraction = fraction ;
 
 	for( unsigned k = 0 ; k < rbData.size() ; ++k ) {
@@ -401,19 +405,27 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 		if( rb.nodes.count() == 0 )
 			continue ;
 
-		// FIXME bogus-bug
-//		data.H -= matrices.Pstress * ( rb.jacobian * matrices.M_lumped_inv_sqrt ) ;
-		typename FormMat<6,3>::Type JM =
-				matrices.Pstress * ( rb.jacobian * matrices.M_lumped_inv_sqrt )  ;
-		data.H -= JM ;
+		typename FormMat<6,3>::Type J =
+				matrices.Pstress * ( rb.jacobian ) ;
+
+		data.H -= J * matrices.M_lumped_inv_sqrt ;
+		// FIXME bogus bug data.H -= matrices.Pstress * ( rb.jacobian * matrices.M_lumped_inv_sqrt )
 
 		const DynVec delta_u = u - rb.projection.transpose() * rb.rb.velocities() ;
 
-		data.w -= matrices.Pstress * DynVec( rb.jacobian * delta_u ) ;
+		data.w -= J * delta_u  ;
 
 		for( Index i = 0 ; i < rb.nodes.count() ; ++i ) {
 			totFraction( m_phaseNodes.indices[ rb.nodes.revIndices[i] ] ) += rb.fraction[i] ;
 		}
+
+		Mat66 inv_inertia ;
+		inv_inertia.setZero() ; // FIXME  + if norm() ...
+
+		coupledRbIndices.push_back( k ) ;
+		data.inv_inertia_matrices.block<6,6>( 0, 6*data.jacobians.size() ) = inv_inertia ;
+		data.jacobians.emplace_back( J * rb.projection.transpose() );
+
 	}
 
 	data.mu.setConstant( data.n(), c.mu ) ;
@@ -443,9 +455,18 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 	u += matrices.M_lumped_inv_sqrt * DynVec( data.H.transpose() * x ) ;
 
 	m_phaseNodes.var2field( x, phase.stresses ) ;
+
 	for( unsigned k = 0 ; k < rbData.size() ; ++k ) {
+
 		RigidBodyData& rb = rbData[k] ;
 		rb.nodes.var2field( x, rb.stresses ) ;
+
+	}
+
+	for( unsigned k = 0 ; k < coupledRbIndices.size() ; ++k ) {
+		RigidBodyData& rb = rbData[ coupledRbIndices[k] ] ;
+		const Vec6 forces = data.jacobians[k].transpose() * x ;
+		rb.rb.predict_velocity( c.dt(), forces );
 	}
 
 }

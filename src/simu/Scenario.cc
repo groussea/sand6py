@@ -52,11 +52,14 @@ struct RbTestScenar : public Scenario {
 	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const
 	{
 		LevelSet::Ptr ls = LevelSet::make_plane() ;
+		ls->set_origin( .5 * m_config->box - Vec(0,0,.25*m_config->box[2]) ) ;
+		ls->set_rotation( Vec(1,0,0), M_PI/8 ) ;
+
 //		LevelSet::Ptr ls = LevelSet::make_sphere() ;
-		ls->scale(.125*m_config->box[2]).set_origin( .5 * m_config->box - Vec(0,0,.25*m_config->box[2]) ) ;
+//		ls->scale(.125*m_config->box[2]).set_origin( .5 * m_config->box - Vec(0,0,.25*m_config->box[2]) ) ;
 
 		rbs.emplace_back( ls );
-		rbs.back().set_velocity( Vec(0,0,1.e-1), Vec(0,0,0) ) ;
+//		rbs.back().set_velocity( Vec(0,0,1.e-1), Vec(0,0,0) ) ;
 	}
 };
 

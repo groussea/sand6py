@@ -34,7 +34,7 @@ public:
 		angularVelocity() = angularVel ;
 	}
 
-	void predict_velocity( const Scalar dt, const Vec6& forces ) const ;
+	void predict_velocity( const Scalar dt, const Vec6& forces ) ;
 
 	void move( const Scalar dt ) const ;
 
