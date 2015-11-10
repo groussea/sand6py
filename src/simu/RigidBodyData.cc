@@ -46,6 +46,7 @@ void RigidBodyData::compute_active( const Active& phaseNodes, BoundaryConditions
 
 		bool occupied = false ;
 		bool boundary = false ;
+		bool interior = true  ;
 
 		for( Index k = 0 ; k < MeshType::NV ; ++k  ) {
 			if( phi( geo.vertex(k) ) >  0. ) {
@@ -53,7 +54,8 @@ void RigidBodyData::compute_active( const Active& phaseNodes, BoundaryConditions
 
 				if( phi( geo.vertex(k) ) >= 1. ) {
 					boundary = true ;
-					break ;
+				} else {
+					interior = false ;
 				}
 			}
 		}
@@ -62,7 +64,7 @@ void RigidBodyData::compute_active( const Active& phaseNodes, BoundaryConditions
 			occupiedCells.push_back( cell ) ;
 		}
 
-		if( boundary ) {
+		if( boundary && !interior ) {
 			nodes.cells.push_back( cell ) ;
 			mesh.list_nodes( cell, nodelist );
 
