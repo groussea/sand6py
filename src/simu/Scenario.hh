@@ -11,8 +11,8 @@
 
 namespace d6 {
 
-class Config ;
-class ScenarioFactory ;
+struct Config ;
+struct ScenarioFactory ;
 class RigidBody ;
 class Simu ;
 

@@ -8,7 +8,7 @@ template < typename M > class MeshBase ;
 
 template< typename ValueType > struct Expr ;
 
-template< typename Derived > struct FieldBase ;
+template< typename Derived > class FieldBase ;
 template< typename Derived > struct FieldTraits ;
 template < typename MeshT > class AbstractScalarField ;
 template < typename MeshT > class AbstractVectorField ;

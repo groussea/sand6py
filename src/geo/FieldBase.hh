@@ -14,7 +14,7 @@ struct FieldTraits
 
 
 template< typename Derived >
-struct FieldBase : public Expr< typename FieldTraits< Derived >::ValueType >
+class FieldBase : public Expr< typename FieldTraits< Derived >::ValueType >
 {
 
 public:

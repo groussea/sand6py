@@ -5,7 +5,7 @@
 
 namespace d6 {
 
-class Config ;
+struct Config ;
 struct Phase ;
 
 class DynParticles {

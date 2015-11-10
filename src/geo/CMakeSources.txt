@@ -10,6 +10,7 @@ geo/Grid.hh
 geo/LevelSet.cc
 geo/LevelSet.hh
 geo/LevelSet.impl.hh
+geo/LevelSet.io.hh
 geo/MeshBase.cc
 geo/MeshBase.hh
 geo/MeshTraits.hh

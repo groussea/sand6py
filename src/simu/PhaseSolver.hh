@@ -13,7 +13,7 @@
 namespace d6 {
 
 class DynParticles ;
-class Config ;
+struct Config ;
 struct Phase ;
 struct PhaseMatrices ;
 class RigidBody ;
