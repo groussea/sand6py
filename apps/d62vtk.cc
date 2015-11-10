@@ -25,6 +25,7 @@ void dump_frame( const d6::Offline& offline, bool particles,
 	fieldWriter.startFile( "fields", frame ) ;
 	fieldWriter.dump(    "phi", offline.grains().fraction ) ;
 	fieldWriter.dump(      "u", offline.grains().velocity ) ;
+	fieldWriter.dump(  "d_phi", offline.grains().grad_phi ) ;
 
 	d6::ScalarField p   = offline.grains().stresses.trace() ;
 	d6::ScalarField dh  = offline.grains().sym_grad.trace() ;

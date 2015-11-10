@@ -246,15 +246,17 @@ void PhaseSolver::step(const Config &config, Phase &phase,
 	std::vector< bool > activeCells ;
 	m_particles.read( activeCells, intPhi, intPhiVel, intPhiInertia, intPhiOrient ) ;
 
+	// phi and grad_phi
 	phase.fraction.flatten() = intPhi.flatten() ;
 	phase.fraction.divide_by( volumes ) ;
+	computeGradPhi( phase.fraction, volumes, phase.grad_phi ) ;
 
 #if defined(FULL_FEM)
 	activeCells.assign( activeCells.size(), true ) ;
 #endif
 
 	// Active nodes
-	computeActiveNodes( mesh, activeCells, phase.fraction ) ;
+	computeActiveNodes( activeCells, phase.grad_phi ) ;
 	Log::Verbose() << "Active nodes: " << m_phaseNodes.count() << " / " << mesh.nNodes() << std::endl;
 
 	DynVec phi_int  ; m_phaseNodes.field2var( intPhi, phi_int ) ;
@@ -338,10 +340,49 @@ void PhaseSolver::step(const Config &config, Phase &phase,
 	Log::Debug() << "Max vel: " << phase.velocity.max_abs() << std::endl ;
 }
 
-void PhaseSolver::computeActiveNodes(const MeshType& mesh, const std::vector<bool> &activeCells ,
-									 const ScalarField &fraction)
+void PhaseSolver::computeGradPhi( const ScalarField& fraction, const ScalarField& volumes, VectorField &grad_phi ) const
+{ 
+	const MeshType &mesh = grad_phi.mesh() ;
+	
+	grad_phi.set_zero() ;
+
+	typename MeshType::CellGeo cellGeo ;
+
+	typename MeshType::Location loc ;
+	typename MeshType::Interpolation itp ;
+	typename MeshType::Derivatives dc_dx ;
+
+	Eigen::Matrix< Scalar, MeshType::NC, MeshType::NQ > qp ;
+	Eigen::Matrix< Scalar,            1, MeshType::NQ > qp_weights ;
+
+	for( typename MeshType::CellIterator it = mesh.cellBegin() ; it != mesh.cellEnd() ; ++it )
+	{
+		loc.cell = *it ;
+
+		mesh.get_geo( *it, cellGeo );
+		cellGeo.get_qp( qp, qp_weights ) ;
+
+		for ( int q = 0 ; q < MeshType::NQ ; ++q ) {
+			loc.coords = qp.col(q) ;
+
+			mesh.interpolate( loc, itp );
+			mesh.get_derivatives( loc, dc_dx );
+
+			for( Index j = 0 ; j < MeshType::NV ; ++j ) {
+				for( Index k = 0 ; k < MeshType::NV ; ++k ) {
+					grad_phi[ itp.nodes[j] ] += qp_weights[q] * dc_dx.row(k) * itp.coeffs[k] * fraction[ itp.nodes[k] ] ; 
+				}
+			}
+		}
+	}
+
+	grad_phi.divide_by( volumes ) ;
+}
+
+void PhaseSolver::computeActiveNodes(const std::vector<bool> &activeCells ,
+									 const VectorField &grad_phi )
 {
-	//TODO get_derivative(CELL_GEO, vertex)
+	const MeshType &mesh = grad_phi.mesh() ;
 
 	m_phaseNodes.reset( mesh.nNodes() );
 
@@ -359,13 +400,11 @@ void PhaseSolver::computeActiveNodes(const MeshType& mesh, const std::vector<boo
 		typename MeshType::NodeList nodes ;
 		mesh.list_nodes( *it, nodes );
 
-		typename MeshType::CellGeo cellGeo ;
-		mesh.get_geo( *it, cellGeo );
-
 		for( int k = 0 ; k < MeshType::NV ; ++ k ) {
 			++activeNodes[ nodes[k] ] ;
-			vecs.col( nodes[k] ) += ( cellGeo.vertex(k) - cellGeo.center() ).normalized() ;
 		}
+
+		
 	}
 
 	for( size_t i = 0 ; i < activeNodes.size() ; ++i ) {
@@ -375,10 +414,11 @@ void PhaseSolver::computeActiveNodes(const MeshType& mesh, const std::vector<boo
 
 			m_surfaceNodes[i].bc = BoundaryInfo::Interior ;
 
-			if( activeNodes[i] < mesh.nAdjacent(i) ) {
+			if( activeNodes[i] < mesh.nAdjacent(i) &&
+				grad_phi[i].squaredNorm() > 1.e-16) {
 
 				m_surfaceNodes[i].bc = BoundaryInfo::Free ;
-				m_surfaceNodes[i].normal = vecs.col( i ) / activeNodes[i] ;
+				m_surfaceNodes[i].normal = - grad_phi[ i ].normalized() ;
 
 			}
 		}

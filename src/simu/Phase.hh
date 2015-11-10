@@ -20,12 +20,14 @@ struct Phase
 	TensorField sym_grad ;
 	VectorField spi_grad ;
 
+	VectorField grad_phi ;
 	VectorField geo_proj ;
 
 	Phase( const MeshType& mesh )
 		: fraction(mesh), velocity(mesh),
 		  stresses(mesh), sym_grad(mesh),
-		  spi_grad(mesh), geo_proj(mesh)
+		  spi_grad(mesh), grad_phi(mesh),
+		  geo_proj(mesh)
 	{}
 
 	template < typename Archive >
@@ -35,6 +37,7 @@ struct Phase
 		ar & stresses ;
 		ar & sym_grad ;
 		ar & spi_grad ;
+		ar & grad_phi ;
 	}
 };
 

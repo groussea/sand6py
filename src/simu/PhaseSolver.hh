@@ -35,9 +35,8 @@ public:
 
 private:
 
-	void computeActiveNodes(const MeshType &mesh,
-							const std::vector< bool >& activeCells,
-							const ScalarField &fraction ) ;
+	void computeActiveNodes(const std::vector< bool >& activeCells,
+							const VectorField &grad_phi ) ;
 
 	void computeProjectors( PhaseMatrices& matrices,
 							const std::vector< RigidBodyData >& rbData
@@ -53,6 +52,9 @@ private:
 							  std::vector< RigidBodyData >& rbData,
 							  const DynVec &fraction,
 							  DynVec &u, Phase &phase) const ;
+
+	void computeGradPhi( const ScalarField& fraction, const ScalarField& volumes, VectorField &grad_phi ) const ;
+
 
 	Index nSuppNodes() const
 	{
