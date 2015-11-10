@@ -36,7 +36,8 @@ public:
 private:
 
 	void computeActiveNodes(const MeshType &mesh,
-							const std::vector< bool >& activeCells ) ;
+							const std::vector< bool >& activeCells,
+							const ScalarField &fraction ) ;
 
 	void computeProjectors( PhaseMatrices& matrices,
 							const std::vector< RigidBodyData >& rbData

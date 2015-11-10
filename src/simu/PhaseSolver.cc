@@ -246,12 +246,15 @@ void PhaseSolver::step(const Config &config, Phase &phase,
 	std::vector< bool > activeCells ;
 	m_particles.read( activeCells, intPhi, intPhiVel, intPhiInertia, intPhiOrient ) ;
 
+	phase.fraction.flatten() = intPhi.flatten() ;
+	phase.fraction.divide_by( volumes ) ;
+
 #if defined(FULL_FEM)
 	activeCells.assign( activeCells.size(), true ) ;
 #endif
 
 	// Active nodes
-	computeActiveNodes( mesh, activeCells ) ;
+	computeActiveNodes( mesh, activeCells, phase.fraction ) ;
 	Log::Verbose() << "Active nodes: " << m_phaseNodes.count() << " / " << mesh.nNodes() << std::endl;
 
 	DynVec phi_int  ; m_phaseNodes.field2var( intPhi, phi_int ) ;
@@ -299,12 +302,7 @@ void PhaseSolver::step(const Config &config, Phase &phase,
 
 		// Compute fraction of grains
 		DynVec fraction ;
-		{
-			DynVec active_volumes ;
-			m_phaseNodes.field2var( volumes, active_volumes ) ;
-			fraction = phi_int.array() / active_volumes.array() ;
-		}
-		m_phaseNodes.var2field( fraction, phase.fraction ) ;
+		m_phaseNodes.field2var( phase.fraction, fraction ) ;
 
 		// Compute rhs of momentum conservation
 		DynVec rhs ;
@@ -340,9 +338,11 @@ void PhaseSolver::step(const Config &config, Phase &phase,
 	Log::Debug() << "Max vel: " << phase.velocity.max_abs() << std::endl ;
 }
 
-void PhaseSolver::computeActiveNodes(
-		const MeshType& mesh, const std::vector<bool> &activeCells )
+void PhaseSolver::computeActiveNodes(const MeshType& mesh, const std::vector<bool> &activeCells ,
+									 const ScalarField &fraction)
 {
+	//TODO get_derivative(CELL_GEO, vertex)
+
 	m_phaseNodes.reset( mesh.nNodes() );
 
 	std::vector< int > activeNodes( mesh.nNodes(), 0 ) ;
