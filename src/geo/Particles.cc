@@ -8,7 +8,7 @@
 
 namespace d6 {
 
-const size_t Particles::s_MAX = 1.e6 ;
+const size_t Particles::s_MAX = 1.e7 ;
 
 Particles::Particles()
 	: m_count(0)

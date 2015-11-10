@@ -24,6 +24,7 @@ struct RigidBodyData
 	TensorField& stresses ;
 
 	Active	    nodes ;
+	typename MeshType::Cells occupiedCells ;
 
 	FormMat<6,3>::Type	jacobian ;
 	FormMat<6,3>::Type	projection ;

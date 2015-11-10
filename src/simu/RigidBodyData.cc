@@ -44,14 +44,22 @@ void RigidBodyData::compute_active( const Active& phaseNodes, BoundaryConditions
 	{
 		mesh.get_geo( cell, geo );
 
+		bool occupied = false ;
 		bool boundary = false ;
 
 		for( Index k = 0 ; k < MeshType::NV ; ++k  ) {
-			if( phi( geo.vertex(k) ) >= 1. ) {
-//			if( phi( geo.vertex(k) ) >  0. ) {
-				boundary = true ;
-				break ;
+			if( phi( geo.vertex(k) ) >  0. ) {
+				occupied = true ;
+
+				if( phi( geo.vertex(k) ) >= 1. ) {
+					boundary = true ;
+					break ;
+				}
 			}
+		}
+
+		if( occupied ) {
+			occupiedCells.push_back( cell ) ;
 		}
 
 		if( boundary ) {
@@ -79,8 +87,8 @@ void RigidBodyData::integrate(const Active &phaseNodes, Index totNodes)
 	const MeshType &mesh = stresses.mesh() ;
 	FormBuilder builder( mesh ) ;
 	builder.reset( totNodes );
-	builder.addToIndex( nodes.cells, phaseNodes.indices, phaseNodes.indices );
-	builder.addToIndex( nodes.cells,      nodes.indices, phaseNodes.indices );
+	builder.addToIndex( occupiedCells, phaseNodes.indices, phaseNodes.indices );
+	builder.addToIndex(   nodes.cells,      nodes.indices, phaseNodes.indices );
 	builder.makeCompressed();
 
 	jacobian.clear() ;
@@ -89,12 +97,19 @@ void RigidBodyData::integrate(const Active &phaseNodes, Index totNodes)
 	jacobian.cloneIndex( builder.index() ) ;
 	jacobian.setBlocksToZero() ;
 
-	builder.integrate_qp( nodes.cells, [&]( Scalar w, Loc loc, Itp itp, Dcdx )
+	builder.integrate_qp( occupiedCells, [&]( Scalar w, Loc loc, Itp itp, Dcdx )
 	{
 		Vec dphi_dx ;
 		grad_phi( mesh.pos( loc ), dphi_dx ) ;
 
 		FormBuilder:: addUTauGphi( jacobian, w, itp, dphi_dx, phaseNodes.indices, phaseNodes.indices ) ;
+	}
+	);
+	builder.integrate_qp(  nodes.cells, [&]( Scalar w, Loc loc, Itp itp, Dcdx )
+	{
+		Vec dphi_dx ;
+		grad_phi( mesh.pos( loc ), dphi_dx ) ;
+
 		FormBuilder:: addUTauGphi( jacobian, w, itp, dphi_dx,      nodes.indices, phaseNodes.indices ) ;
 	}
 	);

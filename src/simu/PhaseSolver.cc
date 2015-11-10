@@ -74,9 +74,13 @@ void PhaseSolver::computeProjectors(PhaseMatrices& mats,
 	for( unsigned k = 0 ; k < rbData.size() ; ++k ) {
 		for( Index i = 0 ; i < rbData[k].nodes.count() ; ++i  ) {
 			const Index   j = rbData[k].nodes.offset + i ;
-//			const Index idx = rbData[k].nodes.revIndices[ i ] ;
+			const Index idx = rbData[k].nodes.revIndices[ i ] ;
 //			m_surfaceNodes[idx].stressProj( mats.Pstress.insertBack( j,j ) ) ;
-			mats.Pstress.insertBack( j,j ).setIdentity() ;
+//			if( mats)
+			if( m_surfaceNodes[idx].bc == BoundaryInfo::Stick )
+				mats.Pstress.insertBack( j,j ).setZero() ;
+			else
+				mats.Pstress.insertBack( j,j ).setIdentity() ;
 		}
 	}
 
