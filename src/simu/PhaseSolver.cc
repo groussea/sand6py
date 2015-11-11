@@ -449,11 +449,9 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 		if( rb.nodes.count() == 0 )
 			continue ;
 
-		typename FormMat<6,3>::Type J =
-				matrices.Pstress * ( rb.jacobian ) ;
+		typename FormMat<6,3>::Type J =	matrices.Pstress * ( rb.jacobian ) ;
 
 		data.H -= J * matrices.M_lumped_inv_sqrt ;
-		// FIXME bogus bug data.H -= matrices.Pstress * ( rb.jacobian * matrices.M_lumped_inv_sqrt )
 
 		const DynVec delta_u = u - rb.projection.transpose() * rb.rb.velocities() ;
 
@@ -463,13 +461,10 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 			totFraction( m_phaseNodes.indices[ rb.nodes.revIndices[i] ] ) += rb.fraction[i] ;
 		}
 
-//		continue ;
-
 		Mat66 inv_inertia ;
 		rb.rb.inv_inertia( inv_inertia ) ;
-//		if( inv_inertia.squaredNorm() < 1.e-16 )
-//			continue ;
-//		inv_inertia.setZero() ; // FIXME  + if norm() ...
+		if( inv_inertia.squaredNorm() < 1.e-16 )
+			continue ;
 
 		coupledRbIndices.push_back( k ) ;
 		data.inv_inertia_matrices.block<6,6>( 0, 6*data.jacobians.size() ) = inv_inertia * c.dt() ;
