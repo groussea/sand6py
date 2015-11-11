@@ -22,7 +22,9 @@ public:
 
 	void run() ;
 	void step() ;
-	void dump(unsigned frame) const ;
+	
+	void dump_fields(unsigned frame) const ;
+	void dump_particles(unsigned frame) const ;
 
 	MeshType& mesh() { return * m_mesh ;  }
 	const MeshType& mesh() const { return * m_mesh ;  }

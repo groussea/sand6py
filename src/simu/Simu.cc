@@ -55,19 +55,27 @@ void Simu::run()
 	m_grains->spi_grad.set_zero();
 	m_grains->geo_proj.set_zero();
 
-	if( m_config.output )
-		dump( 0 ) ;
+	if( m_config.output ) {
+		dump_particles( 0 ) ;
+		dump_fields( 0 ) ;
+	}
 
 	for( unsigned frame = 0 ; frame < m_config.nFrames ; ++ frame ) {
 		bogus::Timer timer ;
 		Log::Info() << "Starting frame " << (frame+1) << std::endl ;
 
 		for( unsigned s = 0 ; s < m_config.substeps ; ++ s ) {
-			bogus::Timer timer ;
 			const Scalar t = (frame * m_config.substeps + s ) * m_config.dt() ;
 			Log::Verbose() << arg3( "Step %1/%2 \t t=%3", s+1, m_config.substeps, t ) << std::endl ;
 
 			Scenario::parse( m_config )->update( *this, t ) ;
+			
+			// Dump particles at last substep of each frame
+			if( m_config.output && m_config.substeps == s+1 )
+				dump_particles( frame+1 ) ;
+			
+			bogus::Timer timer ;
+			
 			step() ;
 
 			Log::Verbose() << arg( "Step done in %1 s", timer.elapsed() ) << std::endl ;
@@ -76,7 +84,8 @@ void Simu::run()
 		Log::Info() << arg( "Frame done in %1 s", timer.elapsed() ) << std::endl ;
 
 		if( m_config.output )
-			dump( frame+1 ) ;
+			dump_fields( frame+1 ) ;
+
 		m_particles.geo().clear_log();
 	}
 
@@ -97,26 +106,13 @@ void Simu::step()
 	}
 }
 
-void Simu::dump( unsigned frame ) const
+void Simu::dump_particles( unsigned frame ) const
 {
-	// Dump frame data for viz
 	FileInfo dir( FileInfo(m_base_dir).filePath( arg("frame-%1", frame ) ) ) ;
 	dir.makePath() ;
 	if( ! dir.exists() )
 		dir.makeDir() ;
 
-	// Grid
-	{
-		std::ofstream ofs( dir.filePath("mesh") );
-		boost::archive::binary_oarchive oa(ofs);
-		oa << m_mesh->derived() ;
-	}
-	// Velocity, Stress, Phi
-	{
-		std::ofstream ofs( dir.filePath("fields") );
-		boost::archive::binary_oarchive oa(ofs);
-		oa << *m_grains ;
-	}
 	// Particles
 	{
 		std::ofstream ofs( dir.filePath("particles") );
@@ -135,6 +131,28 @@ void Simu::dump( unsigned frame ) const
 			const LevelSet* ptr = m_rigidBodies[i].levelSetPtr() ;
 			oa << ptr ;
 		}
+	}
+}
+
+
+void Simu::dump_fields( unsigned frame ) const
+{
+	FileInfo dir( FileInfo(m_base_dir).filePath( arg("frame-%1", frame ) ) ) ;
+	dir.makePath() ;
+	if( ! dir.exists() )
+		dir.makeDir() ;
+
+	// Grid
+	{
+		std::ofstream ofs( dir.filePath("mesh") );
+		boost::archive::binary_oarchive oa(ofs);
+		oa << m_mesh->derived() ;
+	}
+	// Velocity, Stress, Phi
+	{
+		std::ofstream ofs( dir.filePath("fields") );
+		boost::archive::binary_oarchive oa(ofs);
+		oa << *m_grains ;
 	}
 }
 
