@@ -54,12 +54,12 @@ bool Shader::load(const char *vertex, const char *fragment)
 
 
 	if( program ) {
-		attributes.vertex = glGetAttribLocation( program, "vertex");
-		attributes.alpha  = glGetAttribLocation( program, "density");
-		attributes.frame  = glGetAttribLocation( program, "frame");
-
-		uniforms.model_view = glGetUniformLocation( program, "model_view");
-		uniforms.projection = glGetUniformLocation( program, "projection");
+		for( typename Bindings::iterator it = attributes.begin() ; it != attributes.end() ; ++ it ) {
+			it->second = glGetAttribLocation( program, it->first.c_str() );
+		}
+		for( typename Bindings::iterator it = uniforms.begin() ; it != uniforms.end() ; ++ it ) {
+			it->second = glGetUniformLocation( program, it->first.c_str() );
+		}
 	}
 
 	return program != 0 ;

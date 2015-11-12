@@ -73,6 +73,7 @@ void GLViewer::fastDraw()
 void GLViewer::draw()
 {
 
+	if( m_drawParticles ) 
 	{
 		m_glyphQuadIndices.bind();
 
@@ -91,36 +92,36 @@ void GLViewer::draw()
 			UsingShader sh( m_shader ) ;
 
 			// Model-view
-			glUniformMatrix4fv(m_shader.uniforms.model_view, 1, GL_FALSE, modelview );
-			glUniformMatrix4fv(m_shader.uniforms.projection, 1, GL_FALSE, projection );
+			glUniformMatrix4fv(m_shader.uniforms["model_view"], 1, GL_FALSE, modelview );
+			glUniformMatrix4fv(m_shader.uniforms["projection"], 1, GL_FALSE, projection );
 
 			//Vertices
-			gl::VertexAttribPointer vap( m_glyph, m_shader.attributes.vertex ) ;
+			gl::VertexAttribPointer vap( m_glyph, m_shader.attributes["vertex"] ) ;
 
 			// Densities
-			gl::VertexAttribPointer  ap( m_alpha, m_shader.attributes.alpha ) ;
-			glVertexAttribDivisor( m_shader.attributes.alpha, 1 ) ;
+			gl::VertexAttribPointer  ap( m_alpha, m_shader.attributes["alpha"] ) ;
+			glVertexAttribDivisor( m_shader.attributes["alpha"], 1 ) ;
 
 			//Frames
-			glEnableVertexAttribArray( m_shader.attributes.frame+0) ;
-			glEnableVertexAttribArray( m_shader.attributes.frame+1) ;
-			glEnableVertexAttribArray( m_shader.attributes.frame+2) ;
-			glEnableVertexAttribArray( m_shader.attributes.frame+3) ;
-			m_frames.set_vertex_attrib_pointer( m_shader.attributes.frame+0, false, 16, 4*0, 4 ) ;
-			m_frames.set_vertex_attrib_pointer( m_shader.attributes.frame+1, false, 16, 4*1, 4 ) ;
-			m_frames.set_vertex_attrib_pointer( m_shader.attributes.frame+2, false, 16, 4*2, 4 ) ;
-			m_frames.set_vertex_attrib_pointer( m_shader.attributes.frame+3, false, 16, 4*3, 4 ) ;
-			glVertexAttribDivisor( m_shader.attributes.frame+0, 1 ) ;
-			glVertexAttribDivisor( m_shader.attributes.frame+1, 1 ) ;
-			glVertexAttribDivisor( m_shader.attributes.frame+2, 1 ) ;
-			glVertexAttribDivisor( m_shader.attributes.frame+3, 1 ) ;
+			glEnableVertexAttribArray( m_shader.attributes["frame"]+0) ;
+			glEnableVertexAttribArray( m_shader.attributes["frame"]+1) ;
+			glEnableVertexAttribArray( m_shader.attributes["frame"]+2) ;
+			glEnableVertexAttribArray( m_shader.attributes["frame"]+3) ;
+			m_frames.set_vertex_attrib_pointer( m_shader.attributes["frame"]+0, false, 16, 4*0, 4 ) ;
+			m_frames.set_vertex_attrib_pointer( m_shader.attributes["frame"]+1, false, 16, 4*1, 4 ) ;
+			m_frames.set_vertex_attrib_pointer( m_shader.attributes["frame"]+2, false, 16, 4*2, 4 ) ;
+			m_frames.set_vertex_attrib_pointer( m_shader.attributes["frame"]+3, false, 16, 4*3, 4 ) ;
+			glVertexAttribDivisor( m_shader.attributes["frame"]+0, 1 ) ;
+			glVertexAttribDivisor( m_shader.attributes["frame"]+1, 1 ) ;
+			glVertexAttribDivisor( m_shader.attributes["frame"]+2, 1 ) ;
+			glVertexAttribDivisor( m_shader.attributes["frame"]+3, 1 ) ;
 
 			glDrawElementsInstanced( GL_QUADS, m_glyphQuadIndices.size(), GL_UNSIGNED_INT, 0, m_matrices.cols() );
 
-			glDisableVertexAttribArray( m_shader.attributes.frame+3) ;
-			glDisableVertexAttribArray( m_shader.attributes.frame+2) ;
-			glDisableVertexAttribArray( m_shader.attributes.frame+1) ;
-			glDisableVertexAttribArray( m_shader.attributes.frame+0) ;
+			glDisableVertexAttribArray( m_shader.attributes["frame"]+3) ;
+			glDisableVertexAttribArray( m_shader.attributes["frame"]+2) ;
+			glDisableVertexAttribArray( m_shader.attributes["frame"]+1) ;
+			glDisableVertexAttribArray( m_shader.attributes["frame"]+0) ;
 
 		} else {
 
@@ -232,6 +233,13 @@ void GLViewer::init()
 
   update_buffers();
 
+  
+  m_shader.add_attribute("vertex") ;
+  m_shader.add_attribute("frame") ;
+  m_shader.add_attribute("alpha") ;
+
+  m_shader.add_uniform("model_view") ;
+  m_shader.add_uniform("projection") ;
   m_shader.load() ;
 }
 
@@ -309,6 +317,10 @@ void GLViewer::keyPressEvent(QKeyEvent *e)
 		break ;
 	case Qt::Key_Home :
 		set_frame(0);
+		break ;
+	case Qt::Key_D:
+		m_drawParticles = !m_drawParticles ;
+		update_buffers() ;
 		break ;
 	case Qt::Key_B:
 		m_enableBending = !m_enableBending ;

@@ -19,12 +19,16 @@ namespace d6 {
 Offline::Offline(const char *base_dir)
 	: m_base_dir( base_dir )
 {
+	m_config.from_file( FileInfo( base_dir ).filePath( "config" ) ) ;
+	m_config.internalize() ;
+	Log::Info() << arg( "Frame Dt is %1 (IU) = %2 FPS (SI)", frame_dt(), m_config.fps / m_config.units().toSI( Units::Time )) << std::endl ;; 
+
 	m_mesh = new MeshImpl( Vec::Ones(), Vec3i::Ones() ) ;
 	m_grains = new Phase( *m_mesh ) ;
 }
 
 Offline::~Offline(){
-	delete m_mesh ;
+	delete m_mesh;
 	delete m_grains ;
 }
 
@@ -78,6 +82,5 @@ bool Offline::load_frame(unsigned frame )
 	return true ;
 
 }
-
 
 } //d6

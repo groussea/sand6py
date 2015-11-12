@@ -13,8 +13,9 @@
 
 #include <Eigen/Eigenvalues>
 
-#define SPLIT
-#define MERGE
+//FIXME Temporaily disable while working on grain sampler
+//#define SPLIT
+//#define MERGE
 
 
 namespace d6 {

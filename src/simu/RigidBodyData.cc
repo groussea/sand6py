@@ -156,17 +156,10 @@ void RigidBodyData::assemble_matrices(const Active &phaseNodes, Index totNodes)
 		}
 	}
 
-	// FIXME bogus add out-of-bounds insert assert
-	// FIXME bogus copy with fixed block type
 
 	proj.finalize() ;
 
 	projection = proj.transpose() ;
-//	projection.setZero() ;
-//	projection.setCols( phaseNodes.count() );
-//	projection.setRows( 1 );
-//	projection.finalize() ;
-//	projection += proj ;
 
 	integrate( phaseNodes, totNodes );
 }

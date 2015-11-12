@@ -48,6 +48,8 @@ endif()
 
 if ( "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" )
   set (CLANG TRUE)
+  include_directories( /usr/lib/clang/3.7/include )
+  set( CMAKE_EXPORT_COMPILE_COMMANDS 1 )
 elseif( "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" )
   set (GCC TRUE)
 endif()

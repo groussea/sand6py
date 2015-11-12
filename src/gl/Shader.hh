@@ -3,6 +3,8 @@
 
 #include "opengl.hh"
 
+#include <unordered_map>
+
 namespace d6 {
 
 
@@ -26,17 +28,14 @@ public:
 
 	GLuint vertex_shader, fragment_shader, program;
 
-	struct {
-		GLint vertex  ;
-		GLint frame   ;
-		GLint alpha   ;
-	} attributes ;
+	typedef std::unordered_map< std::string, GLint > Bindings ;
+	Bindings attributes ;
+	Bindings uniforms ;
 
-	struct {
-		GLint model_view  ;
-		GLint projection ;
-	} uniforms ;
-
+	void add_attribute( const char* name ) 
+	{ attributes[name] ; }
+	void add_uniform( const char* name ) 
+	{ uniforms[name] ; }
 
 };
 

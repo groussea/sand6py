@@ -166,7 +166,8 @@ struct ColorPointer
 struct VertexAttribPointer
 {
 	template< typename Scalar, unsigned Dim, int Type >
-	VertexAttribPointer( const VertexBuffer< Scalar, Dim, Type > &vb, GLint attrib, bool normalized = false )
+	VertexAttribPointer( const VertexBuffer< Scalar, Dim, Type > &vb, GLint attrib, 
+		bool normalized = false )
 		: m_attrib( attrib )
 	{
 		vb.set_vertex_attrib_pointer( attrib, normalized );
@@ -188,6 +189,7 @@ typedef VertexBuffer< GLfloat, 1, GL_ARRAY_BUFFER > ArrayBufferf;
 typedef VertexBuffer< GLdouble, 3, GL_ARRAY_BUFFER > VertexBuffer3d ;
 
 typedef VertexBuffer< GLuint, 1, GL_ELEMENT_ARRAY_BUFFER > IndexBuffer ;
+typedef VertexBuffer< GLuint, 1, GL_ARRAY_BUFFER > ArrayBufferui;
 
 } //ns gl
 } //ns d6

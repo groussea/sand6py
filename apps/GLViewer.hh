@@ -2,6 +2,8 @@
 #define D6_GLVIEWER_HH
 
 #include "visu/Offline.hh"
+#include "visu/Sampler.hh"
+
 #include "gl/VertexBuffer.hh"
 #include "gl/Shader.hh"
 
@@ -14,9 +16,10 @@ class GLViewer : public QGLViewer
 
 public:
 
-	GLViewer( Offline & offline ) :
-		m_offline( offline ), m_currentFrame(-1),
-		m_enableBending( false ), m_snapshotting(false),
+	GLViewer( Offline & offline, bool sample = true ) :
+		m_offline( offline ), m_sampler( offline ), m_renderSamples( sample ),
+		m_currentFrame(-1),
+		m_drawParticles( !sample ), m_enableBending( false ), m_snapshotting(false),
 		m_lastSnapped( m_currentFrame )
 	{
 
@@ -53,8 +56,12 @@ private:
 	void snap() ;
 
 	Offline& m_offline ;
+	Sampler  m_sampler ;
+
+	bool  	 m_renderSamples  ;
 	unsigned m_currentFrame ;
 
+	bool 	 m_drawParticles ;
 	bool 	 m_enableBending ;
 	bool 	 m_snapshotting ;
 	unsigned m_lastSnapped ;
@@ -70,6 +77,9 @@ private:
 
 	Eigen::VectorXf m_densities ;
 	gl::ArrayBufferf m_alpha ;
+	
+	gl::ArrayBufferui  m_particleIds ;
+	gl::VertexBuffer3d m_grainOffsets ;
 
 	Shader m_shader ;
 

@@ -1,8 +1,11 @@
 #ifndef D6_OFFLINE_HH
 #define D6_OFFLINE_HH
 
+
 #include "geo/geo.fwd.hh"
 #include "geo/Particles.hh"
+
+#include "simu/Config.hh"
 
 #include <memory>
 
@@ -35,8 +38,13 @@ public:
 		return m_levelSets ;
 	}
 
+	Scalar frame_dt () const {
+		return 1./ m_config.fps ;
+	}
+
 private:
 	const char* m_base_dir ;
+	Config m_config ;
 
 	Particles  m_particles ;
 	MeshType*  m_mesh ;
