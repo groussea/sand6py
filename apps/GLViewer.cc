@@ -154,6 +154,12 @@ void GLViewer::draw()
 			//Vertices
 			gl::VertexAttribPointer vap_v( m_grainVertices, m_grainsShader.attribute("vertex") ) ;
 			gl::VertexAttribPointer vap_n( m_grainNormals, m_grainsShader.attribute("normal") ) ;
+			
+			gl::VertexAttribPointer vap_a( m_grainVisibility, m_grainsShader.attribute("visibility") ) ;
+
+			Eigen::Vector3f light_pos( 0, 0, m_offline.mesh().box()[2] * 2 ) ;
+
+			glUniform3fv( m_grainsShader.uniform("light_pos"), 1, light_pos.data() ) ;
 		
 			glPointSize( 2 ) ;
 			glColor3f( 1,0,0 ) ;
@@ -270,9 +276,11 @@ void GLViewer::init()
 
 		m_grainsShader.add_attribute("vertex") ;
 		m_grainsShader.add_attribute("normal") ;
+		m_grainsShader.add_attribute("visibility") ;
 
 		m_grainsShader.add_uniform("model_view") ;
 		m_grainsShader.add_uniform("projection") ;
+		m_grainsShader.add_uniform("light_pos") ;
 		m_grainsShader.load("grains_vertex","grains_fragment") ;
 	}
 
@@ -331,6 +339,7 @@ void GLViewer::update_buffers()
 	if( m_renderSamples ) {
 		m_grainVertices.reset( m_sampler.count(), m_sampler.positions().data(), GL_DYNAMIC_DRAW )  ;
 		m_grainNormals.reset( m_sampler.count(), m_sampler.normals().data(), GL_DYNAMIC_DRAW )  ;
+		m_grainVisibility.reset( m_sampler.count(), m_sampler.visibility().data(), GL_DYNAMIC_DRAW )  ;
 	
 	}
 }
@@ -344,12 +353,12 @@ void GLViewer::postSelection(const QPoint& )
 void GLViewer::set_frame(unsigned frame)
 {
 	if( frame == m_currentFrame+1 && m_renderSamples ) 
-		m_sampler.updateOffsets( m_offline.frame_dt() * .5 ) ;
+		m_sampler.move( m_offline.frame_dt() * .5 ) ;
 
 	if( m_offline.load_frame( frame ) ) {
 
 		if( frame == m_currentFrame+1 && m_renderSamples ) 
-			m_sampler.updateOffsets( m_offline.frame_dt() * .5 ) ;
+			m_sampler.move( m_offline.frame_dt() * .5 ) ;
 
 		m_currentFrame = frame ;
 	}

@@ -35,7 +35,7 @@ struct BallSampler {
     std::uniform_real_distribution<Scalar> dist;
 } ;
 
-void Sampler::updateOffsets( const Scalar dt )
+void Sampler::move( const Scalar dt )
 {
 	// offset += DU*offset * st
 
@@ -44,7 +44,7 @@ void Sampler::updateOffsets( const Scalar dt )
 
 	const Index n = count() ;
 	
-#pragma omp for
+#pragma omp parallel for
 	for(Index i = 0 ; i < n ; ++i) {
 		const unsigned pid = m_particleIds[i] ;
 		const Vec p0 = particles.centers().col( pid ) ;
@@ -58,9 +58,43 @@ void Sampler::updateOffsets( const Scalar dt )
 		m_offsets.col(i) += dt * grad * m_offsets.col(i) ;
 		
 		m_normalNoise.col(i) = ( m_normalNoise.col(i) + dt * spin * m_normalNoise.col(i) ).normalized() ;
+	}
 
-		m_normals.col(i) = m_normalNoise.col(i).cast<float>() ;
-		m_positions.col(i) = (particles.centers().col(pid) + m_offsets.col(i) ).cast< float >() ;
+	compute_absolute() ;
+}
+
+void Sampler::compute_absolute( )
+{
+	// offset += DU*offset * st
+
+	const Scalar noise = 1. ;
+
+	const Particles& particles = m_offline.particles() ;
+	const Phase& grains = m_offline.grains() ;
+
+	const Index n = count() ;
+	
+#pragma omp parallel for
+	for(Index i = 0 ; i < n ; ++i) {
+		const unsigned pid = m_particleIds[i] ;
+		const Vec p0 = particles.centers().col( pid ) ;
+
+		const Vec pos = (p0 + m_offsets.col(i) ) ;
+		m_positions.col(i) = pos.cast< float >() ;
+		
+		Eigen::Vector3f grad_phi = grains.grad_phi( pos ).cast<float>() ;
+		grad_phi += 1.e-2 * Eigen::Vector3f( 0, 0, -1 ) ;
+		const float gn = grad_phi.norm() ;
+		if( gn > 1.e-6 )
+			grad_phi /= gn ;
+		else
+			grad_phi = Eigen::Vector3f( 0, 0, -1 ) ;
+
+
+		Eigen::Quaternionf rot( Eigen::AngleAxisf( noise, m_normalNoise.col(i).cast< float >() ) ) ;
+		m_normals.col(i) =  - ( rot * grad_phi ).normalized() ;
+		
+		m_visibility(i) = std::max( 0., std::min( 1., 1.5 - 1.5*grains.fraction(pos) ) ) ;
 	}
 
 }
@@ -86,6 +120,7 @@ void Sampler::sampleParticles( unsigned nSamples )
 
 	m_positions.resize( 3, n * nSamples ) ;
 	m_normals.resize( 3, n * nSamples ) ;
+	m_visibility.resize( n * nSamples ) ;
 
 #pragma omp parallel 
 	{
@@ -112,11 +147,11 @@ void Sampler::sampleParticles( unsigned nSamples )
 
 				m_normalNoise.col( idx ) = v ;
 
-				m_normals.col( idx ) = m_normalNoise.col( idx ).cast<float>() ; //FIXME
-				m_positions.col(idx) = (particles.centers().col(i) + m_offsets.col(idx) ).cast< float >() ;
 			}
 		}
 	}
+
+	compute_absolute() ;
 }
 
 

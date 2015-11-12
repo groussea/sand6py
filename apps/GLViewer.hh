@@ -80,6 +80,7 @@ private:
 	
 	gl::VertexBuffer3f m_grainVertices ;
 	gl::VertexBuffer3f m_grainNormals ;
+	gl::ArrayBufferf m_grainVisibility ;
 
 	Shader m_shader ;
 	Shader m_grainsShader ;

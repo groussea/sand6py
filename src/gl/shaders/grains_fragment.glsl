@@ -1,6 +1,7 @@
 #version 130
 
 uniform mat4 model_view ;
+uniform vec3 light_pos ;
 
 varying vec3 normal_screen ;
 varying vec3 vertex_screen ;
@@ -11,11 +12,9 @@ out vec4 color ;
 
 void main (void)
 {
-    vec3 light_pos = vec3(0,0,100) ;
-
-    vec4 ambientMat = vec4(0.3,0.3, 0., 1. );
-    vec4 diffuseMat = vec4(1. , 1., 0., 1. );
-    vec4 specMat    = vec4(1. , 1., 1., 1. );
+    vec4 ambientMat = vec4( vec3(0.3,0.3, 0.), 1. );
+    vec4 diffuseMat = vec4( alpha*vec3(.8 , .8, 0.), 1. );
+    vec4 specMat    = vec4( alpha*alpha*vec3(1. , 1., 1.), 1. );
     float specPow = 15.0;
 
     vec4 diffuse;
@@ -32,5 +31,5 @@ void main (void)
     spec = clamp ( specMat * pow(max(dot(R,E),0.0),0.3*specPow) , 0.0, 1.0 );
 
     color = ambient + diffuse + spec;
-    color.a = alpha ;
+//    color.a = alpha ;
 }

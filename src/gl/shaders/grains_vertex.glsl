@@ -5,6 +5,7 @@ uniform mat4 projection ;
 
 in vec3 vertex ;
 in vec3 normal ;
+in float visibility ;
 
 out vec3 normal_screen ;
 out vec3 vertex_screen ;
@@ -16,7 +17,7 @@ void main()
 	vertex_screen  = ip.xyz ;
 	normal_screen  = normalize( mat3(model_view) * normal ) ;
 
-	alpha = 1.0 ;
+	alpha = visibility ;
 
 	gl_Position = projection *  ip ;
 }

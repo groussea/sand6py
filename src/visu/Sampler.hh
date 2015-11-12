@@ -19,7 +19,7 @@ public:
 	void sampleParticles( unsigned nSamples ) ;
 
 	void reassign() ;
-	void updateOffsets( const Scalar dt ) ;
+	void move( const Scalar dt ) ;
 
 	size_t count() const { return m_particleIds.size() ; }
 
@@ -28,9 +28,12 @@ public:
 
 	const Eigen::Matrix3Xf& normals() const { return m_normals ; } 
 	const Eigen::Matrix3Xf& positions() const { return m_positions ; } 
+	const Eigen::VectorXf& visibility() const { return m_visibility ; } 
 	
 
 private:
+
+	void compute_absolute() ;
 
 	const Offline& m_offline ;
 
@@ -40,6 +43,7 @@ private:
 	
 	Eigen::Matrix3Xf m_positions ;
 	Eigen::Matrix3Xf m_normals ;
+	Eigen::VectorXf m_visibility ;
 
 } ;
 
