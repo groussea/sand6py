@@ -4,6 +4,7 @@
 #include "opengl.hh"
 
 #include <unordered_map>
+#include <cassert>
 
 namespace d6 {
 
@@ -37,13 +38,30 @@ public:
 	void add_uniform( const char* name ) 
 	{ uniforms[name] ; }
 
+	GLint uniform( const char* name ) const
+	{
+		const Bindings::const_iterator it = uniforms.find(name) ;
+		assert( it != uniforms.end() ) ;
+		return it->second ;
+	}
+	GLint attribute( const char* name ) const
+	{
+		const Bindings::const_iterator it = attributes.find(name) ;
+		assert( it != attributes.end() ) ;
+		return it->second ;
+	}
+
 };
 
 struct UsingShader {
 	UsingShader( const Shader& shader ) ;
 	~UsingShader() ;
 
+	void bindMVP( const char* model_view = "model_view",
+				  const char* projection = "projection" ) ;
+
 private:
+	const Shader& m_shader ;
 	GLuint previous ;
 };
 

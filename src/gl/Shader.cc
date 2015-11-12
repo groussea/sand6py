@@ -125,6 +125,7 @@ void Shader::use() const
 }
 
 UsingShader::UsingShader(const Shader &shader)
+: m_shader( shader )
 {
 	glGetIntegerv( GL_CURRENT_PROGRAM, (GLint*) &previous );
 	shader.use();
@@ -133,6 +134,17 @@ UsingShader::UsingShader(const Shader &shader)
 UsingShader::~UsingShader()
 {
 	glUseProgram( previous );
+}
+
+void UsingShader::bindMVP( const char* model_view_name, const char* projection_name )
+{
+	float model_view[16];
+	glGetFloatv(GL_MODELVIEW_MATRIX, model_view);
+	float projection[16];
+	glGetFloatv(GL_PROJECTION_MATRIX, projection);
+
+	glUniformMatrix4fv(m_shader.uniform(model_view_name), 1, GL_FALSE, model_view );
+	glUniformMatrix4fv(m_shader.uniform(projection_name), 1, GL_FALSE, projection );
 }
 
 } // d6

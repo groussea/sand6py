@@ -23,6 +23,13 @@ public:
 
 	size_t count() const { return m_particleIds.size() ; }
 
+	const std::vector< unsigned >& particleIds() const { return m_particleIds ; }
+	const DynMat3& offsets() const { return m_offsets ; }
+
+	const Eigen::Matrix3Xf& normals() const { return m_normals ; } 
+	const Eigen::Matrix3Xf& positions() const { return m_positions ; } 
+	
+
 private:
 
 	const Offline& m_offline ;
@@ -30,6 +37,9 @@ private:
 	std::vector< unsigned > m_particleIds ;
 	DynMat3 m_offsets ;
 	DynMat3 m_normalNoise ;
+	
+	Eigen::Matrix3Xf m_positions ;
+	Eigen::Matrix3Xf m_normals ;
 
 } ;
 

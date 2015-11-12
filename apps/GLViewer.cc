@@ -60,7 +60,13 @@ void GLViewer::fastDraw()
 	{
 		glPointSize( 3 );
 		gl::VertexPointer vp( m_centers ) ;
-		gl::ColorPointer  cp( m_colors ) ;
+		
+		if( m_drawParticles ) {
+			gl::ColorPointer  cp( m_colors ) ;
+		} else {
+			glColor3f(0,0,1) ;
+		}
+		
 		glDrawArrays( GL_POINTS, 0, m_centers.size() );
 	}
 
@@ -84,16 +90,10 @@ void GLViewer::draw()
 
 		if( m_shader.ok() ) {
 
-			float modelview[16];
-			glGetFloatv(GL_MODELVIEW_MATRIX, modelview);
-			float projection[16];
-			glGetFloatv(GL_PROJECTION_MATRIX, projection);
-
 			UsingShader sh( m_shader ) ;
 
 			// Model-view
-			glUniformMatrix4fv(m_shader.uniforms["model_view"], 1, GL_FALSE, modelview );
-			glUniformMatrix4fv(m_shader.uniforms["projection"], 1, GL_FALSE, projection );
+			sh.bindMVP() ;
 
 			//Vertices
 			gl::VertexAttribPointer vap( m_glyph, m_shader.attributes["vertex"] ) ;
@@ -143,6 +143,27 @@ void GLViewer::draw()
 		glDisable (GL_BLEND);
 	}
 
+	if( m_renderSamples )
+	{
+		if( m_grainsShader.ok() ) {
+
+			UsingShader sh( m_grainsShader ) ;
+			// Model-view
+			sh.bindMVP() ;
+
+			//Vertices
+			gl::VertexAttribPointer vap_v( m_grainVertices, m_grainsShader.attribute("vertex") ) ;
+			gl::VertexAttribPointer vap_n( m_grainNormals, m_grainsShader.attribute("normal") ) ;
+		
+			glPointSize( 2 ) ;
+			glColor3f( 1,0,0 ) ;
+
+			gl::VertexPointer vp( m_grainVertices ) ;
+			glDrawArrays( GL_POINTS, 0, m_grainVertices.size() );
+		
+		}
+	}
+
 	for( const LevelSet::Ptr& ls: m_offline.levelSets() ) {
 		drawObject( *ls );
 	}
@@ -157,21 +178,25 @@ void GLViewer::draw()
 void GLViewer::drawWithNames()
 {
 
-	m_glyphQuadIndices.bind();
+	if( m_drawParticles )
+	{
 
-	gl::VertexPointer vp( m_glyph ) ;
+		m_glyphQuadIndices.bind();
 
-	for( int i = 0 ; i < m_matrices.cols() ; ++i ){
-		glPushMatrix();
-		glMultMatrixf( m_matrices.col(i).data() );
-		glPushName(i) ;
+		gl::VertexPointer vp( m_glyph ) ;
 
-		glDrawElements( GL_QUADS, m_glyphQuadIndices.size(), GL_UNSIGNED_INT, 0 );
+		for( int i = 0 ; i < m_matrices.cols() ; ++i ){
+			glPushMatrix();
+			glMultMatrixf( m_matrices.col(i).data() );
+			glPushName(i) ;
 
-		glPopName() ;
-		glPopMatrix();
+			glDrawElements( GL_QUADS, m_glyphQuadIndices.size(), GL_UNSIGNED_INT, 0 );
+
+			glPopName() ;
+			glPopMatrix();
+		}
+
 	}
-
 }
 
 void GLViewer::drawObject(const LevelSet &ls)
@@ -214,33 +239,44 @@ void GLViewer::drawObject(const LevelSet &ls)
 
 void GLViewer::init()
 {
-  // Restore previous viewer state.
-  restoreStateFromFile();
+	// Restore previous viewer state.
+	restoreStateFromFile();
 
-  // Camera
-  const Vec& box = m_offline.mesh().box() ;
-  const qglviewer::Vec qgl_box( box[0], box[1], box[2] ) ;
-  const qglviewer::Vec qgl_ori(0,0,0) ;
-  setSceneBoundingBox( qgl_ori, qgl_box) ;
-  camera()->setZClippingCoefficient( box.maxCoeff() );
+	// Camera
+	const Vec& box = m_offline.mesh().box() ;
+	const qglviewer::Vec qgl_box( box[0], box[1], box[2] ) ;
+	const qglviewer::Vec qgl_ori(0,0,0) ;
+	setSceneBoundingBox( qgl_ori, qgl_box) ;
+	camera()->setZClippingCoefficient( box.maxCoeff() );
 
-  // Gen glyph vertices
-  Eigen::Matrix3Xf sphereVertices ;
-  std::vector< GLuint > quadIndices ;
-  genSphere( 5, 8, sphereVertices, quadIndices );
-  m_glyph.reset( sphereVertices.cols(), sphereVertices.data(), GL_STATIC_DRAW );
-  m_glyphQuadIndices.reset( quadIndices.size(), quadIndices.data() );
+	// Gen glyph vertices
+	Eigen::Matrix3Xf sphereVertices ;
+	std::vector< GLuint > quadIndices ;
+	genSphere( 5, 8, sphereVertices, quadIndices );
+	m_glyph.reset( sphereVertices.cols(), sphereVertices.data(), GL_STATIC_DRAW );
+	m_glyphQuadIndices.reset( quadIndices.size(), quadIndices.data() );
 
-  update_buffers();
 
-  
-  m_shader.add_attribute("vertex") ;
-  m_shader.add_attribute("frame") ;
-  m_shader.add_attribute("alpha") ;
+	m_shader.add_attribute("vertex") ;
+	m_shader.add_attribute("frame") ;
+	m_shader.add_attribute("alpha") ;
 
-  m_shader.add_uniform("model_view") ;
-  m_shader.add_uniform("projection") ;
-  m_shader.load() ;
+	m_shader.add_uniform("model_view") ;
+	m_shader.add_uniform("projection") ;
+	m_shader.load() ;
+
+	if( m_renderSamples ) {
+		m_sampler.sampleParticles( 10 ) ;
+
+		m_grainsShader.add_attribute("vertex") ;
+		m_grainsShader.add_attribute("normal") ;
+
+		m_grainsShader.add_uniform("model_view") ;
+		m_grainsShader.add_uniform("projection") ;
+		m_grainsShader.load("grains_vertex","grains_fragment") ;
+	}
+
+	update_buffers();
 }
 
 void GLViewer::animate()
@@ -253,41 +289,50 @@ void GLViewer::update_buffers()
 {
 	const Particles &p = m_offline.particles() ;
 	m_centers.reset( p.count(), p.centers().data(), GL_STATIC_DRAW )  ;
+	
+	if( m_drawParticles )
+	{
 
-	m_matrices.resize( 16, p.count() );
-	m_densities.resize( p.count() );
+		m_matrices.resize( 16, p.count() );
+		m_densities.resize( p.count() );
 
-	// Compute movel-view matrix from tensor
-	Eigen::Matrix4f mat ;
-	Mat tensor ;
+		// Compute movel-view matrix from tensor
+		Eigen::Matrix4f mat ;
+		Mat tensor ;
 
 #pragma omp parallel for private(mat, tensor)
-	for( size_t i = 0 ; i < p.count() ; ++i ) {
-		mat.setIdentity()  ;
+		for( size_t i = 0 ; i < p.count() ; ++i ) {
+			mat.setIdentity()  ;
 
-		tensor_view( p.frames().col( i ) ).get( tensor ) ;
-		Eigen::SelfAdjointEigenSolver<Mat> es( tensor );
+			tensor_view( p.frames().col( i ) ).get( tensor ) ;
+			Eigen::SelfAdjointEigenSolver<Mat> es( tensor );
 
-		const Vec ev = es.eigenvalues().array().max(0).sqrt() ;
-		const Scalar vol = 8 * ev.prod() ;
+			const Vec ev = es.eigenvalues().array().max(0).sqrt() ;
+			const Scalar vol = 8 * ev.prod() ;
 
-		mat.block<3,3>(0,0) = ( es.eigenvectors() * ev.asDiagonal() ).cast< GLfloat >()  ;
-		mat.block<3,1>(0,3) = p.centers().col(i).cast < GLfloat >() ;
+			mat.block<3,3>(0,0) = ( es.eigenvectors() * ev.asDiagonal() ).cast< GLfloat >()  ;
+			mat.block<3,1>(0,3) = p.centers().col(i).cast < GLfloat >() ;
 
-		m_matrices.col(i) = Eigen::Matrix< GLfloat, 16, 1 >::Map( mat.data(), mat.size() ) ;
-		m_densities[i] = p.volumes()[i] / vol ;
+			m_matrices.col(i) = Eigen::Matrix< GLfloat, 16, 1 >::Map( mat.data(), mat.size() ) ;
+			m_densities[i] = p.volumes()[i] / vol ;
 
+		}
+		m_frames.reset( p.count(), m_matrices.data(), GL_STATIC_DRAW )  ;
+		m_alpha.reset ( p.count(), m_densities.data(), GL_STATIC_DRAW )  ;
+
+		// Colors
+		Eigen::Matrix4Xf colors( 4, p.count() ) ;
+		colors.topRows(2).setZero() ;
+		colors.row(2) = m_densities.cast< float >() ;
+		colors.row(3).setOnes() ;
+		m_colors.reset( p.count(), colors.data(), GL_STATIC_DRAW )  ;
+	} 
+
+	if( m_renderSamples ) {
+		m_grainVertices.reset( m_sampler.count(), m_sampler.positions().data(), GL_DYNAMIC_DRAW )  ;
+		m_grainNormals.reset( m_sampler.count(), m_sampler.normals().data(), GL_DYNAMIC_DRAW )  ;
+	
 	}
-	m_frames.reset( p.count(), m_matrices.data(), GL_STATIC_DRAW )  ;
-	m_alpha.reset ( p.count(), m_densities.data(), GL_STATIC_DRAW )  ;
-
-	// Colors
-	Eigen::Matrix4Xf colors( 4, p.count() ) ;
-	colors.topRows(2).setZero() ;
-	colors.row(2) = m_densities.cast< float >() ;
-	colors.row(3).setOnes() ;
-	m_colors.reset( p.count(), colors.data(), GL_STATIC_DRAW )  ;
-
 }
 
 void GLViewer::postSelection(const QPoint& )
@@ -298,9 +343,17 @@ void GLViewer::postSelection(const QPoint& )
 
 void GLViewer::set_frame(unsigned frame)
 {
+	if( frame == m_currentFrame+1 && m_renderSamples ) 
+		m_sampler.updateOffsets( m_offline.frame_dt() * .5 ) ;
+
 	if( m_offline.load_frame( frame ) ) {
+
+		if( frame == m_currentFrame+1 && m_renderSamples ) 
+			m_sampler.updateOffsets( m_offline.frame_dt() * .5 ) ;
+
 		m_currentFrame = frame ;
 	}
+
 	update_buffers();
 }
 

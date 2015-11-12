@@ -57,7 +57,10 @@ void Sampler::updateOffsets( const Scalar dt )
 		grad += spin ;
 		m_offsets.col(i) += dt * grad * m_offsets.col(i) ;
 		
-		m_normalNoise.col(i) = ( dt * spin * m_normalNoise.col(i) ).normalized() ; 
+		m_normalNoise.col(i) = ( m_normalNoise.col(i) + dt * spin * m_normalNoise.col(i) ).normalized() ;
+
+		m_normals.col(i) = m_normalNoise.col(i).cast<float>() ;
+		m_positions.col(i) = (particles.centers().col(pid) + m_offsets.col(i) ).cast< float >() ;
 	}
 
 }
@@ -79,6 +82,10 @@ void Sampler::sampleParticles( unsigned nSamples )
 
 	m_particleIds.resize( n * nSamples ) ;
 	m_offsets.resize( 3, n * nSamples ) ;
+	m_normalNoise.resize( 3, n * nSamples ) ;
+
+	m_positions.resize( 3, n * nSamples ) ;
+	m_normals.resize( 3, n * nSamples ) ;
 
 #pragma omp parallel 
 	{
@@ -100,9 +107,13 @@ void Sampler::sampleParticles( unsigned nSamples )
 				m_particleIds[idx] = i ;
 				
 				sampler(v) ;
-				m_offsets.col( idx ) = ( es.eigenvectors() * ev.asDiagonal() ) * v ;
+				m_offsets.col( idx ) = ( es.eigenvectors() * ev.asDiagonal() ) * v * 1.7 ;
 				sampler.onSphere( v ) ;
+
 				m_normalNoise.col( idx ) = v ;
+
+				m_normals.col( idx ) = m_normalNoise.col( idx ).cast<float>() ; //FIXME
+				m_positions.col(idx) = (particles.centers().col(i) + m_offsets.col(idx) ).cast< float >() ;
 			}
 		}
 	}
