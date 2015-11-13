@@ -3,4 +3,6 @@ gl/Shader.hh
 gl/VertexBuffer.hh
 gl/opengl.hh
 gl/shaders/fragment.glsl
+gl/shaders/grains_fragment.glsl
+gl/shaders/grains_vertex.glsl
 gl/shaders/vertex.glsl

@@ -56,17 +56,17 @@ static void genSphere( const unsigned parallels, const unsigned meridians,
 
 void GLViewer::fastDraw()
 {
-//	draw() ; return ;
+	draw() ; return ;
 	{
 		glPointSize( 3 );
 		gl::VertexPointer vp( m_centers ) ;
-		
+
 		if( m_drawParticles ) {
 			gl::ColorPointer  cp( m_colors ) ;
 		} else {
 			glColor3f(0,0,1) ;
 		}
-		
+
 		glDrawArrays( GL_POINTS, 0, m_centers.size() );
 	}
 
@@ -78,15 +78,15 @@ void GLViewer::fastDraw()
 
 void GLViewer::draw()
 {
+	if( m_enableBending ) {
+		glEnable (GL_BLEND);
+		glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	}
 
-	if( m_drawParticles ) 
+
+	if( m_drawParticles )
 	{
 		m_glyphQuadIndices.bind();
-
-		if( m_enableBending ) {
-			glEnable (GL_BLEND);
-			glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		}
 
 		if( m_shader.ok() ) {
 
@@ -140,7 +140,6 @@ void GLViewer::draw()
 
 		}
 
-		glDisable (GL_BLEND);
 	}
 
 	if( m_renderSamples )
@@ -154,21 +153,24 @@ void GLViewer::draw()
 			//Vertices
 			gl::VertexAttribPointer vap_v( m_grainVertices, m_grainsShader.attribute("vertex") ) ;
 			gl::VertexAttribPointer vap_n( m_grainNormals, m_grainsShader.attribute("normal") ) ;
-			
+
 			gl::VertexAttribPointer vap_a( m_grainVisibility, m_grainsShader.attribute("visibility") ) ;
+			gl::VertexAttribPointer vap_s( m_grainNoise, m_grainsShader.attribute("noise") ) ;
 
 			Eigen::Vector3f light_pos( 0, 0, m_offline.mesh().box()[2] * 2 ) ;
 
 			glUniform3fv( m_grainsShader.uniform("light_pos"), 1, light_pos.data() ) ;
-		
+
 			glPointSize( 2 ) ;
 			glColor3f( 1,0,0 ) ;
 
 			gl::VertexPointer vp( m_grainVertices ) ;
 			glDrawArrays( GL_POINTS, 0, m_grainVertices.size() );
-		
+
 		}
 	}
+
+	glDisable (GL_BLEND);
 
 	for( const LevelSet::Ptr& ls: m_offline.levelSets() ) {
 		drawObject( *ls );
@@ -272,11 +274,12 @@ void GLViewer::init()
 	m_shader.load() ;
 
 	if( m_renderSamples ) {
-		m_sampler.sampleParticles( 10 ) ;
+		m_sampler.sampleParticles( 8 ) ;
 
 		m_grainsShader.add_attribute("vertex") ;
 		m_grainsShader.add_attribute("normal") ;
 		m_grainsShader.add_attribute("visibility") ;
+		m_grainsShader.add_attribute("noise") ;
 
 		m_grainsShader.add_uniform("model_view") ;
 		m_grainsShader.add_uniform("projection") ;
@@ -297,7 +300,7 @@ void GLViewer::update_buffers()
 {
 	const Particles &p = m_offline.particles() ;
 	m_centers.reset( p.count(), p.centers().data(), GL_STATIC_DRAW )  ;
-	
+
 	if( m_drawParticles )
 	{
 
@@ -334,13 +337,13 @@ void GLViewer::update_buffers()
 		colors.row(2) = m_densities.cast< float >() ;
 		colors.row(3).setOnes() ;
 		m_colors.reset( p.count(), colors.data(), GL_STATIC_DRAW )  ;
-	} 
+	}
 
 	if( m_renderSamples ) {
 		m_grainVertices.reset( m_sampler.count(), m_sampler.positions().data(), GL_DYNAMIC_DRAW )  ;
 		m_grainNormals.reset( m_sampler.count(), m_sampler.normals().data(), GL_DYNAMIC_DRAW )  ;
 		m_grainVisibility.reset( m_sampler.count(), m_sampler.visibility().data(), GL_DYNAMIC_DRAW )  ;
-	
+		m_grainNoise.reset( m_sampler.count(), m_sampler.noise().data(), GL_DYNAMIC_DRAW )  ;
 	}
 }
 
@@ -352,16 +355,20 @@ void GLViewer::postSelection(const QPoint& )
 
 void GLViewer::set_frame(unsigned frame)
 {
-	if( frame == m_currentFrame+1 && m_renderSamples ) 
-		m_sampler.move( m_offline.frame_dt() * .5 ) ;
+//	if( frame == m_currentFrame+1 && m_renderSamples )
+//		m_sampler.move( m_offline.frame_dt() * .5 ) ;
+
+	if( frame == m_currentFrame+1 && m_renderSamples ) {
+		m_sampler.reassign();
+		m_sampler.move( m_offline.frame_dt() ) ;
+	}
 
 	if( m_offline.load_frame( frame ) ) {
 
-		if( frame == m_currentFrame+1 && m_renderSamples ) 
-			m_sampler.move( m_offline.frame_dt() * .5 ) ;
-
 		m_currentFrame = frame ;
 	}
+
+	m_sampler.compute_absolute() ;
 
 	update_buffers();
 }

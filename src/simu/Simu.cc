@@ -69,13 +69,15 @@ void Simu::run()
 			Log::Verbose() << arg3( "Step %1/%2 \t t=%3", s+1, m_config.substeps, t ) << std::endl ;
 
 			Scenario::parse( m_config )->update( *this, t ) ;
-			
+
 			// Dump particles at last substep of each frame
-			if( m_config.output && m_config.substeps == s+1 )
+			if( m_config.output && m_config.substeps == s+1 ) {
 				dump_particles( frame+1 ) ;
-			
+			}
+			m_particles.log().start();
+
 			bogus::Timer timer ;
-			
+
 			step() ;
 
 			Log::Verbose() << arg( "Step done in %1 s", timer.elapsed() ) << std::endl ;
@@ -83,10 +85,10 @@ void Simu::run()
 
 		Log::Info() << arg( "Frame done in %1 s", timer.elapsed() ) << std::endl ;
 
-		if( m_config.output )
+		if( m_config.output ) {
 			dump_fields( frame+1 ) ;
-
-		m_particles.geo().clear_log();
+			m_particles.log().clear();
+		}
 	}
 
 	Log::Info() << "All done." << std::endl ;
@@ -153,6 +155,12 @@ void Simu::dump_fields( unsigned frame ) const
 		std::ofstream ofs( dir.filePath("fields") );
 		boost::archive::binary_oarchive oa(ofs);
 		oa << *m_grains ;
+	}
+	// Log
+	{
+		std::ofstream ofs( dir.filePath("log") );
+		boost::archive::binary_oarchive oa(ofs);
+		oa << m_particles.log() ;
 	}
 }
 

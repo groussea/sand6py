@@ -77,10 +77,11 @@ private:
 
 	Eigen::VectorXf m_densities ;
 	gl::ArrayBufferf m_alpha ;
-	
+
 	gl::VertexBuffer3f m_grainVertices ;
 	gl::VertexBuffer3f m_grainNormals ;
 	gl::ArrayBufferf m_grainVisibility ;
+	gl::ArrayBufferf m_grainNoise ;
 
 	Shader m_shader ;
 	Shader m_grainsShader ;

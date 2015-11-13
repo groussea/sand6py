@@ -20,9 +20,43 @@ public:
 		Type   type   ;
 		size_t first  ;
 		size_t second ;
+		size_t third  ;
+
+		Vec    dx ;
 
 		template < typename Archive >
 		void serialize( Archive &ar, unsigned int ) ;
+
+		static Event split( size_t first, size_t second, Vec dx ) {
+			return Event{ Split, first, second, 0, dx } ;
+		}
+	};
+	struct EventLog {
+		void log( const Event& event )	;
+
+		void start() {
+			m_log.emplace_back() ;
+		}
+		void clear() {
+			m_log.clear() ;
+		}
+		const std::vector< std::vector< Event > >& events() const 	{
+			return m_log ;
+		}
+
+		template < typename Archive >
+		void serialize( Archive &ar, unsigned int ) {
+			ar & m_log ;
+		}
+
+		const std::vector< std::vector< Event > >& log() const {
+			return m_log ;
+		}
+
+	private:
+		std::vector< std::vector< Event > > m_log ;
+		Mutex m_log_mutex ;
+
 	};
 
 	static const size_t s_MAX ;
@@ -42,14 +76,6 @@ public:
 	const typename Data< 6 >::Type&     frames() const { return     m_frames ; }
 	const typename Data< 6 >::Type&     orient() const { return     m_orient ; }
 
-	void log( const Event& event )	;
-
-	void clear_log() {
-		m_log.clear() ;
-	}
-	const std::vector< Event >& events() const 	{
-		return m_log ;
-	}
 
 private:
 
@@ -62,9 +88,6 @@ private:
 
 	typename Data< 6 >::Type m_frames ;
 	typename Data< 6 >::Type m_orient ; // Aniso
-
-	std::vector< Event > m_log ;
-	Mutex m_log_mutex ;
 
 	void resize( size_t n ) ;
 

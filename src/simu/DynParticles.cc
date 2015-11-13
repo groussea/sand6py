@@ -14,7 +14,7 @@
 #include <Eigen/Eigenvalues>
 
 //FIXME Temporaily disable while working on grain sampler
-//#define SPLIT
+#define SPLIT
 //#define MERGE
 
 
@@ -238,7 +238,7 @@ void DynParticles::splitMerge( const MeshType & mesh )
 					m_geo.m_volumes[j] = m_geo.m_volumes[i] ;
 
 					ev[kMax] *= .5 ;
-					ev[kMin] = std::max( defLength / 64, ev[kMin] ) ;
+					ev[kMin] = std::max( defLength / 8, ev[kMin] ) ;
 //					ev[kMin] = std::max( evMin, evMax/4 ) ;
 
 					m_geo.m_centers.col(j) = m_geo.m_centers.col(i) - ev[kMax] * es.eigenvectors().col(kMax).normalized() ;
@@ -257,17 +257,26 @@ void DynParticles::splitMerge( const MeshType & mesh )
 					tensor_view( m_geo.m_frames.col(i) ).set( frame ) ;
 					tensor_view( m_geo.m_frames.col(j) ).set( frame ) ;
 
-					m_geo.log( Particles::Event{ Particles::Event::Split, i, j } );
+					const Vec dx = .5 * (m_geo.m_centers.col(j) - m_geo.m_centers.col(i)) ;
+					m_log.log( Particles::Event::split( i, j, dx ) );
 
 			}
-		} else if( evMax > 2*evMin ) {
-#ifdef MERGE
-			typename MeshType::Location loc ;
-			mesh.locate( m_geo.centers().col(i), loc );
-			MergeInfo mgi { i, evMin, es.eigenvectors().col(kMin) }  ;
-#pragma omp critical
-			mg_hash[ mesh.cellIndex( loc.cell ) ].push_back( mgi ) ;
-#endif
+		} else {
+
+			//Repair flat frames
+			ev[kMin] = std::max( defLength / 8, ev[kMin] ) ;
+			frame = es.eigenvectors() * ev.asDiagonal() * ev.asDiagonal() * es.eigenvectors().transpose() ;
+			tensor_view( m_geo.m_frames.col(i) ).set( frame ) ;
+
+			if( evMax > 2*evMin ) {
+	#ifdef MERGE
+				typename MeshType::Location loc ;
+				mesh.locate( m_geo.centers().col(i), loc );
+				MergeInfo mgi { i, evMin, es.eigenvectors().col(kMin) }  ;
+	#pragma omp critical
+				mg_hash[ mesh.cellIndex( loc.cell ) ].push_back( mgi ) ;
+	#endif
+			}
 
 		}
 
@@ -300,7 +309,6 @@ void DynParticles::splitMerge( const MeshType & mesh )
 				const Scalar depl = std::fabs( list[k].dir.dot( list[l].dir ) ) * ( list[k].len + list[l].len ) ;
 
 				if( (pk - pl).squaredNorm() < depl*depl ) {
-					m_geo.log( Particles::Event{ Particles::Event::Merge, list[k].pid, list[l].pid } );
 					mg_indices[ list[k].pid ] = list[l].pid ;
 					mg_indices[ list[l].pid ] = list[k].pid ;
 					break ;
@@ -341,6 +349,8 @@ void DynParticles::splitMerge( const MeshType & mesh )
 			size_t reloc_src = -1 ;
 #pragma omp atomic capture
 			reloc_src = --m_geo.m_count ;
+
+			m_geo.log( Particles::Event{ Particles::Event::Merge, list[k].pid, list[l].pid, mg_reloc[ reloc_src ] } );
 
 			mg_reloc[ j ] = mg_reloc[ reloc_src ] ;
 		}

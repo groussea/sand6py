@@ -166,7 +166,7 @@ struct ColorPointer
 struct VertexAttribPointer
 {
 	template< typename Scalar, unsigned Dim, int Type >
-	VertexAttribPointer( const VertexBuffer< Scalar, Dim, Type > &vb, GLint attrib, 
+	VertexAttribPointer( const VertexBuffer< Scalar, Dim, Type > &vb, GLint attrib,
 		bool normalized = false )
 		: m_attrib( attrib )
 	{

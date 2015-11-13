@@ -21,7 +21,7 @@ Offline::Offline(const char *base_dir)
 {
 	m_config.from_file( FileInfo( base_dir ).filePath( "config" ) ) ;
 	m_config.internalize() ;
-	Log::Info() << arg( "Frame Dt is %1 (IU) = %2 FPS (SI)", frame_dt(), m_config.fps / m_config.units().toSI( Units::Time )) << std::endl ;; 
+	Log::Info() << arg( "Frame Dt is %1 (IU) = %2 FPS (SI)", frame_dt(), m_config.fps / m_config.units().toSI( Units::Time )) << std::endl ;;
 
 	m_mesh = new MeshImpl( Vec::Ones(), Vec3i::Ones() ) ;
 	m_grains = new Phase( *m_mesh ) ;
@@ -57,6 +57,12 @@ bool Offline::load_frame(unsigned frame )
 		std::ifstream ifs( dir.filePath("particles") );
 		boost::archive::binary_iarchive ia(ifs);
 		ia >> m_particles ;
+	}
+	// Log
+	{
+		std::ifstream ifs( dir.filePath("log") );
+		boost::archive::binary_iarchive ia(ifs);
+		ia >> m_log ;
 	}
 
 	//Objects

@@ -42,11 +42,17 @@ public:
 		return 1./ m_config.fps ;
 	}
 
+	const Particles::EventLog& log() const {
+		return m_log ;
+	}
+
 private:
 	const char* m_base_dir ;
 	Config m_config ;
 
 	Particles  m_particles ;
+	Particles::EventLog  m_log ;
+
 	MeshType*  m_mesh ;
 	Phase*     m_grains ;
 

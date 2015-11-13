@@ -28,13 +28,21 @@ public:
 
 	void clamp_particle( size_t i, const MeshType &mesh ) ;
 
-private:
-
 	void splitMerge( const MeshType & mesh ) ;
+
+	const Particles::EventLog& log() const {
+		return m_log ;
+	}
+	Particles::EventLog& log() {
+		return m_log ;
+	}
+
+private:
 
 	void resize( size_t n ) ;
 
 	Particles m_geo ;
+	Particles::EventLog m_log ;
 	Scalar m_meanVolume ;
 
 	Eigen::Matrix< Scalar, 9, Eigen::Dynamic > m_affine ;
