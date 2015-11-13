@@ -15,7 +15,7 @@
 
 //FIXME Temporaily disable while working on grain sampler
 #define SPLIT
-//#define MERGE
+#define MERGE
 
 
 namespace d6 {
@@ -258,7 +258,7 @@ void DynParticles::splitMerge( const MeshType & mesh )
 					tensor_view( m_geo.m_frames.col(j) ).set( frame ) ;
 
 					const Vec dx = .5 * (m_geo.m_centers.col(j) - m_geo.m_centers.col(i)) ;
-					m_log.log( Particles::Event::split( i, j, dx ) );
+					m_events.log( Particles::Event::split( i, j, dx ) );
 
 			}
 		} else {
@@ -292,9 +292,8 @@ void DynParticles::splitMerge( const MeshType & mesh )
 	const size_t n_before_merge = count() ;
 	const size_t None = -1 ;
 	std::vector< size_t > mg_indices( count(), None ) ;
-	std::vector< size_t > mg_reloc( count() ) ;
-	std::iota(mg_reloc.begin(), mg_reloc.end(), 0);
 
+#pragma omp parallel for
 	for( size_t cidx = 0 ; cidx < mg_hash.size() ; ++ cidx ) {
 		const std::vector< MergeInfo >& list = mg_hash[cidx] ;
 		const unsigned m = list.size() ;
@@ -311,6 +310,7 @@ void DynParticles::splitMerge( const MeshType & mesh )
 				if( (pk - pl).squaredNorm() < depl*depl ) {
 					mg_indices[ list[k].pid ] = list[l].pid ;
 					mg_indices[ list[l].pid ] = list[k].pid ;
+
 					break ;
 				}
 			}
@@ -345,26 +345,36 @@ void DynParticles::splitMerge( const MeshType & mesh )
 
 			m_geo.m_volumes[i] += vj ;
 			m_geo.m_centers.col(i) = bary;
-
-			size_t reloc_src = -1 ;
-#pragma omp atomic capture
-			reloc_src = --m_geo.m_count ;
-
-			m_geo.log( Particles::Event{ Particles::Event::Merge, list[k].pid, list[l].pid, mg_reloc[ reloc_src ] } );
-
-			mg_reloc[ j ] = mg_reloc[ reloc_src ] ;
 		}
 	}
 
-	for( size_t j = 0 ; j < m_geo.m_count ; ++ j ) {
-		size_t k = mg_reloc[j] ;
 
-		m_geo.m_volumes[j] = m_geo.m_volumes[k] ;
-		m_geo.m_centers.col(j) = m_geo.m_centers.col(k) ;
-		m_geo.m_orient.col(j) = m_geo.m_orient.col(k) ;
-		m_geo.m_frames.col(j) = m_geo.m_frames.col(k) ;
+	for( size_t j = 0 ; j < n_before_merge ; ++ j ) {
+		if ( mg_indices[j] != None && mg_indices[j] < j ) {
+			//i is empty
+
+			const Vec dx = m_geo.m_centers.col( mg_indices[j] ) - m_geo.m_centers.col( j ) ;
+			m_events.log( Particles::Event::merge( mg_indices[j], j, dx ) );
+
+			if( j >= m_geo.m_count ) continue ;
+
+			size_t reloc_src = -1 ;
+
+			// Find last non-emptym pos
+			do {
+				reloc_src = --m_geo.m_count ;
+			} while( reloc_src > j && mg_indices[reloc_src] != None
+					 && mg_indices[reloc_src] < reloc_src  ) ;
+
+			m_geo.m_volumes[j] = m_geo.m_volumes[reloc_src] ;
+			m_geo.m_centers.col(j) = m_geo.m_centers.col(reloc_src) ;
+			m_geo.m_orient.col(j) = m_geo.m_orient.col(reloc_src) ;
+			m_geo.m_frames.col(j) = m_geo.m_frames.col(reloc_src) ;
+
+		}
 
 	}
+
 
 	Log::Debug() << arg( "Merge: removed %1 particles, tot %2", (n_before_merge-count()), count() ) << std::endl ;
 

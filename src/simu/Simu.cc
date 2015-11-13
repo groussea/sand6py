@@ -74,7 +74,7 @@ void Simu::run()
 			if( m_config.output && m_config.substeps == s+1 ) {
 				dump_particles( frame+1 ) ;
 			}
-			m_particles.log().start();
+			m_particles.events().start();
 
 			bogus::Timer timer ;
 
@@ -87,7 +87,7 @@ void Simu::run()
 
 		if( m_config.output ) {
 			dump_fields( frame+1 ) ;
-			m_particles.log().clear();
+			m_particles.events().clear();
 		}
 	}
 
@@ -160,7 +160,7 @@ void Simu::dump_fields( unsigned frame ) const
 	{
 		std::ofstream ofs( dir.filePath("log") );
 		boost::archive::binary_oarchive oa(ofs);
-		oa << m_particles.log() ;
+		oa << m_particles.events() ;
 	}
 }
 

@@ -43,27 +43,12 @@ void Sampler::move( const Scalar dt )
 {
 	// offset += DU*offset * st
 
-	const Particles& particles = m_offline.particles() ;
 	const Phase& grains = m_offline.grains() ;
 
 	const Index n = count() ;
 
 #pragma omp parallel for
 	for(Index i = 0 ; i < n ; ++i) {
-		const unsigned pid = m_particleIds[i] ;
-
-//		const Vec p0 = particles.centers().col( pid ) ;
-//		const Vec p0 = m_positions.col(i).cast< Scalar >() - m_offsets.col(i) ;
-
-//		Mat grad ;
-//		tensor_view( grains.sym_grad( p0 ) ).get( grad ) ;
-//		Mat spin ;
-//		tensor_view( grains.spi_grad( p0 ) ).get( spin ) ;
-
-//		grad += spin ;
-//		m_offsets.col(i) += dt * grad * m_offsets.col(i) ;
-
-//		m_normalNoise.col(i) = ( m_normalNoise.col(i) + dt * spin * m_normalNoise.col(i) ).normalized() ;
 
 		const Vec p0 = m_positions.col(i).cast< Scalar >()  ;
 		const Vec p1 = p0 + dt * grains.velocity( p0 ) ;
@@ -126,28 +111,32 @@ void Sampler::reassign( )
 
 	std::vector< unsigned > eventIds ;
 
-	const Particles& particles = m_offline.particles() ;
-
 	unsigned nParticles = m_particlesCount ;
 
 	const Index n = count() ;
 
-	for( unsigned s = 0 ; s < m_offline.log().log().size() ; ++s ) {
-		const std::vector< Event > &events = m_offline.log().log()[s] ;
+	for( unsigned s = 0 ; s < m_offline.events().log().size() ; ++s ) {
+		const std::vector< Event > &events = m_offline.events().log()[s] ;
 
 		unsigned splits = 0 ;
 		unsigned merges = 0 ;
 
 		// Assign event-ids to particles
-		eventIds.assign( n, NoEvent );
+		eventIds.assign( n + events.size(), NoEvent );
 		for( unsigned eId = 0 ; eId < events.size() ; ++eId ) {
 			const Event& e = events[eId] ;
+
 			if( e.type == Event::Split ) {
 				eventIds[ e.first  ] = eId ;
 				++splits ;
+			} else {
+				eventIds[ e.first  ] = eId ;
+				eventIds[ e.second ] = eId ;
+				++merges;
 			}
 		}
 
+		//Split -- merge
 #pragma omp parallel for
 		for( Index i = 0 ; i < n ; ++i ) {
 
@@ -177,20 +166,65 @@ void Sampler::reassign( )
 			}
 		}
 
-		nParticles += splits - merges ;
+#pragma omp parallel for
+		for( Index i = 0 ; i < n ; ++i ) {
+
+			const unsigned pid = m_particleIds[i] ;
+			if( eventIds[ pid ] == NoEvent ) continue ;
+
+			const Event& e = events[eventIds[pid]] ;
+
+			if( e.type == Event::Merge ) {
+
+				const Vec dx = events[eventIds[pid]].dx ;
+				if( pid == e.first ) {
+					m_offsets.col(i) -= dx ;
+				} else {
+					m_offsets.col(i) += dx ;
+					m_particleIds[i] = e.first ;
+				}
+			}
+		}
+
+		nParticles += splits ;
+
+		// Reloc
+		std::vector< unsigned > relocs ;
+		relocs.assign( nParticles, NoEvent );
+		for( unsigned eId = 0 ; eId < events.size() ; ++eId ) {
+			const Event& e = events[eId] ;
+
+			if( e.type == Event::Merge && e.second < nParticles ) {
+				size_t reloc_src = -1 ;
+
+				// Find last non-emptym pos
+				do {
+					reloc_src = --nParticles ;
+				} while( reloc_src > e.second && eventIds[reloc_src] != NoEvent
+						 && events[ eventIds[reloc_src] ].type == Event::Merge
+						 && events[ eventIds[reloc_src] ].second == reloc_src
+						 ) ;
+
+				relocs[ reloc_src ] = e.second ;
+			}
+		}
+
+#pragma omp parallel for
+		for( Index i = 0 ; i < n ; ++i ) {
+
+			const unsigned pid = m_particleIds[i] ;
+			if( relocs[ pid ] == NoEvent ) continue ;
+
+			m_particleIds[ i ] = relocs[pid] ;
+		}
+
 
 	}
 
 	m_particlesCount = nParticles ;
 
-	std::cout << "Npartic;es == " << m_particlesCount << std::endl ;
-	std::cout << "Nsampeses == " << count() << std::endl ;
+	std::cout << "Nparticles == " << m_particlesCount << std::endl ;
 
-	// partcles Ids <-> SM
-	// offsets <->
-
-	// TOD0
-	// Require 3 pos
 }
 
 void Sampler::sampleParticles( unsigned nSamples )

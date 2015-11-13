@@ -20,7 +20,6 @@ public:
 		Type   type   ;
 		size_t first  ;
 		size_t second ;
-		size_t third  ;
 
 		Vec    dx ;
 
@@ -28,7 +27,10 @@ public:
 		void serialize( Archive &ar, unsigned int ) ;
 
 		static Event split( size_t first, size_t second, Vec dx ) {
-			return Event{ Split, first, second, 0, dx } ;
+			return Event{ Split, first, second, dx } ;
+		}
+		static Event merge( size_t first, size_t second, Vec dx ) {
+			return Event{ Merge, first, second, dx } ;
 		}
 	};
 	struct EventLog {

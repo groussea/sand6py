@@ -340,10 +340,10 @@ void GLViewer::update_buffers()
 	}
 
 	if( m_renderSamples ) {
-		m_grainVertices.reset( m_sampler.count(), m_sampler.positions().data(), GL_DYNAMIC_DRAW )  ;
-		m_grainNormals.reset( m_sampler.count(), m_sampler.normals().data(), GL_DYNAMIC_DRAW )  ;
+		m_grainVertices  .reset( m_sampler.count(), m_sampler.positions().data() , GL_DYNAMIC_DRAW )  ;
+		m_grainNormals   .reset( m_sampler.count(), m_sampler.normals().data()   , GL_DYNAMIC_DRAW )  ;
 		m_grainVisibility.reset( m_sampler.count(), m_sampler.visibility().data(), GL_DYNAMIC_DRAW )  ;
-		m_grainNoise.reset( m_sampler.count(), m_sampler.noise().data(), GL_DYNAMIC_DRAW )  ;
+		m_grainNoise     .reset( m_sampler.count(), m_sampler.noise().data()     , GL_DYNAMIC_DRAW )  ;
 	}
 }
 

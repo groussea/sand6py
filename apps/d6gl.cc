@@ -12,6 +12,8 @@ int main( int argc, char* argv[] ) {
 
 	QApplication application(argc,argv);
 
+	bool samples = false ;
+
 	for( int i = 1 ; i < argc ; ++i )
 	{
 		if( argv[i][0] == '-' ){
@@ -20,6 +22,9 @@ int main( int argc, char* argv[] ) {
 				if( ++i == argc ) break ;
 				frame = d6::to_uint( argv[i] ) ;
 				break ;
+			case 's':
+				samples = true ;
+				break;
 			}
 		} else {
 			base_dir = argv[i] ;
@@ -28,7 +33,7 @@ int main( int argc, char* argv[] ) {
 
 	d6::Offline offline( base_dir ) ;
 
-	d6::GLViewer viewer( offline );
+	d6::GLViewer viewer( offline, samples );
 	viewer.set_frame( frame );
 
 	viewer.setWindowTitle("D6 glViewer");

@@ -30,11 +30,11 @@ public:
 
 	void splitMerge( const MeshType & mesh ) ;
 
-	const Particles::EventLog& log() const {
-		return m_log ;
+	const Particles::EventLog& events() const {
+		return m_events ;
 	}
-	Particles::EventLog& log() {
-		return m_log ;
+	Particles::EventLog& events() {
+		return m_events ;
 	}
 
 private:
@@ -42,7 +42,7 @@ private:
 	void resize( size_t n ) ;
 
 	Particles m_geo ;
-	Particles::EventLog m_log ;
+	Particles::EventLog m_events ;
 	Scalar m_meanVolume ;
 
 	Eigen::Matrix< Scalar, 9, Eigen::Dynamic > m_affine ;

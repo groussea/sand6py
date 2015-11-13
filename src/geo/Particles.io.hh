@@ -25,7 +25,6 @@ void Particles::Event::serialize( Archive &ar, unsigned int ) {
 	ar & type ;
 	ar & first ;
 	ar & second ;
-	ar & third ;
 	ar & dx ;
 }
 

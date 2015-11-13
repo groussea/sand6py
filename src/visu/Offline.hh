@@ -42,8 +42,8 @@ public:
 		return 1./ m_config.fps ;
 	}
 
-	const Particles::EventLog& log() const {
-		return m_log ;
+	const Particles::EventLog& events() const {
+		return m_events ;
 	}
 
 private:
@@ -51,7 +51,7 @@ private:
 	Config m_config ;
 
 	Particles  m_particles ;
-	Particles::EventLog  m_log ;
+	Particles::EventLog  m_events ;
 
 	MeshType*  m_mesh ;
 	Phase*     m_grains ;
