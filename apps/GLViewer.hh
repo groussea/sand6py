@@ -16,10 +16,10 @@ class GLViewer : public QGLViewer
 
 public:
 
-	GLViewer( Offline & offline, bool sample = true ) :
-		m_offline( offline ), m_sampler( offline ), m_renderSamples( sample ),
+	GLViewer( Offline & offline, unsigned nSamples ) :
+		m_offline( offline ), m_sampler( offline ), m_nSamples( nSamples ),
 		m_currentFrame(-1),
-		m_drawParticles( !sample ), m_enableBending( false ),
+		m_drawParticles( 0 == nSamples ), m_enableBending( false ),
 		m_fastDraw( true ), m_snapshotting(false),
 		m_lastSnapped( m_currentFrame )
 	{
@@ -38,6 +38,10 @@ public:
 		if( m_currentFrame > 0 )
 			set_frame( nextFrame ) ;
 		return nextFrame == m_currentFrame ;
+	}
+
+	bool renderSamples() const {
+		return 0 < m_nSamples ;
 	}
 
 protected :
@@ -59,7 +63,7 @@ private:
 	Offline& m_offline ;
 	Sampler  m_sampler ;
 
-	bool  	 m_renderSamples  ;
+	unsigned m_nSamples  ;
 	unsigned m_currentFrame ;
 
 	bool 	 m_drawParticles ;
@@ -86,7 +90,9 @@ private:
 	gl::ArrayBufferf m_grainNoise ;
 
 	Shader m_shader ;
+
 	Shader m_grainsShader ;
+	Shader m_ballShader ;
 
 } ;
 

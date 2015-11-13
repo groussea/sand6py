@@ -146,7 +146,7 @@ void GLViewer::draw()
 
 	}
 
-	if( m_renderSamples )
+	if( renderSamples() )
 	{
 		if( m_grainsShader.ok() ) {
 
@@ -165,8 +165,7 @@ void GLViewer::draw()
 
 			glUniform3fv( m_grainsShader.uniform("light_pos"), 1, light_pos.data() ) ;
 
-			glPointSize( 2 ) ;
-			glColor3f( 1,0,0 ) ;
+			glPointSize( 1 ) ;
 
 			gl::VertexPointer vp( m_grainVertices ) ;
 			glDrawArrays( GL_POINTS, 0, m_grainVertices.size() );
@@ -218,34 +217,61 @@ void GLViewer::drawObject(const LevelSet &ls)
 	mat.block<3,3>(0,0) = ls.rotation().matrix().cast < GLfloat >() * ls.scale()  ;
 	mat.block<3,1>(0,3) = ls.origin().cast < GLfloat >() ;
 
-	glPushMatrix();
-	glMultMatrixf( mat.data() );
-
 	glColor4f(1., .8, .8, 1);
 
 	if( dynamic_cast<const SphereLevelSet*>(&ls) )
 	{
-		m_glyphQuadIndices.bind();
-		gl::VertexPointer vp( m_glyph ) ;
+//		m_glyphQuadIndices.bind();
+//		gl::VertexPointer vp( m_glyph ) ;
 //		gl::NormalPointer np( m_glyph ) ;
-		glDrawElements( GL_QUADS, m_glyphQuadIndices.size(), GL_UNSIGNED_INT, 0 );
+//		glDrawElements( GL_QUADS, m_glyphQuadIndices.size(), GL_UNSIGNED_INT, 0 );
+
+		Eigen::Matrix<float, 3, 4> vtx ;
+		vtx  <<  -1, -1, 1,  1,
+				 -1,  1, 1, -1,
+				 0, 0 ,0, 0 ;
+
+		gl::VertexBuffer3f squareVertices ;
+		squareVertices.reset( 4, vtx.data() );
+
+		UsingShader sh( m_ballShader ) ;
+		// Model-view
+		sh.bindMVP() ;
+
+		//Vertices
+		gl::VertexAttribPointer vap_v( squareVertices, m_ballShader.attribute("vertex") ) ;
+
+		glUniform1f( m_ballShader.uniform("radius"), ls.scale() ) ;
+		glUniform3fv( m_ballShader.uniform("center"), 1, &mat(0,3) ) ;
+
+		Eigen::Vector3f light_pos( 0, 0, m_offline.mesh().box()[2] * 2 ) ;
+		glUniform3fv( m_ballShader.uniform("light_pos"), 1, light_pos.data() ) ;
+
+		gl::VertexPointer vp( squareVertices ) ;
+		glDrawArrays( GL_QUADS, 0, squareVertices.size() ) ;
 	}
-	else if ( dynamic_cast<const PlaneLevelSet*>(&ls) )
-	{
-		const Vec& box = m_offline.mesh().box() ;
-		glBegin( GL_QUADS );
-		glNormal3f( 0.f, 0.f, 1.f );
-		glVertex3d( -box[0], -box[1], 0 );
-		glNormal3f( 0.f, 0.f, 1.f );
-		glVertex3d( -box[0],  box[1], 0 );
-		glNormal3f( 0.f, 0.f, 1.f );
-		glVertex3d(  box[0],  box[1], 0 );
-		glNormal3f( 0.f, 0.f, 1.f );
-		glVertex3d(  box[0], -box[1], 0 );
-		glEnd( ) ;
+	else{
+
+
+		glPushMatrix();
+		glMultMatrixf( mat.data() );
+
+		if ( dynamic_cast<const PlaneLevelSet*>(&ls) ) {
+			const Vec& box = m_offline.mesh().box() ;
+			glBegin( GL_QUADS );
+			glNormal3f( 0.f, 0.f, 1.f );
+			glVertex3d( -box[0], -box[1], 0 );
+			glNormal3f( 0.f, 0.f, 1.f );
+			glVertex3d( -box[0],  box[1], 0 );
+			glNormal3f( 0.f, 0.f, 1.f );
+			glVertex3d(  box[0],  box[1], 0 );
+			glNormal3f( 0.f, 0.f, 1.f );
+			glVertex3d(  box[0], -box[1], 0 );
+			glEnd( ) ;
+		}
+		glPopMatrix();
 	}
 
-	glPopMatrix();
 
 }
 
@@ -277,8 +303,8 @@ void GLViewer::init()
 	m_shader.add_uniform("projection") ;
 	m_shader.load() ;
 
-	if( m_renderSamples ) {
-		m_sampler.sampleParticles( 8 ) ;
+	if( renderSamples() ) {
+		m_sampler.sampleParticles( m_nSamples ) ;
 
 		m_grainsShader.add_attribute("vertex") ;
 		m_grainsShader.add_attribute("normal") ;
@@ -290,6 +316,14 @@ void GLViewer::init()
 		m_grainsShader.add_uniform("light_pos") ;
 		m_grainsShader.load("grains_vertex","grains_fragment") ;
 	}
+
+	m_ballShader.add_uniform("model_view") ;
+	m_ballShader.add_uniform("projection") ;
+	m_ballShader.add_uniform("radius") ;
+	m_ballShader.add_uniform("center") ;
+	m_ballShader.add_uniform("light_pos") ;
+	m_ballShader.add_attribute("vertex") ;
+	m_ballShader.load("ball_vertex","ball_fragment") ;
 
 	update_buffers();
 }
@@ -343,7 +377,7 @@ void GLViewer::update_buffers()
 		m_colors.reset( p.count(), colors.data(), GL_STATIC_DRAW )  ;
 	}
 
-	if( m_renderSamples ) {
+	if( renderSamples() ) {
 		m_grainVertices  .reset( m_sampler.count(), m_sampler.positions().data() , GL_DYNAMIC_DRAW )  ;
 		m_grainNormals   .reset( m_sampler.count(), m_sampler.normals().data()   , GL_DYNAMIC_DRAW )  ;
 		m_grainVisibility.reset( m_sampler.count(), m_sampler.visibility().data(), GL_DYNAMIC_DRAW )  ;
@@ -359,10 +393,8 @@ void GLViewer::postSelection(const QPoint& )
 
 void GLViewer::set_frame(unsigned frame)
 {
-//	if( frame == m_currentFrame+1 && m_renderSamples )
-//		m_sampler.move( m_offline.frame_dt() * .5 ) ;
 
-	if( frame == m_currentFrame+1 && m_renderSamples ) {
+	if( frame == m_currentFrame+1 && renderSamples() ) {
 		m_sampler.reassign();
 		m_sampler.move( m_offline.frame_dt() ) ;
 	}
