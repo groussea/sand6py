@@ -223,8 +223,6 @@ void Sampler::reassign( )
 
 	m_particlesCount = nParticles ;
 
-	std::cout << "Nparticles == " << m_particlesCount << std::endl ;
-
 }
 
 void Sampler::sampleParticles( unsigned nSamples )

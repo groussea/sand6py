@@ -19,7 +19,8 @@ public:
 	GLViewer( Offline & offline, bool sample = true ) :
 		m_offline( offline ), m_sampler( offline ), m_renderSamples( sample ),
 		m_currentFrame(-1),
-		m_drawParticles( !sample ), m_enableBending( false ), m_snapshotting(false),
+		m_drawParticles( !sample ), m_enableBending( false ),
+		m_fastDraw( true ), m_snapshotting(false),
 		m_lastSnapped( m_currentFrame )
 	{
 
@@ -63,6 +64,7 @@ private:
 
 	bool 	 m_drawParticles ;
 	bool 	 m_enableBending ;
+	bool	 m_fastDraw ;
 	bool 	 m_snapshotting ;
 	unsigned m_lastSnapped ;
 

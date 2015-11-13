@@ -56,7 +56,11 @@ static void genSphere( const unsigned parallels, const unsigned meridians,
 
 void GLViewer::fastDraw()
 {
-	draw() ; return ;
+	if( !m_fastDraw ) {
+		draw() ;
+		return ;
+	}
+
 	{
 		glPointSize( 3 );
 		gl::VertexPointer vp( m_centers ) ;
@@ -390,6 +394,9 @@ void GLViewer::keyPressEvent(QKeyEvent *e)
 	case Qt::Key_D:
 		m_drawParticles = !m_drawParticles ;
 		update_buffers() ;
+		break ;
+	case Qt::Key_F:
+		m_fastDraw = !m_fastDraw ;
 		break ;
 	case Qt::Key_B:
 		m_enableBending = !m_enableBending ;
