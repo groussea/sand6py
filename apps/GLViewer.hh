@@ -77,6 +77,7 @@ private:
 
 	gl::VertexBuffer3f m_glyph ;
 	gl::IndexBuffer	   m_glyphQuadIndices ;
+	gl::VertexBuffer3f m_square ;
 
 	Eigen::Matrix< float, 16, Eigen::Dynamic> m_matrices ; // FIXME
 	gl::VertexBuffer16f m_frames  ;

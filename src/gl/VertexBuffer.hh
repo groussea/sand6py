@@ -167,15 +167,42 @@ struct VertexAttribPointer
 {
 	template< typename Scalar, unsigned Dim, int Type >
 	VertexAttribPointer( const VertexBuffer< Scalar, Dim, Type > &vb, GLint attrib,
-		bool normalized = false )
+		bool normalized = false, int divisor = 0 )
 		: m_attrib( attrib )
 	{
 		vb.set_vertex_attrib_pointer( attrib, normalized );
 		glEnableVertexAttribArray( attrib );
+		glVertexAttribDivisor( m_attrib, divisor ) ;
 	}
 	~VertexAttribPointer()
 	{
+		glVertexAttribDivisor( m_attrib,  0 ) ;
 		glDisableVertexAttribArray( m_attrib );
+	}
+private:
+	GLint m_attrib ;
+};
+
+template < unsigned Cols >
+struct ArrayAttribPointer
+{
+	template< typename Scalar, unsigned Dim, int Type >
+	ArrayAttribPointer( const VertexBuffer< Scalar, Dim, Type > &vb, GLint attrib,
+		bool normalized = false, int divisor = 0 )
+		: m_attrib( attrib )
+	{
+		for( unsigned i = 0 ; i < Cols ; ++i ) {
+			glEnableVertexAttribArray( m_attrib+i );
+			vb.set_vertex_attrib_pointer( m_attrib+i, normalized, Dim, i*Dim/Cols, Dim/Cols );
+			glVertexAttribDivisor( m_attrib+i, divisor ) ;
+		}
+	}
+	~ArrayAttribPointer()
+	{
+		for( unsigned i = 0 ; i < Cols ; ++i ) {
+			glVertexAttribDivisor( m_attrib+i,  0 ) ;
+			glDisableVertexAttribArray( m_attrib+i );
+		}
 	}
 private:
 	GLint m_attrib ;

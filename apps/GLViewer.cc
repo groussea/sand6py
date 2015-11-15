@@ -103,29 +103,12 @@ void GLViewer::draw()
 			gl::VertexAttribPointer vap( m_glyph, m_shader.attributes["vertex"] ) ;
 
 			// Densities
-			gl::VertexAttribPointer  ap( m_alpha, m_shader.attributes["alpha"] ) ;
-			glVertexAttribDivisor( m_shader.attributes["alpha"], 1 ) ;
+			gl::VertexAttribPointer  ap( m_alpha, m_shader.attributes["alpha"], false, 1 ) ;
 
 			//Frames
-			glEnableVertexAttribArray( m_shader.attributes["frame"]+0) ;
-			glEnableVertexAttribArray( m_shader.attributes["frame"]+1) ;
-			glEnableVertexAttribArray( m_shader.attributes["frame"]+2) ;
-			glEnableVertexAttribArray( m_shader.attributes["frame"]+3) ;
-			m_frames.set_vertex_attrib_pointer( m_shader.attributes["frame"]+0, false, 16, 4*0, 4 ) ;
-			m_frames.set_vertex_attrib_pointer( m_shader.attributes["frame"]+1, false, 16, 4*1, 4 ) ;
-			m_frames.set_vertex_attrib_pointer( m_shader.attributes["frame"]+2, false, 16, 4*2, 4 ) ;
-			m_frames.set_vertex_attrib_pointer( m_shader.attributes["frame"]+3, false, 16, 4*3, 4 ) ;
-			glVertexAttribDivisor( m_shader.attributes["frame"]+0, 1 ) ;
-			glVertexAttribDivisor( m_shader.attributes["frame"]+1, 1 ) ;
-			glVertexAttribDivisor( m_shader.attributes["frame"]+2, 1 ) ;
-			glVertexAttribDivisor( m_shader.attributes["frame"]+3, 1 ) ;
+			gl::ArrayAttribPointer<4>  fp( m_frames, m_shader.attributes["frame"], false, 1 ) ;
 
 			glDrawElementsInstanced( GL_QUADS, m_glyphQuadIndices.size(), GL_UNSIGNED_INT, 0, m_matrices.cols() );
-
-			glDisableVertexAttribArray( m_shader.attributes["frame"]+3) ;
-			glDisableVertexAttribArray( m_shader.attributes["frame"]+2) ;
-			glDisableVertexAttribArray( m_shader.attributes["frame"]+1) ;
-			glDisableVertexAttribArray( m_shader.attributes["frame"]+0) ;
 
 		} else {
 
@@ -221,25 +204,13 @@ void GLViewer::drawObject(const LevelSet &ls)
 
 	if( dynamic_cast<const SphereLevelSet*>(&ls) )
 	{
-//		m_glyphQuadIndices.bind();
-//		gl::VertexPointer vp( m_glyph ) ;
-//		gl::NormalPointer np( m_glyph ) ;
-//		glDrawElements( GL_QUADS, m_glyphQuadIndices.size(), GL_UNSIGNED_INT, 0 );
-
-		Eigen::Matrix<float, 3, 4> vtx ;
-		vtx  <<  -1, -1, 1,  1,
-				 -1,  1, 1, -1,
-				 0, 0 ,0, 0 ;
-
-		gl::VertexBuffer3f squareVertices ;
-		squareVertices.reset( 4, vtx.data() );
 
 		UsingShader sh( m_ballShader ) ;
 		// Model-view
 		sh.bindMVP() ;
 
 		//Vertices
-		gl::VertexAttribPointer vap_v( squareVertices, m_ballShader.attribute("vertex") ) ;
+		gl::VertexAttribPointer vap_v( m_square, m_ballShader.attribute("vertex") ) ;
 
 		glUniform1f( m_ballShader.uniform("radius"), ls.scale() ) ;
 		glUniform3fv( m_ballShader.uniform("center"), 1, &mat(0,3) ) ;
@@ -247,8 +218,8 @@ void GLViewer::drawObject(const LevelSet &ls)
 		Eigen::Vector3f light_pos( 0, 0, m_offline.mesh().box()[2] * 2 ) ;
 		glUniform3fv( m_ballShader.uniform("light_pos"), 1, light_pos.data() ) ;
 
-		gl::VertexPointer vp( squareVertices ) ;
-		glDrawArrays( GL_QUADS, 0, squareVertices.size() ) ;
+		gl::VertexPointer vp( m_square ) ;
+		glDrawArrays( GL_QUADS, 0, m_square.size() ) ;
 	}
 	else{
 
@@ -293,6 +264,12 @@ void GLViewer::init()
 	genSphere( 5, 8, sphereVertices, quadIndices );
 	m_glyph.reset( sphereVertices.cols(), sphereVertices.data(), GL_STATIC_DRAW );
 	m_glyphQuadIndices.reset( quadIndices.size(), quadIndices.data() );
+
+	Eigen::Matrix<float, 3, 4> vtx ;
+	vtx  <<  -1, -1, 1,  1,
+		 -1,  1, 1, -1,
+		 0, 0 ,0, 0 ;
+	m_square.reset( 4, vtx.data() );
 
 
 	m_shader.add_attribute("vertex") ;
