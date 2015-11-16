@@ -195,12 +195,8 @@ void GLViewer::drawWithNames()
 
 void GLViewer::drawObject(const LevelSet &ls)
 {
-	Eigen::Matrix4f mat ;
-	mat.setIdentity() ;
-	mat.block<3,3>(0,0) = ls.rotation().matrix().cast < GLfloat >() * ls.scale()  ;
-	mat.block<3,1>(0,3) = ls.origin().cast < GLfloat >() ;
-
-	glColor4f(1., .8, .8, 1);
+	const Eigen::Matrix3f rotation = ls.rotation().matrix().cast < GLfloat >() ;
+	const Eigen::Vector3f translation = ls.origin().cast < GLfloat >() ; 
 
 	if( dynamic_cast<const SphereLevelSet*>(&ls) )
 	{
@@ -213,15 +209,23 @@ void GLViewer::drawObject(const LevelSet &ls)
 		gl::VertexAttribPointer vap_v( m_square, m_ballShader.attribute("vertex") ) ;
 
 		glUniform1f( m_ballShader.uniform("radius"), ls.scale() ) ;
-		glUniform3fv( m_ballShader.uniform("center"), 1, &mat(0,3) ) ;
+		glUniformMatrix3fv( m_ballShader.uniform("rotation"), 1, GL_FALSE, rotation.data() ) ;
+		glUniform3fv( m_ballShader.uniform("center"), 1, translation.data() ) ;
 
 		Eigen::Vector3f light_pos( 0, 0, m_offline.mesh().box()[2] * 2 ) ;
 		glUniform3fv( m_ballShader.uniform("light_pos"), 1, light_pos.data() ) ;
 
 		gl::VertexPointer vp( m_square ) ;
 		glDrawArrays( GL_QUADS, 0, m_square.size() ) ;
-	}
-	else{
+
+	} else {
+
+		Eigen::Matrix4f mat ;
+		mat.setIdentity() ;
+		mat.block<3,3>(0,0) = rotation * ls.scale()  ;
+		mat.block<3,1>(0,3) = translation ;
+
+		glColor4f(1., .8, .8, 1);
 
 
 		glPushMatrix();
@@ -297,6 +301,7 @@ void GLViewer::init()
 	m_ballShader.add_uniform("model_view") ;
 	m_ballShader.add_uniform("projection") ;
 	m_ballShader.add_uniform("radius") ;
+	m_ballShader.add_uniform("rotation") ;
 	m_ballShader.add_uniform("center") ;
 	m_ballShader.add_uniform("light_pos") ;
 	m_ballShader.add_attribute("vertex") ;

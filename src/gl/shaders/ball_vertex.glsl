@@ -12,9 +12,9 @@ out vec2 coord ;
 void main()
 {
     coord = vertex.xy ;
-    vec4 depl = transpose(model_view) * vec4(vertex, 1) ;
+    vec3 depl = transpose(mat3( model_view)) * vertex ;
 
-    vec3 pos = center + depl.xyz*radius ;
+    vec3 pos = center + depl * radius ;
 
 
     gl_Position = projection * model_view * vec4(pos,1) ;
