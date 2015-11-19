@@ -161,9 +161,9 @@ void FormBuilder::addTauDu( FormMat<6,3>::Type& A, Scalar w, Itp itp, Dcdx dc_dx
 	}
 }
 
-void FormBuilder::addVDsig( FormMat<3,6>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices )
+void FormBuilder::addVDp ( FormMat<3,1>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices )
 {
-	typedef FormMat<3,6>::Type::BlockType Block ;
+	typedef FormMat<3,1>::Type::BlockType Block ;
 
 //#pragma omp parallel for
 	for( int k = 0 ; k < MeshType::NV ; ++k ) {
@@ -172,30 +172,7 @@ void FormBuilder::addVDsig( FormMat<3,6>::Type& A, Scalar w, Itp itp, Dcdx dc_dx
 			Block &b = A.block( rowIndices[itp.nodes[k]], colIndices[itp.nodes[j]] ) ;
 
 			// sqrt2_3 * ( vx da_dx + vy da_dy + vz da_dz)
-			b(0,0) += m * s_sqrt_23 * dc_dx(j, 0) ;
-			b(1,0) += m * s_sqrt_23 * dc_dx(j, 1) ;
-			b(2,0) += m * s_sqrt_23 * dc_dx(j, 2) ;
-
-			// ( vx db_dx - vy db_dy )
-			b(0,1) += m * dc_dx(j, 0) ;
-			b(1,1) -= m * dc_dx(j, 1) ;
-
-			// isqrt_3 * ( - vx dc_dx - vy dc_dy + 2 * vz dc_dz)
-			b(0,2) -= m * s_isqrt_3 * dc_dx(j, 0) ;
-			b(1,2) -= m * s_isqrt_3 * dc_dx(j, 1) ;
-			b(2,2) += m * s_isqrt_3 * dc_dx(j, 2) * 2 ;
-
-			// ( vx dd_dy + vy dd_dx )
-			b(0,3) += m * dc_dx(j, 1) ;
-			b(1,3) += m * dc_dx(j, 0) ;
-
-			// ( vx de_dz + vy de_dz )
-			b(0,4) += m * dc_dx(j, 2) ;
-			b(2,4) += m * dc_dx(j, 0) ;
-
-			// ( vz df_dy + vy df_dz )
-			b(2,5) += m * dc_dx(j, 1) ;
-			b(1,5) += m * dc_dx(j, 2) ;
+			b += m * s_sqrt_23 * dc_dx.row(j) ;
 		}
 	}
 }

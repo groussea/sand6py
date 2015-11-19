@@ -25,7 +25,7 @@ Primal::Primal(const PrimalData &data)
 	: m_data( data )
 {}
 
-void ackResidual( unsigned iter, Scalar res ) {
+static void ackResidual( unsigned iter, Scalar res ) {
 	Log::Debug() << "GS " << iter << " =\t " << res << std::endl ;
 }
 

@@ -1,2 +1,4 @@
+solve/LCP.cc
+solve/LCP.hh
 solve/Primal.cc
 solve/Primal.hh

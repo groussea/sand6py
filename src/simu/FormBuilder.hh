@@ -28,6 +28,7 @@ public:
 	{}
 
 	void reset( Index rows ) ;
+	Index rows() const { return m_data.size() ; }
 
 	void addToIndex(
 			const typename MeshType::Cells& cells,
@@ -45,7 +46,8 @@ public:
 	void integrate_particle( const Particles& particles, Func func ) const  ;
 
 	static void addDuDv ( FormMat<3,3>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
-	static void addVDsig( FormMat<3,6>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
+
+	static void addVDp  ( FormMat<3,1>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
 
 	static void addTauDu( FormMat<6,3>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
 	static void addTauWu( FormMat<3,3>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices ) ;

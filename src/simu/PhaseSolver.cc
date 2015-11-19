@@ -12,6 +12,7 @@
 
 #include "LinearSolver.hh"
 #include "solve/Primal.hh"
+#include "solve/LCP.hh"
 
 #include "utils/Log.hh"
 
@@ -20,6 +21,8 @@
 #include <bogus/Core/Utils/Timer.hpp>
 
 //#define FULL_FEM
+
+#define ENFORCE_MAX_FRAC
 
 namespace d6 {
 
@@ -34,8 +37,10 @@ struct PhaseMatrices
 
 	typename FormMat<3,3>::Type A ; //Could be Symmetric when FormBuilder has sym index
 
-	typename FormMat<6,3>::Type B ;
-	typename FormMat<3,3>::Type J ;
+	typename FormMat<6,3>::Type B ; // \phi Tau:D(u)
+	typename FormMat<3,3>::Type J ; // \phi Tau:W(u)
+
+	typename FormMat<3,1>::Type C ; // \phi v.grad(p)
 
 	typename FormMat<3,3>::SymType Pvel ;
 	typename FormMat<6,6>::SymType Pstress ;
@@ -144,15 +149,23 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 	mats.J.cloneIndex( builder.index() ) ;
 	mats.J.setBlocksToZero() ;
 
+	// C
+#ifdef ENFORCE_MAX_FRAC
+	mats.C.clear();
+	mats.C.setRows( builder.rows() );
+	mats.C.setCols( m );
+	mats.C.cloneIndex( builder.index() ) ;
+	mats.C.setBlocksToZero() ;
+#endif
+
 	builder.addRows(mc) ;
 
 	// B
 	mats.B.clear();
-	mats.B.setRows( m+mc );
+	mats.B.setRows( builder.rows() );
 	mats.B.setCols( m );
 	mats.B.cloneIndex( builder.index() ) ;
 	mats.B.setBlocksToZero() ;
-
 
 	timer.reset() ;
 	builder.integrate_qp( m_phaseNodes.cells, [&]( Scalar w, Loc, Itp itp, Dcdx dc_dx )
@@ -170,6 +183,9 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 		{
 			FormBuilder::addTauDu( mats.B, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
 			FormBuilder::addTauWu( mats.J, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
+#ifdef ENFORCE_MAX_FRAC
+			FormBuilder::addVDp  ( mats.C, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
+#endif
 		}
 	);
 	Log::Debug() << "Integrate particle: " << timer.elapsed() << std::endl ;
@@ -205,8 +221,7 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 				+ Mat::Identity() - mats.Pvel.block(i) ;
 		mats.M_lumped_inv     .block(i) = mats.Pvel.block(i) * 1./( regul + m )
 				+ Mat::Identity() - mats.Pvel.block(i) ;
-		mats.M_lumped_inv_sqrt.block(i) = mats.Pvel.block(i) * 1./std::sqrt( regul + m )
-				; //+ Mat::Identity() - mats.Pvel.block(i) ;
+		mats.M_lumped_inv_sqrt.block(i) = mats.Pvel.block(i) * 1./std::sqrt( regul + m ) ;
 	}
 
 }
@@ -306,7 +321,12 @@ void PhaseSolver::step(const Config &config, Phase &phase,
 		DynVec fraction ;
 		m_phaseNodes.field2var( phase.fraction, fraction ) ;
 
-		// Compute rhs of momentum conservation
+
+#ifdef ENFORCE_MAX_FRAC
+		enforceMaxFrac( config, matrices, rbData, fraction, phase );
+#endif
+
+		// Compute rhs of momentum conservation -- gravity + u(t)
 		DynVec rhs ;
 		{
 			DynVec grav ;	m_phaseNodes.field2var( gravity, grav ) ;
@@ -341,9 +361,9 @@ void PhaseSolver::step(const Config &config, Phase &phase,
 }
 
 void PhaseSolver::computeGradPhi( const ScalarField& fraction, const ScalarField& volumes, VectorField &grad_phi ) const
-{ 
+{
 	const MeshType &mesh = grad_phi.mesh() ;
-	
+
 	grad_phi.set_zero() ;
 
 	typename MeshType::CellGeo cellGeo ;
@@ -370,7 +390,7 @@ void PhaseSolver::computeGradPhi( const ScalarField& fraction, const ScalarField
 
 			for( Index j = 0 ; j < MeshType::NV ; ++j ) {
 				for( Index k = 0 ; k < MeshType::NV ; ++k ) {
-					grad_phi[ itp.nodes[j] ] += qp_weights[q] * dc_dx.row(k) * itp.coeffs[k] * fraction[ itp.nodes[k] ] ; 
+					grad_phi[ itp.nodes[j] ] += qp_weights[q] * dc_dx.row(k) * itp.coeffs[k] * fraction[ itp.nodes[k] ] ;
 				}
 			}
 		}
@@ -404,7 +424,7 @@ void PhaseSolver::computeActiveNodes(const std::vector<bool> &activeCells ,
 			++activeNodes[ nodes[k] ] ;
 		}
 
-		
+
 	}
 
 	for( size_t i = 0 ; i < activeNodes.size() ; ++i ) {
@@ -443,6 +463,7 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 
 	DynVec totFraction = fraction ;
 
+	// Handle rigid bodies jacobians
 	for( unsigned k = 0 ; k < rbData.size() ; ++k ) {
 		RigidBodyData& rb = rbData[k] ;
 
@@ -512,6 +533,53 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 		const Vec6 forces = data.jacobians[k].transpose() * x ;
 		rb.rb.integrate_forces( c.dt(), forces );
 	}
+
+}
+
+void PhaseSolver::enforceMaxFrac(const Config &c, const PhaseMatrices &matrices,
+									   std::vector<RigidBodyData> &rbData,
+									   const DynVec &fraction,
+									   Phase& phase ) const
+{
+
+	LCPData data ;
+
+	data.H = matrices.Pvel * matrices.C ;
+
+	// Apply pressure projection
+	for( Index i = 0 ; i < data.H.rowsOfBlocks() ; ++i ) {
+		for( LCPData::HType::InnerIterator it = data.H.innerIterator(i) ; it ; ++it ) {
+			data.H.block( it.ptr() ) *= matrices.Pstress.block( it.inner() )(0,0) ;
+		}
+	}
+
+
+	data.w.setZero( data.n() );
+
+	DynVec totFraction = fraction ;
+
+	for( unsigned k = 0 ; k < rbData.size() ; ++k ) {
+		RigidBodyData& rb = rbData[k] ;
+
+		if( rb.nodes.count() == 0 )
+			continue ;
+
+		for( Index i = 0 ; i < rb.nodes.count() ; ++i ) {
+			Scalar& frac = totFraction( m_phaseNodes.indices[ rb.nodes.revIndices[i] ] ) ;
+			frac = std::min( std::max( 1., frac ), frac + rb.fraction[i] ) ;
+		}
+	}
+
+	data.w.segment(0, totFraction.rows()) = ( c.phiMax - totFraction.array() )
+			* s_sqrt_23 * matrices.S.array()    // 1/d * Tr \tau = \sqrt{2}{d} \tau_N
+			;
+
+	DynVec x = DynVec::Zero( data.n() ) ;
+	LCP lcp( data ) ;
+	lcp.solve( x ) ;
+
+	const DynVec depl = - data.H * x ;
+	m_phaseNodes.var2field( depl, phase.geo_proj ) ;
 
 }
 
