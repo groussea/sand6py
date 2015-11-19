@@ -171,8 +171,8 @@ void FormBuilder::addVDp ( FormMat<3,1>::Type& A, Scalar w, Itp itp, Dcdx dc_dx,
 		for( int j = 0 ; j < MeshType::NV ; ++j ) {
 			Block &b = A.block( rowIndices[itp.nodes[k]], colIndices[itp.nodes[j]] ) ;
 
-			// sqrt2_3 * ( vx da_dx + vy da_dy + vz da_dz)
-			b += m * s_sqrt_23 * dc_dx.row(j) ;
+			// ( vx da_dx + vy da_dy + vz da_dz)
+			b += m * dc_dx.row(j) ;
 		}
 	}
 }

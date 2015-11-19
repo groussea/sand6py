@@ -55,7 +55,7 @@ private:
 	void enforceMaxFrac(const Config &c, const PhaseMatrices &matrices,
 									   std::vector<RigidBodyData> &rbData,
 									   const DynVec &fraction,
-									   Phase& phase ) const ;
+									   DynVec &depl ) const ;
 
 	void computeGradPhi( const ScalarField& fraction, const ScalarField& volumes, VectorField &grad_phi ) const ;
 

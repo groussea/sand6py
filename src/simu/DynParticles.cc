@@ -13,7 +13,6 @@
 
 #include <Eigen/Eigenvalues>
 
-//FIXME Temporaily disable while working on grain sampler
 #define SPLIT
 #define MERGE
 

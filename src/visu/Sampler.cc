@@ -55,6 +55,13 @@ void Sampler::move( const Scalar dt )
 		m_positions.col(i) = p1.cast< float >() ;
 	}
 
+	// Predict particle positions
+	const Index np = m_particlesCount ;
+#pragma omp parallel for
+	for(Index i = 0 ; i < np ; ++i) {
+		m_predPos.col(i) += dt*grains.velocity(	m_predPos.col(i) )   ;
+	}
+
 }
 
 void Sampler::compute_absolute( )
@@ -66,6 +73,7 @@ void Sampler::compute_absolute( )
 	const Particles& particles = m_offline.particles() ;
 	const Phase& grains = m_offline.grains() ;
 
+
 	const Index n = count() ;
 
 #pragma omp parallel for
@@ -73,7 +81,9 @@ void Sampler::compute_absolute( )
 		const unsigned pid = m_particleIds[i] ;
 
 		const Vec p0 = particles.centers().col( pid ) ;
-		m_offsets.col( i ) = m_positions.col(i).cast<Scalar>() - p0 ;
+		const Vec p0_pred = m_predPos.col( pid ) ;
+
+		m_offsets.col( i ) = m_positions.col(i).cast<Scalar>() - p0_pred ;
 
 		Mat frame ;
 		tensor_view( particles.frames().col(pid) ).get( frame ) ;
@@ -111,9 +121,18 @@ void Sampler::reassign( )
 
 	std::vector< unsigned > eventIds ;
 
-	unsigned nParticles = m_particlesCount ;
+	const Particles& particles = m_offline.particles() ;
+
+	// Reset particle positions and reserve storage space
+	unsigned nEvents = 0 ;
+	for( unsigned s = 0 ; s < m_offline.events().log().size() ; ++s ) {
+		nEvents += m_offline.events().log()[s].size() ;
+	}
+	m_predPos.resize(3, m_particlesCount + nEvents );
+	m_predPos.leftCols( m_particlesCount ) = particles.centers().leftCols( m_particlesCount ) ;
 
 	const Index n = count() ;
+	unsigned nParticles = m_particlesCount ;
 
 	for( unsigned s = 0 ; s < m_offline.events().log().size() ; ++s ) {
 		const std::vector< Event > &events = m_offline.events().log()[s] ;
@@ -127,12 +146,19 @@ void Sampler::reassign( )
 			const Event& e = events[eId] ;
 
 			if( e.type == Event::Split ) {
-				eventIds[ e.first  ] = eId ;
 				++splits ;
+
+				eventIds[ e.first  ] = eId ;
+
+				m_predPos.col( e.second ) = m_predPos.col( e.first ) + e.dx ;
+				m_predPos.col( e.first  ) = m_predPos.col( e.first ) - e.dx ;
 			} else {
+				++merges;
+
 				eventIds[ e.first  ] = eId ;
 				eventIds[ e.second ] = eId ;
-				++merges;
+
+				m_predPos.col( e.first  ) = m_predPos.col( e.second ) + e.dx ;
 			}
 		}
 
@@ -206,6 +232,7 @@ void Sampler::reassign( )
 						 ) ;
 
 				relocs[ reloc_src ] = e.second ;
+				m_predPos.col( e.second ) = m_predPos.col( reloc_src ) ;
 			}
 		}
 
@@ -266,10 +293,13 @@ void Sampler::sampleParticles( unsigned nSamples )
 				m_normalNoise.col( idx ) = v.cast< float >() ;
 
 			}
+
 		}
 	}
 
 	m_particlesCount = n ;
+	m_predPos = particles.centers().leftCols( m_particlesCount ) ;
+
 	compute_absolute() ;
 }
 

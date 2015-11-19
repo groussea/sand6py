@@ -13,7 +13,7 @@ class Sampler {
 
 public:
 	explicit Sampler( const Offline& offline )
-	: m_offline( offline )
+	: m_offline( offline ), m_particlesCount( 0 )
 	{}
 
 	void sampleParticles( unsigned nSamples ) ;
@@ -46,6 +46,8 @@ private:
 	Eigen::Matrix3Xf m_positions ;
 	Eigen::Matrix3Xf m_normals ;
 	Eigen::VectorXf m_visibility ;
+
+	DynMat3 m_predPos ;
 
 } ;
 

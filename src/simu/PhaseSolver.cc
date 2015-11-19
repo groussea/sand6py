@@ -322,10 +322,6 @@ void PhaseSolver::step(const Config &config, Phase &phase,
 		m_phaseNodes.field2var( phase.fraction, fraction ) ;
 
 
-#ifdef ENFORCE_MAX_FRAC
-		enforceMaxFrac( config, matrices, rbData, fraction, phase );
-#endif
-
 		// Compute rhs of momentum conservation -- gravity + u(t)
 		DynVec rhs ;
 		{
@@ -338,6 +334,17 @@ void PhaseSolver::step(const Config &config, Phase &phase,
 		solveSDP( matrices.A, matrices.M_lumped_inv, rhs, u ) ;
 
 		Log::Debug() << "Linear solve at " << timer.elapsed() << std::endl ;
+
+
+#ifdef ENFORCE_MAX_FRAC
+		{
+			Eigen::VectorXd depl ;
+			enforceMaxFrac( config, matrices, rbData, fraction, depl );
+
+			m_phaseNodes.var2field( depl, phase.geo_proj ) ; //Purely geometric
+			// u += depl/config.dt() ; // Includes proj into inertia
+		}
+#endif
 
 		solveComplementarity( config, matrices, rbData, fraction, u, phase );
 
@@ -539,21 +546,12 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 void PhaseSolver::enforceMaxFrac(const Config &c, const PhaseMatrices &matrices,
 									   std::vector<RigidBodyData> &rbData,
 									   const DynVec &fraction,
-									   Phase& phase ) const
+									   DynVec& depl ) const
 {
 
 	LCPData data ;
 
 	data.H = matrices.Pvel * matrices.C ;
-
-	// Apply pressure projection
-	for( Index i = 0 ; i < data.H.rowsOfBlocks() ; ++i ) {
-		for( LCPData::HType::InnerIterator it = data.H.innerIterator(i) ; it ; ++it ) {
-			data.H.block( it.ptr() ) *= matrices.Pstress.block( it.inner() )(0,0) ;
-		}
-	}
-
-
 	data.w.setZero( data.n() );
 
 	DynVec totFraction = fraction ;
@@ -571,15 +569,25 @@ void PhaseSolver::enforceMaxFrac(const Config &c, const PhaseMatrices &matrices,
 	}
 
 	data.w.segment(0, totFraction.rows()) = ( c.phiMax - totFraction.array() )
-			* s_sqrt_23 * matrices.S.array()    // 1/d * Tr \tau = \sqrt{2}{d} \tau_N
+			* matrices.S.array()    // 1/d * Tr \tau = \sqrt{2}{d} \tau_N
 			;
+
+	// Apply pressure projection
+#pragma omp parallel for
+	for( Index i = 0 ; i < data.H.rowsOfBlocks() ; ++i ) {
+		for( LCPData::HType::InnerIterator it = data.H.innerIterator(i) ; it ; ++it ) {
+			data.H.block( it.ptr() ) *= matrices.Pstress.block( it.inner() )(0,0) ;
+		}
+	}
+	for( Index i = 0 ; i < data.n() ; ++i ) {
+		data.w(i) *= matrices.Pstress.block( i )(0,0) ;
+	}
 
 	DynVec x = DynVec::Zero( data.n() ) ;
 	LCP lcp( data ) ;
 	lcp.solve( x ) ;
 
-	const DynVec depl = - data.H * x ;
-	m_phaseNodes.var2field( depl, phase.geo_proj ) ;
+	depl = - data.H * x ;
 
 }
 
