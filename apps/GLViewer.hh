@@ -56,6 +56,8 @@ protected :
 
 private:
 
+	Eigen::Vector3f lightPosition() const ;
+
 	void update_buffers() ;
 	void drawObject( const LevelSet& ls ) ;
 	void snap() ;
@@ -94,6 +96,11 @@ private:
 
 	Shader m_grainsShader ;
 	Shader m_ballShader ;
+
+	Shader m_depthShader ;
+
+	GLuint m_depthBuffer ;
+	GLuint m_depthTexture ;
 
 } ;
 

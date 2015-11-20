@@ -19,6 +19,9 @@
 
 #include <iomanip>
 
+#define fb_width 512
+#define fb_height 512
+
 namespace d6 {
 
 static void genSphere( const unsigned parallels, const unsigned meridians,
@@ -133,25 +136,78 @@ void GLViewer::draw()
 	{
 		if( m_grainsShader.ok() ) {
 
-			UsingShader sh( m_grainsShader ) ;
-			// Model-view
-			sh.bindMVP() ;
+			Eigen::Matrix4f depthMVP ;
 
-			//Vertices
-			gl::VertexAttribPointer vap_v( m_grainVertices, m_grainsShader.attribute("vertex") ) ;
-			gl::VertexAttribPointer vap_n( m_grainNormals, m_grainsShader.attribute("normal") ) ;
+//			qglviewer::Camera& cam = *camera() ;
+			qglviewer::Camera cam ;
+			Eigen::Vector3f light_pos = lightPosition() ;
+			qglviewer::Vec lp( light_pos[0], light_pos[1], light_pos[2] )  ;
 
-			gl::VertexAttribPointer vap_a( m_grainVisibility, m_grainsShader.attribute("visibility") ) ;
-			gl::VertexAttribPointer vap_s( m_grainNoise, m_grainsShader.attribute("noise") ) ;
+			cam.setPosition( lp );
+			cam.lookAt( sceneCenter() );
+			cam.setFieldOfView( std::atan2( m_offline.mesh().box().norm(), lightPosition().norm()/2 ) ) ;
+//			cam.setFieldOfView( 2./3*M_PI );
+//			cam.setSceneRadius(  );
 
-			Eigen::Vector3f light_pos( 0, 0, m_offline.mesh().box()[2] * 2 ) ;
-
-			glUniform3fv( m_grainsShader.uniform("light_pos"), 1, light_pos.data() ) ;
-
-			glPointSize( 1 ) ;
+			Eigen::Matrix4d depthMVP_d ;
+			cam.getModelViewProjectionMatrix(depthMVP_d.data());
+			depthMVP = depthMVP_d.cast< float >() ;
 
 			gl::VertexPointer vp( m_grainVertices ) ;
-			glDrawArrays( GL_POINTS, 0, m_grainVertices.size() );
+
+			if(1){
+
+				glBindFramebuffer(GL_FRAMEBUFFER, m_depthBuffer );
+				glBindTexture(GL_TEXTURE_2D, m_depthTexture);
+
+				if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+					Log::Error() << "Frame buffer incomplete" << std::endl ;
+
+				int viewport[4] ;
+				glGetIntegerv( GL_VIEWPORT, viewport );
+				glViewport(0,0,fb_width,fb_height) ;
+
+				// Compute distance to light
+				UsingShader sh( m_depthShader ) ;
+
+				glUniformMatrix4fv( m_depthShader.uniform("depth_mvp"), 1, GL_FALSE, depthMVP.data()) ;
+
+				gl::VertexAttribPointer vap_v( m_grainVertices, m_depthShader.attribute("vertex") ) ;
+
+				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+				glPointSize( 2 ) ;
+				glDrawArrays( GL_POINTS, 0, m_grainVertices.size() );
+
+				glBindFramebuffer(GL_FRAMEBUFFER, 0);
+				glViewport(0,0,viewport[2],viewport[3]) ;
+			}
+
+
+			if(1){
+
+				UsingShader sh( m_grainsShader ) ;
+				// Model-view
+				sh.bindMVP() ;
+
+				//Vertices
+				gl::VertexAttribPointer vap_v( m_grainVertices, m_grainsShader.attribute("vertex") ) ;
+				gl::VertexAttribPointer vap_n( m_grainNormals, m_grainsShader.attribute("normal") ) ;
+
+				gl::VertexAttribPointer vap_a( m_grainVisibility, m_grainsShader.attribute("visibility") ) ;
+				gl::VertexAttribPointer vap_s( m_grainNoise, m_grainsShader.attribute("noise") ) ;
+
+				glUniform3fv( m_grainsShader.uniform("light_pos"), 1, lightPosition().data() ) ;
+
+				glActiveTexture(GL_TEXTURE0) ;
+				glBindTexture( GL_TEXTURE_2D, m_depthTexture ) ;
+				glUniform1i( m_grainsShader.uniform("depth_texture"), 0);
+
+				glUniformMatrix4fv( m_grainsShader.uniform("depth_mvp"), 1, GL_FALSE, depthMVP.data()) ;
+
+				glPointSize( 1 ) ;
+				glDrawArrays( GL_POINTS, 0, m_grainVertices.size() );
+			}
 
 		}
 	}
@@ -196,7 +252,7 @@ void GLViewer::drawWithNames()
 void GLViewer::drawObject(const LevelSet &ls)
 {
 	const Eigen::Matrix3f rotation = ls.rotation().matrix().cast < GLfloat >() ;
-	const Eigen::Vector3f translation = ls.origin().cast < GLfloat >() ; 
+	const Eigen::Vector3f translation = ls.origin().cast < GLfloat >() ;
 
 	if( dynamic_cast<const SphereLevelSet*>(&ls) )
 	{
@@ -212,8 +268,7 @@ void GLViewer::drawObject(const LevelSet &ls)
 		glUniformMatrix3fv( m_ballShader.uniform("rotation"), 1, GL_FALSE, rotation.data() ) ;
 		glUniform3fv( m_ballShader.uniform("center"), 1, translation.data() ) ;
 
-		Eigen::Vector3f light_pos( 0, 0, m_offline.mesh().box()[2] * 2 ) ;
-		glUniform3fv( m_ballShader.uniform("light_pos"), 1, light_pos.data() ) ;
+		glUniform3fv( m_ballShader.uniform("light_pos"), 1, lightPosition().data() ) ;
 
 		gl::VertexPointer vp( m_square ) ;
 		glDrawArrays( GL_QUADS, 0, m_square.size() ) ;
@@ -295,7 +350,36 @@ void GLViewer::init()
 		m_grainsShader.add_uniform("model_view") ;
 		m_grainsShader.add_uniform("projection") ;
 		m_grainsShader.add_uniform("light_pos") ;
+		m_grainsShader.add_uniform("depth_mvp");
+		m_grainsShader.add_uniform("depth_texture");
 		m_grainsShader.load("grains_vertex","grains_fragment") ;
+
+		glGenFramebuffers(1, &m_depthBuffer);
+		glBindFramebuffer(GL_FRAMEBUFFER, m_depthBuffer );
+
+		glGenTextures(1, &m_depthTexture);
+		glBindTexture(GL_TEXTURE_2D, m_depthTexture);
+
+		//				float dataa[ fb_width * fb_height ]	;
+		//				for( unsigned j = 0 ; j < fb_height ; ++j )
+		//					for( unsigned i = 0 ; i < fb_width ; ++i ) {
+		//						dataa[ j*fb_width + i ] = (1.*i)/fb_width ;
+		//					}
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, fb_width, fb_height, 0,GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_depthTexture, 0);
+		glDrawBuffer(GL_NONE); // No color buffer is drawn to.
+
+
+		m_depthShader.add_attribute("vertex") ;
+		m_depthShader.add_uniform("depth_mvp");
+		m_depthShader.load("depth_vertex","depth_fragment") ;
 	}
 
 	m_ballShader.add_uniform("model_view") ;
@@ -314,6 +398,11 @@ void GLViewer::animate()
 {
 	if( ! next_frame() )
 		stopAnimation();
+}
+
+Eigen::Vector3f GLViewer::lightPosition() const
+{
+	return Eigen::Vector3f ( 0, 0, m_offline.mesh().box()[2] * 2 ) ;
 }
 
 void GLViewer::update_buffers()

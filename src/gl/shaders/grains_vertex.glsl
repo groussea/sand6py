@@ -2,6 +2,7 @@
 
 uniform mat4 model_view ;
 uniform mat4 projection ;
+uniform mat4 depth_mvp  ;
 
 in vec3 vertex ;
 in vec3 normal ;
@@ -10,7 +11,8 @@ in float noise ;
 
 out vec3 normal_screen ;
 out vec3 vertex_screen ;
-out float alpha ;
+out vec4 shadow_coord  ;
+out float vis ;
 out float material ;
 
 void main()
@@ -19,9 +21,10 @@ void main()
     vertex_screen  = ip.xyz ;
     normal_screen  = normalize( mat3(model_view) * normal ) ;
 
-    alpha = visibility ;
+    vis = visibility ;
 
     material = noise ;
 
     gl_Position = projection *  ip ;
+    shadow_coord = ( depth_mvp * vec4( vertex, 1 ) ) ;
 }

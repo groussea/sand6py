@@ -2,17 +2,35 @@
 
 uniform mat4 model_view ;
 uniform vec3 light_pos ;
+uniform sampler2D depth_texture;
 
 in vec3 normal_screen ;
 in vec3 vertex_screen ;
+in vec4 shadow_coord  ;
 
-in float alpha ;
+in float vis ;
 in float material ;
 
 out vec4 color ;
 
 void main (void)
 {
+    float alpha = 1 ; //vis ;
+
+    vec2 tex_coords = 0.5 * ( shadow_coord.xy / shadow_coord.w ) + vec2(0.5,0.5) ;
+
+    float zz = shadow_coord.z /100  ;
+    //float zs = texture( depth_texture, shadow_coord.xy/1280 ).z ;
+//    float zs = texture( depth_texture, vec2(0, 0) ).x ;
+    float zs = texture( depth_texture, tex_coords ).r ;
+    //color = texture( depth_texture, vec2(0.5,0.5) ) ;
+//    color = vec4( zs, 0, 0, 1 );
+//    return ;
+
+    if ( zs  <  zz ){
+         alpha = 1.-(zz-zs) ; //shadow_coord.z/20;
+     }
+
     vec4 ambientMat  = vec4(0,0,0,0) ;
     vec4 diffuseMat  = vec4(0,0,0,0) ;
     vec4 specMat     = vec4(0,0,0,0) ;
