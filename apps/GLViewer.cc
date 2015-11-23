@@ -159,11 +159,11 @@ void GLViewer::draw()
 
 			if(1){
 
-//				cam.loadModelViewMatrix();
-//				cam.loadProjectionMatrix();
-
 				glBindFramebuffer(GL_FRAMEBUFFER, m_depthBuffer );
 				glBindTexture(GL_TEXTURE_2D, m_depthTexture);
+
+				glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depthTexture, 0);
+				glDrawBuffer(GL_NONE); // No color buffer is drawn to.
 
 				if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 					Log::Error() << "Frame buffer incomplete" << std::endl ;
@@ -172,10 +172,7 @@ void GLViewer::draw()
 				glGetIntegerv( GL_VIEWPORT, viewport );
 				glViewport(0,0,fb_width,fb_height) ;
 
-				// Compute distance to light
 				UsingShader sh( m_depthShader ) ;
-//				qglviewer::Camera old_cam = *camera() ;
-//				*camera() = cam ;
 
 				glUniformMatrix4fv( m_depthShader.uniform("depth_mvp"), 1, GL_FALSE, depthMVP.data()) ;
 
@@ -207,9 +204,6 @@ void GLViewer::draw()
 			}
 
 			if(1){
-
-//				camera()->loadModelViewMatrix();
-//				camera()->loadProjectionMatrix();
 
 				UsingShader sh( m_grainsShader ) ;
 				// Model-view
@@ -383,28 +377,26 @@ void GLViewer::init()
 		m_grainsShader.load("grains_vertex","grains_fragment") ;
 
 		glGenFramebuffers(1, &m_depthBuffer);
-		glBindFramebuffer(GL_FRAMEBUFFER, m_depthBuffer );
 
 		glGenTextures(1, &m_depthTexture);
 		glBindTexture(GL_TEXTURE_2D, m_depthTexture);
 
-		float dataa[ fb_width * fb_height ]	;
-		for( unsigned j = 0 ; j < fb_height ; ++j )
-			for( unsigned i = 0 ; i < fb_width ; ++i ) {
-				dataa[ j*fb_width + i ] = 1 ; //(1.*i)/fb_width ;
-			}
-//		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, fb_width, fb_height, 0,GL_DEPTH_COMPONENT, GL_FLOAT, dataa);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, fb_width, fb_height, 0,GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, 0);
+		//float data[ fb_width * fb_height ]	;
+		//for( unsigned j = 0 ; j < fb_height ; ++j )
+		//	for( unsigned i = 0 ; i < fb_width ; ++i ) {
+		//		daaa[ j*fb_width + i ] = (1.*i)/fb_width ;
+		//	}
+		float* data = 0 ;
+	
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, fb_width, fb_height, 0,GL_DEPTH_COMPONENT, GL_FLOAT, data);
 
+		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_depthTexture, 0);
-		glDrawBuffer(GL_NONE); // No color buffer is drawn to.
-
 
 		m_depthShader.add_attribute("vertex") ;
 		m_depthShader.add_uniform("depth_mvp");
