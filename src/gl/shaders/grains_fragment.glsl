@@ -19,7 +19,7 @@ void main (void)
 
     vec2 tex_coords = 0.5 * ( shadow_coord.xy / shadow_coord.w ) + vec2(0.5,0.5) ;
 
-    float zz = shadow_coord.z /100  ;
+    float zz = shadow_coord.z / shadow_coord.w  ;
     //float zs = texture( depth_texture, shadow_coord.xy/1280 ).z ;
 //    float zs = texture( depth_texture, vec2(0, 0) ).x ;
     float zs = texture( depth_texture, tex_coords ).r ;
@@ -28,8 +28,10 @@ void main (void)
 //    return ;
 
     if ( zs  <  zz ){
-         alpha = 1.-(zz-zs) ; //shadow_coord.z/20;
+         alpha = 1. - .5*shadow_coord.w*(zz-zs) ; //shadow_coord.z/20;
      }
+
+    alpha = 0.75 * pow( clamp(alpha,0,1), 3) ;
 
     vec4 ambientMat  = vec4(0,0,0,0) ;
     vec4 diffuseMat  = vec4(0,0,0,0) ;

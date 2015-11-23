@@ -9,4 +9,6 @@ gl/shaders/depth_vertex.glsl
 gl/shaders/fragment.glsl
 gl/shaders/grains_fragment.glsl
 gl/shaders/grains_vertex.glsl
+gl/shaders/textest_fragment.glsl
+gl/shaders/textest_vertex.glsl
 gl/shaders/vertex.glsl

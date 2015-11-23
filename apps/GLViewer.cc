@@ -19,7 +19,7 @@
 
 #include <iomanip>
 
-#define fb_width 512
+#define fb_width  512
 #define fb_height 512
 
 namespace d6 {
@@ -139,7 +139,7 @@ void GLViewer::draw()
 			Eigen::Matrix4f depthMVP ;
 
 //			qglviewer::Camera& cam = *camera() ;
-			qglviewer::Camera cam ;
+			qglviewer::Camera  cam = *camera() ;
 			Eigen::Vector3f light_pos = lightPosition() ;
 			qglviewer::Vec lp( light_pos[0], light_pos[1], light_pos[2] )  ;
 
@@ -148,6 +148,8 @@ void GLViewer::draw()
 			cam.setFieldOfView( std::atan2( m_offline.mesh().box().norm(), lightPosition().norm()/2 ) ) ;
 //			cam.setFieldOfView( 2./3*M_PI );
 //			cam.setSceneRadius(  );
+			cam.computeModelViewMatrix();
+			cam.computeProjectionMatrix();
 
 			Eigen::Matrix4d depthMVP_d ;
 			cam.getModelViewProjectionMatrix(depthMVP_d.data());
@@ -156,6 +158,9 @@ void GLViewer::draw()
 			gl::VertexPointer vp( m_grainVertices ) ;
 
 			if(1){
+
+//				cam.loadModelViewMatrix();
+//				cam.loadProjectionMatrix();
 
 				glBindFramebuffer(GL_FRAMEBUFFER, m_depthBuffer );
 				glBindTexture(GL_TEXTURE_2D, m_depthTexture);
@@ -169,6 +174,8 @@ void GLViewer::draw()
 
 				// Compute distance to light
 				UsingShader sh( m_depthShader ) ;
+//				qglviewer::Camera old_cam = *camera() ;
+//				*camera() = cam ;
 
 				glUniformMatrix4fv( m_depthShader.uniform("depth_mvp"), 1, GL_FALSE, depthMVP.data()) ;
 
@@ -181,10 +188,28 @@ void GLViewer::draw()
 
 				glBindFramebuffer(GL_FRAMEBUFFER, 0);
 				glViewport(0,0,viewport[2],viewport[3]) ;
+
+//				*camera() = old_cam ;
 			}
 
+			if(0){
+				UsingShader sh( m_testShader ) ;
+
+				glActiveTexture(GL_TEXTURE0) ;
+				glBindTexture( GL_TEXTURE_2D, m_depthTexture ) ;
+				glUniform1i( m_testShader.uniform("in_texture"), 0);
+
+				gl::VertexAttribPointer vap_v( m_square, m_testShader.attribute("vertex") ) ;
+				gl::VertexPointer vp( m_square ) ;
+				glDrawArrays( GL_QUADS, 0, m_square.size() ) ;
+
+				glBindTexture( GL_TEXTURE_2D, 0 ) ;
+			}
 
 			if(1){
+
+//				camera()->loadModelViewMatrix();
+//				camera()->loadProjectionMatrix();
 
 				UsingShader sh( m_grainsShader ) ;
 				// Model-view
@@ -207,6 +232,9 @@ void GLViewer::draw()
 
 				glPointSize( 1 ) ;
 				glDrawArrays( GL_POINTS, 0, m_grainVertices.size() );
+
+				glBindTexture( GL_TEXTURE_2D, 0 ) ;
+
 			}
 
 		}
@@ -360,12 +388,13 @@ void GLViewer::init()
 		glGenTextures(1, &m_depthTexture);
 		glBindTexture(GL_TEXTURE_2D, m_depthTexture);
 
-		//				float dataa[ fb_width * fb_height ]	;
-		//				for( unsigned j = 0 ; j < fb_height ; ++j )
-		//					for( unsigned i = 0 ; i < fb_width ; ++i ) {
-		//						dataa[ j*fb_width + i ] = (1.*i)/fb_width ;
-		//					}
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, fb_width, fb_height, 0,GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+		float dataa[ fb_width * fb_height ]	;
+		for( unsigned j = 0 ; j < fb_height ; ++j )
+			for( unsigned i = 0 ; i < fb_width ; ++i ) {
+				dataa[ j*fb_width + i ] = 1 ; //(1.*i)/fb_width ;
+			}
+//		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, fb_width, fb_height, 0,GL_DEPTH_COMPONENT, GL_FLOAT, dataa);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, fb_width, fb_height, 0,GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, 0);
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -390,6 +419,10 @@ void GLViewer::init()
 	m_ballShader.add_uniform("light_pos") ;
 	m_ballShader.add_attribute("vertex") ;
 	m_ballShader.load("ball_vertex","ball_fragment") ;
+
+	m_testShader.add_attribute("vertex") ;
+	m_testShader.add_uniform("in_texture");
+	m_testShader.load("textest_vertex","textest_fragment") ;
 
 	update_buffers();
 }

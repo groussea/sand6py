@@ -98,6 +98,7 @@ private:
 	Shader m_ballShader ;
 
 	Shader m_depthShader ;
+	Shader m_testShader ;
 
 	GLuint m_depthBuffer ;
 	GLuint m_depthTexture ;
