@@ -1,11 +1,11 @@
 #include "Scenario.hh"
 
-#include "Config.hh"
 #include "Simu.hh"
 #include "RigidBody.hh"
 
 #include "geo/LevelSet.hh"
 
+#include "utils/Config.hh"
 #include "utils/string.hh"
 #include "utils/Log.hh"
 

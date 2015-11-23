@@ -5,7 +5,7 @@
 #include "geo/geo.fwd.hh"
 #include "geo/Particles.hh"
 
-#include "simu/Config.hh"
+#include "utils/Config.hh"
 
 #include <memory>
 

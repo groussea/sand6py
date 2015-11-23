@@ -1,6 +1,5 @@
 #include "DynParticles.hh"
 
-#include "Config.hh"
 #include "Phase.hh"
 
 #include "Scenario.hh"
@@ -8,6 +7,7 @@
 #include "geo/Tensor.hh"
 
 #include "utils/Log.hh"
+#include "utils/Config.hh"
 
 #include <bogus/Core/Utils/Timer.hpp>
 

@@ -2,7 +2,6 @@
 
 #include "Phase.hh"
 #include "DynParticles.hh"
-#include "Config.hh"
 
 #include "RigidBody.hh"
 #include "RigidBodyData.hh"
@@ -15,6 +14,7 @@
 #include "solve/LCP.hh"
 
 #include "utils/Log.hh"
+#include "utils/Config.hh"
 
 #include <bogus/Core/Block.impl.hpp>
 #include <bogus/Core/Block.io.hpp>

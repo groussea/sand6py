@@ -1,12 +1,12 @@
 #include "Simu.hh"
 #include "Phase.hh"
 
-#include "Config.hh"
 #include "Scenario.hh"
 #include "RigidBody.hh"
 
 #include "utils/Log.hh"
 #include "utils/File.hh"
+#include "utils/Config.hh"
 
 #include "geo/Grid.hh"
 #include "geo/LevelSet.hh"

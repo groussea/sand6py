@@ -1,4 +1,4 @@
-#include "simu/Config.hh"
+#include "utils/Config.hh"
 #include "simu/Simu.hh"
 
 #include "utils/Log.hh"
