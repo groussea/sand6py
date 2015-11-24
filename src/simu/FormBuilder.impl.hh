@@ -51,7 +51,7 @@ void FormBuilder::integrate_particle( const Particles& particles, Func func ) co
 		m_mesh.interpolate( loc, itp );
 		m_mesh.get_derivatives( loc, dc_dx );
 
-		func( particles.volumes()[i], loc, itp, dc_dx ) ;
+		func( i, particles.volumes()[i], loc, itp, dc_dx ) ;
 	}
 
 }

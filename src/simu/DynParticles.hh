@@ -18,7 +18,8 @@ public:
 	void update( const Config&c, const Phase& phase ) ;
 	void read(std::vector< bool > &activeCells,
 			   ScalarField &phi, VectorField &phiVel,
-			   ScalarField &phiInertia, TensorField &phiOrient
+			   ScalarField &phiInertia, TensorField &phiOrient,
+			   ScalarField &phiCohesion
 			   ) const ;
 
 	const Particles &geo() const { return m_geo ; }
@@ -37,6 +38,9 @@ public:
 		return m_events ;
 	}
 
+	const Particles::Data< 1 >::Type&  inertia() const { return m_inertia ; }
+	const Particles::Data< 1 >::Type& cohesion() const { return m_cohesion ; }
+
 private:
 
 	void resize( size_t n ) ;
@@ -45,8 +49,9 @@ private:
 	Particles::EventLog m_events ;
 	Scalar m_meanVolume ;
 
-	Eigen::Matrix< Scalar, 9, Eigen::Dynamic > m_affine ;
-	Eigen::Matrix< Scalar, 1, Eigen::Dynamic > m_inertia ;
+	Particles::Data< 9 >::Type m_affine ;
+	Particles::Data< 1 >::Type m_inertia ;
+	Particles::Data< 1 >::Type m_cohesion ;
 
 };
 

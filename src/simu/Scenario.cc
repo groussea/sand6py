@@ -45,6 +45,52 @@ struct BridsonScenar : public Scenario {
 	}
 };
 
+struct TowerScenar : public Scenario {
+	Vec center ;
+	Scalar radius ;
+
+	Scalar volMass ;
+	Scalar hvel ;
+	Scalar zvel ;
+	Scalar avel ;
+
+	Scalar particle_density( const Vec &x ) const {
+		return ( std::fabs( x[0] - center[0] ) < radius
+//		        && std::fabs( x[1] - center[1] ) < radius
+				)
+			   ? 1. : 0. ;
+	}
+
+	virtual void init( const Params& params ) {
+		center = Vec( .5*m_config->box[0], .5*m_config->box[1], .5*m_config->box[2] ) ;
+		radius = .125 * m_config->box[0] ;
+
+		volMass = scalar_param( params, "vm", Units::VolumicMass, 1.5*m_config->units().R ) ;
+		hvel = scalar_param( params, "hvel", Units::Velocity, 1. * m_config->units().U ) ;
+		avel = scalar_param( params, "avel", Units::Frequency, 0. ) ;
+
+		const Scalar t = m_config->box[0] * M_SQRT2 / hvel ;
+		zvel = .5 * m_config->gravity.norm() * t ;
+	}
+
+	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const
+	{
+		LevelSet::Ptr ls = LevelSet::make_sphere() ;
+		ls->scale(.5*.125*m_config->box[0]).set_origin( center - 1*m_config->box[0]*Vec(1,1,0) ) ;
+
+		rbs.emplace_back( ls, volMass );
+		rbs.back().set_velocity( Vec(hvel/M_SQRT2, hvel/M_SQRT2, zvel), Vec(avel,0,0) ) ;
+	}
+
+	void update( Simu& simu, Scalar /*time*/ ) const
+	{
+		for( RigidBody& rb: simu.rigidBodies() ) {
+			rb.integrate_gravity( m_config->dt(), m_config->gravity );
+		}
+
+	}
+};
+
 struct RbPlaneTestScenar : public Scenario {
 	Scalar particle_density( const Vec &x ) const {
 		return ( x[2] >  .5*m_config->box[2] ) ? 1. : 0. ;
@@ -110,6 +156,8 @@ struct DefaultScenarioFactory : public ScenarioFactory
 			return std::unique_ptr< Scenario >( new CollapseScenar() ) ;
 		if( str == "bridson")
 			return std::unique_ptr< Scenario >( new BridsonScenar() ) ;
+		if( str == "tower")
+			return std::unique_ptr< Scenario >( new TowerScenar() ) ;
 		if( str == "rb_plane_test")
 			return std::unique_ptr< Scenario >( new RbPlaneTestScenar() ) ;
 		if( str == "impact")

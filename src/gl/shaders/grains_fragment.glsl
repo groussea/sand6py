@@ -23,10 +23,10 @@ void main (void)
     float zs = texture( depth_texture, tex_coords ).r ;
 
     if ( zs  <  zz ){
-         alpha = 1. - .5*5*shadow_coord.w*(zz-zs) ; //shadow_coord.z/20;
+         alpha = 1. - shadow_coord.w*(zz-zs) ; //shadow_coord.z/20;
      }
 
-    alpha = 0.75 * pow( clamp(alpha,0,1), 3) ;
+    alpha = 0.6 * pow( clamp(alpha,0,1), 3) ;
 
     vec4 ambientMat  = vec4(0,0,0,0) ;
     vec4 diffuseMat  = vec4(0,0,0,0) ;

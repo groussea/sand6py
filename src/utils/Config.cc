@@ -26,6 +26,7 @@ Config::Config() :
 	viscosity( 1.e-3 ),
 	gravity( 0, 0, -9.81 ),
 	phiMax(1), mu(0),
+	cohesion(0), cohesion_decay(0),
 	boundary("cuve"),
 	output( true )
 {

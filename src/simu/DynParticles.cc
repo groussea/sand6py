@@ -28,8 +28,9 @@ void DynParticles::generate(const Config &c, const MeshType &mesh)
 {
 	m_geo.generate( Scenario::parse( c )->generator(), c.nSamples, mesh );
 
-	 m_affine.leftCols( count() ).setZero() ;
-	m_inertia.leftCols( count() ).setZero() ;
+	  m_affine.leftCols( count() ).setZero() ;
+	 m_inertia.leftCols( count() ).setZero() ;
+	m_cohesion.leftCols( count() ).setConstant( 1. ) ;
 
 	m_meanVolume = m_geo.volumes().segment( 0, m_geo.count() ).sum() / m_geo.count() ;
 }
@@ -107,6 +108,8 @@ void DynParticles::update(const Config &config, const Phase &phase )
 			const Scalar DuT = ( Du - 1./3. * Du.trace() * Mat::Identity() ).norm()  ;
 			m_inertia(i) = DuT / std::sqrt( std::max( 1.e-16, phase.stresses(p0)[0] ) ) ;
 
+
+			m_cohesion(i) /= ( 1. + config.dt() * config.cohesion_decay * DuT ) ;
 		}
 
 		// Frame
@@ -143,7 +146,9 @@ void DynParticles::update(const Config &config, const Phase &phase )
 
 void DynParticles::read(std::vector<bool> &activeCells,
 						ScalarField &phi, VectorField &phiVel,
-						ScalarField &phiInertia, TensorField &phiOrient) const
+						ScalarField &phiInertia, TensorField &phiOrient,
+						ScalarField &phiCohesion
+						) const
 {
 	const MeshType& mesh = phi.mesh() ;
 	activeCells.assign( mesh.nCells(), false );
@@ -152,6 +157,7 @@ void DynParticles::read(std::vector<bool> &activeCells,
 	phiVel.set_zero();
 	phiInertia.set_zero();
 	phiOrient.set_zero();
+	phiCohesion.set_zero();
 
 	for ( size_t i = 0 ; i < count() ; ++i ) {
 
@@ -165,10 +171,11 @@ void DynParticles::read(std::vector<bool> &activeCells,
 
 		activeCells[ mesh.cellIndex( loc.cell ) ] = true ;
 
-			   phi.add_at( itp, m );
-			phiVel.add_at( itp, m * m_geo.velocities().col(i) );
-		phiInertia.add_at( itp, m * m_inertia[i] );
-		phiOrient .add_at( itp, m * m_geo.orient().col(i) );
+			   phi .add_at( itp, m );
+			phiVel .add_at( itp, m * m_geo.velocities().col(i) );
+		phiInertia .add_at( itp, m * m_inertia[i] );
+		phiCohesion.add_at( itp, m * m_cohesion[i] );
+		phiOrient  .add_at( itp, m * m_geo.orient().col(i) );
 
 
 		// APIC
@@ -247,6 +254,7 @@ void DynParticles::splitMerge( const MeshType & mesh )
 					m_geo.m_orient.col(j) = m_geo.m_orient.col(i) ;
 					m_affine.col(j) = m_affine.col(i) ;
 					m_inertia(j) = m_inertia(i) ;
+					m_cohesion(j) = m_cohesion(i) ;
 
 					clamp_particle( i, mesh );
 					clamp_particle( j, mesh );
@@ -341,6 +349,7 @@ void DynParticles::splitMerge( const MeshType & mesh )
 //			m_velocities.col(i) = ( m_masses[i] * m_velocities.col(i) + m_masses[j] * m_velocities.col(j) ) / ( m_masses[i] + m_masses[j ] ) ;
 //			m_affine.col(i) = ( m_masses[i] * m_affine.col(i) + m_masses[j] * m_affine.col(j) ) / ( m_masses[i] + m_masses[j ] ) ;
 //			m_inertia[i] = ( m_masses[i] * m_inertia[i] + m_masses[j] * m_inertia[j] ) / ( m_masses[i] + m_masses[j ] ) ;
+			m_cohesion[i] = ( vi * m_cohesion[i] + vj * m_cohesion[j] ) / ( vi + vj ) ;
 
 			m_geo.m_volumes[i] += vj ;
 			m_geo.m_centers.col(i) = bary;
@@ -386,6 +395,7 @@ void DynParticles::resize( size_t n )
 {
 	m_affine.resize( 9, n );
 	m_inertia.resize( 1, n );
+	m_cohesion.resize( 1, n );
 }
 
 } //d6
