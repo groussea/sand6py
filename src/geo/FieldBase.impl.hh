@@ -62,6 +62,11 @@ Derived& FieldBase< Derived >::divide_by(const ScalarField &field) {
 	div_compwise< D >( m_data, field.flatten() ) ;
 	return derived() ;
 }
+template< typename Derived >
+Derived& FieldBase< Derived >::divide_by_positive(const ScalarField &field, Scalar min) {
+	div_compwise< D >( m_data, field.flatten().cwiseMax(min) ) ;
+	return derived() ;
+}
 
 } //ns d6
 

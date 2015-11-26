@@ -109,7 +109,8 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 	const Index m  = m_phaseNodes.count() ;
 	const Index mc = nSuppNodes() ;
 
-	const Scalar regul = 1.e-8 ;
+	const Scalar dyn_regul = 1.e-8 ;
+	const Scalar con_regul = 1.e-4 ;
 
 	computeProjectors( mats, rbData ) ;
 
@@ -136,7 +137,6 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 
 	// S -- used to integrate (phi_max - phi)
 	mats.S.setZero( m );
-	mats.cohesion.setZero( 3*m ) ;
 
 	// A
 	mats.A.clear();
@@ -189,13 +189,6 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 #ifdef ENFORCE_MAX_FRAC
 			FormBuilder::addVDp  ( mats.C, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
 #endif
-
-			const Scalar c = w * m_particles.cohesion()[i] ;
-			// int{ phi c \Div v }
-			for( Index k = 0 ; k < MeshType::NQ ; ++k ) {
-				Segmenter<3>::segment( mats.cohesion, m_phaseNodes.indices[itp.nodes[k]] )
-						+= c * dc_dx.row(k) ;
-			}
 		}
 	);
 	Log::Debug() << "Integrate particle: " << timer.elapsed() << std::endl ;
@@ -229,9 +222,9 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 		const Scalar m = mats.M_lumped.block(i).trace() / 3 ;
 		mats.M_lumped         .block(i) = mats.Pvel.block(i) * m
 				+ Mat::Identity() - mats.Pvel.block(i) ;
-		mats.M_lumped_inv     .block(i) = mats.Pvel.block(i) * 1./( regul + m )
+		mats.M_lumped_inv     .block(i) = mats.Pvel.block(i) * 1./(m + dyn_regul )
 				+ Mat::Identity() - mats.Pvel.block(i) ;
-		mats.M_lumped_inv_sqrt.block(i) = mats.Pvel.block(i) * 1./std::sqrt( regul + m ) ;
+		mats.M_lumped_inv_sqrt.block(i) = mats.Pvel.block(i) * 1./std::sqrt( m + con_regul ) ;
 	}
 
 }
@@ -246,6 +239,7 @@ void PhaseSolver::step(const Config &config, Phase &phase,
 	m_surfaceNodes.clear();
 	m_surfaceNodes.resize( mesh.nNodes() );
 
+	// Compute volumes of cells
 	ScalarField volumes(mesh) ; volumes.set_zero();
 	for( typename MeshType::CellIterator it = mesh.cellBegin() ; it != mesh.cellEnd() ; ++it ) {
 		typename MeshType::CellGeo geo ;
@@ -263,12 +257,12 @@ void PhaseSolver::step(const Config &config, Phase &phase,
 	VectorField gravity ( mesh ) ;
 	gravity.set_constant( config.gravity );
 
-	// Splat
-	ScalarField intPhi    ( mesh ) ;
-	VectorField intPhiVel ( mesh ) ;
-	ScalarField intPhiInertia( mesh ) ;
+	// Rasterize particles
+	ScalarField intPhi        ( mesh ) ;
+	VectorField intPhiVel     ( mesh ) ;
+	ScalarField intPhiInertia ( mesh ) ;
 	ScalarField intPhiCohesion( mesh ) ;
-	TensorField intPhiOrient ( mesh ) ;
+	TensorField intPhiOrient  ( mesh ) ;
 	std::vector< bool > activeCells ;
 	m_particles.read( activeCells, intPhi, intPhiVel, intPhiInertia, intPhiOrient, intPhiCohesion ) ;
 
@@ -285,15 +279,7 @@ void PhaseSolver::step(const Config &config, Phase &phase,
 	computeActiveNodes( activeCells, phase.grad_phi ) ;
 	Log::Verbose() << "Active nodes: " << m_phaseNodes.count() << " / " << mesh.nNodes() << std::endl;
 
-	DynVec phi_int  ; m_phaseNodes.field2var( intPhi, phi_int ) ;
-	DynVec phiu_int ; m_phaseNodes.field2var( intPhiVel, phiu_int ) ;
-
-#ifdef FULL_FEM
-	phi_int.setOnes() ;
-	phiu_int.setZero() ;
-#endif
-
-	//Rigid bodies
+	//Rigid bodies and frictional boundaries
 	std::vector< RigidBodyData > rbData ;
 	rbData.clear();
 	for( unsigned i = 0 ; i < rigidBodies.size() ; ++i ) {
@@ -314,13 +300,18 @@ void PhaseSolver::step(const Config &config, Phase &phase,
 	}
 	Log::Debug() << "Tot coupling nodes: " << nSuppNodes() << std::endl ;
 
+
 	// Matrices
+	DynVec phi_int  ; m_phaseNodes.field2var( intPhi, phi_int ) ;
+#ifdef FULL_FEM
+	phi_int.setOnes() ;
+#endif
+
 	mesh.make_bc( StrBoundaryMapper( config.boundary ), m_surfaceNodes ) ;
 	PhaseMatrices matrices ;
 	assembleMatrices( config, mesh, phi_int, matrices, rbData );
 
 	Log::Debug() << "Matrices assembled  at " << timer.elapsed() << std::endl ;
-
 
 
 	{
@@ -346,7 +337,10 @@ void PhaseSolver::step(const Config &config, Phase &phase,
 
 
 			// Inertia
+#ifndef  FULL_FEM
+			DynVec phiu_int ; m_phaseNodes.field2var( intPhiVel, phiu_int ) ;
 			forces += config.inv_dt() * config.volMass * phiu_int ;
+#endif
 
 			rhs = matrices.Pvel * forces ;
 		}
@@ -367,7 +361,7 @@ void PhaseSolver::step(const Config &config, Phase &phase,
 		}
 #endif
 
-		intPhiCohesion.divide_by( intPhi ) ;
+		intPhiCohesion.divide_by_positive( intPhi ) ;
 		DynVec cohesion  ;
 		m_phaseNodes.field2var( intPhiCohesion, cohesion ) ;
 
@@ -381,11 +375,11 @@ void PhaseSolver::step(const Config &config, Phase &phase,
 			// Velocities gradient
 			DynVec int_phiDu = .5 * matrices.Pstress * DynVec( matrices.B * u ) ;
 			m_phaseNodes.var2field( int_phiDu, phase.sym_grad ) ;
-			phase.sym_grad.divide_by( intPhi ) ;
+			phase.sym_grad.divide_by_positive( intPhi ) ;
 
 			DynVec int_phiWu = .5 * matrices.J * u ;
 			m_phaseNodes.var2field( int_phiWu, phase.spi_grad ) ;
-			phase.spi_grad.divide_by( intPhi ) ;
+			phase.spi_grad.divide_by_positive( intPhi ) ;
 		}
 	}
 
@@ -484,29 +478,21 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 									   const DynVec &fraction, const DynVec &cohesion,
 									   DynVec &u, Phase& phase ) const
 {
+	PrimalData	data ;
+	data.H = matrices.Pstress * ( matrices.B * matrices.M_lumped_inv_sqrt ) ;
 
 	//Cohesion
 	{
-		const Config& config = c ;
-		const Scalar cohe_start = 0.99999 * config.phiMax ;
-		DynVec contact = ( ( fraction.array() - cohe_start )/ (config.phiMax - cohe_start) ).max(0).min(1) ;
-		contact.array() *= config.cohesion * cohesion.array() ;
+		const Scalar cohe_start = 0.999 * c.phiMax ;
+		const DynArr contact_zone = ( ( fraction.array() - cohe_start )/ (c.phiMax - cohe_start) ).max(0).min(1) ;
 
 		DynVec cohe_s  = DynVec::Zero( matrices.Pstress.rows() ) ;
-		component< 6 >( cohe_s, 0 ).head(contact.rows()) = contact ;
+		component< 6 >( cohe_s, 0 ).head(cohesion.rows()).array() =
+				c.cohesion * cohesion.array() * contact_zone ;
 
-		DynVec forces =  matrices.B.transpose() * DynVec( matrices.Pstress * cohe_s );
-
-		//				DynVec cohe ; m_phaseNodes.field2var( phase.grad_phi, cohe ) ;
-		//				mul_compwise< 3 >( cohe, matrices.S ) ;
-		//				forces += config.cohesion * cohe ;
-
-		u -= matrices.M_lumped_inv * DynVec( matrices.Pvel * forces ) ;
-//		u -= matrices.M_lumped_inv * DynVec( matrices.Pvel * matrices.cohesion ) ;
+		u -= matrices.M_lumped_inv_sqrt * DynVec( data.H.transpose() * cohe_s ) ;
 	}
 
-	PrimalData	data ;
-	data.H = matrices.Pstress * ( matrices.B * matrices.M_lumped_inv_sqrt ) ;
 	data.w = matrices.Pstress * DynVec( matrices.B * u ) ;
 
 	data.jacobians.reserve( rbData.size() ) ;
@@ -570,6 +556,10 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 	primal.solve( x, y ) ;
 
 	u += matrices.M_lumped_inv_sqrt * DynVec( data.H.transpose() * x ) ;
+
+
+	DynVec fcontact = matrices.Pvel * ( matrices.B.transpose() * ( matrices.Pstress * x ) );
+	m_phaseNodes.var2field( fcontact, phase.fcontact ) ;
 
 	m_phaseNodes.var2field( x, phase.stresses ) ;
 

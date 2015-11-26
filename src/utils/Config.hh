@@ -24,7 +24,7 @@ namespace d6 {
 	CONFIG_FIELD( phiMax			, Scalar		,	Units::None			) \
 	CONFIG_FIELD( mu				, Scalar		,	Units::None			) \
 	CONFIG_FIELD( cohesion			, Scalar		,	Units::Stress		) \
-	CONFIG_FIELD( cohesion_decay	, Scalar		,	Units::None			) \
+	CONFIG_FIELD( cohesion_decay	, Scalar		,	Units::Time			) \
 	\
 	CONFIG_FIELD( scenario			, std::string	,	Units::None			) \
 	CONFIG_FIELD( boundary			, std::string	,	Units::None			) \

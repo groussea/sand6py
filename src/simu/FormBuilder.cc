@@ -242,4 +242,20 @@ void FormBuilder::addUTauGphi( FormMat<6,3>::Type& A, Scalar w, Itp itp, const V
 
 }
 
+void FormBuilder::addUTaunGphi( FormMat<6,3>::Type& A, Scalar w, Itp itp, const Vec& dphi_dx, Indices rowIndices, Indices colIndices )
+{
+	typedef FormMat<6,3>::Type::BlockType Block ;
+
+//#pragma omp parallel for
+	for( int k = 0 ; k < MeshType::NV ; ++k ) {
+		for( int j = 0 ; j < MeshType::NV ; ++j ) {
+			Block &b = A.block( rowIndices[itp.nodes[k]], colIndices[itp.nodes[j]] ) ;
+			const Scalar m = w * itp.coeffs[k] * itp.coeffs[j] ;
+
+			// a * sqrt2_3 * (dphi_dx ux + dphi_dy uy + dphi_dz uz)
+			b.row(0) += m * s_sqrt_23 * dphi_dx ;
+		}
+	}
+}
+
 } //d6

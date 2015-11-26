@@ -80,6 +80,7 @@ void DynParticles::update(const Config &config, const Phase &phase )
 			typename MeshType::Derivatives derivatives ;
 
 			mesh.locate( p0, loc );
+
 			mesh.interpolate( loc, itp );
 			mesh.get_derivatives( loc, derivatives ) ;
 
@@ -90,6 +91,9 @@ void DynParticles::update(const Config &config, const Phase &phase )
 			}
 
 			tensor_view( m_affine.col(i) ).set( Bp );
+
+
+			m_cohesion(i) /= ( 1. + config.dt() * config.cohesion_decay * (Bp+Bp.transpose()).squaredNorm() ) ;
 		}
 
 
@@ -107,9 +111,6 @@ void DynParticles::update(const Config &config, const Phase &phase )
 
 			const Scalar DuT = ( Du - 1./3. * Du.trace() * Mat::Identity() ).norm()  ;
 			m_inertia(i) = DuT / std::sqrt( std::max( 1.e-16, phase.stresses(p0)[0] ) ) ;
-
-
-			m_cohesion(i) /= ( 1. + config.dt() * config.cohesion_decay * DuT ) ;
 		}
 
 		// Frame
@@ -170,6 +171,7 @@ void DynParticles::read(std::vector<bool> &activeCells,
 		mesh.interpolate( loc, itp );
 
 		activeCells[ mesh.cellIndex( loc.cell ) ] = true ;
+
 
 			   phi .add_at( itp, m );
 			phiVel .add_at( itp, m * m_geo.velocities().col(i) );

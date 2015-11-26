@@ -8,12 +8,15 @@
 namespace d6 {
 
 typedef Eigen::Matrix< Scalar, Eigen::Dynamic, 1 > DynVec;
+typedef Eigen::Array < Scalar, Eigen::Dynamic, 1 > DynArr;
 typedef Eigen::Matrix< Scalar, Eigen::Dynamic, Eigen::Dynamic > DynMat;
 
 typedef Eigen::Matrix< Scalar, 3, 3 > Mat ;
 typedef Eigen::Matrix< Scalar, 3, 1 > Vec ;
+typedef Eigen::Array < Scalar, 3, 1 > Arr ;
 
 typedef Eigen::Matrix< Index, 3, 1 > Vec3i ;
+typedef Eigen::Array < Index, 3, 1 > Arr3i ;
 
 typedef Eigen::Matrix< Scalar, 6, 6 > Mat66 ;
 typedef Eigen::Matrix< Scalar, 6, 1 > Vec6 ;
@@ -63,23 +66,24 @@ inline void set_zero( Scalar &s ) {
 	s = 0 ;
 }
 
-template < Index Dimension >
-void mul_compwise( DynVec& vec, const DynVec & scalar ) {
+template < Index Dimension, typename Derived >
+void mul_compwise( DynVec& vec, const Eigen::MatrixBase<Derived> & scalar ) {
 	assert( vec.rows() == scalar.rows() * Dimension ) ;
 	Eigen::Matrix< Scalar, Dimension, Eigen::Dynamic >::Map( vec.data(), Dimension, scalar.rows() )
 			*= scalar.asDiagonal() ;
 }
-template < Index Dimension >
-void div_compwise( DynVec& vec, const DynVec & scalar ) {
+template < Index Dimension, typename Derived >
+void div_compwise( DynVec& vec,  const Eigen::MatrixBase<Derived> & scalar ) {
 	assert( vec.rows() == scalar.rows() * Dimension ) ;
 	Eigen::Matrix< Scalar, Dimension, Eigen::Dynamic >::Map( vec.data(), Dimension, scalar.rows() )
 			*= (1./scalar.array()).matrix().asDiagonal() ;
 }
-template < Index Dimension >
-void set_compwise( DynVec& vec, const DynVec & scalar ) {
+template < Index Dimension, typename Derived >
+void set_compwise( DynVec& vec, const Eigen::MatrixBase< Derived > & scalar ) {
 	vec.setOnes( Dimension * scalar.rows() ) ;
 	mul_compwise< Dimension >( vec, scalar ) ;
 }
+
 template < Index Dimension >
 typename Eigen::Matrix< Scalar, Dimension, Eigen::Dynamic >::MapType::RowXpr component( DynVec& vec, Index row ) {
 	 return Eigen::Matrix< Scalar, Dimension, Eigen::Dynamic >::Map( vec.data(), Dimension, vec.rows()/Dimension ).row( row ) ;

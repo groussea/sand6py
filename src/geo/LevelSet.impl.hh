@@ -18,7 +18,7 @@ struct SphereLevelSet : public LevelSet
 	}
 
 	virtual void local_inv_inertia( Mat& I ) const {
-		I = Mat::Identity() / ( volume() * 2./5. ) ;
+		I = Mat::Identity() / ( local_volume() * 2./5. ) ;
 	}
 
 	virtual Scalar local_volume() const {

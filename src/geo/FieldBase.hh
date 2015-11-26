@@ -84,6 +84,7 @@ public:
 
 	Derived& multiply_by( const ScalarField& field ) ;
 	Derived&   divide_by( const ScalarField& field ) ;
+	Derived&   divide_by_positive( const ScalarField& field, Scalar min = 1.e-16 ) ;
 
 	// Serialization
 
