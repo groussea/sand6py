@@ -70,11 +70,12 @@ void GLViewer::fastDraw()
 
 		if( m_drawParticles ) {
 			gl::ColorPointer  cp( m_colors ) ;
+			glDrawArrays( GL_POINTS, 0, m_centers.size() );
 		} else {
 			glColor3f(0,0,1) ;
+			glDrawArrays( GL_POINTS, 0, m_centers.size() );
 		}
 
-		glDrawArrays( GL_POINTS, 0, m_centers.size() );
 	}
 
 	for( const LevelSet::Ptr& ls: m_offline.levelSets() ) {
@@ -85,6 +86,7 @@ void GLViewer::fastDraw()
 
 void GLViewer::draw()
 {
+
 	if( m_enableBending ) {
 		glEnable (GL_BLEND);
 		glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
