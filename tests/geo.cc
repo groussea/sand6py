@@ -276,7 +276,24 @@ TEST( geo, tetGrid )
 			ASSERT_TRUE( tet.vertex(k).minCoeff() >= 0 ) ;
 			ASSERT_TRUE( tet.vertex(k).maxCoeff() <= 1 ) ;
 		}
+		ASSERT_TRUE( Vec(0,0,1).isApprox( tet.vertex(3) ) ) ;
 	}
+
+	TetGrid::Location loc ;
+
+	for( int i = 0 ; i < 10 ; ++i ) {
+		for( int j = 0 ; j < 10 ; ++j ) {
+			for( int k = 0 ; k < 10 ; ++k ) {
+				Vec p ( 0.1*i, 0.1*j, 0.1*k ) ;
+				g.locate( p, loc ) ;
+				ASSERT_TRUE( loc.coords.minCoeff() >= 0 ) ;
+				ASSERT_DOUBLE_EQ( 1, loc.coords.sum() ) ;
+				g.get_geo(loc.cell, tet) ;
+				ASSERT_TRUE( p.isApprox( tet.pos( loc.coords ) ) ) ;
+			}
+		}
+	}
+
 
 
 }

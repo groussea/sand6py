@@ -45,38 +45,24 @@ void TetGrid::locate(const Vec &x, Location &loc) const
 //	pos -= loc.cell.segment<3>(0).cast< Scalar >() ;
 
 	Tet geo ;
-	Tet::Coords coords ;
 	for( loc.cell[3] = 0 ; loc.cell[3] < 6 ; ++loc.cell[3] )
 	{
 		get_geo(  loc.cell, geo ) ;
-		geo.compute_coords( x, coords );
+		geo.compute_coords( x, loc.coords );
 
-		if( coords.minCoeff() >= 0 )
+		if( loc.coords.minCoeff() >= 0 )
 			break ;
 	}
 }
 
 void TetGrid::get_geo( const Cell &cell, CellGeo& geo ) const {
-	//int ori = (cell[0]%2) * 8 + (cell[1]%2) * 4 + (cell[2]%2) * 2 ;
+	const int color = (cell[0]%2) * 8 + (cell[1]%2) * 4 + (cell[2]%2) * 2 ;
 
-	int split = cell[3] / 2 ;
-	int rot = 0 ;
-
-	switch( split ) {
-	case 1:
-		rot = 6 ;
-		break ;
-	case 2:
-		rot = 5 ;
-		break ;
-	default:
-		break ;
-	}
 
 	get_corner( cell.segment<3>(0), geo.origin );
 	geo.box = m_dx ;
 
-	geo.set_orientation( rot, cell[3]%2 ) ;
+	geo.update_geometry( color, cell[3] ) ;
 
 }
 

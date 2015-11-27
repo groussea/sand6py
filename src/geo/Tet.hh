@@ -19,18 +19,30 @@ struct Tet {
 	typedef Eigen::Matrix< Scalar, 3, Eigen::Dynamic > Points ;
 	typedef Eigen::Matrix< Scalar, 6, Eigen::Dynamic > Frames ;
 
-	enum Type {
-		Corner,
-		Middle
+	struct {
+		unsigned char part : 1 ;
+		unsigned char rot  : 3 ;
+		unsigned char sym  : 3 ;
+
+		inline char rotate ( int d ) const { return rot&(1<<d) ; }
+		inline char sign   ( int d ) const { 
+			return 1 - 2*( ( sym&(1<<d) ) >> d )  ; 
+		}
+
+	} geometry ;
+
+	enum Part {
+		Left  = 0,
+		Right = 1
 	};
 
 	Vec origin ;  //!< 3D coords of first corner
 	Arr box    ;  //!< Dimensions of cell
 
-	int orientation ; //!< 1 bit part + 3 bits rotation
+	int orientation ; //!< 1 bit part + 3 bits symmetry
 
 	Tet()
-		: orientation(0)
+	: geometry{0,0,0}
 	{}
 
 	Vec pos( const Coords& coords ) const {
@@ -79,21 +91,7 @@ struct Tet {
 		weights.setConstant( volume() / NQ ) ;
 	}
 
-	void set_orientation( int rotation, int part )
-	{
-		orientation = (rotation<<1) + part ;
-
-		Vec o (-.5,-.5,-.5)	 ;
-		Vec o_rot = o ;
-		to_world( o_rot );
-
-		origin.array() += box*( o_rot - o ).array() ;
-
-		Vec rot_box = box ;
-		to_local( rot_box ) ;
-		box = rot_box.array().abs() ;
-
-	}
+	void update_geometry( unsigned char rotation, int num ) ;
 
 private:
 
