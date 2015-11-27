@@ -2,8 +2,10 @@
 #include "TensorField.hh"
 #include "FieldBase.impl.hh"
 
-#include "Grid.hh"
 #include "Tensor.hh"
+
+#include "Grid.hh"
+#include "TetGrid.hh"
 
 namespace d6
 {
@@ -22,6 +24,8 @@ void AbstractTensorField< MeshT >::add_sym_tensor(const Vec &x, Mat &tensor) con
 
 template class FieldBase< AbstractTensorField< Grid > > ;
 template class AbstractTensorField< Grid > ;
+template class FieldBase< AbstractTensorField< TetGrid > > ;
+template class AbstractTensorField< TetGrid > ;
 
 }
 

@@ -10,6 +10,9 @@
 #include "geo/Tensor.hh"
 #include "geo/Voxel.hh"
 
+#include "geo/TetGrid.hh"
+#include "geo/Tet.hh"
+
 #include "geo/BoundaryInfo.hh"
 
 #include <Eigen/Geometry>
@@ -232,4 +235,48 @@ TEST( geo, cross )
 
 	Vec test( -5, 12, 4) ;
 	ASSERT_TRUE( (mat * test).isApprox( test.cross(x) ) ) ;
+}
+
+
+TEST( geo, tet )
+{
+	Tet tet ;
+	tet.box = Vec(.5, 1, 1.5 ) ;
+	tet.origin = Vec(1.,1.,1.) ;
+
+	Vec point( 1.3, 1.2, 1.4 ) ;
+	for( tet.orientation = 0 ; tet.orientation < 16 ; ++tet.orientation ) {
+		Tet::Coords c ;
+		tet.compute_coords( point, c );
+		ASSERT_DOUBLE_EQ(c.sum(), 1) ;
+		ASSERT_TRUE( point.isApprox( tet.pos( c ) )) ;
+	}
+
+}
+
+TEST( geo, tetGrid )
+{
+	Vec3i dim( 1, 1, 1 ) ;
+	Vec   box( 1, 1, 1 ) ;
+
+	TetGrid g( box, dim ) ;
+
+	ASSERT_EQ( 6, g.nCells() ) ;
+	ASSERT_EQ( 8, g.nNodes() ) ;
+
+	Tet tet ;
+	for( TetGrid::CellIterator it = g.cellBegin() ; it != g.cellEnd() ; ++it )
+	{
+		std::cout << (*it).transpose() << std::endl ;
+		g.get_geo( *it, tet );
+
+		std::cout << "origin " << tet.origin.transpose() << std::endl ;
+		for( int k = 0 ; k < 4 ; ++ k ) {
+			std::cout << tet.vertex(k).transpose() << std::endl ;
+			ASSERT_TRUE( tet.vertex(k).minCoeff() >= 0 ) ;
+			ASSERT_TRUE( tet.vertex(k).maxCoeff() <= 1 ) ;
+		}
+	}
+
+
 }

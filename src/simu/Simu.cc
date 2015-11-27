@@ -8,7 +8,7 @@
 #include "utils/File.hh"
 #include "utils/Config.hh"
 
-#include "geo/Grid.hh"
+#include "geo/MeshImpl.hh"
 #include "geo/LevelSet.hh"
 
 #include "geo/LevelSet.io.hh"

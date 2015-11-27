@@ -3,7 +3,7 @@
 
 #include "FormBuilder.hh"
 
-#include "geo/Grid.hh"
+#include "geo/MeshImpl.hh"
 #include "geo/Particles.hh"
 
 namespace d6 {

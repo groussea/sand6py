@@ -4,7 +4,7 @@
 #include "geo/VectorField.hh"
 #include "geo/TensorField.hh"
 
-#include "geo/Grid.hh"
+#include "geo/MeshImpl.hh"
 
 #include "utils/File.hh"
 #include "utils/Log.hh"

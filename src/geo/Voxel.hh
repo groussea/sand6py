@@ -64,23 +64,7 @@ struct Voxel {
 
 	Index sample_uniform( const unsigned N, const Index start, Points &points, Frames &frames ) const ;
 
-	static QuadPoints Qps() {
-		// .5 * ( 1 +- 1./sqrt(3) )
-		const Vec dqp = Vec::Constant( 1./sqrt(3.) );
-//		const Vec dqp = Vec::Constant( 1. );
-		const Vec qp0 = .5 * ( Vec::Ones() - dqp );
-
-		QuadPoints qps ;
-		for( int i = 0 ; i < 2 ; ++i ) {
-			for( int j = 0 ; j < 2 ; ++j ) {
-				for( int k = 0 ; k < 2 ; ++k ) {
-					Vec3i corner ( i, j, k) ;
-					qps.col( cornerIndex(corner) ) = qp0.array() + corner.cast< Scalar >().array()*dqp.array() ;
-				}
-			}
-		}
-		return qps ;
-	}
+	static QuadPoints Qps()  ;
 
 	void get_qp( QuadPoints& qp, QuadWeights& weights ) const {
 		static const QuadPoints s_qps = Qps() ;

@@ -6,7 +6,7 @@
 #include "geo/VectorField.hh"
 #include "geo/TensorField.hh"
 
-#include "geo/Grid.hh"
+#include "geo/MeshImpl.hh"
 
 namespace d6 {
 

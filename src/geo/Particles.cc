@@ -1,6 +1,6 @@
 #include "Particles.hh"
 
-#include "Grid.hh"
+#include "MeshImpl.hh"
 
 #include "utils/Log.hh"
 

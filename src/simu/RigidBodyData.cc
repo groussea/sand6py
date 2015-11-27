@@ -10,8 +10,8 @@
 #include "geo/TensorField.hh"
 #include "geo/Tensor.hh"
 
-#include "geo/Grid.hh"
-#include "geo/Voxel.hh"
+#include "geo/MeshImpl.hh"
+#include "geo/MeshCell.hh"
 
 #include <bogus/Core/Block.impl.hpp>
 

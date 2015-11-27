@@ -110,7 +110,7 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 	const Index mc = nSuppNodes() ;
 
 	const Scalar dyn_regul = 1.e-8 ;
-	const Scalar con_regul = 1.e-4 ;
+	const Scalar con_regul = 1.e-1 ;
 
 	computeProjectors( mats, rbData ) ;
 

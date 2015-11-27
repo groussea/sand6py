@@ -1,6 +1,6 @@
 #include "FormBuilder.hh"
 
-#include "geo/Grid.hh"
+#include "geo/MeshImpl.hh"
 #include "geo/Tensor.hh"
 
 #include <bogus/Core/Block.impl.hpp>

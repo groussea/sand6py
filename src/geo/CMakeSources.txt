@@ -13,6 +13,8 @@ geo/LevelSet.impl.hh
 geo/LevelSet.io.hh
 geo/MeshBase.cc
 geo/MeshBase.hh
+geo/MeshCell.hh
+geo/MeshImpl.hh
 geo/MeshTraits.hh
 geo/Particles.cc
 geo/Particles.hh
@@ -22,6 +24,10 @@ geo/ScalarField.hh
 geo/Tensor.hh
 geo/TensorField.cc
 geo/TensorField.hh
+geo/Tet.cc
+geo/Tet.hh
+geo/TetGrid.cc
+geo/TetGrid.hh
 geo/VectorField.cc
 geo/VectorField.hh
 geo/Voxel.cc

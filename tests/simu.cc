@@ -1,7 +1,7 @@
 
 #include <gtest/gtest.h>
 
-#include "geo/Grid.hh"
+#include "geo/MeshImpl.hh"
 #include "simu/FormBuilder.hh"
 #include "simu/FormBuilder.impl.hh"
 
@@ -15,10 +15,10 @@ TEST( simu, quad ) {
 
 	Vec3i dim( 10, 5, 15 ) ;
 	Vec   box( 12, 17, 2 ) ;
-	Grid g( box, dim ) ;
+	MeshImpl g( box, dim ) ;
 
-	Grid::Cells cells ;
-	for( Grid::CellIterator it = g.cellBegin() ; it != g.cellEnd() ; ++it )
+	MeshType::Cells cells ;
+	for( MeshType::CellIterator it = g.cellBegin() ; it != g.cellEnd() ; ++it )
 		cells.push_back( * it ) ;
 
 	ASSERT_EQ( (Index) cells.size(), g.nCells() ) ;
@@ -27,9 +27,9 @@ TEST( simu, quad ) {
 //	std::iota( indices.begin(), indices.end(), 0 );
 //	for( unsigned i = 0 ; i < indices.size() ; ++i ) std::cout << indices[i] << " " ;
 
-	typedef const typename Grid::Location& Loc ;
-	typedef const typename Grid::Interpolation& Itp ;
-	typedef const typename Grid::Derivatives& Dcdx ;
+	typedef const typename MeshType::Location& Loc ;
+	typedef const typename MeshType::Interpolation& Itp ;
+	typedef const typename MeshType::Derivatives& Dcdx ;
 
 	Scalar f_cst  = 0. ;
 	Scalar f_lin  = 0. ;
@@ -37,7 +37,7 @@ TEST( simu, quad ) {
 
 	FormBuilder builder( g ) ;
 	builder.integrate_qp( cells, [&]( Scalar w, Loc loc, Itp , Dcdx ) {
-		Grid::CellGeo geo ;
+		MeshType::CellGeo geo ;
 		g.get_geo( loc.cell, geo );
 		f_cst += w ;
 		f_lin += w * geo.pos( loc.coords ).prod() ;
@@ -64,17 +64,17 @@ TEST( simu, DuDv ) {
 	typename Grid::Interpolation itp ;
 	typename Grid::Derivatives dc_dx ;
 
-	Grid g( Vec(1,1,1), Vec3i(1,1,1) ) ;
-	Voxel vx ;
+	MeshImpl g( Vec(1,1,1), Vec3i(1,1,1) ) ;
+	MeshType::CellGeo vx ;
 	g.get_geo( *g.cellBegin(), vx );
 	loc.cell = *g.cellBegin() ;
 
-	typename Voxel::QuadPoints  qp ;
-	typename Voxel::QuadWeights qp_w ;
+	typename MeshType::CellGeo::QuadPoints  qp ;
+	typename MeshType::CellGeo::QuadWeights qp_w ;
 
 	vx.get_qp( qp, qp_w );
 
-	for( int q = 0 ; q < Voxel::NQ ; ++q ) {
+	for( int q = 0 ; q < MeshType::CellGeo::NQ ; ++q ) {
 		loc.coords = qp.col(q) ;
 
 		g.interpolate( loc, itp );
