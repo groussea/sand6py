@@ -10,7 +10,6 @@
 
 namespace d6 {
 
-class Grid ;
 template < typename M > class MeshBase ;
 
 template< typename ValueType > struct Expr ;
@@ -22,6 +21,8 @@ template < typename MeshT > class AbstractVectorField ;
 template < typename MeshT > class AbstractTensorField ;
 
 
+class Grid ;
+class TetGrid ;
 #if( D6_MESH_IMPL == D6_MESH_TET_GRID )
 typedef TetGrid MeshImpl ;
 #else

@@ -49,6 +49,7 @@ TEST( simu, quad ) {
 	ASSERT_FLOAT_EQ( g.box().prod() * g.box().prod() * g.box().prod() / 27,  f_quad ) ;
 }
 
+#if (D6_MESH_IMPL == D6_MESH_GRID)
 TEST( simu, DuDv ) {
 	FormMat<3,3>::Type A ;
 	A.setRows(2); A.setCols(2);
@@ -60,9 +61,9 @@ TEST( simu, DuDv ) {
 
 	std::vector< Index > indices( 8, 1 ) ;
 
-	typename Grid::Location loc ;
-	typename Grid::Interpolation itp ;
-	typename Grid::Derivatives dc_dx ;
+	typename MeshType::Location loc ;
+	typename MeshType::Interpolation itp ;
+	typename MeshType::Derivatives dc_dx ;
 
 	MeshImpl g( Vec(1,1,1), Vec3i(1,1,1) ) ;
 	MeshType::CellGeo vx ;
@@ -87,3 +88,4 @@ TEST( simu, DuDv ) {
 
 	ASSERT_TRUE( ( A.block(0) - A.block(0).trace()/3 * Mat::Identity() ).isZero() ) ;
 }
+#endif

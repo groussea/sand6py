@@ -5,8 +5,12 @@ OPTION( TESTS "Build tests" ON )
 OPTION( APPS "Build apps" ON )
 OPTION( LIB "Build lib" ON )
 
-OPTION( OPENMP "Use OpenMP" ON )
-OPTION( CPP11 "Build with c++11 standard" ON )
+OPTION( OPENMP  "Use OpenMP" ON )
+OPTION( TETGRID "Use regulard grid of tetrehedra" ON )
+
+if (TETGRID)
+	add_definitions( -DD6_MESH_IMPL=1 )
+endif()
 
 SET( D6_ROOT ${CMAKE_CURRENT_SOURCE_DIR} )
 SET( CMAKE_MODULE_PATH ${D6_ROOT}/cmake )

@@ -50,13 +50,13 @@ void TetGrid::locate(const Vec &x, Location &loc) const
 		get_geo(  loc.cell, geo ) ;
 		geo.compute_coords( x, loc.coords );
 
-		if( loc.coords.minCoeff() >= 0 )
+		if( loc.coords.minCoeff() >= -1.e-12 )
 			break ;
 	}
 }
 
 void TetGrid::get_geo( const Cell &cell, CellGeo& geo ) const {
-	const int color = (cell[0]%2) * 8 + (cell[1]%2) * 4 + (cell[2]%2) * 2 ;
+	const int color = (cell[0]%2) + (cell[1]%2) * 2 + (cell[2]%2) * 4 ;
 
 
 	get_corner( cell.segment<3>(0), geo.origin );
@@ -68,11 +68,23 @@ void TetGrid::get_geo( const Cell &cell, CellGeo& geo ) const {
 
 void TetGrid::interpolate(const Location &loc, Interpolation &itp) const
 {
-
+	itp.coeffs = loc.coords ;
+	
+	Tet geo ;
+	get_geo(  loc.cell, geo ) ;
+	
+	for( Index k = 0 ; k < NV ; ++k ) {
+		const Vec3i v = ( geo.vertex(k).array() * m_idx.array() ).round() ;
+		itp.nodes[k] = nodeIndex( v ) ;
+	}
 }
 
 void TetGrid::get_derivatives( const Location& loc, Derivatives& dc_dx ) const
 {
+	Tet geo ;
+	get_geo(  loc.cell, geo ) ;
+	
+	geo.compute_derivatives( loc.coords, dc_dx ) ; 
 }
 
 

@@ -182,7 +182,7 @@ TEST( geo, field_func )
 {
 	Vec3i dim( 10, 10, 10 ) ;
 	Vec   box( 1, 1, 1 ) ;
-	Grid g( box, dim ) ;
+	MeshImpl g( box, dim ) ;
 
 	TensorField tf( g ) ;
 
@@ -257,7 +257,7 @@ TEST( geo, tet )
 TEST( geo, tetGrid )
 {
 	Vec3i dim( 1, 1, 1 ) ;
-	Vec   box( 1, 1, 1 ) ;
+	Vec   box( .75, 1.5, 2 ) ;
 
 	TetGrid g( box, dim ) ;
 
@@ -267,16 +267,16 @@ TEST( geo, tetGrid )
 	Tet tet ;
 	for( TetGrid::CellIterator it = g.cellBegin() ; it != g.cellEnd() ; ++it )
 	{
-		std::cout << (*it).transpose() << std::endl ;
+		//std::cout << (*it).transpose() << std::endl ;
 		g.get_geo( *it, tet );
 
-		std::cout << "origin " << tet.origin.transpose() << std::endl ;
+		//std::cout << "origin " << tet.origin.transpose() << std::endl ;
 		for( int k = 0 ; k < 4 ; ++ k ) {
-			std::cout << tet.vertex(k).transpose() << std::endl ;
+			//std::cout << tet.vertex(k).transpose() << std::endl ;
 			ASSERT_TRUE( tet.vertex(k).minCoeff() >= 0 ) ;
-			ASSERT_TRUE( tet.vertex(k).maxCoeff() <= 1 ) ;
+			ASSERT_TRUE( ( box - tet.vertex(k)).minCoeff() >= 0 ) ;
 		}
-		ASSERT_TRUE( Vec(0,0,1).isApprox( tet.vertex(3) ) ) ;
+		ASSERT_TRUE( Vec(0,0,box[2]).isApprox( tet.vertex(3) ) ) ;
 	}
 
 	TetGrid::Location loc ;
@@ -284,9 +284,9 @@ TEST( geo, tetGrid )
 	for( int i = 0 ; i < 10 ; ++i ) {
 		for( int j = 0 ; j < 10 ; ++j ) {
 			for( int k = 0 ; k < 10 ; ++k ) {
-				Vec p ( 0.1*i, 0.1*j, 0.1*k ) ;
+				Vec p ( box[0]/10*i, box[1]/10*j, box[2]/10*k ) ;
 				g.locate( p, loc ) ;
-				ASSERT_TRUE( loc.coords.minCoeff() >= 0 ) ;
+				ASSERT_TRUE( loc.coords.minCoeff() >= -1.e-12 ) ;
 				ASSERT_DOUBLE_EQ( 1, loc.coords.sum() ) ;
 				g.get_geo(loc.cell, tet) ;
 				ASSERT_TRUE( p.isApprox( tet.pos( loc.coords ) ) ) ;
@@ -294,6 +294,11 @@ TEST( geo, tetGrid )
 		}
 	}
 
+	AbstractScalarField< TetGrid > field( g ) ;
+	field.set_zero() ;
+	field[7] = 1. ;
 
-
+	ASSERT_DOUBLE_EQ( 1, field( box ) ) ;
+	ASSERT_DOUBLE_EQ( 0, field( Vec(box[0],0,box[2]) ) ) ;
+	ASSERT_DOUBLE_EQ( 0.5, field( Vec(box[0],0.5*box[1],box[2]) ) ) ;
 }

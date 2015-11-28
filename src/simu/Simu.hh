@@ -14,8 +14,6 @@ class RigidBody ;
 class Simu {
 
 public:
-	typedef Grid MeshImpl ;
-	typedef MeshBase< Grid > MeshType ;
 
 	explicit Simu( const Config& config, const char* base_dir ) ;
 	~Simu() ;

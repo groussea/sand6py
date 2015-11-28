@@ -4,7 +4,7 @@
 
 #include "geo/Particles.hh"
 #include "geo/Tensor.hh"
-#include "geo/Grid.hh"
+#include "geo/MeshImpl.hh"
 #include "geo/LevelSet.impl.hh"
 
 #include "utils/Log.hh"

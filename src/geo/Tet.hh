@@ -12,6 +12,8 @@ struct Tet {
 	static constexpr Index NQ = 4 ;
 
 	typedef Eigen::Matrix< Scalar, NC, 1 > Coords ;
+	typedef Eigen::Matrix< Scalar, NV, 3 > Derivatives ;
+	
 	typedef Eigen::Matrix< Scalar, NC, NQ> QuadPoints ;
 	typedef Eigen::Matrix< Scalar,  1, NQ> QuadWeights ;
 
@@ -80,6 +82,7 @@ struct Tet {
 		to_local( local );
 		local_coords( local, coords );
 	}
+	void compute_derivatives( const Coords & coords, Derivatives& dc_dx ) const ;
 
 	Index sample_uniform( const unsigned N, const Index start, Points &points, Frames &frames ) const ;
 

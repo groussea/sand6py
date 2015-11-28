@@ -24,7 +24,9 @@ void VTKFieldWriter::writeMesh( File &vtk ) const
 	Eigen::Matrix<int, MeshType::NV+1, Eigen::Dynamic > nodeIndices( MeshType::NV+1, m_mesh.nCells() ) ;
 	nodeIndices.row(0).setConstant( MeshType::NV ) ;
 
-	const Eigen::VectorXi cellTypes = Eigen::VectorXi::Constant( m_mesh.nCells(), /*VTK_VOXEL*/ 11 ) ;
+	const Eigen::VectorXi cellTypes = 
+		Eigen::VectorXi::Constant( m_mesh.nCells(), 
+		MeshType::NV == 4 ? /*VTK_TETRA*/ 10 : /*VTK_VOXEL*/ 11 ) ;
 
 	typename MeshType::CellGeo cellGeo ;
 	typename MeshType::NodeList cellNodes ;
