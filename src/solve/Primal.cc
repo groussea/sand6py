@@ -56,6 +56,7 @@ Scalar Primal::solve(DynVec &lambda, DynVec &gamma) const
 	bogus::GaussSeidel< WType > gs( W ) ;
 	gs.callback().connect( ackResidual );
 
+
 	const double res = gs.solve( law, m_data.w, lambda ) ;
 
 	gamma = W*lambda + m_data.w ;

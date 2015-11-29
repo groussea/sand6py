@@ -35,6 +35,7 @@ int main( int argc, char* argv[] ) {
 	d6::Offline offline( base_dir ) ;
 
 	d6::GLViewer viewer( offline, nSamples );
+	
 	viewer.set_frame( frame );
 
 	viewer.setWindowTitle("D6 glViewer");

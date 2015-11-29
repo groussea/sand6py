@@ -125,8 +125,8 @@ void Sampler::reassign( )
 
 	// Reset particle positions and reserve storage space
 	unsigned nEvents = 0 ;
-	for( unsigned s = 0 ; s < m_offline.events().log().size() ; ++s ) {
-		nEvents += m_offline.events().log()[s].size() ;
+	for( const std::vector< Event > &events :  m_offline.events().log() ) {
+		nEvents += events.size() ;
 	}
 	m_predPos.resize(3, m_particlesCount + nEvents );
 	m_predPos.leftCols( m_particlesCount ) = particles.centers().leftCols( m_particlesCount ) ;

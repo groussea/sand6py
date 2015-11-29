@@ -432,6 +432,10 @@ Eigen::Vector3f GLViewer::lightPosition() const
 
 void GLViewer::update_buffers()
 {
+	if( m_square.size() == 0 )
+		return ; // No OpenGL context yet ;
+
+
 	const Particles &p = m_offline.particles() ;
 	m_centers.reset( p.count(), p.centers().data(), GL_STATIC_DRAW )  ;
 

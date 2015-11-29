@@ -60,6 +60,7 @@ bool Offline::load_frame(unsigned frame )
 	}
 	// Log
 	{
+		m_events.clear() ;
 		std::ifstream ifs( dir.filePath("log") );
 		boost::archive::binary_iarchive ia(ifs);
 		ia >> m_events ;

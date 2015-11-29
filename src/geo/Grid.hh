@@ -104,6 +104,10 @@ public:
 
 	void make_bc( const BoundaryMapper& mapper, BoundaryConditions &bc ) const ;
 
+	Index nAdjacent( Index ) const {
+		return NV ;
+	}
+
 private:
 
 	const Vec3i& dim() const { return m_dim ; }

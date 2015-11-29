@@ -100,6 +100,19 @@ public:
 	}
 
 	void make_bc( const BoundaryMapper& mapper, BoundaryConditions &bc ) const ;
+	
+	Index nAdjacent( Index idx ) const {
+		Vec3i node ;
+		node[0] = idx / ( (m_dim[2]+1) * (m_dim[1]+1) ) ;
+		idx -= node[0] * (m_dim[2]+1) * (m_dim[1]+1) ;
+		node[1] = idx / (m_dim[2]+1) ;
+		node[2] = idx - node[1]*(m_dim[2]+1)  ;
+
+		// (0,0,1) et (1m,0,0)
+		return ( ( (node[0]%2) == (node[1]%2) ) && ( (node[0]%2) != (node[2]%2) ) )
+			? 48 : 16 ;
+
+	}
 
 private:
 

@@ -301,4 +301,67 @@ TEST( geo, tetGrid )
 	ASSERT_DOUBLE_EQ( 1, field( box ) ) ;
 	ASSERT_DOUBLE_EQ( 0, field( Vec(box[0],0,box[2]) ) ) ;
 	ASSERT_DOUBLE_EQ( 0.5, field( Vec(box[0],0.5*box[1],box[2]) ) ) ;
+
+
+	for( unsigned k = 0 ; k < 6 ; ++k ) {
+		TetGrid::Cell cell = *g.cellBegin() ;
+		cell[3] = k ;
+
+		g.get_geo( cell, tet );
+		const Vec x1 = tet.center() + 1.e-2 * Vec(1,-2,3) ;
+
+		TetGrid::Derivatives dc_dx ;
+		TetGrid::Interpolation itp ;
+		g.locate( x1, loc );
+		g.interpolate( loc, itp ) ;
+		g.get_derivatives( loc, dc_dx );
+
+		for( unsigned i = 0 ; i < 3 ; ++i ) {
+			Vec dx ( Vec::Zero() ) ;
+			dx[i] = 1.e-2 ;
+
+			TetGrid::CoefList coeffs_pred = itp.coeffs + ( dc_dx * dx ) ;
+
+			TetGrid::Location loc2 ;
+			TetGrid::Interpolation itp2 ;
+
+			const Vec x2 = x1 + dx ;
+			g.locate( x2, loc2 );
+			g.interpolate( loc2, itp2 ) ;
+
+			ASSERT_TRUE( coeffs_pred.isApprox( itp2.coeffs ) ) ;
+
+		}
+	}
+
+}
+
+TEST( geo, adjacency )
+{
+	Vec3i dim( 10, 15, 9 ) ;
+	Vec   box( 1, 1, 1 ) ;
+
+	MeshImpl g( box, dim ) ;
+	Eigen::VectorXi nAdj ( g.nNodes() ) ;
+	nAdj.setZero() ;
+
+	for( typename MeshType::CellIterator it = g.cellBegin() ; it != g.cellEnd() ; ++it ) {
+		typename MeshType::NodeList nodes ;
+		g.list_nodes( *it, nodes );
+
+		for( Index k = 0 ; k < MeshType::NV ; ++k ) {
+			nAdj[nodes[k]]++ ;
+		}
+	}
+
+	StrBoundaryMapper mapper("diri") ;
+	std::vector< BoundaryInfo > bc ( nAdj.rows() ) ;
+	g.make_bc( mapper, bc ) ;
+
+	for( Index i = 0 ; i < nAdj.rows() ; ++i ) {
+		if( bc[i].bc == BoundaryInfo::Interior ) {
+			ASSERT_EQ( nAdj[i], g.nAdjacent( i ) ) ;
+		}
+	}
+
 }

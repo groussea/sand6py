@@ -110,7 +110,7 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 	const Index mc = nSuppNodes() ;
 
 	const Scalar dyn_regul = 1.e-8 ;
-	const Scalar con_regul = 1.e-1 ;
+	const Scalar con_regul = 1.e-8 ;
 
 	computeProjectors( mats, rbData ) ;
 
@@ -460,7 +460,7 @@ void PhaseSolver::computeActiveNodes(const std::vector<bool> &activeCells ,
 
 			m_surfaceNodes[i].bc = BoundaryInfo::Interior ;
 
-			if( activeNodes[i] < mesh.nAdjacent(i) &&
+			if( 1.5*activeNodes[i] < mesh.nAdjacent(i) &&
 				grad_phi[i].squaredNorm() > 1.e-16) {
 
 				m_surfaceNodes[i].bc = BoundaryInfo::Free ;

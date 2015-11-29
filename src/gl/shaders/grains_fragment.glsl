@@ -27,6 +27,7 @@ void main (void)
      }
 
     alpha = 0.6 * pow( clamp(alpha,0,1), 3) ;
+	//alpha = vis ;
 
     vec4 ambientMat  = vec4(0,0,0,0) ;
     vec4 diffuseMat  = vec4(0,0,0,0) ;

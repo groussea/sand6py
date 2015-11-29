@@ -49,10 +49,11 @@ public:
 
 	void destroy()
 	{
-		assert( valid() ) ;
-		glDeleteBuffers( 1, &m_vbo ) ;
-		m_vbo = INVALID_VBO ;
-		m_size = 0 ;
+		if( valid() ) {
+			glDeleteBuffers( 1, &m_vbo ) ;
+			m_vbo = INVALID_VBO ;
+			m_size = 0 ;
+		}
 	}
 
 	void bind() const

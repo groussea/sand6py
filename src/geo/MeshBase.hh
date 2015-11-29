@@ -91,7 +91,9 @@ public:
 		derived().make_bc( mapper, bc ) ;
 	}
 
-	Index nAdjacent( Index ) const { return NV ; }
+	Index nAdjacent( Index node ) const {
+		return derived().nAdjacent( node ) ;
+	}
 
 	Vec pos( const Location& loc ) const ;
 } ;

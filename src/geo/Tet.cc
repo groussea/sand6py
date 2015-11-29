@@ -1,5 +1,7 @@
 #include "Tet.hh"
 
+#include "Tensor.hh"
+
 namespace d6 {
 
 void Tet::to_world( Vec& pos ) const {
@@ -115,6 +117,8 @@ void Tet::local_coords(const Vec &pos, Coords &coords) const
 	
 void Tet::compute_derivatives( const Coords & coords, Derivatives& dc_dx ) const 
 {
+	(void) coords ;
+
 	dc_dx.setZero() ;
 	dc_dx(0,  geometry.part) = -1./box[  geometry.part] ;
 	dc_dx(1,  geometry.part) =  1./box[  geometry.part] ;
@@ -143,6 +147,27 @@ void Tet::compute_derivatives( const Coords & coords, Derivatives& dc_dx ) const
 	dc_dx.col(2) = geometry.sign(2)*dc_dx.col(2) ;
 }
 	
-Index Tet::sample_uniform( const unsigned N, const Index start, Points &points, Frames &frames ) const {return 0;}
+Index Tet::sample_uniform( const unsigned N, const Index start, Points &points, Frames &frames ) const 
+{
+	const Scalar a = 1./6 ;
+	const Scalar b = 1./2 ;
+
+	(void) N ;
+	const Vec subBox = box.array() / std::pow(24, 1./3) ; //Nsub.array().cast< Scalar >() ;
+	
+	Vec6 frame ;
+	tensor_view( frame ).set_diag( Vec( .25 * subBox.array() * subBox.array() ) ) ;
+	
+	Index p = start ;
+	for( Index k = 0 ; k < 4 ; ++k ) {
+		Coords coords = Coords::Constant(a) ;
+		coords[k] = b ;
+		points.col(p) = pos(coords) ;
+		frames.col(p) = frame ;
+		++p ;
+	}
+	
+	return p - start;
+}
 
 } //d6
