@@ -13,8 +13,9 @@ using namespace d6 ;
 
 TEST( simu, quad ) {
 
-	Vec3i dim( 10, 5, 15 ) ;
-	Vec   box( 12, 17, 2 ) ;
+	//Vec3i dim( 10, 5, 15 ) ;
+	Vec3i dim( 1, 1, 1 ) ;
+	Vec   box( 1, 1, 1 ) ;
 	MeshImpl g( box, dim ) ;
 
 	MeshType::Cells cells ;
@@ -42,6 +43,7 @@ TEST( simu, quad ) {
 		f_cst += w ;
 		f_lin += w * geo.pos( loc.coords ).prod() ;
 		f_quad += w * geo.pos( loc.coords ).prod()  * geo.pos( loc.coords ).prod() ;
+		std::cout << loc.coords.transpose() << " /// " << geo.pos( loc.coords ).transpose() << std::endl ;
 	} ) ;
 
 	ASSERT_FLOAT_EQ( g.box().prod() , f_cst  ) ;

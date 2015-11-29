@@ -103,19 +103,6 @@ void Tet::compute_vertices( Vertices& vertices ) const
 	vertices(2,3) = box[2] ;
 }
 
-Tet::QuadPoints Tet::Qps()
-{
-
-	const Scalar a = (5. -   std::sqrt(5.) ) / 20 ;
-	const Scalar b = (5. + 3*std::sqrt(5.) ) / 20 ;
-
-	QuadPoints qps ;
-	qps.setConstant( a ) ;
-	qps.diagonal().setConstant( b ) ;
-
-	return qps ;
-}
-
 void Tet::local_coords(const Vec &pos, Coords &coords) const
 {
 	const Vec scaled = pos.array()/box ;
@@ -124,11 +111,6 @@ void Tet::local_coords(const Vec &pos, Coords &coords) const
 	coords[1] = scaled[geometry.part] - scaled[1-geometry.part] ;
 	coords[2] = scaled[1-geometry.part] ;
 	coords[3] = scaled[2] ;
-	//const int dir = geometry.part ;
-	//coords[3] = scaled[2] ;
-	//coords[2] = scaled[1-dir] ;
-	//coords[1] = scaled[dir] - coords[2] ;
-	//coords[0] = 1 - coords.segment<3>(1).sum() ;
 }
 	
 void Tet::compute_derivatives( const Coords & coords, Derivatives& dc_dx ) const 

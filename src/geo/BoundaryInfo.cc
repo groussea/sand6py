@@ -131,6 +131,8 @@ StrBoundaryMapper::StrBoundaryMapper(const std::string &str)
 	//Predefs
 	if( str == "cuve") {
 		parse_str = "top:normal left:slip right:slip front:slip back:slip bottom:stick" ;
+	} else if( str == "poiseuille") {
+		parse_str = "top:normal left:stick right:tick front:slip back:slip bottom:normal" ;
 	} else
 		parse_str = str ;
 

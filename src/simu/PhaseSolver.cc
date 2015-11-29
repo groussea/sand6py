@@ -182,7 +182,7 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 
 
 	timer.reset() ;
-	builder.integrate_particle( m_particles.geo(), [&]( Index i, Scalar w, Loc loc, Itp itp, Dcdx dc_dx )
+	builder.integrate_particle( m_particles.geo(), [&]( Index, Scalar w, Loc, Itp itp, Dcdx dc_dx )
 		{
 			FormBuilder::addTauDu( mats.B, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
 			FormBuilder::addTauWu( mats.J, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
@@ -558,16 +558,14 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 	u += matrices.M_lumped_inv_sqrt * DynVec( data.H.transpose() * x ) ;
 
 
-	DynVec fcontact = matrices.Pvel * ( matrices.B.transpose() * ( matrices.Pstress * x ) );
+	DynVec fcontact = matrices.Pvel * DynVec( matrices.B.transpose() * DynVec( matrices.Pstress * x ) );
 	m_phaseNodes.var2field( fcontact, phase.fcontact ) ;
 
 	m_phaseNodes.var2field( x, phase.stresses ) ;
 
 	for( unsigned k = 0 ; k < rbData.size() ; ++k ) {
-
 		RigidBodyData& rb = rbData[k] ;
 		rb.nodes.var2field( x, rb.stresses ) ;
-
 	}
 
 	for( unsigned k = 0 ; k < coupledRbIndices.size() ; ++k ) {

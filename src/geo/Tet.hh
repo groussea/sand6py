@@ -86,11 +86,12 @@ struct Tet {
 
 	Index sample_uniform( const unsigned N, const Index start, Points &points, Frames &frames ) const ;
 
-	static QuadPoints Qps() ;
+	void get_qp( QuadPoints& qps, QuadWeights& weights ) const {
+		const Scalar a = (5. -   std::sqrt(5.) ) / 20 ;
+		const Scalar b = (5. + 3*std::sqrt(5.) ) / 20 ;
 
-	void get_qp( QuadPoints& qp, QuadWeights& weights ) const {
-		static const QuadPoints s_qps = Qps() ;
-		qp = s_qps ;
+		qps.setConstant( a ) ;
+		qps.diagonal().setConstant( b ) ;
 		weights.setConstant( volume() / NQ ) ;
 	}
 
