@@ -27,6 +27,7 @@ Config::Config() :
 	gravity( 0, 0, -9.81 ),
 	phiMax(1), mu(0),
 	cohesion(0), cohesion_decay(0),
+	enforceMaxFrac( false ),
 	boundary("cuve"),
 	output( true )
 {

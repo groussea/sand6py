@@ -32,6 +32,8 @@ struct RigidBodyData
 	DynVec fraction ;
 
 private:
+	static const Scalar s_splatRad ;
+
 	void integrate(const Active& phaseNodes, Index totNodes  ) ;
 
 };

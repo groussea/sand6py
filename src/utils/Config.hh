@@ -26,6 +26,8 @@ namespace d6 {
 	CONFIG_FIELD( cohesion			, Scalar		,	Units::Stress		) \
 	CONFIG_FIELD( cohesion_decay	, Scalar		,	Units::Time			) \
 	\
+	CONFIG_FIELD( enforceMaxFrac	, bool			,	Units::None			) \
+	\
 	CONFIG_FIELD( scenario			, std::string	,	Units::None			) \
 	CONFIG_FIELD( boundary			, std::string	,	Units::None			) \
 	CONFIG_FIELD( output			, bool			,	Units::None			) \

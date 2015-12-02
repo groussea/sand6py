@@ -231,6 +231,7 @@ void GLViewer::drawWithNames()
 
 void GLViewer::drawObject(const LevelSet &ls)
 {
+	if(!m_drawObjects) return ;
 	m_shapeRenderer.draw( ls, m_offline.mesh().box(), lightPosition() );
 }
 
@@ -416,6 +417,9 @@ void GLViewer::keyPressEvent(QKeyEvent *e)
 		break ;
 	case Qt::Key_B:
 		m_enableBending = !m_enableBending ;
+		break ;
+	case Qt::Key_O:
+		m_drawObjects = !m_drawObjects ;
 		break ;
 	case Qt::Key_R:
 		m_snapshotting = !m_snapshotting ;

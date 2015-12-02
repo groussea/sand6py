@@ -167,8 +167,8 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 
 				Eigen::Vector3f n ( std::cos(beta0), std::sin(beta0),0) ;
 
-				Eigen::Vector3f v0 = p0 + torus->radius() * n ;
-				Eigen::Vector3f v1 = p1 + torus->radius() * n ;
+				Eigen::Vector3f v0 = p0 + n ;
+				Eigen::Vector3f v1 = p1 + n ;
 
 				glNormal3fv( n.data() );
 				glVertex3fv( v0.data() );

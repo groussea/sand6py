@@ -17,6 +17,8 @@
 
 namespace d6 {
 
+const Scalar RigidBodyData::s_splatRad = 1 ;
+
 RigidBodyData::RigidBodyData( RigidBody& rb_, TensorField &s )
 	: rb(rb_), stresses(s)
 {
@@ -24,11 +26,12 @@ RigidBodyData::RigidBodyData( RigidBody& rb_, TensorField &s )
 
 Scalar RigidBodyData::phi( const Vec &x ) const
 {
-	return std::min( 1., std::max(0., 1. + rb.levelSet().eval_at( x ) ) );
+	return std::min( 1., std::max(0., 1. + rb.levelSet().eval_at( x ) / s_splatRad ) );
 }
 void RigidBodyData::grad_phi(const Vec &x, Vec &grad) const
 {
 	rb.levelSet().grad_at( x, grad );
+	grad /= s_splatRad ;
 }
 
 void RigidBodyData::compute_active( const Active& phaseNodes, BoundaryConditions& bc )
@@ -49,22 +52,24 @@ void RigidBodyData::compute_active( const Active& phaseNodes, BoundaryConditions
 		bool interior = true  ;
 
 		for( Index k = 0 ; k < MeshType::NV ; ++k  ) {
-			if( phi( geo.vertex(k) ) >  0. ) {
-				occupied = true ;
+			const Scalar phi_k = phi( geo.vertex(k) ) ;
 
-				if( phi( geo.vertex(k) ) >= 1. ) {
-					boundary = true ;
-				} else {
-					interior = false ;
+			if( phi_k >= 1. ) {
+				boundary = true ;
+			} else {
+				if( phi_k >  0. ) {
+					occupied = true ;
 				}
+				interior = false ;
 			}
 		}
 
-		if( occupied ) {
+		if( occupied || boundary ) {
 			occupiedCells.push_back( cell ) ;
 		}
 
-		if( boundary && !interior ) {
+		if( boundary && !interior )
+		{
 			nodes.cells.push_back( cell ) ;
 			mesh.list_nodes( cell, nodelist );
 

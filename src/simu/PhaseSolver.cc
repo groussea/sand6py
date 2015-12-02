@@ -22,8 +22,6 @@
 
 //#define FULL_FEM
 
-//#define ENFORCE_MAX_FRAC
-
 namespace d6 {
 
 
@@ -152,13 +150,13 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 	mats.J.setBlocksToZero() ;
 
 	// C
-#ifdef ENFORCE_MAX_FRAC
-	mats.C.clear();
-	mats.C.setRows( builder.rows() );
-	mats.C.setCols( m );
-	mats.C.cloneIndex( builder.index() ) ;
-	mats.C.setBlocksToZero() ;
-#endif
+	if( config.enforceMaxFrac ) {
+		mats.C.clear();
+		mats.C.setRows( builder.rows() );
+		mats.C.setCols( m );
+		mats.C.cloneIndex( builder.index() ) ;
+		mats.C.setBlocksToZero() ;
+	}
 
 	builder.addRows(mc) ;
 
@@ -186,9 +184,9 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 		{
 			FormBuilder::addTauDu( mats.B, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
 			FormBuilder::addTauWu( mats.J, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
-#ifdef ENFORCE_MAX_FRAC
-			FormBuilder::addVDp  ( mats.C, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
-#endif
+			if( config.enforceMaxFrac ) {
+				FormBuilder::addVDp  ( mats.C, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
+			}
 		}
 	);
 	Log::Debug() << "Integrate particle: " << timer.elapsed() << std::endl ;
@@ -296,7 +294,7 @@ void PhaseSolver::step(const Config &config, Phase &phase,
 	for( unsigned i = 0 ; i < rigidBodies.size() ; ++i )
 	{
 		rbData[i].nodes.setOffset( m_totRbNodes + m_phaseNodes.count() ) ;
-		m_totRbNodes += rbData.back().nodes.count() ;
+		m_totRbNodes += rbData[i].nodes.count() ;
 	}
 	Log::Debug() << "Tot coupling nodes: " << nSuppNodes() << std::endl ;
 
@@ -351,15 +349,13 @@ void PhaseSolver::step(const Config &config, Phase &phase,
 		Log::Debug() << "Linear solve at " << timer.elapsed() << std::endl ;
 
 
-#ifdef ENFORCE_MAX_FRAC
-		{
+		if( config.enforceMaxFrac){
 			Eigen::VectorXd depl ;
 			enforceMaxFrac( config, matrices, rbData, fraction, depl );
 
 			m_phaseNodes.var2field( depl, phase.geo_proj ) ; //Purely geometric
 			// u += depl/config.dt() ; // Includes proj into inertia
 		}
-#endif
 
 		intPhiCohesion.divide_by_positive( intPhi ) ;
 		DynVec cohesion  ;
@@ -515,6 +511,10 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 		const DynVec delta_u = u - rb.projection.transpose() * rb.rb.velocities() ;
 
 		data.w -= J * delta_u  ;
+
+		if( k == 1 ) {
+			std::cout << ( J * delta_u ).minCoeff() << std::endl ;
+		}
 
 		for( Index i = 0 ; i < rb.nodes.count() ; ++i ) {
 			totFraction( m_phaseNodes.indices[ rb.nodes.revIndices[i] ] ) += rb.fraction[i] ;

@@ -124,9 +124,7 @@ struct ImpactScenar : public Scenario {
 
 	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const
 	{
-//		LevelSet::Ptr ls = LevelSet::make_sphere() ;
-//		LevelSet::Ptr ls = LevelSet::make_torus( 0.5 ) ;
-		LevelSet::Ptr ls = LevelSet::make_cylinder( 0.5 ) ;
+		LevelSet::Ptr ls = LevelSet::make_sphere() ;
 		ls->scale(.125*m_config->box[0]).set_origin( .5 * m_config->box + Vec(0,0,.25*m_config->box[2]) ) ;
 
 		rbs.emplace_back( ls, volMass );
@@ -147,6 +145,36 @@ private:
 	Scalar avel ;
 };
 
+struct HourGlassScenar : public Scenario {
+
+	Scalar particle_density( const Vec &x ) const {
+		return ( x[2] > ( .5*m_config->box[2] + (1-Dbar)*R )
+				|| x[2] < h*m_config->box[2]
+				) ? 1. : 0. ;
+	}
+
+	virtual void init( const Params& params ) {
+		Dbar = scalar_param( params, "d", Units::None, 0.5 ) ;
+		h    = scalar_param( params, "h", Units::None, 0.1 ) ;
+		R = .5*m_config->box[0]*M_SQRT2 ;
+	}
+
+	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const
+	{
+		LevelSet::Ptr ls = LevelSet::make_torus( 1. - Dbar ) ;
+		ls->scale(R).set_origin( .5 * m_config->box ) ;
+		rbs.emplace_back( ls, 1.e99 );
+
+		LevelSet::Ptr ls2 = LevelSet::make_plane() ;
+		ls2->set_origin( .5 * m_config->box - Vec(0,0,.4*m_config->box[2]) ) ;
+		rbs.emplace_back( ls2, 1. );
+	}
+
+private:
+	Scalar h ;
+	Scalar R ;
+	Scalar Dbar ;
+};
 
 
 // Factories & stuff
@@ -167,6 +195,8 @@ struct DefaultScenarioFactory : public ScenarioFactory
 			return std::unique_ptr< Scenario >( new RbPlaneTestScenar() ) ;
 		if( str == "impact")
 			return std::unique_ptr< Scenario >( new ImpactScenar() ) ;
+		if( str == "hourglass")
+			return std::unique_ptr< Scenario >( new HourGlassScenar() ) ;
 
 		return std::unique_ptr< Scenario >( new BedScenar() ) ;
 	}
