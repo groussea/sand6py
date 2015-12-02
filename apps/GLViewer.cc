@@ -129,19 +129,14 @@ void GLViewer::draw()
 
 			if(1){
 				// Compute grains shadowing
+				UsingFrameBuffer fb( m_depthBuffer ) ;
 
-				glBindFramebuffer(GL_FRAMEBUFFER, m_depthBuffer );
-				glBindTexture(GL_TEXTURE_2D, m_depthTexture);
-
-				glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depthTexture, 0);
+				glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depthTexture.id(), 0);
 				glDrawBuffer(GL_NONE); // No color buffer is drawn to.
 
-				if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+				if( m_depthBuffer.check_complete() )
 					Log::Error() << "Frame buffer incomplete" << std::endl ;
 
-				int viewport[4] ;
-				glGetIntegerv( GL_VIEWPORT, viewport );
-				glViewport(0,0,fb_width,fb_height) ;
 
 				UsingShader sh( m_depthShader ) ;
 
@@ -154,23 +149,18 @@ void GLViewer::draw()
 				glPointSize( 2 ) ;
 				glDrawArrays( GL_POINTS, 0, m_grainVertices.size() );
 
-				glBindFramebuffer(GL_FRAMEBUFFER, 0);
-				glViewport(0,0,viewport[2],viewport[3]) ;
-
 			}
 
 			if(0){
 				UsingShader sh( m_testShader ) ;
 
-				glActiveTexture(GL_TEXTURE0) ;
-				glBindTexture( GL_TEXTURE_2D, m_depthTexture ) ;
-				glUniform1i( m_testShader.uniform("in_texture"), 0);
+				UsingTexture tx( m_depthTexture ) ;
+				tx.bindUniform( m_testShader.uniform("in_texture") );
 
 				gl::VertexAttribPointer vap_v( m_shapeRenderer.squareVertices(), m_testShader.attribute("vertex") ) ;
 				gl::VertexPointer vp( m_shapeRenderer.squareVertices() ) ;
 				glDrawArrays( GL_QUADS, 0, m_shapeRenderer.squareVertices().size() ) ;
 
-				glBindTexture( GL_TEXTURE_2D, 0 ) ;
 			}
 
 			if(1){
@@ -188,16 +178,14 @@ void GLViewer::draw()
 
 				glUniform3fv( m_grainsShader.uniform("light_pos"), 1, lightPosition().data() ) ;
 
-				glActiveTexture(GL_TEXTURE0) ;
-				glBindTexture( GL_TEXTURE_2D, m_depthTexture ) ;
-				glUniform1i( m_grainsShader.uniform("depth_texture"), 0);
+				UsingTexture tx( m_depthTexture ) ;
+				tx.bindUniform( m_testShader.uniform("in_texture") );
+				tx.bindUniform( m_grainsShader.uniform("depth_texture") );
 
 				glUniformMatrix4fv( m_grainsShader.uniform("depth_mvp"), 1, GL_FALSE, depthMVP.data()) ;
 
 				glPointSize( 1 ) ;
 				glDrawArrays( GL_POINTS, 0, m_grainVertices.size() );
-
-				glBindTexture( GL_TEXTURE_2D, 0 ) ;
 
 			}
 
@@ -283,10 +271,10 @@ void GLViewer::init()
 		m_grainsShader.add_uniform("depth_texture");
 		m_grainsShader.load("grains_vertex","grains_fragment") ;
 
-		glGenFramebuffers(1, &m_depthBuffer);
+		m_depthBuffer.reset( fb_width, fb_height );
 
-		glGenTextures(1, &m_depthTexture);
-		glBindTexture(GL_TEXTURE_2D, m_depthTexture);
+		m_depthTexture.reset( GL_TEXTURE_2D );
+		m_depthTexture.bind() ;
 
 		//float data[ fb_width * fb_height ]	;
 		//for( unsigned j = 0 ; j < fb_height ; ++j )
@@ -295,7 +283,7 @@ void GLViewer::init()
 		//	}
 		float* data = 0 ;
 
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, fb_width, fb_height, 0,GL_DEPTH_COMPONENT, GL_FLOAT, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, m_depthBuffer.width(), m_depthBuffer.height(), 0,GL_DEPTH_COMPONENT, GL_FLOAT, data);
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);

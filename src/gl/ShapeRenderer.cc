@@ -155,6 +155,28 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 
 		} else if ( (cylinder = dynamic_cast<const CylinderLevelSet*>(&ls)) ) {
 
+			Eigen::Vector3f p0 (0,0,0) ;
+			Eigen::Vector3f p1 (0,0,cylinder->height()) ;
+
+			const unsigned res= 10 ;
+
+			glBegin( GL_QUAD_STRIP );
+			for( unsigned j = 0 ; j < res ; ++j )
+			{
+				const float beta0 = (2*M_PI*(j+0)) / (res-1) ;
+
+				Eigen::Vector3f n ( std::cos(beta0), std::sin(beta0),0) ;
+
+				Eigen::Vector3f v0 = p0 + torus->radius() * n ;
+				Eigen::Vector3f v1 = p1 + torus->radius() * n ;
+
+				glNormal3fv( n.data() );
+				glVertex3fv( v0.data() );
+				glNormal3fv( n.data() );
+				glVertex3fv( v1.data() );
+
+			}
+			glEnd( ) ;
 		}
 
 		glPopMatrix();

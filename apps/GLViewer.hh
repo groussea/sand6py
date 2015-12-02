@@ -7,6 +7,7 @@
 #include "gl/VertexBuffer.hh"
 #include "gl/Shader.hh"
 #include "gl/ShapeRenderer.hh"
+#include "gl/Texture.hh"
 
 #include <QGLViewer/qglviewer.h>
 
@@ -95,8 +96,8 @@ private:
 	Shader m_depthShader ;
 	Shader m_testShader ;
 
-	GLuint m_depthBuffer ;
-	GLuint m_depthTexture ;
+	Texture     m_depthTexture ;
+	FrameBuffer m_depthBuffer  ;
 
 	ShapeRenderer m_shapeRenderer ;
 

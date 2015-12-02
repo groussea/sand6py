@@ -125,7 +125,8 @@ struct ImpactScenar : public Scenario {
 	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const
 	{
 //		LevelSet::Ptr ls = LevelSet::make_sphere() ;
-		LevelSet::Ptr ls = LevelSet::make_torus( 0.5 ) ;
+//		LevelSet::Ptr ls = LevelSet::make_torus( 0.5 ) ;
+		LevelSet::Ptr ls = LevelSet::make_cylinder( 0.5 ) ;
 		ls->scale(.125*m_config->box[0]).set_origin( .5 * m_config->box + Vec(0,0,.25*m_config->box[2]) ) ;
 
 		rbs.emplace_back( ls, volMass );
