@@ -6,6 +6,7 @@
 
 #include "gl/VertexBuffer.hh"
 #include "gl/Shader.hh"
+#include "gl/ShapeRenderer.hh"
 
 #include <QGLViewer/qglviewer.h>
 
@@ -77,10 +78,6 @@ private:
 	gl::VertexBuffer3d m_centers ;
 	gl::VertexBuffer4f m_colors  ;
 
-	gl::VertexBuffer3f m_glyph ;
-	gl::IndexBuffer	   m_glyphQuadIndices ;
-	gl::VertexBuffer3f m_square ;
-
 	Eigen::Matrix< float, 16, Eigen::Dynamic> m_matrices ; // FIXME
 	gl::VertexBuffer16f m_frames  ;
 
@@ -92,16 +89,16 @@ private:
 	gl::ArrayBufferf m_grainVisibility ;
 	gl::ArrayBufferf m_grainNoise ;
 
-	Shader m_shader ;
-
+	Shader m_particlesShader ;
 	Shader m_grainsShader ;
-	Shader m_ballShader ;
 
 	Shader m_depthShader ;
 	Shader m_testShader ;
 
 	GLuint m_depthBuffer ;
 	GLuint m_depthTexture ;
+
+	ShapeRenderer m_shapeRenderer ;
 
 } ;
 

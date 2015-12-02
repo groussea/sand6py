@@ -5,7 +5,9 @@
 #include "geo/Particles.hh"
 #include "geo/Tensor.hh"
 #include "geo/MeshImpl.hh"
-#include "geo/LevelSet.impl.hh"
+#include "geo/LevelSet.hh"
+
+#include "gl/ShapeRenderer.hh"
 
 #include "utils/Log.hh"
 #include "utils/File.hh"
@@ -24,38 +26,6 @@
 
 namespace d6 {
 
-static void genSphere( const unsigned parallels, const unsigned meridians,
-					   Eigen::Matrix3Xf& ballVerts,
-					   std::vector< GLuint >& quadIndices )
-{
-	ballVerts.resize( 3, parallels * meridians ) ;
-
-	quadIndices.clear();
-	quadIndices.reserve( 4 * (parallels - 1) * meridians ) ;
-
-	const double dphi = M_PI / (parallels - 1.);
-	const double dpsi = 2 * M_PI / meridians ;
-
-	for(unsigned i = 0; i < parallels; ++i)
-	{
-		const double z = std::cos( i * dphi ) ;
-		const double r = std::sin( i * dphi ) ;
-
-		for(unsigned j = 0; j < meridians; j++)
-		{
-			const Vec p ( r * std::cos( j * dpsi ), r * std::sin( j * dpsi ), z )  ;
-			ballVerts.col( i*meridians + j ) = p.cast< GLfloat >() ;
-
-			if( i > 0 ) {
-				quadIndices.push_back( (i-1)*meridians + ( ( j+1 ) % meridians ) ) ;
-				quadIndices.push_back( (i-1)*meridians + j ) ;
-				quadIndices.push_back( i*meridians + j ) ;
-				quadIndices.push_back( i*meridians +  ( ( j+1 ) % meridians ) ) ;
-			}
-		}
-	}
-
-}
 
 void GLViewer::fastDraw()
 {
@@ -95,37 +65,37 @@ void GLViewer::draw()
 
 	if( m_drawParticles )
 	{
-		m_glyphQuadIndices.bind();
+		m_shapeRenderer.sphereQuadIndices().bind();
 
-		if( m_shader.ok() ) {
+		if( m_particlesShader.ok() ) {
 
-			UsingShader sh( m_shader ) ;
+			UsingShader sh( m_particlesShader ) ;
 
 			// Model-view
 			sh.bindMVP() ;
 
 			//Vertices
-			gl::VertexAttribPointer vap( m_glyph, m_shader.attributes["vertex"] ) ;
+			gl::VertexAttribPointer vap( m_shapeRenderer.sphereVertices(), m_particlesShader.attributes["vertex"] ) ;
 
 			// Densities
-			gl::VertexAttribPointer  ap( m_alpha, m_shader.attributes["alpha"], false, 1 ) ;
+			gl::VertexAttribPointer  ap( m_alpha, m_particlesShader.attributes["alpha"], false, 1 ) ;
 
 			//Frames
-			gl::ArrayAttribPointer<4>  fp( m_frames, m_shader.attributes["frame"], false, 1 ) ;
+			gl::ArrayAttribPointer<4>  fp( m_frames, m_particlesShader.attributes["frame"], false, 1 ) ;
 
-			glDrawElementsInstanced( GL_QUADS, m_glyphQuadIndices.size(), GL_UNSIGNED_INT, 0, m_matrices.cols() );
+			glDrawElementsInstanced( GL_QUADS, m_shapeRenderer.sphereQuadIndices().size(), GL_UNSIGNED_INT, 0, m_matrices.cols() );
 
 		} else {
 
-			gl::VertexPointer vp( m_glyph ) ;
-			gl::NormalPointer np( m_glyph ) ;
+			gl::VertexPointer vp( m_shapeRenderer.sphereVertices() ) ;
+			gl::NormalPointer np( m_shapeRenderer.sphereVertices() ) ;
 
 			for( int i = 0 ; i < m_matrices.cols() ; ++i ){
 				glPushMatrix();
 				glMultMatrixf( m_matrices.col(i).data() );
 
 				glColor4f(1., 0, 0, m_densities[i]);
-				glDrawElements( GL_QUADS, m_glyphQuadIndices.size(), GL_UNSIGNED_INT, 0 );
+				glDrawElements( GL_QUADS, m_shapeRenderer.sphereQuadIndices().size(), GL_UNSIGNED_INT, 0 );
 
 				glPopMatrix();
 			}
@@ -140,7 +110,7 @@ void GLViewer::draw()
 
 			Eigen::Matrix4f depthMVP ;
 
-//			qglviewer::Camera& cam = *camera() ;
+//			qglviewer::Camera& cam = *camera() ; //Debug mode
 			qglviewer::Camera  cam = *camera() ;
 			Eigen::Vector3f light_pos = lightPosition() ;
 			qglviewer::Vec lp( light_pos[0], light_pos[1], light_pos[2] )  ;
@@ -148,8 +118,6 @@ void GLViewer::draw()
 			cam.setPosition( lp );
 			cam.lookAt( sceneCenter() );
 			cam.setFieldOfView( std::atan2( m_offline.mesh().box().norm(), lightPosition().norm()/2 ) ) ;
-//			cam.setFieldOfView( 2./3*M_PI );
-//			cam.setSceneRadius(  );
 			cam.computeModelViewMatrix();
 			cam.computeProjectionMatrix();
 
@@ -160,6 +128,7 @@ void GLViewer::draw()
 			gl::VertexPointer vp( m_grainVertices ) ;
 
 			if(1){
+				// Compute grains shadowing
 
 				glBindFramebuffer(GL_FRAMEBUFFER, m_depthBuffer );
 				glBindTexture(GL_TEXTURE_2D, m_depthTexture);
@@ -188,7 +157,6 @@ void GLViewer::draw()
 				glBindFramebuffer(GL_FRAMEBUFFER, 0);
 				glViewport(0,0,viewport[2],viewport[3]) ;
 
-//				*camera() = old_cam ;
 			}
 
 			if(0){
@@ -198,9 +166,9 @@ void GLViewer::draw()
 				glBindTexture( GL_TEXTURE_2D, m_depthTexture ) ;
 				glUniform1i( m_testShader.uniform("in_texture"), 0);
 
-				gl::VertexAttribPointer vap_v( m_square, m_testShader.attribute("vertex") ) ;
-				gl::VertexPointer vp( m_square ) ;
-				glDrawArrays( GL_QUADS, 0, m_square.size() ) ;
+				gl::VertexAttribPointer vap_v( m_shapeRenderer.squareVertices(), m_testShader.attribute("vertex") ) ;
+				gl::VertexPointer vp( m_shapeRenderer.squareVertices() ) ;
+				glDrawArrays( GL_QUADS, 0, m_shapeRenderer.squareVertices().size() ) ;
 
 				glBindTexture( GL_TEXTURE_2D, 0 ) ;
 			}
@@ -255,16 +223,16 @@ void GLViewer::drawWithNames()
 	if( m_drawParticles )
 	{
 
-		m_glyphQuadIndices.bind();
+		m_shapeRenderer.sphereQuadIndices().bind();
 
-		gl::VertexPointer vp( m_glyph ) ;
+		gl::VertexPointer vp( m_shapeRenderer.sphereVertices() ) ;
 
 		for( int i = 0 ; i < m_matrices.cols() ; ++i ){
 			glPushMatrix();
 			glMultMatrixf( m_matrices.col(i).data() );
 			glPushName(i) ;
 
-			glDrawElements( GL_QUADS, m_glyphQuadIndices.size(), GL_UNSIGNED_INT, 0 );
+			glDrawElements( GL_QUADS, m_shapeRenderer.sphereQuadIndices().size(), GL_UNSIGNED_INT, 0 );
 
 			glPopName() ;
 			glPopMatrix();
@@ -275,58 +243,7 @@ void GLViewer::drawWithNames()
 
 void GLViewer::drawObject(const LevelSet &ls)
 {
-	const Eigen::Matrix3f rotation = ls.rotation().matrix().cast < GLfloat >() ;
-	const Eigen::Vector3f translation = ls.origin().cast < GLfloat >() ;
-
-	if( dynamic_cast<const SphereLevelSet*>(&ls) )
-	{
-
-		UsingShader sh( m_ballShader ) ;
-		// Model-view
-		sh.bindMVP() ;
-
-		//Vertices
-		gl::VertexAttribPointer vap_v( m_square, m_ballShader.attribute("vertex") ) ;
-
-		glUniform1f( m_ballShader.uniform("radius"), ls.scale() ) ;
-		glUniformMatrix3fv( m_ballShader.uniform("rotation"), 1, GL_FALSE, rotation.data() ) ;
-		glUniform3fv( m_ballShader.uniform("center"), 1, translation.data() ) ;
-
-		glUniform3fv( m_ballShader.uniform("light_pos"), 1, lightPosition().data() ) ;
-
-		gl::VertexPointer vp( m_square ) ;
-		glDrawArrays( GL_QUADS, 0, m_square.size() ) ;
-
-	} else {
-
-		Eigen::Matrix4f mat ;
-		mat.setIdentity() ;
-		mat.block<3,3>(0,0) = rotation * ls.scale()  ;
-		mat.block<3,1>(0,3) = translation ;
-
-		glColor4f(1., .8, .8, 1);
-
-
-		glPushMatrix();
-		glMultMatrixf( mat.data() );
-
-		if ( dynamic_cast<const PlaneLevelSet*>(&ls) ) {
-			const Vec& box = m_offline.mesh().box() ;
-			glBegin( GL_QUADS );
-			glNormal3f( 0.f, 0.f, 1.f );
-			glVertex3d( -box[0], -box[1], 0 );
-			glNormal3f( 0.f, 0.f, 1.f );
-			glVertex3d( -box[0],  box[1], 0 );
-			glNormal3f( 0.f, 0.f, 1.f );
-			glVertex3d(  box[0],  box[1], 0 );
-			glNormal3f( 0.f, 0.f, 1.f );
-			glVertex3d(  box[0], -box[1], 0 );
-			glEnd( ) ;
-		}
-		glPopMatrix();
-	}
-
-
+	m_shapeRenderer.draw( ls, m_offline.mesh().box(), lightPosition() );
 }
 
 void GLViewer::init()
@@ -341,27 +258,15 @@ void GLViewer::init()
 	setSceneBoundingBox( qgl_ori, qgl_box) ;
 	camera()->setZClippingCoefficient( box.maxCoeff() );
 
-	// Gen glyph vertices
-	Eigen::Matrix3Xf sphereVertices ;
-	std::vector< GLuint > quadIndices ;
-	genSphere( 5, 8, sphereVertices, quadIndices );
-	m_glyph.reset( sphereVertices.cols(), sphereVertices.data(), GL_STATIC_DRAW );
-	m_glyphQuadIndices.reset( quadIndices.size(), quadIndices.data() );
+	m_shapeRenderer.init();
 
-	Eigen::Matrix<float, 3, 4> vtx ;
-	vtx  <<  -1, -1, 1,  1,
-		 -1,  1, 1, -1,
-		 0, 0 ,0, 0 ;
-	m_square.reset( 4, vtx.data() );
+	m_particlesShader.add_attribute("vertex") ;
+	m_particlesShader.add_attribute("frame") ;
+	m_particlesShader.add_attribute("alpha") ;
 
-
-	m_shader.add_attribute("vertex") ;
-	m_shader.add_attribute("frame") ;
-	m_shader.add_attribute("alpha") ;
-
-	m_shader.add_uniform("model_view") ;
-	m_shader.add_uniform("projection") ;
-	m_shader.load() ;
+	m_particlesShader.add_uniform("model_view") ;
+	m_particlesShader.add_uniform("projection") ;
+	m_particlesShader.load() ;
 
 	if( renderSamples() ) {
 		m_sampler.sampleParticles( m_nSamples ) ;
@@ -403,15 +308,6 @@ void GLViewer::init()
 		m_depthShader.load("depth_vertex","depth_fragment") ;
 	}
 
-	m_ballShader.add_uniform("model_view") ;
-	m_ballShader.add_uniform("projection") ;
-	m_ballShader.add_uniform("radius") ;
-	m_ballShader.add_uniform("rotation") ;
-	m_ballShader.add_uniform("center") ;
-	m_ballShader.add_uniform("light_pos") ;
-	m_ballShader.add_attribute("vertex") ;
-	m_ballShader.load("ball_vertex","ball_fragment") ;
-
 	m_testShader.add_attribute("vertex") ;
 	m_testShader.add_uniform("in_texture");
 	m_testShader.load("textest_vertex","textest_fragment") ;
@@ -432,7 +328,7 @@ Eigen::Vector3f GLViewer::lightPosition() const
 
 void GLViewer::update_buffers()
 {
-	if( m_square.size() == 0 )
+	if( m_shapeRenderer.squareVertices().size() == 0 )
 		return ; // No OpenGL context yet ;
 
 

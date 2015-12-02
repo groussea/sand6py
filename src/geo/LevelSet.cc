@@ -58,9 +58,9 @@ void LevelSet::inv_inertia(Mat66 &Mi) const
 	Mi *= std::pow( m_scale, -3. ) ;
 }
 
-//LevelSet::Ptr LevelSet::make_cube() { return Ptr( new CubeLevelSet() ) ; }
 LevelSet::Ptr LevelSet::make_sphere() { return Ptr( new SphereLevelSet() ) ; }
 //LevelSet::Ptr LevelSet::make_cylinder() { return Ptr( new CylinderLevelSet() ) ; }
 LevelSet::Ptr LevelSet::make_plane() { return Ptr( new PlaneLevelSet() ) ; }
+LevelSet::Ptr LevelSet::make_torus(Scalar radius) { return Ptr( new TorusLevelSet( radius ) ) ; }
 
 } //d6

@@ -460,7 +460,7 @@ void PhaseSolver::computeActiveNodes(const std::vector<bool> &activeCells ,
 
 			m_surfaceNodes[i].bc = BoundaryInfo::Interior ;
 
-			if( 1.5*activeNodes[i] < mesh.nAdjacent(i) &&
+			if( activeNodes[i] < mesh.nAdjacent(i) &&
 				grad_phi[i].squaredNorm() > 1.e-16) {
 
 				m_surfaceNodes[i].bc = BoundaryInfo::Free ;

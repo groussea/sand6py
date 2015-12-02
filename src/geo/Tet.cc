@@ -114,8 +114,8 @@ void Tet::local_coords(const Vec &pos, Coords &coords) const
 	coords[2] = scaled[1-geometry.part] ;
 	coords[3] = scaled[2] ;
 }
-	
-void Tet::compute_derivatives( const Coords & coords, Derivatives& dc_dx ) const 
+
+void Tet::compute_derivatives( const Coords & coords, Derivatives& dc_dx ) const
 {
 	(void) coords ;
 
@@ -126,7 +126,7 @@ void Tet::compute_derivatives( const Coords & coords, Derivatives& dc_dx ) const
 	dc_dx(2,1-geometry.part) =  1./box[1-geometry.part] ;
 	dc_dx(0,2) = -1/box[2] ;
 	dc_dx(3,2) =  1/box[2] ;
-	
+
 	//to_word
 
 	if( geometry.rotate(0) ) {
@@ -146,18 +146,19 @@ void Tet::compute_derivatives( const Coords & coords, Derivatives& dc_dx ) const
 	dc_dx.col(1) = geometry.sign(1)*dc_dx.col(1) ;
 	dc_dx.col(2) = geometry.sign(2)*dc_dx.col(2) ;
 }
-	
-Index Tet::sample_uniform( const unsigned N, const Index start, Points &points, Frames &frames ) const 
+
+Index Tet::sample_uniform( const unsigned N, const Index start, Points &points, Frames &frames ) const
 {
+	/*
 	const Scalar a = 1./6 ;
 	const Scalar b = 1./2 ;
 
 	(void) N ;
 	const Vec subBox = box.array() / std::pow(24, 1./3) ; //Nsub.array().cast< Scalar >() ;
-	
+
 	Vec6 frame ;
 	tensor_view( frame ).set_diag( Vec( .25 * subBox.array() * subBox.array() ) ) ;
-	
+
 	Index p = start ;
 	for( Index k = 0 ; k < 4 ; ++k ) {
 		Coords coords = Coords::Constant(a) ;
@@ -166,7 +167,41 @@ Index Tet::sample_uniform( const unsigned N, const Index start, Points &points, 
 		frames.col(p) = frame ;
 		++p ;
 	}
-	
+	*/
+
+	Scalar min = box.minCoeff() ;
+
+	Vec3i Nsub ;
+	for( int k = 0 ; k < 3 ; ++ k)
+		Nsub[k] = N * std::round( box[k] / min ) ;
+
+	const Vec subBox = box.array() / Nsub.array().cast< Scalar >() ;
+
+	Vec rot_box = subBox ;
+	to_world( rot_box ) ;
+
+	Vec6 frame ;
+	tensor_view( frame ).set_diag( Vec( .25 * rot_box.array() * rot_box.array() ) ) ;
+
+	Index p = start ;
+
+	Vec local ;
+	Coords coords ;
+
+	for( int i = 0 ; i < Nsub[0] ; ++i )
+		for( int j = 0 ; j < Nsub[1] ; ++j )
+			for( int k = 0 ; k < Nsub[2] ; ++k ) {
+
+				local = (Vec(i+.5,j+.5,k+.5).array() * subBox.array()).matrix() ;
+				local_coords( local, coords );
+				if( coords.minCoeff() < 0 )
+					continue ;
+
+				points.col(p) = pos( coords )  ;
+				frames.col(p) = frame ;
+				++p ;
+			}
+
 	return p - start;
 }
 

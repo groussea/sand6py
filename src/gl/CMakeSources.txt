@@ -1,5 +1,7 @@
 gl/Shader.cc
 gl/Shader.hh
+gl/ShapeRenderer.cc
+gl/ShapeRenderer.hh
 gl/VertexBuffer.hh
 gl/opengl.hh
 gl/shaders/ball_fragment.glsl

@@ -37,7 +37,7 @@ public:
 	//Constructors
 	static Ptr make_sphere( ) ;
 	static Ptr make_plane( ) ;
-	static Ptr make_box( const Vec &box ) ;
+	static Ptr make_torus( Scalar radius ) ;
 	static Ptr make_cylinder( Scalar height ) ;
 
 	// Absolute positioning
