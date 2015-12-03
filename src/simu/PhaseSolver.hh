@@ -37,6 +37,11 @@ private:
 
 	void computeActiveNodes(const std::vector< bool >& activeCells,
 							const VectorField &grad_phi ) ;
+	void computeActiveBodies( std::vector<RigidBody> &rigidBodies,
+							  std::vector<TensorField> &rbStresses,
+							  std::vector< RigidBodyData >& rbData ) ;
+
+
 
 	void computeProjectors( PhaseMatrices& matrices,
 							const std::vector< RigidBodyData >& rbData
@@ -46,7 +51,7 @@ private:
 						   const Config &config, PhaseMatrices& matrices) const ;
 
 	void assembleMatrices( const Config& c, const MeshType& mesh,
-						   const DynVec &phiInt,
+						   const ScalarField &phiInt,
 						   PhaseMatrices& matrices,
 						   std::vector< RigidBodyData >& rbData
 						   ) const ;

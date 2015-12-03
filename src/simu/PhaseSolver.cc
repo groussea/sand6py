@@ -20,20 +20,21 @@
 #include <bogus/Core/Block.io.hpp>
 #include <bogus/Core/Utils/Timer.hpp>
 
-//#define FULL_FEM
+//#define FULL_FEM  // Ignore particles, just solve FEM system
 
 namespace d6 {
 
 
 struct PhaseMatrices
 {
-	DynVec S  ;
+	DynVec S  ;	// Volume aossciated to each node, computed from active cells only
 
+	// Lumped mass matrix, its inverse and a factorization
 	typename FormMat<3,3>::SymType M_lumped ;
 	typename FormMat<3,3>::SymType M_lumped_inv ;
 	typename FormMat<3,3>::SymType M_lumped_inv_sqrt ;
 
-	typename FormMat<3,3>::Type A ; //Could be Symmetric when FormBuilder has sym index
+	typename FormMat<3,3>::Type A ; // Mass + Visco ; Could be Symmetric when FormBuilder has sym index
 
 	typename FormMat<6,3>::Type B ; // \phi Tau:D(u)
 	typename FormMat<3,3>::Type J ; // \phi Tau:W(u)
@@ -44,9 +45,6 @@ struct PhaseMatrices
 	typename FormMat<6,6>::SymType Pstress ;
 
 	typename FormMat<6,6>::SymType Aniso ;
-
-	DynVec cohesion ;
-
 };
 
 PhaseSolver::PhaseSolver(const DynParticles &particles)
@@ -82,8 +80,8 @@ void PhaseSolver::computeProjectors(PhaseMatrices& mats,
 		for( Index i = 0 ; i < rbData[k].nodes.count() ; ++i  ) {
 			const Index   j = rbData[k].nodes.offset + i ;
 			const Index idx = rbData[k].nodes.revIndices[ i ] ;
-//			m_surfaceNodes[idx].stressProj( mats.Pstress.insertBack( j,j ) ) ;
-//			if( mats)
+
+			// Ignore RB-boundary constraints on Dirichlet boundaries
 			if( m_surfaceNodes[idx].bc == BoundaryInfo::Stick )
 				mats.Pstress.insertBack( j,j ).setZero() ;
 			else
@@ -95,7 +93,7 @@ void PhaseSolver::computeProjectors(PhaseMatrices& mats,
 	mats.Pvel   .finalize();
 }
 
-void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, const DynVec &phiInt,
+void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, const ScalarField &phiInt,
 								   PhaseMatrices& mats,
 								   std::vector< RigidBodyData >& rbData
 								   ) const
@@ -114,87 +112,93 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 
 	computeProjectors( mats, rbData ) ;
 
-	mats.M_lumped.setRows( m );
-	mats.M_lumped.setIdentity() ;
-	mats.M_lumped_inv.setRows( m );
-	mats.M_lumped_inv.setIdentity() ;
-	mats.M_lumped_inv_sqrt.setRows( m );
-	mats.M_lumped_inv_sqrt.setIdentity() ;
+	// Lumped mass matrix
+	{
+		mats.M_lumped.setRows( m );
+		mats.M_lumped.setIdentity() ;
+		mats.M_lumped_inv.setRows( m );
+		mats.M_lumped_inv.setIdentity() ;
+		mats.M_lumped_inv_sqrt.setRows( m );
+		mats.M_lumped_inv_sqrt.setIdentity() ;
 
-#pragma omp parallel for
-	for( Index i = 0 ; i < m ; ++i ) {
-		mats.M_lumped.block( i ) *= phiInt[i] ;
+	#pragma omp parallel for
+		for( Index i = 0 ; i < m ; ++i ) {
+			mats.M_lumped.block( i ) *= phiInt[ m_phaseNodes.revIndices[i] ] ;
+		}
 	}
 
-	timer.reset() ;
+	// Other bilinear forms
+	{
+		timer.reset() ;
 
-	FormBuilder builder( mesh ) ;
-	builder.reset( m );
-	builder.addToIndex( m_phaseNodes.cells, m_phaseNodes.indices, m_phaseNodes.indices );
-	builder.makeCompressed();
+		FormBuilder builder( mesh ) ;
+		builder.reset( m );
+		builder.addToIndex( m_phaseNodes.cells, m_phaseNodes.indices, m_phaseNodes.indices );
+		builder.makeCompressed();
 
-	Log::Debug() << "Index computation: " << timer.elapsed() << std::endl ;
+		Log::Debug() << "Index computation: " << timer.elapsed() << std::endl ;
 
-	// S -- used to integrate (phi_max - phi)
-	mats.S.setZero( m );
+		// S -- used to integrate (phi_max - phi)
+		mats.S.setZero( m );
 
-	// A
-	mats.A.clear();
-	mats.A.setRows( m );
-	mats.A.setCols( m );
-	mats.A.cloneIndex( builder.index() ) ;
-	mats.A.setBlocksToZero() ;
-	// J
-	mats.J.clear();
-	mats.J.setRows( m );
-	mats.J.setCols( m );
-	mats.J.cloneIndex( builder.index() ) ;
-	mats.J.setBlocksToZero() ;
+		// A
+		mats.A.clear();
+		mats.A.setRows( m );
+		mats.A.setCols( m );
+		mats.A.cloneIndex( builder.index() ) ;
+		mats.A.setBlocksToZero() ;
+		// J
+		mats.J.clear();
+		mats.J.setRows( m );
+		mats.J.setCols( m );
+		mats.J.cloneIndex( builder.index() ) ;
+		mats.J.setBlocksToZero() ;
 
-	// C
-	if( config.enforceMaxFrac ) {
-		mats.C.clear();
-		mats.C.setRows( builder.rows() );
-		mats.C.setCols( m );
-		mats.C.cloneIndex( builder.index() ) ;
-		mats.C.setBlocksToZero() ;
+		// C
+		if( config.enforceMaxFrac ) {
+			mats.C.clear();
+			mats.C.setRows( builder.rows() );
+			mats.C.setCols( m );
+			mats.C.cloneIndex( builder.index() ) ;
+			mats.C.setBlocksToZero() ;
+		}
+
+		builder.addRows(mc) ;
+
+		// B
+		mats.B.clear();
+		mats.B.setRows( builder.rows() );
+		mats.B.setCols( m );
+		mats.B.cloneIndex( builder.index() ) ;
+		mats.B.setBlocksToZero() ;
+
+		timer.reset() ;
+		builder.integrate_qp( m_phaseNodes.cells, [&]( Scalar w, Loc, Itp itp, Dcdx dc_dx )
+			{
+				FormBuilder:: addDuDv( mats.A, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
+				for( Index k = 0 ; k < MeshType::NQ ; ++k ) {
+					mats.S[ m_phaseNodes.indices[itp.nodes[k]] ] += w / MeshType::NQ ;
+				}
+			}
+		);
+		Log::Debug() << "Integrate grid: " << timer.elapsed() << std::endl ;
+
+
+		timer.reset() ;
+		builder.integrate_particle( m_particles.geo(), [&]( Index, Scalar w, Loc, Itp itp, Dcdx dc_dx )
+			{
+				FormBuilder::addTauDu( mats.B, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
+				FormBuilder::addTauWu( mats.J, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
+				if( config.enforceMaxFrac ) {
+					FormBuilder::addVDp  ( mats.C, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
+				}
+			}
+		);
+		Log::Debug() << "Integrate particle: " << timer.elapsed() << std::endl ;
+
 	}
-
-	builder.addRows(mc) ;
-
-	// B
-	mats.B.clear();
-	mats.B.setRows( builder.rows() );
-	mats.B.setCols( m );
-	mats.B.cloneIndex( builder.index() ) ;
-	mats.B.setBlocksToZero() ;
-
-	timer.reset() ;
-	builder.integrate_qp( m_phaseNodes.cells, [&]( Scalar w, Loc, Itp itp, Dcdx dc_dx )
-		{
-			FormBuilder:: addDuDv( mats.A, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
-			for( Index k = 0 ; k < MeshType::NQ ; ++k ) {
-				mats.S[ m_phaseNodes.indices[itp.nodes[k]] ] += w / MeshType::NQ ;
-			}
-		}
-	);
-	Log::Debug() << "Integrate grid: " << timer.elapsed() << std::endl ;
-
-
-	timer.reset() ;
-	builder.integrate_particle( m_particles.geo(), [&]( Index, Scalar w, Loc, Itp itp, Dcdx dc_dx )
-		{
-			FormBuilder::addTauDu( mats.B, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
-			FormBuilder::addTauWu( mats.J, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
-			if( config.enforceMaxFrac ) {
-				FormBuilder::addVDp  ( mats.C, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
-			}
-		}
-	);
-	Log::Debug() << "Integrate particle: " << timer.elapsed() << std::endl ;
 
 	// Rigid bodies
-
 	timer.reset() ;
 #pragma omp parallel for if( rbData.size() > 1)
 	for( unsigned k = 0 ; k < rbData.size() ; ++k )
@@ -203,7 +207,8 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 	}
 	Log::Debug() << "Integrate rbs: " << timer.elapsed() << std::endl ;
 
-	/////////////////
+
+	// A = mass + viscosity
 #ifndef FULL_FEM
 	mats.M_lumped *= config.volMass * config.inv_dt() ;
 
@@ -212,6 +217,7 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 #else
 	(void) config ;
 #endif
+
 
 	// Projections
 	const typename FormMat<3,3>::SymType IP = mats.Pvel.Identity() - mats.Pvel ;
@@ -230,10 +236,10 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 
 }
 
-void PhaseSolver::computeAnisotropy(const DynVec &orientation, const Config& config, PhaseMatrices &matrices ) const
+void PhaseSolver::computeAnisotropy(const DynVec &orientation, const Config& config,
+									PhaseMatrices &matrices ) const
 {
 
-	// Anisotropy
 	matrices.Aniso = matrices.Pstress.Identity() ;
 
 	if( config.anisotropy <= 0 )
@@ -243,14 +249,13 @@ void PhaseSolver::computeAnisotropy(const DynVec &orientation, const Config& con
 
 #pragma omp parallel for
 	for( Index i = 0 ; i < m ; ++i ) {
-		Mat66& Abar = matrices.Aniso.block(i) ;
 
 		Mat ori ;
 		tensor_view( Segmenter<6>::segment( orientation, i ) ).get( ori ) ;
 
 		ori = (1. - config.anisotropy) * Mat::Identity() + 3 * config.anisotropy * ori ;
 
-		// TODO Abar bar(tau) = (tauN ; bar( ori Dev(taut) ori ) )
+		compute_anisotropy_matrix( ori, matrices.Aniso.block(i) );
 
 	}
 
@@ -263,88 +268,89 @@ void PhaseSolver::step(const Config &config, Phase &phase,
 	bogus::Timer timer ;
 
 	const MeshType& mesh = phase.fraction.mesh() ;
-	m_surfaceNodes.clear();
-	m_surfaceNodes.resize( mesh.nNodes() );
 
-	// Compute volumes of cells
-	ScalarField volumes(mesh) ; volumes.set_zero();
-	for( typename MeshType::CellIterator it = mesh.cellBegin() ; it != mesh.cellEnd() ; ++it ) {
-		typename MeshType::CellGeo geo ;
-		typename MeshType::NodeList nodes ;
-
-		mesh.get_geo( *it, geo );
-		const Scalar vol = geo.volume() / MeshType::NV ;
-
-		mesh.list_nodes( *it, nodes );
-		for( Index k = 0 ; k < MeshType::NV ; ++k ) {
-			volumes[nodes[k]] += vol ;
-		}
-	}
-
-	VectorField gravity ( mesh ) ;
-	gravity.set_constant( config.gravity );
-
-	// Rasterize particles
-	ScalarField intPhi        ( mesh ) ;
-	VectorField intPhiVel     ( mesh ) ;
-	ScalarField intPhiInertia ( mesh ) ;
-	ScalarField intPhiCohesion( mesh ) ;
-	TensorField intPhiOrient  ( mesh ) ;
-	std::vector< bool > activeCells ;
-	m_particles.read( activeCells, intPhi, intPhiVel, intPhiInertia, intPhiOrient, intPhiCohesion ) ;
-
-	// phi and grad_phi
-	phase.fraction.flatten() = intPhi.flatten() ;
-	phase.fraction.divide_by( volumes ) ;
-	computeGradPhi( phase.fraction, volumes, phase.grad_phi ) ;
-
-#if defined(FULL_FEM)
-	activeCells.assign( activeCells.size(), true ) ;
-#endif
-
-	// Active nodes
-	computeActiveNodes( activeCells, phase.grad_phi ) ;
-	Log::Verbose() << "Active nodes: " << m_phaseNodes.count() << " / " << mesh.nNodes() << std::endl;
-
-	//Rigid bodies and frictional boundaries
-	std::vector< RigidBodyData > rbData ;
-	rbData.clear();
-	for( unsigned i = 0 ; i < rigidBodies.size() ; ++i ) {
-		rbData.emplace_back( rigidBodies[i], rbStresses[i] );
-	}
-
-#pragma omp parallel for
-	for( unsigned i = 0 ; i < rigidBodies.size() ; ++i ) {
-		rbData[i].compute_active( m_phaseNodes, m_surfaceNodes ) ;
-		rbData[i].nodes.computeRevIndices() ;
-	}
-
-	m_totRbNodes = 0 ;
-	for( unsigned i = 0 ; i < rigidBodies.size() ; ++i )
-	{
-		rbData[i].nodes.setOffset( m_totRbNodes + m_phaseNodes.count() ) ;
-		m_totRbNodes += rbData[i].nodes.count() ;
-	}
-	Log::Debug() << "Tot coupling nodes: " << nSuppNodes() << std::endl ;
-
-
-	// Matrices
-	DynVec phi_int  ; m_phaseNodes.field2var( intPhi, phi_int ) ;
-#ifdef FULL_FEM
-	phi_int.setOnes() ;
-#endif
-
-	mesh.make_bc( StrBoundaryMapper( config.boundary ), m_surfaceNodes ) ;
 	PhaseMatrices matrices ;
-	assembleMatrices( config, mesh, phi_int, matrices, rbData );
+	std::vector< RigidBodyData > rbData ;
 
-	Log::Debug() << "Matrices assembled  at " << timer.elapsed() << std::endl ;
-
+	ScalarField intPhi ( mesh ) ;
+	DynVec phiu_int ;
+	DynVec cohesion ;
+	DynVec inertia  ;
 
 	{
-#ifdef FULL_FEM
-		phi_int = matrices.S ;
-#endif
+
+		m_surfaceNodes.clear();
+		m_surfaceNodes.resize( mesh.nNodes() );
+
+		// Compute volumes of cells
+		ScalarField volumes(mesh) ; volumes.set_zero();
+		for( typename MeshType::CellIterator it = mesh.cellBegin() ; it != mesh.cellEnd() ; ++it ) {
+			typename MeshType::CellGeo geo ;
+			typename MeshType::NodeList nodes ;
+
+			mesh.get_geo( *it, geo );
+			const Scalar vol = geo.volume() / MeshType::NV ;
+
+			mesh.list_nodes( *it, nodes );
+			for( Index k = 0 ; k < MeshType::NV ; ++k ) {
+				volumes[nodes[k]] += vol ;
+			}
+		}
+
+		// Rasterize particles
+		VectorField intPhiVel     ( mesh ) ;
+		ScalarField intPhiInertia ( mesh ) ;
+		ScalarField intPhiCohesion( mesh ) ;
+		TensorField intPhiOrient  ( mesh ) ;
+		std::vector< bool > activeCells ;
+
+
+	#if defined(FULL_FEM)
+		intPhi.set_constant( 1. ) ;
+		intPhiVel.set_zero() ;
+		intPhiInertia.set_zero() ;
+		intPhiCohesion.set_zero() ;
+		intPhiOrient.set_zero() ;
+		activeCells.assign( activeCells.size(), true ) ;
+	#else
+		m_particles.read( activeCells, intPhi, intPhiVel, intPhiInertia, intPhiOrient, intPhiCohesion ) ;
+	#endif
+
+		// Compute phi and grad_phi
+		phase.fraction.flatten() = intPhi.flatten() ;
+		phase.fraction.divide_by( volumes ) ;
+		computeGradPhi( phase.fraction, volumes, phase.grad_phi ) ;
+
+		// Active nodes
+		computeActiveNodes( activeCells, phase.grad_phi ) ;
+		Log::Verbose() << "Active nodes: " << m_phaseNodes.count() << " / " << mesh.nNodes() << std::endl;
+
+		//Rigid bodies and frictional boundaries
+		computeActiveBodies( rigidBodies, rbStresses, rbData );
+
+		// Matrices
+		mesh.make_bc( StrBoundaryMapper( config.boundary ), m_surfaceNodes ) ;
+		assembleMatrices( config, mesh, intPhi, matrices, rbData );
+
+		Log::Debug() << "Matrices assembled  at " << timer.elapsed() << std::endl ;
+
+
+		m_phaseNodes.field2var( intPhiVel, phiu_int ) ;
+
+		// Cohesion, inertia, orientation
+		DynVec orientation ;
+		intPhiCohesion.divide_by_positive( intPhi ) ;
+		intPhiInertia .divide_by_positive( intPhi ) ;
+		intPhiOrient  .divide_by_positive( intPhi ) ;
+
+		m_phaseNodes.field2var( intPhiCohesion, cohesion ) ;
+		m_phaseNodes.field2var( intPhiInertia , inertia  ) ;
+		m_phaseNodes.field2var( intPhiOrient  , orientation  ) ;
+
+		computeAnisotropy( orientation, config, matrices );
+	}
+
+	{
 
 		// Compute fraction of grains
 		DynVec fraction ;
@@ -358,20 +364,21 @@ void PhaseSolver::step(const Config &config, Phase &phase,
 
 			//Gravity
 			{
+				VectorField gravity ( mesh ) ;
+				gravity.set_constant( config.gravity );
 				DynVec grav ; m_phaseNodes.field2var( gravity, grav ) ;
 				forces = config.dt() * matrices.M_lumped * grav ;
 			}
 
-
 			// Inertia
 #ifndef  FULL_FEM
-			DynVec phiu_int ; m_phaseNodes.field2var( intPhiVel, phiu_int ) ;
 			forces += config.inv_dt() * config.volMass * phiu_int ;
 #endif
 
 			rhs = matrices.Pvel * forces ;
 		}
 
+		// Solve unconstrained momentum equation
 		DynVec u = matrices.M_lumped_inv * rhs ;
 		solveSDP( matrices.A, matrices.M_lumped_inv, rhs, u ) ;
 
@@ -388,18 +395,6 @@ void PhaseSolver::step(const Config &config, Phase &phase,
 
 		// Friction solve
 		{
-			// Cohesion, inertia, orientation
-			intPhiCohesion.divide_by_positive( intPhi ) ;
-			intPhiInertia .divide_by_positive( intPhi ) ;
-			intPhiOrient  .divide_by_positive( intPhi ) ;
-			DynVec cohesion ;
-			DynVec inertia  ;
-			DynVec orientation ;
-			m_phaseNodes.field2var( intPhiCohesion, cohesion ) ;
-			m_phaseNodes.field2var( intPhiInertia , inertia  ) ;
-			m_phaseNodes.field2var( intPhiOrient  , orientation  ) ;
-
-			computeAnisotropy( orientation, config, matrices );
 
 			solveComplementarity( config, matrices, rbData, fraction, cohesion, inertia, u, phase );
 			Log::Debug() << "Complementarity solve at " << timer.elapsed() << std::endl ;
@@ -494,6 +489,33 @@ void PhaseSolver::computeActiveNodes(const std::vector<bool> &activeCells ,
 	m_phaseNodes.computeRevIndices();
 }
 
+void PhaseSolver::computeActiveBodies( std::vector<RigidBody> &rigidBodies,
+							  std::vector<TensorField> &rbStresses,
+							  std::vector< RigidBodyData >& rbData )
+{
+	rbData.clear();
+	for( unsigned i = 0 ; i < rigidBodies.size() ; ++i ) {
+		rbData.emplace_back( rigidBodies[i], rbStresses[i] );
+	}
+
+#pragma omp parallel for
+	for( unsigned i = 0 ; i < rigidBodies.size() ; ++i ) {
+		rbData[i].compute_active( m_phaseNodes, m_surfaceNodes ) ;
+		rbData[i].nodes.computeRevIndices() ;
+	}
+
+	m_totRbNodes = 0 ;
+	for( unsigned i = 0 ; i < rigidBodies.size() ; ++i )
+	{
+		rbData[i].nodes.setOffset( m_totRbNodes + m_phaseNodes.count() ) ;
+		m_totRbNodes += rbData[i].nodes.count() ;
+	}
+	Log::Debug() << "Tot coupling nodes: " << nSuppNodes() << std::endl ;
+
+
+
+}
+
 void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &matrices,
 									   std::vector<RigidBodyData> &rbData,
 									   const DynVec &fraction, const DynVec &cohesion, const DynVec &inertia,
@@ -560,8 +582,8 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 	}
 
 
+	// Compressability
 	{
-		// Compressability
 		const DynVec q = ( ( c.phiMax - totFraction.array() )
 						   * s_sqrt_23 * matrices.S.array()    // 1/d * Tr \tau = \sqrt{2}{d} \tau_N
 						   * c.inv_dt()
@@ -580,26 +602,27 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 	}
 
 	// Proper solving
-	Primal primal( data ) ;
-	primal.solve( x, y ) ;
+	Primal( data ).solve( x, y ) ;
 
 	// Output
-
 	u += matrices.M_lumped_inv_sqrt * DynVec( data.H.transpose() * x ) ;
 
-	DynVec fcontact = matrices.Pvel * DynVec( matrices.B.transpose()
-									* DynVec( matrices.Pstress
-									* DynVec( matrices.Aniso * x ) ) );
+	// Contact forces -- useless, debug only
+	{
+		const DynVec fcontact = matrices.Pvel * DynVec( matrices.B.transpose()
+														* DynVec( matrices.Pstress
+																  * DynVec( matrices.Aniso * x ) ) );
+		m_phaseNodes.var2field( fcontact, phase.fcontact ) ;
+	}
 
-	m_phaseNodes.var2field( fcontact, phase.fcontact ) ;
-
+	// Save stresses for warm-starting next step
 	m_phaseNodes.var2field( x, phase.stresses ) ;
-
 	for( unsigned k = 0 ; k < rbData.size() ; ++k ) {
 		RigidBodyData& rb = rbData[k] ;
 		rb.nodes.var2field( x, rb.stresses ) ;
 	}
 
+	// Add contact forces to rigid bodies
 	for( unsigned k = 0 ; k < coupledRbIndices.size() ; ++k ) {
 		RigidBodyData& rb = rbData[ coupledRbIndices[k] ] ;
 		const Vec6 forces = data.jacobians[k].transpose() * x ;

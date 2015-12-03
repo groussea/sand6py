@@ -136,6 +136,9 @@ inline void make_cross_mat( const Vec& x, Mat& mat ) {
 	return make_cross_mat( x, mat.block<3,3>(0,0) ) ;
 }
 
+// such that Abar bar(tau) = (tauN ; bar( A Dev(tau) A ) )
+void compute_anisotropy_matrix( const Mat& A, Mat66 & Abar ) ;
+
 } //d6
 
 #endif
