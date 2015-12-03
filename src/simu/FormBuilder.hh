@@ -41,6 +41,13 @@ public:
 
 	template < typename Func >
 	void integrate_qp( const typename MeshType::Cells& cells, Func func	) const ;
+	template < typename CellIterator, typename Func >
+	void integrate_qp( const CellIterator& cellBegin, const CellIterator& cellEnd, Func func ) const ;
+
+	template < typename Func >
+	void integrate_node( const typename MeshType::Cells& cells, Func func	) const ;
+	template < typename CellIterator, typename Func >
+	void integrate_node( const CellIterator& cellBegin, const CellIterator& cellEnd, Func func ) const ;
 
 	template < typename Func >
 	void integrate_particle( const Particles& particles, Func func ) const  ;

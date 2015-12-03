@@ -388,35 +388,20 @@ void PhaseSolver::computeGradPhi( const ScalarField& fraction, const ScalarField
 
 	grad_phi.set_zero() ;
 
-	typename MeshType::CellGeo cellGeo ;
+	FormBuilder builder(mesh) ;
 
-	typename MeshType::Location loc ;
-	typename MeshType::Interpolation itp ;
-	typename MeshType::Derivatives dc_dx ;
+	typedef const typename MeshType::Location& Loc ;
+	typedef const typename MeshType::Interpolation& Itp ;
+	typedef const typename MeshType::Derivatives& Dcdx ;
 
-	Eigen::Matrix< Scalar, MeshType::NC, MeshType::NQ > qp ;
-	Eigen::Matrix< Scalar,            1, MeshType::NQ > qp_weights ;
-
-	for( typename MeshType::CellIterator it = mesh.cellBegin() ; it != mesh.cellEnd() ; ++it )
+	builder.integrate_qp( mesh.cellBegin(), mesh.cellEnd(),[&]( Scalar w, Loc , Itp itp, Dcdx dc_dx )
 	{
-		loc.cell = *it ;
-
-		mesh.get_geo( *it, cellGeo );
-		cellGeo.get_qp( qp, qp_weights ) ;
-
-		for ( int q = 0 ; q < MeshType::NQ ; ++q ) {
-			loc.coords = qp.col(q) ;
-
-			mesh.interpolate( loc, itp );
-			mesh.get_derivatives( loc, dc_dx );
-
-			for( Index j = 0 ; j < MeshType::NV ; ++j ) {
-				for( Index k = 0 ; k < MeshType::NV ; ++k ) {
-					grad_phi[ itp.nodes[j] ] += qp_weights[q] * dc_dx.row(k) * itp.coeffs[k] * fraction[ itp.nodes[k] ] ;
-				}
+		for( Index j = 0 ; j < MeshType::NV ; ++j ) {
+			for( Index k = 0 ; k < MeshType::NV ; ++k ) {
+				grad_phi[ itp.nodes[j] ] += w * dc_dx.row(k) * itp.coeffs[k] * fraction[ itp.nodes[k] ] ;
 			}
 		}
-	}
+	} ) ;
 
 	grad_phi.divide_by( volumes ) ;
 }
@@ -511,10 +496,6 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 		const DynVec delta_u = u - rb.projection.transpose() * rb.rb.velocities() ;
 
 		data.w -= J * delta_u  ;
-
-		if( k == 1 ) {
-			std::cout << ( J * delta_u ).minCoeff() << std::endl ;
-		}
 
 		for( Index i = 0 ; i < rb.nodes.count() ; ++i ) {
 			totFraction( m_phaseNodes.indices[ rb.nodes.revIndices[i] ] ) += rb.fraction[i] ;

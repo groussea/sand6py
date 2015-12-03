@@ -112,7 +112,7 @@ void RigidBodyData::integrate(const Active &phaseNodes, Index totNodes)
 		FormBuilder:: addUTaunGphi( jacobian, w, itp, dphi_dx, phaseNodes.indices, phaseNodes.indices ) ;
 	}
 	);
-	builder.integrate_qp(  nodes.cells, [&]( Scalar w, Loc loc, Itp itp, Dcdx )
+	builder.integrate_node(  nodes.cells, [&]( Scalar w, Loc loc, Itp itp )
 	{
 		Vec dphi_dx ;
 		grad_phi( mesh.pos( loc ), dphi_dx ) ;

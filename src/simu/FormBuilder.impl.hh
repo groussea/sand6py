@@ -11,7 +11,12 @@ namespace d6 {
 template < typename Func >
 void FormBuilder::integrate_qp( const typename MeshType::Cells& cells, Func func ) const
 {
+	integrate_qp( cells.begin(), cells.end(), func ) ;
+}
 
+template < typename CellIterator, typename Func >
+void FormBuilder::integrate_qp( const CellIterator& cellBegin, const CellIterator& cellEnd, Func func ) const
+{
 	typename MeshType::Location loc ;
 	typename MeshType::Interpolation itp ;
 	typename MeshType::Derivatives dc_dx ;
@@ -21,8 +26,9 @@ void FormBuilder::integrate_qp( const typename MeshType::Cells& cells, Func func
 
 	typename MeshType::CellGeo cellGeo ;
 
-	for( const typename MeshType::Cell& cell : cells )
+	for( CellIterator it = cellBegin ; it !=  cellEnd ; ++it )
 	{
+		const typename MeshType::Cell& cell = *it ;
 		loc.cell = cell ;
 		m_mesh.get_geo( cell, cellGeo );
 
@@ -38,6 +44,43 @@ void FormBuilder::integrate_qp( const typename MeshType::Cells& cells, Func func
 		}
 	}
 }
+
+template < typename Func >
+void FormBuilder::integrate_node( const typename MeshType::Cells& cells, Func func ) const
+{
+	integrate_node( cells.begin(), cells.end(), func ) ;
+}
+
+template < typename CellIterator, typename Func >
+void FormBuilder::integrate_node( const CellIterator& cellBegin, const CellIterator& cellEnd, Func func ) const
+{
+	typename MeshType::Location loc ;
+	typename MeshType::Interpolation itp ;
+
+	typename MeshType::CellGeo cellGeo ;
+
+	itp.coeffs.setZero() ;
+
+	for( CellIterator it = cellBegin ; it !=  cellEnd ; ++it )
+	{
+		const typename MeshType::Cell& cell = *it ;
+		loc.cell = cell ;
+		m_mesh.get_geo( cell, cellGeo );
+		m_mesh.list_nodes( cell, itp.nodes );
+
+		const Scalar w = cellGeo.volume() / MeshType::NV ;
+
+		for ( int k = 0 ; k < MeshType::NV ; ++k ) {
+			cellGeo.vertexCoords(k, loc.coords) ;
+			itp.coeffs[k] = 1. ;
+
+			func( w, loc, itp ) ;
+
+			itp.coeffs[k] = 0. ;
+		}
+	}
+}
+
 
 template < typename Func >
 void FormBuilder::integrate_particle( const Particles& particles, Func func ) const

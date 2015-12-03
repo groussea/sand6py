@@ -13,7 +13,7 @@ struct Tet {
 
 	typedef Eigen::Matrix< Scalar, NC, 1 > Coords ;
 	typedef Eigen::Matrix< Scalar, NV, 3 > Derivatives ;
-	
+
 	typedef Eigen::Matrix< Scalar, NC, NQ> QuadPoints ;
 	typedef Eigen::Matrix< Scalar,  1, NQ> QuadWeights ;
 
@@ -27,8 +27,8 @@ struct Tet {
 		unsigned char sym  : 3 ;
 
 		inline char rotate ( int d ) const { return rot&(1<<d) ; }
-		inline char sign   ( int d ) const { 
-			return 1 - 2*( ( sym&(1<<d) ) >> d )  ; 
+		inline char sign   ( int d ) const {
+			return 1 - 2*( ( sym&(1<<d) ) >> d )  ;
 		}
 
 	} geometry ;
@@ -71,6 +71,10 @@ struct Tet {
 
 		to_world(v) ;
 		return v + origin ;
+	}
+	void vertexCoords( int cornerIndex, Coords& coords ) const {
+		coords.setZero() ;
+		coords[cornerIndex] = 1. ;
 	}
 
 	Scalar volume() const {
