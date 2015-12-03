@@ -365,3 +365,36 @@ TEST( geo, adjacency )
 	}
 
 }
+
+TEST( geo, aniso_matrix )
+{
+	Mat orir ;
+	orir.setRandom() ;
+	Mat ori = .5 * ( orir + orir.transpose() ) ;
+
+	Mat66 Abar ;
+	compute_anisotropy_matrix( ori, Abar );
+
+	ASSERT_TRUE( Abar.isApprox( Abar.transpose() ) ) ;
+
+	Mat taur ;
+	taur.setRandom() ;
+	Mat tau = .5 * ( taur + taur.transpose() );
+
+	Mat dev = tau -  1./3 * tau.trace() * Mat::Identity() ;
+	Mat ani_tau = ori * dev * ori ;
+	Mat ani_tau_dev = ani_tau -  1./3 * ani_tau.trace() * Mat::Identity() ;
+
+	ASSERT_NEAR( 0, dev.trace(), 1.e-12 ) ;
+	ASSERT_NEAR( 0, ani_tau_dev.trace(), 1.e-12 ) ;
+
+	Vec6 taubar, Abartau, tauref ;
+	tensor_view( taubar ).set( tau ) ;
+	tensor_view( tauref ).set( ani_tau_dev ) ;
+	tauref[0] = taubar[0] ;
+
+	Abartau = Abar * taubar ;
+
+	ASSERT_DOUBLE_EQ( Abartau[0], taubar[0] ) ;
+	ASSERT_TRUE( tauref.isApprox( Abartau )) ;
+}
