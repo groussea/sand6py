@@ -40,7 +40,7 @@ struct Config
 	bool from_string( const std::string &key, const std::string &value ) ;
 	bool from_file(const std::string& file_name) ;
 
-	bool dump( const std::string& file_name ) const ;
+	bool dump( const std::string& file_name, const char* comment = nullptr ) const ;
 
 	//! Transform all the parameters from SI to internal units
 	void internalize() ;

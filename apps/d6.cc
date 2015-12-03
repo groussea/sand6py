@@ -4,10 +4,13 @@
 #include "utils/Log.hh"
 #include "utils/File.hh"
 
+#include "d6_version.hh"
+
 #include <cstring>
 
 int main( int argc, const char* argv[] )
 {
+
 	d6::Config config ;
 
 	const char * base_dir = "out" ;
@@ -36,7 +39,10 @@ int main( int argc, const char* argv[] )
 		}
 	}
 
-	config.dump( d6::FileInfo(base_dir).filePath("config") );
+	std::string info = d6::arg3("%1 %3 on %2", argv[0], D6_stringify(D6_GIT_BRANCH), D6_stringify(D6_GIT_COMMIT_HASH) ) ;
+	d6::Log::Info() << "This is " << info << std::endl ;
+
+	config.dump( d6::FileInfo(base_dir).filePath("config"), info.c_str() );
 	config.internalize();
 
 	d6::Simu( config, base_dir ).run() ;

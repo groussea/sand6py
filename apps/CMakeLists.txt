@@ -1,9 +1,6 @@
 
 include_directories( ../src )
 
-add_executable ( d6 d6.cc )
-target_link_libraries ( d6 d6_simu )
-
 add_executable ( d62vtk d62vtk.cc )
 target_link_libraries ( d62vtk d6_visu )
 
@@ -23,3 +20,9 @@ if( OPENGL_FOUND )
     message( STATUS "QGLViewer not found, not builder viewer" )
     endif()
 endif()
+
+include_directories(${CMAKE_BINARY_DIR}/generated)
+
+add_executable ( d6 d6.cc )
+target_link_libraries ( d6 d6_simu )
+
