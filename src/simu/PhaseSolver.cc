@@ -348,7 +348,7 @@ void PhaseSolver::step(const Config &config, Phase &phase,
 
 		Log::Debug() << "Linear solve at " << timer.elapsed() << std::endl ;
 
-
+		// Maximum fraction projection
 		if( config.enforceMaxFrac){
 			Eigen::VectorXd depl ;
 			enforceMaxFrac( config, matrices, rbData, fraction, depl );
@@ -357,13 +357,20 @@ void PhaseSolver::step(const Config &config, Phase &phase,
 			// u += depl/config.dt() ; // Includes proj into inertia
 		}
 
-		intPhiCohesion.divide_by_positive( intPhi ) ;
-		DynVec cohesion  ;
-		m_phaseNodes.field2var( intPhiCohesion, cohesion ) ;
+		// Friction solve
+		{
+			// Cohesion, inertia
+			intPhiCohesion.divide_by_positive( intPhi ) ;
+			intPhiInertia. divide_by_positive( intPhi ) ;
+			DynVec cohesion ;
+			DynVec inertia  ;
+			m_phaseNodes.field2var( intPhiCohesion, cohesion ) ;
+			m_phaseNodes.field2var( intPhiInertia , inertia  ) ;
 
-		solveComplementarity( config, matrices, rbData, fraction, cohesion, u, phase );
 
-		Log::Debug() << "Complementarity solve at " << timer.elapsed() << std::endl ;
+			solveComplementarity( config, matrices, rbData, fraction, cohesion, inertia, u, phase );
+			Log::Debug() << "Complementarity solve at " << timer.elapsed() << std::endl ;
+		}
 
 		m_phaseNodes.var2field( u, phase.velocity ) ;
 
@@ -456,13 +463,19 @@ void PhaseSolver::computeActiveNodes(const std::vector<bool> &activeCells ,
 
 void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &matrices,
 									   std::vector<RigidBodyData> &rbData,
-									   const DynVec &fraction, const DynVec &cohesion,
+									   const DynVec &fraction, const DynVec &cohesion, const DynVec &inertia,
 									   DynVec &u, Phase& phase ) const
 {
 	PrimalData	data ;
 	data.H = matrices.Pstress * ( matrices.B * matrices.M_lumped_inv_sqrt ) ;
 
-	//Cohesion
+	data.mu.resize( data.n() ) ;
+
+	// Inertia, mu(I) = \delta_mu * (1./ (1 + I0/I) ), I = dp * sqrt( rho ) * inertia, inertia = |D(U)|/sqrt(p)
+	const Scalar I0bar = c.I0 / ( c.grainDiameter * std::sqrt( c.volMass )) ;
+	data.mu.segment(0,fraction.rows()).array() = c.mu + c.delta_mu / ( 1. + I0bar / inertia.array().max(1.e-12) ) ;
+
+	//Cohesion : add \grad{ c phi } to rhs
 	{
 		const Scalar cohe_start = 0.999 * c.phiMax ;
 		const DynArr contact_zone = ( ( fraction.array() - cohe_start )/ (c.phiMax - cohe_start) ).max(0).min(1) ;
@@ -501,6 +514,8 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 			totFraction( m_phaseNodes.indices[ rb.nodes.revIndices[i] ] ) += rb.fraction[i] ;
 		}
 
+		data.mu.setConstant( rb.nodes.offset, rb.nodes.count(), c.muRigid ) ;
+
 		Mat66 inv_inertia ;
 		rb.rb.inv_inertia( inv_inertia ) ;
 		if( inv_inertia.squaredNorm() < 1.e-16 )
@@ -509,10 +524,8 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 		coupledRbIndices.push_back( k ) ;
 		data.inv_inertia_matrices.block<6,6>( 0, 6*data.jacobians.size() ) = inv_inertia * c.dt() ;
 		data.jacobians.emplace_back( J * rb.projection.transpose() );
-
 	}
 
-	data.mu.setConstant( data.n(), c.mu ) ;
 
 	{
 		// Compressability

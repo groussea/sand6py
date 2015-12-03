@@ -51,7 +51,7 @@ private:
 	void solveComplementarity(const Config&c, const PhaseMatrices& matrices ,
 							  std::vector< RigidBodyData >& rbData,
 							  const DynVec &fraction,
-							  const DynVec &cohesion,
+							  const DynVec &cohesion, const DynVec &inertia,
 							  DynVec &u, Phase &phase) const ;
 	void enforceMaxFrac(const Config &c, const PhaseMatrices &matrices,
 									   std::vector<RigidBodyData> &rbData,

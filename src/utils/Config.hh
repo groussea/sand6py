@@ -22,7 +22,12 @@ namespace d6 {
 	CONFIG_FIELD( viscosity			, Scalar		,	Units::Viscosity	) \
 	CONFIG_FIELD( gravity			, Vec			,	Units::Acceleration	) \
 	CONFIG_FIELD( phiMax			, Scalar		,	Units::None			) \
+	\
 	CONFIG_FIELD( mu				, Scalar		,	Units::None			) \
+	CONFIG_FIELD( delta_mu			, Scalar		,	Units::None			) \
+	CONFIG_FIELD( I0				, Scalar		,	Units::None			) \
+	CONFIG_FIELD( grainDiameter		, Scalar		,	Units::Length		) \
+	CONFIG_FIELD( muRigid			, Scalar		,	Units::None			) \
 	CONFIG_FIELD( cohesion			, Scalar		,	Units::Stress		) \
 	CONFIG_FIELD( cohesion_decay	, Scalar		,	Units::Time			) \
 	\
