@@ -98,23 +98,20 @@ void DynParticles::update(const Config &config, const Phase &phase )
 
 
 		// Frames and orientation
-		Mat grad ;
+		Mat Du, Wu ;
+		phase.sym_grad.get_sym_tensor( p0, Du );
+		phase.spi_grad.get_spi_tensor( p0, Wu );
 
 		// Inertia
 		{
-			Mat Du ;
-			phase.sym_grad.get_sym_tensor( p0, Du );
-
-			grad = Du ;
-//			grad.setZero() ; //FIXME
-			phase.spi_grad.add_spi_tensor( p0, grad );
-
 			const Scalar DuT = ( Du - 1./3. * Du.trace() * Mat::Identity() ).norm()  ;
 			m_inertia(i) = DuT / std::sqrt( std::max( 1.e-16, phase.stresses(p0)[0] ) ) ;
 		}
 
 		// Frame
 		{
+			const Mat grad = Wu + Du ;
+
 			auto  frame_view( tensor_view( m_geo.m_frames.col(i) ) ) ;
 			Mat frame ;
 			frame_view.get( frame ) ;
@@ -124,17 +121,19 @@ void DynParticles::update(const Config &config, const Phase &phase )
 
 		//Orientation
 		{
+			const Scalar lambda = config.elongation ;
+
 			auto orient_view( tensor_view( m_geo.m_orient.col(i) ) ) ;
 			Mat a2 ;
 			orient_view.get( a2 ) ;
 
 			// Quadratic closure
-			Mat a4grad = (a2.cwiseProduct( grad ).sum() * a2 ) ;
+			Mat a4grad = (a2.cwiseProduct( Du ).sum() * a2 ) ;
 
-			a2    += dt * ( grad * a2    +    a2 * grad.transpose() ) ;
+			a2 += dt * ( Wu * a2  - a2 * Wu + lambda * ( Du * a2  + a2 * Du ) ) ;
 
-			a2 -= 2 * dt  * a4grad ;
-			a2 = a2.normalized() ;
+			a2 -= 2 * lambda * dt  * a4grad ;
+			a2 /= a2.lpNorm<1>() ;
 
 			orient_view.set( a2 ) ;
 		}

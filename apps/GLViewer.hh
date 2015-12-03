@@ -22,7 +22,7 @@ public:
 		m_offline( offline ), m_sampler( offline ), m_nSamples( nSamples ),
 		m_currentFrame(-1),
 		m_drawParticles( 0 == nSamples ), m_enableBending( false ),
-		m_fastDraw( true ), m_drawObjects( true ),
+		m_fastDraw( true ), m_drawObjects( true ), m_drawOrientations( false ),
 		m_snapshotting(false), m_lastSnapped( m_currentFrame )
 	{
 
@@ -74,6 +74,7 @@ private:
 	bool 	 m_enableBending ;
 	bool	 m_fastDraw ;
 	bool 	 m_drawObjects ;
+	bool 	 m_drawOrientations ;
 	bool 	 m_snapshotting ;
 	unsigned m_lastSnapped ;
 

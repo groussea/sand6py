@@ -31,6 +31,7 @@ namespace d6 {
 	CONFIG_FIELD( cohesion			, Scalar		,	Units::Stress		) \
 	CONFIG_FIELD( cohesion_decay	, Scalar		,	Units::Time			) \
 	CONFIG_FIELD( anisotropy		, Scalar		,	Units::None			) \
+	CONFIG_FIELD( elongation		, Scalar		,	Units::None			) \
 	\
 	CONFIG_FIELD( enforceMaxFrac	, bool			,	Units::None			) \
 	\

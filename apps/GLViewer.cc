@@ -338,17 +338,33 @@ void GLViewer::update_buffers()
 		for( size_t i = 0 ; i < p.count() ; ++i ) {
 			mat.setIdentity()  ;
 
-			tensor_view( p.frames().col( i ) ).get( tensor ) ;
-			Eigen::SelfAdjointEigenSolver<Mat> es( tensor );
+			if( m_drawOrientations) {
+				tensor_view( p.orient().col( i ) ).get( tensor ) ;
+				Eigen::SelfAdjointEigenSolver<Mat> es( tensor );
 
-			const Vec ev = es.eigenvalues().array().max(0).sqrt() ;
-			const Scalar vol = 8 * ev.prod() ;
+				const Vec ev = es.eigenvalues().array().max(0).sqrt() ;
 
-			mat.block<3,3>(0,0) = ( es.eigenvectors() * ev.asDiagonal() ).cast< GLfloat >()  ;
-			mat.block<3,1>(0,3) = p.centers().col(i).cast < GLfloat >() ;
+				mat.block<3,3>(0,0) = ( es.eigenvectors() * ev.asDiagonal() ).cast< GLfloat >()
+						* .5 * std::pow( p.volumes()[i], 1./3 )  ;
+				mat.block<3,1>(0,3) = p.centers().col(i).cast < GLfloat >() ;
+
+				m_densities[i] = p.volumes()[i]  ;
+
+			} else {
+				tensor_view( p.frames().col( i ) ).get( tensor ) ;
+				Eigen::SelfAdjointEigenSolver<Mat> es( tensor );
+
+				const Vec ev = es.eigenvalues().array().max(0).sqrt() ;
+				const Scalar vol = 8 * ev.prod() ;
+
+				mat.block<3,3>(0,0) = ( es.eigenvectors() * ev.asDiagonal() ).cast< GLfloat >()  ;
+				mat.block<3,1>(0,3) = p.centers().col(i).cast < GLfloat >() ;
+
+				m_densities[i] = p.volumes()[i] / vol ;
+			}
+
 
 			m_matrices.col(i) = Eigen::Matrix< GLfloat, 16, 1 >::Map( mat.data(), mat.size() ) ;
-			m_densities[i] = p.volumes()[i] / vol ;
 
 		}
 		m_frames.reset( p.count(), m_matrices.data(), GL_STATIC_DRAW )  ;
@@ -407,6 +423,10 @@ void GLViewer::keyPressEvent(QKeyEvent *e)
 		break ;
 	case Qt::Key_Home :
 		set_frame(0);
+		break ;
+	case Qt::Key_A:
+		m_drawOrientations = !m_drawOrientations ;
+		update_buffers() ;
 		break ;
 	case Qt::Key_D:
 		m_drawParticles = !m_drawParticles ;
