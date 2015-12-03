@@ -43,6 +43,8 @@ struct PhaseMatrices
 	typename FormMat<3,3>::SymType Pvel ;
 	typename FormMat<6,6>::SymType Pstress ;
 
+	typename FormMat<6,6>::SymType Aniso ;
+
 	DynVec cohesion ;
 
 };
@@ -225,6 +227,33 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 		mats.M_lumped_inv_sqrt.block(i) = mats.Pvel.block(i) * 1./std::sqrt( m + con_regul ) ;
 	}
 
+
+}
+
+void PhaseSolver::computeAnisotropy(const DynVec &orientation, const Config& config, PhaseMatrices &matrices ) const
+{
+
+	// Anisotropy
+	matrices.Aniso = matrices.Pstress.Identity() ;
+
+	if( config.anisotropy <= 0 )
+		return ;
+
+	const Index m  = m_phaseNodes.count() ;
+
+#pragma omp parallel for
+	for( Index i = 0 ; i < m ; ++i ) {
+		Mat66& Abar = matrices.Aniso.block(i) ;
+
+		Mat ori ;
+		tensor_view( Segmenter<6>::segment( orientation, i ) ).get( ori ) ;
+
+		ori = (1. - config.anisotropy) * Mat::Identity() + 3 * config.anisotropy * ori ;
+
+		// TODO Abar bar(tau) = (tauN ; bar( ori Dev(taut) ori ) )
+
+	}
+
 }
 
 void PhaseSolver::step(const Config &config, Phase &phase,
@@ -359,14 +388,18 @@ void PhaseSolver::step(const Config &config, Phase &phase,
 
 		// Friction solve
 		{
-			// Cohesion, inertia
+			// Cohesion, inertia, orientation
 			intPhiCohesion.divide_by_positive( intPhi ) ;
-			intPhiInertia. divide_by_positive( intPhi ) ;
+			intPhiInertia .divide_by_positive( intPhi ) ;
+			intPhiOrient  .divide_by_positive( intPhi ) ;
 			DynVec cohesion ;
 			DynVec inertia  ;
+			DynVec orientation ;
 			m_phaseNodes.field2var( intPhiCohesion, cohesion ) ;
 			m_phaseNodes.field2var( intPhiInertia , inertia  ) ;
+			m_phaseNodes.field2var( intPhiOrient  , orientation  ) ;
 
+			computeAnisotropy( orientation, config, matrices );
 
 			solveComplementarity( config, matrices, rbData, fraction, cohesion, inertia, u, phase );
 			Log::Debug() << "Complementarity solve at " << timer.elapsed() << std::endl ;
@@ -467,7 +500,7 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 									   DynVec &u, Phase& phase ) const
 {
 	PrimalData	data ;
-	data.H = matrices.Pstress * ( matrices.B * matrices.M_lumped_inv_sqrt ) ;
+	data.H = matrices.Aniso * ( matrices.Pstress * ( matrices.B * matrices.M_lumped_inv_sqrt ) ) ;
 
 	data.mu.resize( data.n() ) ;
 
@@ -480,14 +513,14 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 		const Scalar cohe_start = 0.999 * c.phiMax ;
 		const DynArr contact_zone = ( ( fraction.array() - cohe_start )/ (c.phiMax - cohe_start) ).max(0).min(1) ;
 
-		DynVec cohe_s  = DynVec::Zero( matrices.Pstress.rows() ) ;
+		DynVec cohe_s  = DynVec::Zero( data.H.rows() ) ;
 		component< 6 >( cohe_s, 0 ).head(cohesion.rows()).array() =
 				c.cohesion * cohesion.array() * contact_zone ;
 
 		u -= matrices.M_lumped_inv_sqrt * DynVec( data.H.transpose() * cohe_s ) ;
 	}
 
-	data.w = matrices.Pstress * DynVec( matrices.B * u ) ;
+	data.w = matrices.Aniso * DynVec( matrices.Pstress * DynVec( matrices.B * u ) ) ;
 
 	data.jacobians.reserve( rbData.size() ) ;
 	data.inv_inertia_matrices.resize( 6, 6*rbData.size() ) ;
@@ -502,7 +535,7 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 		if( rb.nodes.count() == 0 )
 			continue ;
 
-		typename FormMat<6,3>::Type J =	matrices.Pstress * ( rb.jacobian ) ;
+		typename FormMat<6,3>::Type J =	matrices.Aniso * ( matrices.Pstress * ( rb.jacobian ) ) ;
 
 		data.H -= J * matrices.M_lumped_inv_sqrt ;
 
@@ -539,20 +572,25 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 
 	DynVec x( data.w.rows() ), y( data.w.rows() ) ;
 
-
+	// Warm-start stresses
 	m_phaseNodes.field2var( phase.stresses, x, false ) ;
 	for( unsigned k = 0 ; k < rbData.size() ; ++k ) {
 		RigidBodyData& rb = rbData[k] ;
 		rb.nodes.field2var( rb.stresses, x, false ) ;
 	}
 
+	// Proper solving
 	Primal primal( data ) ;
 	primal.solve( x, y ) ;
 
+	// Output
+
 	u += matrices.M_lumped_inv_sqrt * DynVec( data.H.transpose() * x ) ;
 
+	DynVec fcontact = matrices.Pvel * DynVec( matrices.B.transpose()
+									* DynVec( matrices.Pstress
+									* DynVec( matrices.Aniso * x ) ) );
 
-	DynVec fcontact = matrices.Pvel * DynVec( matrices.B.transpose() * DynVec( matrices.Pstress * x ) );
 	m_phaseNodes.var2field( fcontact, phase.fcontact ) ;
 
 	m_phaseNodes.var2field( x, phase.stresses ) ;

@@ -42,6 +42,9 @@ private:
 							const std::vector< RigidBodyData >& rbData
 							) const ;
 
+	void computeAnisotropy(const DynVec& orientation,
+						   const Config &config, PhaseMatrices& matrices) const ;
+
 	void assembleMatrices( const Config& c, const MeshType& mesh,
 						   const DynVec &phiInt,
 						   PhaseMatrices& matrices,
