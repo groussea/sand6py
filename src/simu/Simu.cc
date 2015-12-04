@@ -23,7 +23,9 @@ namespace d6 {
 
 
 Simu::Simu(const Config &config, const char *base_dir)
-	: m_config(config), m_base_dir( base_dir ), m_solver( m_particles )
+	: m_config(config), m_base_dir( base_dir ),
+	  m_stats( m_base_dir ),
+	  m_solver( m_particles )
 {
 	m_mesh = new MeshImpl( config.box, config.res ) ;
 
@@ -65,6 +67,8 @@ void Simu::run()
 		Log::Info() << "Starting frame " << (frame+1) << std::endl ;
 
 		for( unsigned s = 0 ; s < m_config.substeps ; ++ s ) {
+
+			m_stats.frameId = frame ;
 			const Scalar t = (frame * m_config.substeps + s ) * m_config.dt() ;
 			Log::Verbose() << arg3( "Step %1/%2 \t t=%3", s+1, m_config.substeps, t ) << std::endl ;
 
@@ -76,11 +80,7 @@ void Simu::run()
 			}
 			m_particles.events().start();
 
-			bogus::Timer timer ;
-
 			step() ;
-
-			Log::Verbose() << arg( "Step done in %1 s", timer.elapsed() ) << std::endl ;
 		}
 
 		Log::Info() << arg( "Frame done in %1 s", timer.elapsed() ) << std::endl ;
@@ -97,15 +97,28 @@ void Simu::run()
 
 void Simu::step()
 {
+	bogus::Timer timer ;
+
 	// TODO adapt mesh
 
-	m_solver.step( m_config, *m_grains, m_rigidBodies, m_rbStresses ) ;
+	m_stats.delta_t = m_config.dt() * m_config.units().toSI( Units::Time ) ;
+	m_stats.nParticles = m_particles.count() ;
+	m_stats.nNodes = m_mesh->nNodes() ;
+
+	m_solver.step( m_config, *m_grains, m_stats, m_rigidBodies, m_rbStresses ) ;
+	const Scalar solverTime = timer.elapsed() ;
 
 	m_particles.update( m_config, *m_grains ) ;
 
 	for( RigidBody& rb: m_rigidBodies ) {
 		rb.move( m_config.dt() );
 	}
+
+	m_stats.totalTime = timer.elapsed() ;
+	m_stats.advectionTime = timer.elapsed() - solverTime ;
+
+	Log::Verbose() << arg( "Step done in %1 s", m_stats.totalTime ) << std::endl ;
+	m_stats.dump();
 }
 
 void Simu::dump_particles( unsigned frame ) const

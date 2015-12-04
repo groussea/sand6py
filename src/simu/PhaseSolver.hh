@@ -13,11 +13,14 @@
 namespace d6 {
 
 class DynParticles ;
-struct Config ;
 struct Phase ;
 struct PhaseMatrices ;
+
 class RigidBody ;
 struct RigidBodyData ;
+
+struct Config ;
+class Stats ;
 
 class PhaseSolver {
 
@@ -28,7 +31,7 @@ public:
 
 	~PhaseSolver() ;
 
-	void step(const Config &config, Phase& phase,
+	void step(const Config &config, Phase& phase, Stats &stats,
 			  std::vector<RigidBody> &rigidBodies,
 			  std::vector<TensorField> &rbStresses
 			  ) ;
@@ -60,7 +63,7 @@ private:
 							  std::vector< RigidBodyData >& rbData,
 							  const DynVec &fraction,
 							  const DynVec &cohesion, const DynVec &inertia,
-							  DynVec &u, Phase &phase) const ;
+							  DynVec &u, Phase &phase, Stats &stats ) const ;
 	void enforceMaxFrac(const Config &c, const PhaseMatrices &matrices,
 									   std::vector<RigidBodyData> &rbData,
 									   const DynVec &fraction,

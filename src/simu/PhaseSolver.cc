@@ -15,6 +15,7 @@
 
 #include "utils/Log.hh"
 #include "utils/Config.hh"
+#include "utils/Stats.hh"
 
 #include <bogus/Core/Block.impl.hpp>
 #include <bogus/Core/Block.io.hpp>
@@ -261,7 +262,7 @@ void PhaseSolver::computeAnisotropy(const DynVec &orientation, const Config& con
 
 }
 
-void PhaseSolver::step(const Config &config, Phase &phase,
+void PhaseSolver::step(const Config &config, Phase &phase, Stats& stats,
 					   std::vector< RigidBody   >& rigidBodies,
 					   std::vector<TensorField > &rbStresses)
 {
@@ -350,6 +351,10 @@ void PhaseSolver::step(const Config &config, Phase &phase,
 		computeAnisotropy( orientation, config, matrices );
 	}
 
+	stats.nActiveNodes = m_phaseNodes.count() ;
+	stats.nCouplingNodes = m_totRbNodes ;
+	stats.assemblyTime = timer.elapsed() ;
+
 	{
 
 		// Compute fraction of grains
@@ -382,7 +387,8 @@ void PhaseSolver::step(const Config &config, Phase &phase,
 		DynVec u = matrices.M_lumped_inv * rhs ;
 		solveSDP( matrices.A, matrices.M_lumped_inv, rhs, u ) ;
 
-		Log::Debug() << "Linear solve at " << timer.elapsed() << std::endl ;
+		stats.linSolveTime = timer.elapsed() - stats.assemblyTime ;
+		Log::Debug() << "Linear solve: " << stats.linSolveTime << std::endl ;
 
 		// Maximum fraction projection
 		if( config.enforceMaxFrac){
@@ -391,12 +397,14 @@ void PhaseSolver::step(const Config &config, Phase &phase,
 
 			m_phaseNodes.var2field( depl, phase.geo_proj ) ; //Purely geometric
 			// u += depl/config.dt() ; // Includes proj into inertia
+
+			stats.lcpSolveTime = timer.elapsed() - stats.assemblyTime - stats.linSolveTime ;
 		}
 
 		// Friction solve
 		{
 
-			solveComplementarity( config, matrices, rbData, fraction, cohesion, inertia, u, phase );
+			solveComplementarity( config, matrices, rbData, fraction, cohesion, inertia, u, phase, stats );
 			Log::Debug() << "Complementarity solve at " << timer.elapsed() << std::endl ;
 		}
 
@@ -414,7 +422,8 @@ void PhaseSolver::step(const Config &config, Phase &phase,
 		}
 	}
 
-	Log::Debug() << "Max vel: " << phase.velocity.max_abs() << std::endl ;
+	stats.maxVelocity = phase.velocity.max_abs() ;
+	Log::Debug() << "Max vel: " << stats.maxVelocity << std::endl ;
 }
 
 void PhaseSolver::computeGradPhi( const ScalarField& fraction, const ScalarField& volumes, VectorField &grad_phi ) const
@@ -519,7 +528,7 @@ void PhaseSolver::computeActiveBodies( std::vector<RigidBody> &rigidBodies,
 void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &matrices,
 									   std::vector<RigidBodyData> &rbData,
 									   const DynVec &fraction, const DynVec &cohesion, const DynVec &inertia,
-									   DynVec &u, Phase& phase ) const
+									   DynVec &u, Phase& phase, Stats &simuStats ) const
 {
 	PrimalData	data ;
 	data.H = matrices.Aniso * ( matrices.Pstress * ( matrices.B * matrices.M_lumped_inv_sqrt ) ) ;
@@ -607,6 +616,9 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 	Primal( data ).solve( options, x, stats ) ;
 	Log::Verbose() << arg3( "Primal: %1 iterations,\t err= %2,\t time= %3 ",
 						   stats.nIterations, stats.residual, stats.time ) << std::endl ;
+	simuStats.frictionError      = stats.residual ;
+	simuStats.frictionTime       = stats.time ;
+	simuStats.frictionIterations = stats.nIterations ;
 
 	// Output
 	u += matrices.M_lumped_inv_sqrt * DynVec( data.H.transpose() * x ) ;

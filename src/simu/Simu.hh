@@ -2,8 +2,11 @@
 #define D6_SIMU_HH
 
 #include "geo/geo.fwd.hh"
+
 #include "simu/DynParticles.hh"
 #include "simu/PhaseSolver.hh"
+
+#include "utils/Stats.hh"
 
 namespace d6 {
 
@@ -20,7 +23,7 @@ public:
 
 	void run() ;
 	void step() ;
-	
+
 	void dump_fields(unsigned frame) const ;
 	void dump_particles(unsigned frame) const ;
 
@@ -46,6 +49,7 @@ private:
 	const Config& m_config ;
 	const char* m_base_dir ;
 
+	Stats		  m_stats ;
 	DynParticles  m_particles ;
 
 	std::vector< RigidBody   > m_rigidBodies ;

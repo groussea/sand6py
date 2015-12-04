@@ -6,6 +6,8 @@ utils/Log.hh
 utils/LogLevels.hh
 utils/Mutex.cc
 utils/Mutex.hh
+utils/Stats.cc
+utils/Stats.hh
 utils/ThreadLocal.hh
 utils/alg.hh
 utils/block_mat.hh
