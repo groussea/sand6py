@@ -414,7 +414,7 @@ void PhaseSolver::step(const Config &config, Phase &phase, Stats& stats,
 
 		{
 			// Velocities gradient
-			DynVec int_phiDu = .5 * matrices.Pstress * DynVec( matrices.B * u ) ;
+			DynVec int_phiDu = .5 * matrices.Pstress * ( matrices.B * u ) ;
 			m_phaseNodes.var2field( int_phiDu, phase.sym_grad ) ;
 			phase.sym_grad.divide_by_positive( intPhi ) ;
 
@@ -550,10 +550,10 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 		component< 6 >( cohe_s, 0 ).head(cohesion.rows()).array() =
 				c.cohesion * cohesion.array() * contact_zone ;
 
-		u -= matrices.M_lumped_inv_sqrt * DynVec( data.H.transpose() * cohe_s ) ;
+		u -= matrices.M_lumped_inv_sqrt * ( data.H.transpose() * cohe_s ) ;
 	}
 
-	data.w = matrices.Aniso * DynVec( matrices.Pstress * DynVec( matrices.B * u ) ) ;
+	data.w = matrices.Aniso * ( matrices.Pstress * ( matrices.B * u ) ) ;
 
 	data.jacobians.reserve( rbData.size() ) ;
 	data.inv_inertia_matrices.resize( 6, 6*rbData.size() ) ;
@@ -623,13 +623,13 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 	simuStats.frictionIterations = stats.nIterations ;
 
 	// Output
-	u += matrices.M_lumped_inv_sqrt * DynVec( data.H.transpose() * x ) ;
+	u += matrices.M_lumped_inv_sqrt * ( data.H.transpose() * x ) ;
 
 	// Contact forces -- useless, debug only
 	{
-		const DynVec fcontact = matrices.Pvel * DynVec( matrices.B.transpose()
-														* DynVec( matrices.Pstress
-																  * DynVec( matrices.Aniso * x ) ) );
+		const DynVec fcontact = matrices.Pvel * ( matrices.B.transpose()
+														* ( matrices.Pstress
+																  * ( matrices.Aniso * x ) ) );
 		m_phaseNodes.var2field( fcontact, phase.fcontact ) ;
 	}
 

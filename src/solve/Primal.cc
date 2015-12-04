@@ -84,6 +84,7 @@ Scalar Primal::solve( const SolverOptions& options, DynVec &lambda, SolverStats 
 			pg.setDefaultVariant( bogus::projected_gradient::APGD );
 			pg.setTol( options.tolerance );
 			pg.setMaxIters( options.maxIterations );
+			pg.setLineSearchOptimisticFactor( 1. );
 
 			res = bogus::solveCadoux<6>( W, m_data.w.data(), m_data.mu.data(), pg,
 										  lambda.data(), options.maxOuterIterations, &callback ) ;
