@@ -24,13 +24,45 @@ struct PrimalData {
 };
 
 class Primal {
-
 public:
+
+	struct SolverStats
+	{
+		Scalar residual ;
+		Scalar time ;
+		unsigned nIterations ;
+
+		// For internal use
+		void ackResidual( unsigned iter, Scalar err ) ;
+	} ;
+
+	struct SolverOptions
+	{
+		enum Algorithm {
+			GaussSeidel,
+			Cadoux_APGD,
+			Cadoux_GS
+		};
+
+		Algorithm algorithm ;
+
+		unsigned maxIterations ;	  //Inner
+		unsigned maxOuterIterations ; //For Cadoux algorithm
+
+		Scalar tolerance ;
+
+		SolverOptions() ;
+	};
+
 	Primal( const PrimalData &data ) ;
 
-	Scalar solve( DynVec& lambda, DynVec &gamma ) const ;
+	Scalar solve( const SolverOptions &options, DynVec& lambda, SolverStats &stats ) const ;
 
 private:
+
+	typedef typename FormMat<6,6>::SymType WType ;
+	Scalar solveCadoux( const WType& W, const SolverOptions &options, DynVec& lambda, SolverStats &stats ) const ;
+
 	const PrimalData& m_data ;
 
 };

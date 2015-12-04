@@ -602,7 +602,11 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 	}
 
 	// Proper solving
-	Primal( data ).solve( x, y ) ;
+	Primal::SolverOptions options ;
+	Primal::SolverStats stats ;
+	Primal( data ).solve( options, x, stats ) ;
+	Log::Verbose() << arg3( "Primal: %1 iterations,\t err= %2,\t time= %3 ",
+						   stats.nIterations, stats.residual, stats.time ) << std::endl ;
 
 	// Output
 	u += matrices.M_lumped_inv_sqrt * DynVec( data.H.transpose() * x ) ;

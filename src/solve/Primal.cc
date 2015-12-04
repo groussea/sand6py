@@ -6,6 +6,8 @@
 #include <bogus/Core/BlockSolvers.impl.hpp>
 #include <bogus/Extra/SecondOrder.impl.hpp>
 
+#include <bogus/Core/Utils/Timer.hpp>
+
 namespace d6 {
 
 bool PrimalData::load(const char *file)
@@ -20,19 +22,28 @@ bool PrimalData::dump(const char *file) const
 	return false ;
 }
 
+Primal::SolverOptions::SolverOptions()
+	: algorithm( GaussSeidel ),
+	  maxIterations(250), maxOuterIterations( 15 ),
+	  tolerance( 1.e-6 )
+{}
+
 
 Primal::Primal(const PrimalData &data)
 	: m_data( data )
 {}
 
-static void ackResidual( unsigned iter, Scalar res ) {
-	Log::Debug() << "GS " << iter << " =\t " << res << std::endl ;
+void Primal::SolverStats::ackResidual( unsigned iter, Scalar res )
+{
+	nIterations = iter ;
+	Log::Debug() << "Primal " << iter << " =\t " << res << std::endl ;
 }
 
 
-Scalar Primal::solve(DynVec &lambda, DynVec &gamma) const
+Scalar Primal::solve( const SolverOptions& options, DynVec &lambda, SolverStats &stats) const
 {
-	typedef typename FormMat<6,6>::SymType WType ;
+	bogus::Timer timer ;
+
 	WType W = m_data.H * m_data.H.transpose() ;
 
 	// Add rigid bodies jacobians
@@ -50,19 +61,31 @@ Scalar Primal::solve(DynVec &lambda, DynVec &gamma) const
 		W +=  JM * Mi * JM.transpose() ;
 	}
 
+	Scalar res = -1 ;
 
-	bogus::SOCLaw< 6, Scalar, true > law( m_data.n(), m_data.mu.data() ) ;
+	if( options.algorithm == SolverOptions::GaussSeidel ) {
+		bogus::SOCLaw< 6, Scalar, true > law( m_data.n(), m_data.mu.data() ) ;
 
-	bogus::GaussSeidel< WType > gs( W ) ;
-	gs.callback().connect( ackResidual );
+		bogus::GaussSeidel< WType > gs( W ) ;
+		gs.setTol( options.tolerance );
+		gs.setMaxIters( options.maxIterations );
+		gs.callback().connect( stats, &SolverStats::ackResidual );
 
+		res = gs.solve( law, m_data.w, lambda ) ;
+	} else {
+		res = solveCadoux( W, options, lambda, stats ) ;
+	}
 
-	const double res = gs.solve( law, m_data.w, lambda ) ;
-
-	gamma = W*lambda + m_data.w ;
+	stats.residual = res ;
+	stats.time = timer.elapsed() ;
 
 	return res ;
 }
 
+Scalar Primal::solveCadoux( const WType& W, const SolverOptions& options, DynVec &lambda, SolverStats &stats) const
+{
+	return -1 ;
+
+}
 
 }
