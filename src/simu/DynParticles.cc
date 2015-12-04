@@ -124,8 +124,14 @@ void DynParticles::update(const Config &config, const Phase &phase )
 			const Scalar lambda = config.elongation ;
 
 			auto orient_view( tensor_view( m_geo.m_orient.col(i) ) ) ;
-			Mat a2 ;
-			orient_view.get( a2 ) ;
+			Mat orient ;
+			orient_view.get( orient ) ;
+
+			Eigen::SelfAdjointEigenSolver<Mat> es(orient);
+			Vec ev = es.eigenvalues().array().max(0).min(1) ;
+
+			// Translate to tangent space
+			Mat a2 = .5 * es.eigenvectors() * (1. - ev.array()).matrix().asDiagonal() * es.eigenvectors().transpose() ;
 
 			// Quadratic closure
 			Mat a4grad = (a2.cwiseProduct( Du ).sum() * a2 ) ;
@@ -133,9 +139,16 @@ void DynParticles::update(const Config &config, const Phase &phase )
 			a2 += dt * ( Wu * a2  - a2 * Wu + lambda * ( Du * a2  + a2 * Du ) ) ;
 
 			a2 -= 2 * lambda * dt  * a4grad ;
-			a2 /= a2.lpNorm<1>() ;
 
-			orient_view.set( a2 ) ;
+			//Back to normal
+			es.compute(a2);
+			ev = es.eigenvalues().array().max(0).min(1) ;
+
+			orient = es.eigenvectors() * (1 - 2*ev.array()).matrix().asDiagonal() * es.eigenvectors().transpose() ;
+
+			orient /= orient.lpNorm<1>() ;
+
+			orient_view.set( orient ) ;
 		}
 
 	}
