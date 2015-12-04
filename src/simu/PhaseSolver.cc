@@ -10,6 +10,8 @@
 #include "FormBuilder.impl.hh"
 
 #include "LinearSolver.hh"
+
+#include "solve/PrimalData.hh"
 #include "solve/Primal.hh"
 #include "solve/LCP.hh"
 

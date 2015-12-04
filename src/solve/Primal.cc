@@ -1,4 +1,5 @@
 #include "Primal.hh"
+#include "PrimalData.hh"
 
 #include "utils/Log.hh"
 
@@ -7,22 +8,10 @@
 #include <bogus/Extra/SecondOrder.impl.hpp>
 
 #include <bogus/Core/Utils/Timer.hpp>
-
 #include <bogus/Interfaces/Cadoux.hpp>
 
 namespace d6 {
 
-bool PrimalData::load(const char *file)
-{
-	(void) file ;
-	return false ;
-}
-
-bool PrimalData::dump(const char *file) const
-{
-	(void) file ;
-	return false ;
-}
 
 Primal::SolverOptions::SolverOptions()
 	: algorithm( GaussSeidel ),
