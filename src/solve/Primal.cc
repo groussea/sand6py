@@ -8,6 +8,8 @@
 
 #include <bogus/Core/Utils/Timer.hpp>
 
+#include <bogus/Interfaces/Cadoux.hpp>
+
 namespace d6 {
 
 bool PrimalData::load(const char *file)
@@ -39,11 +41,13 @@ void Primal::SolverStats::ackResidual( unsigned iter, Scalar res )
 	Log::Debug() << "Primal " << iter << " =\t " << res << std::endl ;
 }
 
-
 Scalar Primal::solve( const SolverOptions& options, DynVec &lambda, SolverStats &stats) const
 {
 	bogus::Timer timer ;
 
+	typedef typename FormMat<6,6>::SymType WType ;
+	//typedef bogus::SparseBlockMatrix< Eigen::Matrix< Scalar, 6, 6, Eigen::RowMajor >,
+//										bogus::SYMMETRIC > WType ;
 	WType W = m_data.H * m_data.H.transpose() ;
 
 	// Add rigid bodies jacobians
@@ -72,20 +76,35 @@ Scalar Primal::solve( const SolverOptions& options, DynVec &lambda, SolverStats 
 		gs.callback().connect( stats, &SolverStats::ackResidual );
 
 		res = gs.solve( law, m_data.w, lambda ) ;
-	} else {
-		res = solveCadoux( W, options, lambda, stats ) ;
+	} else  {
+
+		bogus::Signal<unsigned, Scalar> callback ;
+		callback.connect( stats, &Primal::SolverStats::ackResidual );
+
+		if( options.algorithm == SolverOptions::Cadoux_GS ) {
+
+			bogus::GaussSeidel< WType > gs ;
+			gs.setTol( options.tolerance );
+			gs.setMaxIters( options.maxIterations );
+
+			res = bogus::solveCadoux<6>( W, m_data.w.data(), m_data.mu.data(), gs,
+										  lambda.data(), options.maxOuterIterations, &callback ) ;
+		} else {
+
+			bogus::ProjectedGradient< WType > pg ;
+			pg.setDefaultVariant( bogus::projected_gradient::APGD );
+			pg.setTol( options.tolerance );
+			pg.setMaxIters( options.maxIterations );
+
+			res = bogus::solveCadoux<6>( W, m_data.w.data(), m_data.mu.data(), pg,
+										  lambda.data(), options.maxOuterIterations, &callback ) ;
+		}
 	}
 
 	stats.residual = res ;
 	stats.time = timer.elapsed() ;
 
 	return res ;
-}
-
-Scalar Primal::solveCadoux( const WType& W, const SolverOptions& options, DynVec &lambda, SolverStats &stats) const
-{
-	return -1 ;
-
 }
 
 }

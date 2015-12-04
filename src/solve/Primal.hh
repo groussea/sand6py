@@ -60,9 +60,6 @@ public:
 
 private:
 
-	typedef typename FormMat<6,6>::SymType WType ;
-	Scalar solveCadoux( const WType& W, const SolverOptions &options, DynVec& lambda, SolverStats &stats ) const ;
-
 	const PrimalData& m_data ;
 
 };
