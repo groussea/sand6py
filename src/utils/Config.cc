@@ -29,7 +29,7 @@ Config::Config() :
 	delta_mu( 0 ), I0( 0.4 ), grainDiameter( 1.e-3 ),
 	muRigid( 0.5 ),
 	cohesion(0), cohesion_decay(0),
-	anisotropy( 0 ), elongation( 1 ),
+	anisotropy( 0 ), elongation( 1 ), brownian( 0 ),
 	enforceMaxFrac( false ),
 	boundary("cuve"),
 	output( true )

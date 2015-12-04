@@ -93,7 +93,7 @@ void DynParticles::update(const Config &config, const Phase &phase )
 			tensor_view( m_affine.col(i) ).set( Bp );
 
 
-			m_cohesion(i) /= ( 1. + config.dt() * config.cohesion_decay * (Bp+Bp.transpose()).squaredNorm() ) ;
+			m_cohesion(i) /= ( 1. + config.dt() * config.cohesion_decay * (Bp+Bp.transpose()).norm() ) ;
 		}
 
 
@@ -137,7 +137,6 @@ void DynParticles::update(const Config &config, const Phase &phase )
 			Mat a4grad = (a2.cwiseProduct( Du ).sum() * a2 ) ;
 
 			a2 += dt * ( Wu * a2  - a2 * Wu + lambda * ( Du * a2  + a2 * Du ) ) ;
-
 			a2 -= 2 * lambda * dt  * a4grad ;
 
 			//Back to normal
@@ -146,6 +145,10 @@ void DynParticles::update(const Config &config, const Phase &phase )
 
 			orient = es.eigenvectors() * (1 - 2*ev.array()).matrix().asDiagonal() * es.eigenvectors().transpose() ;
 
+			// Folgar-Tucker brownian motion
+			orient += dt * config.brownian * Du.norm() * ( Mat::Identity() - 3 * orient ) ;
+
+			// Normalize
 			orient /= orient.lpNorm<1>() ;
 
 			orient_view.set( orient ) ;
