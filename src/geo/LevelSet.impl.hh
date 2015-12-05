@@ -3,25 +3,27 @@
 
 #include "LevelSet.hh"
 
+#include "TriangularMesh.hh"
+
 #include <limits>
 
 namespace d6 {
 
 struct SphereLevelSet : public LevelSet
 {
-	virtual Scalar eval_local(const Vec &x) const {
+	Scalar eval_local(const Vec &x) const override {
 		return 1. - x.norm() ;
 	}
 
-	virtual Vec grad_local(const Vec &x) const {
+	Vec grad_local(const Vec &x) const override {
 		return -x / ( 1.e-12 + x.norm() ) ;
 	}
 
-	virtual void local_inv_inertia( Mat& I ) const {
+	void local_inv_inertia( Mat& I ) const override {
 		I = Mat::Identity() / ( local_volume() * 2./5. ) ;
 	}
 
-	virtual Scalar local_volume() const {
+	Scalar local_volume() const override {
 		return 4./3 * M_PI ;
 	}
 
@@ -30,19 +32,19 @@ struct SphereLevelSet : public LevelSet
 };
 struct PlaneLevelSet : public LevelSet
 {
-	virtual Scalar eval_local(const Vec &x) const {
+	Scalar eval_local(const Vec &x) const override {
 		return - x[2] ;
 	}
 
-	virtual Vec grad_local(const Vec & ) const {
+	Vec grad_local(const Vec & ) const override {
 		return Vec(0, 0, -1) ;
 	}
 
-	virtual void local_inv_inertia( Mat& I ) const {
+	void local_inv_inertia( Mat& I ) const override {
 		I.setZero() ;
 	}
 
-	virtual Scalar local_volume() const {
+	Scalar local_volume() const override {
 		return std::numeric_limits<Scalar>::infinity() ;
 	}
 
@@ -59,7 +61,7 @@ struct TorusLevelSet : public LevelSet
 
 	Scalar radius() const { return m_radius ; }
 
-	virtual Scalar eval_local(const Vec &x) const
+	Scalar eval_local(const Vec &x) const override 
 	{
 		Vec proj ;
 		proj_on_circle( x, proj );
@@ -67,7 +69,7 @@ struct TorusLevelSet : public LevelSet
 		return m_radius - (x - proj).norm() ;
 	}
 
-	virtual Vec grad_local(const Vec &x) const {
+	Vec grad_local(const Vec &x) const override {
 		Vec proj ;
 		proj_on_circle( x, proj );
 
@@ -75,7 +77,7 @@ struct TorusLevelSet : public LevelSet
 		return (proj - x) / (1.e-12 + n) ;
 	}
 
-	virtual void local_inv_inertia( Mat& I ) const {
+	void local_inv_inertia( Mat& I ) const override {
 		//From http://mathworld.wolfram.com/Torus.html
 		I.setZero() ;
 		I(0,0) = I(1,1) = 1./( 5./8 * m_radius * m_radius + .5 ) ;
@@ -83,7 +85,7 @@ struct TorusLevelSet : public LevelSet
 		I.diagonal() /= local_volume() ;
 	}
 
-	virtual Scalar local_volume() const {
+	Scalar local_volume() const override {
 		return 2 * M_PI * M_PI * m_radius * m_radius ;
 	}
 
@@ -116,7 +118,7 @@ struct CylinderLevelSet : public LevelSet
 
 	Scalar height() const { return m_height ; }
 
-	virtual Scalar eval_local(const Vec &x) const
+	Scalar eval_local(const Vec &x) const override 
 	{
 		Vec proj ;
 		proj_on_axis( x, proj );
@@ -124,7 +126,7 @@ struct CylinderLevelSet : public LevelSet
 		return 1. - (x - proj).norm() ;
 	}
 
-	virtual Vec grad_local(const Vec &x) const {
+	Vec grad_local(const Vec &x) const override {
 		Vec proj ;
 		proj_on_axis( x, proj );
 
@@ -132,7 +134,7 @@ struct CylinderLevelSet : public LevelSet
 		return (proj - x) / (1.e-12 + n) ;
 	}
 
-	virtual void local_inv_inertia( Mat& I ) const {
+	void local_inv_inertia( Mat& I ) const override {
 		//From http://mathworld.wolfram.com/Torus.html
 		I.setZero() ;
 		I(0,0) = I(1,1) = 6./( 3. + m_height * m_height ) ;
@@ -140,7 +142,7 @@ struct CylinderLevelSet : public LevelSet
 		I.diagonal() *= 2./local_volume() ;
 	}
 
-	virtual Scalar local_volume() const {
+	Scalar local_volume() const override {
 		return m_height * M_PI ;
 	}
 
@@ -157,6 +159,41 @@ private:
 	}
 
 	Scalar m_height ;
+};
+
+struct MeshLevelSet : public LevelSet
+{
+	explicit MeshLevelSet( std::string objFile = "" )
+	: m_objFile( objFile )
+	{}
+
+	Scalar eval_local(const Vec &x) const override {
+		return 0 ;
+	}
+
+	Vec grad_local(const Vec &x) const override {
+		return Vec::Zero() ;
+	}
+
+	void local_inv_inertia( Mat& I ) const override {
+		I.setZero() ;
+	}
+
+	Scalar local_volume() const override {
+		return 0 ;
+	}
+
+	void compute() override ;
+
+	template<class Archive>
+	void serialize(Archive &ar, const unsigned int version ) ;
+
+	const std::string& objFile() const 
+	{ return m_objFile ; }
+
+private:
+	std::string m_objFile ;
+	TriangularMesh m_mesh ;
 };
 
 } //ns d6

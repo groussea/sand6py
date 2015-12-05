@@ -1,5 +1,7 @@
 #include "ShapeRenderer.hh"
 
+#include "MeshRenderer.hh"
+
 #include "geo/LevelSet.impl.hh"
 
 namespace d6 {
@@ -105,6 +107,7 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 
 		const CylinderLevelSet* cylinder = nullptr ;
 		const TorusLevelSet* torus = nullptr ;
+		const MeshLevelSet* mesh = nullptr ;
 
 		if ( dynamic_cast<const PlaneLevelSet*>(&ls) ) {
 
@@ -177,10 +180,20 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 
 			}
 			glEnd( ) ;
+		} else if ( (mesh = dynamic_cast<const MeshLevelSet*>(&ls)) ) {
+			MeshRenderer& renderer = m_meshRenderers[ mesh->objFile() ] ;
+			if( !renderer.ok() ) {
+				TriangularMesh triMesh ;
+				triMesh.loadObj( mesh->objFile().c_str() ) ;
+				renderer.reset( triMesh ) ;
+			}
+
+			renderer.draw() ;
 		}
 
 		glPopMatrix();
 	}
+
 
 }
 

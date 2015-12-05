@@ -5,10 +5,16 @@
 
 #include "VertexBuffer.hh"
 #include "Shader.hh"
+#include "MeshRenderer.hh"
+
+#include <string>
+#include <unordered_map>
 
 namespace d6 {
 
 class LevelSet ;
+class MeshRenderer ;
+class TriangularMesh ;
 
 class ShapeRenderer
 {
@@ -36,6 +42,8 @@ private:
 
 	Shader m_ballShader ;
 
+	typedef std::unordered_map< std::string, MeshRenderer > MeshRenderers ;
+	mutable MeshRenderers m_meshRenderers ;
 };
 
 } //d6

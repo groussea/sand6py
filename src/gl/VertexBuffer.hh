@@ -143,8 +143,10 @@ struct NormalPointer
 	template< typename Scalar, unsigned Dim, int Type >
 	NormalPointer( const VertexBuffer< Scalar, Dim, Type > &vb )
 	{
-		vb.set_normal_pointer();
-		glEnableClientState( GL_NORMAL_ARRAY );
+		if( vb.valid() ) {
+			vb.set_normal_pointer();
+			glEnableClientState( GL_NORMAL_ARRAY );
+		}
 	}
 	~NormalPointer()
 	{
@@ -156,8 +158,10 @@ struct ColorPointer
 	template< typename Scalar, unsigned Dim, int Type >
 	ColorPointer( const VertexBuffer< Scalar, Dim, Type > &vb )
 	{
-		vb.set_color_pointer();
-		glEnableClientState( GL_COLOR_ARRAY );
+		if( vb.valid() ) {
+			vb.set_color_pointer();
+			glEnableClientState( GL_COLOR_ARRAY );
+		}
 	}
 	~ColorPointer()
 	{

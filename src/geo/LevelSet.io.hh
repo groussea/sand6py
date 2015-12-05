@@ -30,6 +30,12 @@ void CylinderLevelSet::serialize(Archive &ar, const unsigned int )
 	ar & boost::serialization::base_object<LevelSet>(*this);
 	ar & m_height ;
 }
+template<class Archive>
+void MeshLevelSet::serialize(Archive &ar, const unsigned int )
+{
+	ar & boost::serialization::base_object<LevelSet>(*this);
+	ar & m_objFile ;
+}
 
 
 // register derived class ptrs
@@ -40,6 +46,7 @@ void LevelSet::register_derived(Archive &ar )
 	ar.register_type(static_cast<   PlaneLevelSet *>(NULL));
 	ar.register_type(static_cast<   TorusLevelSet *>(NULL));
 	ar.register_type(static_cast<CylinderLevelSet *>(NULL));
+	ar.register_type(static_cast<    MeshLevelSet *>(NULL));
 }
 
 //base class serilization

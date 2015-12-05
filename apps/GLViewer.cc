@@ -424,7 +424,7 @@ void GLViewer::keyPressEvent(QKeyEvent *e)
 	case Qt::Key_Home :
 		set_frame(0);
 		break ;
-	case Qt::Key_A:
+	case Qt::Key_O:
 		m_drawOrientations = !m_drawOrientations ;
 		update_buffers() ;
 		break ;
@@ -438,7 +438,7 @@ void GLViewer::keyPressEvent(QKeyEvent *e)
 	case Qt::Key_B:
 		m_enableBending = !m_enableBending ;
 		break ;
-	case Qt::Key_O:
+	case Qt::Key_L:
 		m_drawObjects = !m_drawObjects ;
 		break ;
 	case Qt::Key_R:

@@ -39,6 +39,9 @@ public:
 	static Ptr make_plane( ) ;
 	static Ptr make_torus( Scalar radius ) ;
 	static Ptr make_cylinder( Scalar height ) ;
+	static Ptr from_mesh( const char* objFile ) ;
+
+	virtual void compute() {}
 
 	// Absolute positioning
 	LevelSet& scale( const Scalar s )

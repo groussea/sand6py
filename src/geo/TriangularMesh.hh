@@ -2,6 +2,7 @@
 #define D6_TRIANGULAR_MESH_HH
 
 #include "utils/alg.hh"
+#include <string>
 
 namespace d6 {
 
@@ -39,7 +40,7 @@ public:
 	DynMat3::ConstColXpr uv( Index face, Index num ) const 
 	{
 		assert( hasVertexUVs() ) ;
-		return m_vertices.col( m_normalIndices( num, face ) ) ;
+		return m_vertices.col( m_uvIndices( num, face ) ) ;
 	}
 
 	DynMat3::ConstColXpr faceNormal( Index face ) const 
@@ -49,6 +50,9 @@ public:
 	}
 
 	void computeFaceNormals() ;
+
+	const std::string& name() const 
+	{ return m_name ; }
 
 private:
 
@@ -66,7 +70,7 @@ private:
 	Eigen::Matrix< Index, 3, Eigen::Dynamic > m_normalIndices ;
 	Eigen::Matrix< Index, 3, Eigen::Dynamic > m_uvIndices ;
 
-
+	std::string m_name ;
 
 } ;
 

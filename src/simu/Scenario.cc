@@ -14,19 +14,19 @@ namespace d6 {
 // Default scenars
 
 struct RayleighScenar : public Scenario {
-	Scalar particle_density( const Vec &x ) const {
+	Scalar particle_density( const Vec &x ) const override {
 		return ( x[2] >  .5*m_config->box[2] ) ? 1. : 0. ;
 	}
 };
 
 struct BedScenar : public Scenario {
-	Scalar particle_density( const Vec &x ) const {
+	Scalar particle_density( const Vec &x ) const override {
 		return ( x[2] <  .5*m_config->box[2] ) ? 1. : 0. ;
 	}
 };
 
 struct CollapseScenar : public Scenario {
-	Scalar particle_density( const Vec &x ) const {
+	Scalar particle_density( const Vec &x ) const override {
 		return ( x[0] > .75*m_config->box[0] ) ? 1. : 0. ;
 	}
 };
@@ -34,12 +34,12 @@ struct BridsonScenar : public Scenario {
 	Vec center ;
 	Scalar radius ;
 
-	virtual void init( const Params& ) {
+	virtual void init( const Params& ) override {
 		center = Vec( .75*m_config->box[0], .75*m_config->box[1], .5*m_config->box[2] ) ;
 		radius = .125 * m_config->box[0] ;
 	}
 
-	Scalar particle_density( const Vec &x ) const {
+	Scalar particle_density( const Vec &x ) const override {
 		return ( x[0] > center[0] && x[1] > center[1]
 				&& (x - center).squaredNorm() > radius * radius ) ? 1. : 0. ;
 	}
@@ -56,14 +56,14 @@ struct TowerScenar : public Scenario {
 	Scalar zvel ;
 	Scalar avel ;
 
-	Scalar particle_density( const Vec &x ) const {
+	Scalar particle_density( const Vec &x ) const override {
 		return ( std::fabs( x[0] - center[0] ) < radius
 //		        && std::fabs( x[1] - center[1] ) < radius
 				)
 			   ? 1. : 0. ;
 	}
 
-	virtual void init( const Params& params ) {
+	virtual void init( const Params& params ) override {
 		center = Vec( .5*m_config->box[0], .5*m_config->box[1], .5*m_config->box[2] ) ;
 		radius = .125 * m_config->box[0] ;
 
@@ -76,7 +76,7 @@ struct TowerScenar : public Scenario {
 		zvel = .5 * m_config->gravity.norm() * t ;
 	}
 
-	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const
+	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override 
 	{
 		LevelSet::Ptr ls = LevelSet::make_sphere() ;
 		ls->scale(.5*.125*m_config->box[0]).set_origin( center - h0*Vec(1,1,0)/M_SQRT2 ) ;
@@ -85,7 +85,7 @@ struct TowerScenar : public Scenario {
 		rbs.back().set_velocity( Vec(hvel/M_SQRT2, hvel/M_SQRT2, zvel), Vec(avel,0,0) ) ;
 	}
 
-	void update( Simu& simu, Scalar /*time*/ ) const
+	void update( Simu& simu, Scalar /*time*/ ) const override 
 	{
 		for( RigidBody& rb: simu.rigidBodies() ) {
 			rb.integrate_gravity( m_config->dt(), m_config->gravity );
@@ -95,11 +95,11 @@ struct TowerScenar : public Scenario {
 };
 
 struct RbPlaneTestScenar : public Scenario {
-	Scalar particle_density( const Vec &x ) const {
+	Scalar particle_density( const Vec &x ) const override {
 		return ( x[2] >  .5*m_config->box[2] ) ? 1. : 0. ;
 	}
 
-	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const
+	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override 
 	{
 		LevelSet::Ptr ls = LevelSet::make_plane() ;
 		ls->set_origin( .5 * m_config->box - Vec(0,0,.25*m_config->box[2]) ) ;
@@ -112,7 +112,7 @@ struct RbPlaneTestScenar : public Scenario {
 
 struct ImpactScenar : public Scenario {
 
-	Scalar particle_density( const Vec &x ) const {
+	Scalar particle_density( const Vec &x ) const override {
 		return ( x[2] <  .5*m_config->box[2] ) ? 1. : 0. ;
 	}
 
@@ -122,7 +122,7 @@ struct ImpactScenar : public Scenario {
 		avel = scalar_param( params, "avel", Units::Frequency, 0. ) ;
 	}
 
-	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const
+	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override 
 	{
 		LevelSet::Ptr ls = LevelSet::make_sphere() ;
 		ls->scale(.125*m_config->box[0]).set_origin( .5 * m_config->box + Vec(0,0,.25*m_config->box[2]) ) ;
@@ -131,7 +131,7 @@ struct ImpactScenar : public Scenario {
 		rbs.back().set_velocity( Vec(0,0,-zvel), Vec(avel,0,0) ) ;
 	}
 
-	void update( Simu& simu, Scalar /*time*/ ) const
+	void update( Simu& simu, Scalar /*time*/ ) const override 
 	{
 		for( RigidBody& rb: simu.rigidBodies() ) {
 			rb.integrate_gravity( m_config->dt(), m_config->gravity );
@@ -147,19 +147,19 @@ private:
 
 struct HourGlassScenar : public Scenario {
 
-	Scalar particle_density( const Vec &x ) const {
+	Scalar particle_density( const Vec &x ) const override {
 		return ( x[2] > ( .5*m_config->box[2] + (1-Dbar)*R )
 				|| x[2] < h*m_config->box[2]
 				) ? 1. : 0. ;
 	}
 
-	virtual void init( const Params& params ) {
+	virtual void init( const Params& params ) override {
 		Dbar = scalar_param( params, "d", Units::None, 0.5 ) ;
 		h    = scalar_param( params, "h", Units::None, 0.1 ) ;
 		R = .5*m_config->box[0]*M_SQRT2 ;
 	}
 
-	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const
+	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override 
 	{
 		LevelSet::Ptr ls = LevelSet::make_torus( 1. - Dbar ) ;
 		ls->scale(R).set_origin( .5 * m_config->box ) ;
@@ -174,6 +174,24 @@ private:
 	Scalar h ;
 	Scalar R ;
 	Scalar Dbar ;
+};
+
+struct BunnyScenar : public Scenario {
+
+	Scalar particle_density( const Vec &x ) const override {
+		return 0. ;
+	}
+
+	void init( const Params& params ) override {
+	}
+
+	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override 
+	{
+		LevelSet::Ptr ls = LevelSet::from_mesh( "../scenes/bunny.obj" ) ;
+		ls->scale(1.e2) ;
+		rbs.emplace_back( ls, 1.e99 );
+	}
+
 };
 
 
@@ -197,6 +215,8 @@ struct DefaultScenarioFactory : public ScenarioFactory
 			return std::unique_ptr< Scenario >( new ImpactScenar() ) ;
 		if( str == "hourglass")
 			return std::unique_ptr< Scenario >( new HourGlassScenar() ) ;
+		if( str == "bunny")
+			return std::unique_ptr< Scenario >( new BunnyScenar() ) ;
 
 		return std::unique_ptr< Scenario >( new BedScenar() ) ;
 	}

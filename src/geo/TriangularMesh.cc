@@ -25,6 +25,8 @@ bool TriangularMesh::loadObj( const char* fileName )
 	if( !secondObjPass( meshFile ) )
 		return false ;
 
+	m_name = fileName ;
+
 	return true ;
 	
 } ;
@@ -176,6 +178,10 @@ bool TriangularMesh::secondObjPass( File& file )
 			++facesCount ;
 		}
 	}
+
+	m_vertexIndices.array() -= 1 ;
+	m_normalIndices.array() -= 1 ;
+	m_uvIndices.array() -= 1 ;
 
 	return true ;
 

@@ -1,3 +1,5 @@
+gl/MeshRenderer.cc
+gl/MeshRenderer.hh
 gl/Shader.cc
 gl/Shader.hh
 gl/ShapeRenderer.cc
