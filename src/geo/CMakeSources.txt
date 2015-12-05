@@ -29,6 +29,8 @@ geo/Tet.cc
 geo/Tet.hh
 geo/TetGrid.cc
 geo/TetGrid.hh
+geo/TriangularMesh.cc
+geo/TriangularMesh.hh
 geo/VectorField.cc
 geo/VectorField.hh
 geo/Voxel.cc
