@@ -1,0 +1,7 @@
+#ifndef D6_VERSION_H
+#define D6_VERSION_H
+
+#define D6_GIT_BRANCH @GIT_BRANCH@
+#define D6_GIT_COMMIT_HASH @GIT_COMMIT_HASH@
+
+#endif
