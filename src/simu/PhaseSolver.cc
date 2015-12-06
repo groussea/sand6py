@@ -614,7 +614,8 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 
 	// Proper solving
 	Primal::SolverOptions options ;
-	//options.algorithm = Primal::SolverOptions::Cadoux_APGD ;
+	//options.algorithm = Primal::SolverOptions::Cadoux_GS ;
+	//options.maxIterations = 100 ;
 	Primal::SolverStats stats ;
 	Primal( data ).solve( options, x, stats ) ;
 	Log::Verbose() << arg3( "Primal: %1 iterations,\t err= %2,\t time= %3 ",

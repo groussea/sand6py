@@ -230,10 +230,6 @@ void DynParticles::splitMerge( const MeshType & mesh )
 #pragma omp parallel for
 	for(size_t i = 0 ; i < n ; ++i)
 	{
-		if( m_geo.volumes()[i] < m_meanVolume / 64 )
-			continue ;
-		if( m_geo.m_count + 1 == Particles::s_MAX )
-			continue ;
 
 		Mat frame ;
 		tensor_view( m_geo.m_frames.col(i) ).get( frame ) ;
@@ -247,8 +243,9 @@ void DynParticles::splitMerge( const MeshType & mesh )
 
 		if( //ev.minCoeff() < 1.e-6
 				   evMax > evMin * 4.
-				&& evMax > 2 * defLength
-				)
+				&& evMax > defLength
+				&& m_geo.volumes()[i] > m_meanVolume / 64 
+				&& m_geo.m_count + 1 != Particles::s_MAX )
 		{
 			// Split
 			size_t j = 0 ;
@@ -289,6 +286,7 @@ void DynParticles::splitMerge( const MeshType & mesh )
 
 			//Repair flat frames
 			ev[kMin] = std::max( defLength / 8, ev[kMin] ) ;
+			ev[kMax] = std::min( defLength * 8, ev[kMax] ) ;
 			frame = es.eigenvectors() * ev.asDiagonal() * ev.asDiagonal() * es.eigenvectors().transpose() ;
 			tensor_view( m_geo.m_frames.col(i) ).set( frame ) ;
 

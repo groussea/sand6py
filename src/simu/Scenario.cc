@@ -167,7 +167,7 @@ struct HourGlassScenar : public Scenario {
 
 		LevelSet::Ptr ls2 = LevelSet::make_plane() ;
 		ls2->set_origin( .5 * m_config->box - Vec(0,0,.4*m_config->box[2]) ) ;
-		rbs.emplace_back( ls2, 1. );
+		//rbs.emplace_back( ls2, 1. );
 	}
 
 private:
