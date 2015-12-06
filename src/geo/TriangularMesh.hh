@@ -17,6 +17,9 @@ public:
 	TriangularMesh() {}
 
 	bool loadObj ( const char* fileName ) ;
+	void computeFaceNormals() ;
+
+
 
 	Index nFaces() const { return m_vertexIndices.cols() ; }
 	Index nVertices() const { return m_vertices.cols() ; }
@@ -49,10 +52,10 @@ public:
 		return m_faceNormals.col( face ) ;
 	}
 
-	void computeFaceNormals() ;
-
 	const std::string& name() const 
 	{ return m_name ; }
+
+	const DynMat3& vertices() const { return m_vertices ; }
 
 private:
 

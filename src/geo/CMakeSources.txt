@@ -15,6 +15,7 @@ geo/MeshBase.cc
 geo/MeshBase.hh
 geo/MeshCell.hh
 geo/MeshImpl.hh
+geo/MeshLevelSet.cc
 geo/MeshTraits.hh
 geo/Particles.cc
 geo/Particles.hh

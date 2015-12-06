@@ -28,6 +28,9 @@ public:
 
 	}
 
+	// Naive local gradient
+	Vec grad_at( const Vec& x) const ;
+
 	template <typename Func>
 	AbstractScalarField( const FieldFuncBase< Func, Base::D, MeshT > & func )
 		: Base( func.mesh() )
@@ -40,6 +43,8 @@ public:
 		return Base::operator=( func );
 	}
 
+protected:
+	using Base::m_mesh ;
 };
 
 

@@ -3,7 +3,8 @@
 
 #include "LevelSet.hh"
 
-#include "TriangularMesh.hh"
+#include "Grid.hh"
+#include "ScalarField.hh"
 
 #include <limits>
 
@@ -163,27 +164,21 @@ private:
 
 struct MeshLevelSet : public LevelSet
 {
-	explicit MeshLevelSet( std::string objFile = "" )
-	: m_objFile( objFile )
-	{}
+	explicit MeshLevelSet( const char* objFile = "" ) ;
 
-	Scalar eval_local(const Vec &x) const override {
-		return 0 ;
-	}
+	Scalar eval_local(const Vec &x) const override ;
+	Vec grad_local(const Vec &x) const override ;
 
-	Vec grad_local(const Vec &x) const override {
-		return Vec::Zero() ;
-	}
-
+	// TODO -- cannot be used as static obstacle for now
 	void local_inv_inertia( Mat& I ) const override {
 		I.setZero() ;
 	}
-
+	// TODO -- cannot be used as static obstacle for now
 	Scalar local_volume() const override {
-		return 0 ;
+		return 1 ;
 	}
 
-	void compute() override ;
+	bool compute() override ;
 
 	template<class Archive>
 	void serialize(Archive &ar, const unsigned int version ) ;
@@ -193,7 +188,12 @@ struct MeshLevelSet : public LevelSet
 
 private:
 	std::string m_objFile ;
-	TriangularMesh m_mesh ;
+	Scalar m_radius ;
+	
+	Grid m_grid ;
+	Vec  m_offset ;
+	Scalar m_emptyVal ;
+	AbstractScalarField< Grid > m_values ;
 };
 
 } //ns d6

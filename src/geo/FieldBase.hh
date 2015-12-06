@@ -29,8 +29,13 @@ public:
 	typedef typename Segmenter< D >::ConstSeg ConstSeg  ;
 
 	explicit FieldBase( const MeshType& mesh )
-		: m_mesh( mesh ), m_size( mesh.nNodes() )
+		: m_mesh( mesh )
 	{
+		fit_mesh() ;
+	}
+
+	void fit_mesh() {
+		m_size = m_mesh.nNodes() ;
 		m_data.resize( D * m_size );
 	}
 

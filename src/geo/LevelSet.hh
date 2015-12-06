@@ -41,7 +41,7 @@ public:
 	static Ptr make_cylinder( Scalar height ) ;
 	static Ptr from_mesh( const char* objFile ) ;
 
-	virtual void compute() {}
+	virtual bool compute() { return true ; }
 
 	// Absolute positioning
 	LevelSet& scale( const Scalar s )

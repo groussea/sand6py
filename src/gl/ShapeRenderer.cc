@@ -1,6 +1,7 @@
 #include "ShapeRenderer.hh"
 
 #include "MeshRenderer.hh"
+#include "TriangularMesh.hh"
 
 #include "geo/LevelSet.impl.hh"
 
@@ -99,7 +100,7 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 		mat.block<3,3>(0,0) = rotation * ls.scale()  ;
 		mat.block<3,1>(0,3) = translation ;
 
-		glColor4f(1., 1., .8, 1);
+		glColor4f(1., 0., .8, 1);
 
 
 		glPushMatrix();

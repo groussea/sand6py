@@ -51,7 +51,8 @@ public:
 	typedef Vec3i 				Vertex ;
 
 	Grid( const Vec& box, const Vec3i &res ) ;
-
+	
+	void set_box( const Vec& box ) ;
 
 	Index nNodes() const
 	{ return (m_dim[0]+1) * (m_dim[1]+1) * (m_dim[2] + 1) ; }
@@ -107,14 +108,11 @@ public:
 	Index nAdjacent( Index ) const {
 		return NV ;
 	}
-
-private:
-
-	const Vec3i& dim() const { return m_dim ; }
-	const Vec&    dx() const { return  m_dx ; }
-	const Vec&   idx() const { return m_idx ; }
-
-
+	
+	Vec nodePosition( const Vertex& node ) const
+	{
+		return firstCorner( node ) ;
+	}
 
 	Index nodeIndex( const Vertex& node ) const
 	{
@@ -122,6 +120,13 @@ private:
 			+  (m_dim[2]+1) * node[1]
 			+  node[2] ;
 	}
+	
+	const Vec3i& dim() const { return m_dim ; }
+
+private:
+
+	const Vec&    dx() const { return  m_dx ; }
+	const Vec&   idx() const { return m_idx ; }
 
 	void get_corner( const Cell &cell, Vec& corner ) const {
 		corner = (cell.array().cast< Scalar >() * m_dx.array()).matrix() ;

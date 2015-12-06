@@ -22,11 +22,17 @@ Index GridIterator::index() const {
 	return grid.cellIndex( cell ) ;
 }
 
+
 Grid::Grid(const Vec &box, const Vec3i &res)
 	: Base()
 {
 	m_dim = res ;
-	m_dx.array() = box.array()/res.array().cast< Scalar >() ;
+	set_box( box ) ;
+}
+
+void Grid::set_box( const Vec& box )
+{
+	m_dx.array() = box.array()/m_dim.array().cast< Scalar >() ;
 	m_idx.array() = 1./m_dx.array() ;
 }
 

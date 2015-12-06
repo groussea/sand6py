@@ -179,19 +179,23 @@ private:
 struct BunnyScenar : public Scenario {
 
 	Scalar particle_density( const Vec &x ) const override {
-		return 0. ;
+		return ( bunny_ls->eval_at( x ) < 0 && 
+				 x[2] > .5*m_config->box[2]
+		) ? 1 : 0 ;
 	}
 
 	void init( const Params& params ) override {
+		bunny_ls = LevelSet::from_mesh( "../scenes/bunny.obj" ) ;
+		bunny_ls->scale(25.e1) ; 
+		bunny_ls->compute() ;
 	}
 
 	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override 
 	{
-		LevelSet::Ptr ls = LevelSet::from_mesh( "../scenes/bunny.obj" ) ;
-		ls->scale(3.e1) ; //.set_origin( Vec( m_config->box[0], m_config->box[1], 0 ) ) ;
-		rbs.emplace_back( ls, 1.e99 );
+		rbs.emplace_back( bunny_ls, 1.e99 );
 	}
 
+	mutable LevelSet::Ptr bunny_ls ;	
 };
 
 
