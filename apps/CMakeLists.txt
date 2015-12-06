@@ -9,6 +9,9 @@ add_custom_target(d6_version ALL
     -DOUTPUT=${D6_VERSION_FILE}
     -P ${CMAKE_SOURCE_DIR}/cmake/GenVersion.cmake )
 
+set_source_files_properties(${D6_VERSION_FILE}
+    PROPERTIES GENERATED TRUE )
+
 # Executables
 
 include_directories( ../src )

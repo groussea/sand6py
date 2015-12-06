@@ -76,6 +76,16 @@ void BoundaryInfo::combine( const Bc bc_, const Vec n )
 void BoundaryInfo::stressProj( Mat66 &proj ) const
 {
 	proj.setIdentity() ;
+	
+	switch( bc )
+	{
+	case BoundaryInfo::Corner:
+	case BoundaryInfo::Interior:
+	case BoundaryInfo::Stick:
+		return ;
+	default:
+		break ;
+	}
 
 	const Vec & n = normal ;
 
@@ -95,10 +105,7 @@ void BoundaryInfo::stressProj( Mat66 &proj ) const
 	{
 	case BoundaryInfo::Free:
 		// (\tau n) = 0
-	{
-
 		break ;
-	}
 	case BoundaryInfo::Normal:
 		// nn' (\tau n) = 0
 		N = (n*n.transpose()) * N ;
@@ -107,10 +114,7 @@ void BoundaryInfo::stressProj( Mat66 &proj ) const
 		// (\tau n) - nn' (\tau n) = 0
 		N = N - (n*n.transpose()) * N ;
 		break ;
-	case BoundaryInfo::Corner:
-	case BoundaryInfo::Interior:
-	case BoundaryInfo::Stick:
-		N.setZero() ;
+	default:
 		break ;
 	}
 

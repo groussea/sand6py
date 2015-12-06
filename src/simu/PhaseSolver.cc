@@ -580,7 +580,7 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 			totFraction( m_phaseNodes.indices[ rb.nodes.revIndices[i] ] ) += rb.fraction[i] ;
 		}
 
-		data.mu.setConstant( rb.nodes.offset, rb.nodes.count(), c.muRigid ) ;
+		data.mu.segment( rb.nodes.offset, rb.nodes.count() ).setConstant( c.muRigid ) ;
 
 		Mat66 inv_inertia ;
 		rb.rb.inv_inertia( inv_inertia ) ;
@@ -591,7 +591,6 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 		data.inv_inertia_matrices.block<6,6>( 0, 6*data.jacobians.size() ) = inv_inertia * c.dt() ;
 		data.jacobians.emplace_back( J * rb.projection.transpose() );
 	}
-
 
 	// Compressability
 	{
@@ -612,8 +611,10 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 		rb.nodes.field2var( rb.stresses, x, false ) ;
 	}
 
+
 	// Proper solving
 	Primal::SolverOptions options ;
+	//options.algorithm = Primal::SolverOptions::Cadoux_APGD ;
 	Primal::SolverStats stats ;
 	Primal( data ).solve( options, x, stats ) ;
 	Log::Verbose() << arg3( "Primal: %1 iterations,\t err= %2,\t time= %3 ",

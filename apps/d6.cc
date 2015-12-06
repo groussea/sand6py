@@ -6,6 +6,8 @@
 
 #include <cstring>
 
+#include <fenv.h>
+
 namespace d6 {
 	extern const char* g_git_branch ; 
 	extern const char* g_git_commit ; 
@@ -14,7 +16,7 @@ namespace d6 {
 
 int main( int argc, const char* argv[] )
 {
-
+       feenableexcept (FE_INVALID|FE_DIVBYZERO|FE_OVERFLOW);
 	d6::Config config ;
 
 	const char * base_dir = "out" ;

@@ -149,7 +149,7 @@ struct HourGlassScenar : public Scenario {
 
 	Scalar particle_density( const Vec &x ) const override {
 		return ( x[2] > ( .5*m_config->box[2] + (1-Dbar)*R )
-				|| x[2] < h*m_config->box[2]
+			//	|| x[2] < h*m_config->box[2]
 				) ? 1. : 0. ;
 	}
 
