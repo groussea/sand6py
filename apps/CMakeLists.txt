@@ -1,34 +1,20 @@
 
 
 # Git info
+SET( D6_VERSION_FILE ${CMAKE_CURRENT_BINARY_DIR}/generated/d6_version.cc )
 
-
-# Get the current working branch
-execute_process(
-  COMMAND git rev-parse --abbrev-ref HEAD
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  OUTPUT_VARIABLE GIT_BRANCH
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-
-# Get the latest abbreviated commit hash of the working branch
-execute_process(
-  COMMAND git log -1 --format=%h
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  OUTPUT_VARIABLE GIT_COMMIT_HASH
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-
-configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/d6_version.tpl.cc
-  ${CMAKE_CURRENT_BINARY_DIR}/generated/d6_version.cc
-)
+add_custom_target(d6_version ALL 
+	${CMAKE_COMMAND} 
+	-DTEMPLATE=${CMAKE_CURRENT_SOURCE_DIR}/d6_version.tpl.cc 
+    -DOUTPUT=${D6_VERSION_FILE}
+    -P ${CMAKE_SOURCE_DIR}/cmake/GenVersion.cmake )
 
 # Executables
 
 include_directories( ../src )
 
-add_executable ( d6 d6.cc ${CMAKE_CURRENT_BINARY_DIR}/generated/d6_version.cc )
+add_executable ( d6 d6.cc ${D6_VERSION_FILE} )
+add_dependencies( d6 d6_version )
 target_link_libraries ( d6 d6_simu )
 
 add_executable ( d62vtk d62vtk.cc )

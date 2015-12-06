@@ -9,6 +9,7 @@
 namespace d6 {
 	extern const char* g_git_branch ; 
 	extern const char* g_git_commit ; 
+	extern const char* g_timestamp  ; 
 }
 
 int main( int argc, const char* argv[] )
@@ -42,7 +43,7 @@ int main( int argc, const char* argv[] )
 		}
 	}
 
-	std::string info = d6::arg3("%1 %3 on %2", argv[0], d6::g_git_branch, d6::g_git_commit ) ;
+	std::string info = d6::arg( d6::arg3("%1 %3 on %2 [%4]", argv[0], d6::g_git_branch, d6::g_git_commit ), d6::g_timestamp ) ;
 	d6::Log::Info() << "This is " << info << std::endl ;
 
 	config.dump( d6::FileInfo(base_dir).filePath("config"), info.c_str() );
