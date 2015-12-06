@@ -4,9 +4,12 @@
 #include "utils/Log.hh"
 #include "utils/File.hh"
 
-#include "d6_version.hh"
-
 #include <cstring>
+
+namespace d6 {
+	extern const char* g_git_branch ; 
+	extern const char* g_git_commit ; 
+}
 
 int main( int argc, const char* argv[] )
 {
@@ -39,7 +42,7 @@ int main( int argc, const char* argv[] )
 		}
 	}
 
-	std::string info = d6::arg3("%1 %3 on %2", argv[0], D6_stringify(D6_GIT_BRANCH), D6_stringify(D6_GIT_COMMIT_HASH) ) ;
+	std::string info = d6::arg3("%1 %3 on %2", argv[0], d6::g_git_branch, d6::g_git_commit ) ;
 	d6::Log::Info() << "This is " << info << std::endl ;
 
 	config.dump( d6::FileInfo(base_dir).filePath("config"), info.c_str() );

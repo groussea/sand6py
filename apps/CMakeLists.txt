@@ -1,5 +1,35 @@
 
+
+# Git info
+
+
+# Get the current working branch
+execute_process(
+  COMMAND git rev-parse --abbrev-ref HEAD
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE GIT_BRANCH
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+# Get the latest abbreviated commit hash of the working branch
+execute_process(
+  COMMAND git log -1 --format=%h
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE GIT_COMMIT_HASH
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/d6_version.tpl.cc
+  ${CMAKE_CURRENT_BINARY_DIR}/generated/d6_version.cc
+)
+
+# Executables
+
 include_directories( ../src )
+
+add_executable ( d6 d6.cc ${CMAKE_CURRENT_BINARY_DIR}/generated/d6_version.cc )
+target_link_libraries ( d6 d6_simu )
 
 add_executable ( d62vtk d62vtk.cc )
 target_link_libraries ( d62vtk d6_visu )
@@ -20,9 +50,4 @@ if( OPENGL_FOUND )
     message( STATUS "QGLViewer not found, not builder viewer" )
     endif()
 endif()
-
-include_directories(${CMAKE_BINARY_DIR}/generated)
-
-add_executable ( d6 d6.cc )
-target_link_libraries ( d6 d6_simu )
 
