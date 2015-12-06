@@ -134,6 +134,7 @@ bool TriangularMesh::secondObjPass( File& file )
 						>> m_vertexNormals( 1, vtxNormalsCount ) 
 						>> m_vertexNormals( 2, vtxNormalsCount )  ;
 					if(! iss ) goto error ;
+					m_vertexNormals.col( vtxNormalsCount ) = m_vertexNormals.col(vtxNormalsCount).normalized() ;
 					++ vtxNormalsCount ;
 					break ;
 				case 't':

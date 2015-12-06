@@ -14,10 +14,12 @@ TEST( geo, mesh )
 	TriangularMesh mesh ;
 	mesh.loadObj( test_obj.c_str() ) ;
 
-	ASSERT_EQ( mesh.nFaces(), 4968u ) ;
+	ASSERT_EQ( mesh.nFaces(), 5002u ) ;
 	ASSERT_EQ( mesh.nVertices(), 2503u ) ;
+	ASSERT_TRUE( mesh.hasVertexNormals() ) ;
+
+
 	ASSERT_FALSE( mesh.hasVertexUVs() ) ;
-	ASSERT_FALSE( mesh.hasVertexNormals() ) ;
 	ASSERT_FALSE( mesh.hasFaceNormals() ) ;
 
 	mesh.computeFaceNormals() ;

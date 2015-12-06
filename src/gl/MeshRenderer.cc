@@ -32,6 +32,17 @@ void MeshRenderer::reset( const TriangularMesh& mesh )
 		}
 		m_normals.reset( 3*n, normals.data() ) ;
 	
+	} else if ( mesh.hasFaceNormals() ) {
+		Eigen::Matrix3Xf normals( 3, n*3 ) ;
+
+#pragma omp parallel for
+		for( unsigned i = 0 ; i < n ; ++i ) {
+			normals.col(3*i+0) = mesh.faceNormal( i ).cast<float>() ;
+			normals.col(3*i+1) = mesh.faceNormal( i ).cast<float>() ;
+			normals.col(3*i+2) = mesh.faceNormal( i ).cast<float>() ;
+		}
+		m_normals.reset( 3*n, normals.data() ) ;
+	
 	}
 
 }

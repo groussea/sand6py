@@ -35,12 +35,12 @@ public:
 	DynMat3::ConstColXpr normal( Index face, Index num ) const 
 	{
 		assert( hasVertexNormals() ) ;
-		return m_vertices.col( m_normalIndices( num, face ) ) ;
+		return m_vertexNormals.col( m_normalIndices( num, face ) ) ;
 	}
 	DynMat3::ConstColXpr uv( Index face, Index num ) const 
 	{
 		assert( hasVertexUVs() ) ;
-		return m_vertices.col( m_uvIndices( num, face ) ) ;
+		return m_vertexUVs.col( m_uvIndices( num, face ) ) ;
 	}
 
 	DynMat3::ConstColXpr faceNormal( Index face ) const 

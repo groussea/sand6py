@@ -188,7 +188,7 @@ struct BunnyScenar : public Scenario {
 	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override 
 	{
 		LevelSet::Ptr ls = LevelSet::from_mesh( "../scenes/bunny.obj" ) ;
-		ls->scale(1.e2) ;
+		ls->scale(3.e1) ; //.set_origin( Vec( m_config->box[0], m_config->box[1], 0 ) ) ;
 		rbs.emplace_back( ls, 1.e99 );
 	}
 
