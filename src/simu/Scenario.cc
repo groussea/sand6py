@@ -76,7 +76,7 @@ struct TowerScenar : public Scenario {
 		zvel = .5 * m_config->gravity.norm() * t ;
 	}
 
-	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override 
+	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
 	{
 		LevelSet::Ptr ls = LevelSet::make_sphere() ;
 		ls->scale(.5*.125*m_config->box[0]).set_origin( center - h0*Vec(1,1,0)/M_SQRT2 ) ;
@@ -85,7 +85,7 @@ struct TowerScenar : public Scenario {
 		rbs.back().set_velocity( Vec(hvel/M_SQRT2, hvel/M_SQRT2, zvel), Vec(avel,0,0) ) ;
 	}
 
-	void update( Simu& simu, Scalar /*time*/ ) const override 
+	void update( Simu& simu, Scalar /*time*/ ) const override
 	{
 		for( RigidBody& rb: simu.rigidBodies() ) {
 			rb.integrate_gravity( m_config->dt(), m_config->gravity );
@@ -99,7 +99,7 @@ struct RbPlaneTestScenar : public Scenario {
 		return ( x[2] >  .5*m_config->box[2] ) ? 1. : 0. ;
 	}
 
-	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override 
+	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
 	{
 		LevelSet::Ptr ls = LevelSet::make_plane() ;
 		ls->set_origin( .5 * m_config->box - Vec(0,0,.25*m_config->box[2]) ) ;
@@ -122,7 +122,7 @@ struct ImpactScenar : public Scenario {
 		avel = scalar_param( params, "avel", Units::Frequency, 0. ) ;
 	}
 
-	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override 
+	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
 	{
 		LevelSet::Ptr ls = LevelSet::make_sphere() ;
 		ls->scale(.125*m_config->box[0]).set_origin( .5 * m_config->box + Vec(0,0,.25*m_config->box[2]) ) ;
@@ -131,7 +131,7 @@ struct ImpactScenar : public Scenario {
 		rbs.back().set_velocity( Vec(0,0,-zvel), Vec(avel,0,0) ) ;
 	}
 
-	void update( Simu& simu, Scalar /*time*/ ) const override 
+	void update( Simu& simu, Scalar /*time*/ ) const override
 	{
 		for( RigidBody& rb: simu.rigidBodies() ) {
 			rb.integrate_gravity( m_config->dt(), m_config->gravity );
@@ -159,7 +159,7 @@ struct HourGlassScenar : public Scenario {
 		R = .5*m_config->box[0]*M_SQRT2 ;
 	}
 
-	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override 
+	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
 	{
 		LevelSet::Ptr ls = LevelSet::make_torus( 1. - Dbar ) ;
 		ls->scale(R).set_origin( .5 * m_config->box ) ;
@@ -168,6 +168,19 @@ struct HourGlassScenar : public Scenario {
 		LevelSet::Ptr ls2 = LevelSet::make_plane() ;
 		ls2->set_origin( .5 * m_config->box - Vec(0,0,.4*m_config->box[2]) ) ;
 		//rbs.emplace_back( ls2, 1. );
+	}
+
+	void update( Simu& simu, Scalar /*time*/ ) const override
+	{
+		DynParticles &particles = simu.particles() ;
+		const Scalar zmin = m_config->box[2] / 3 ;
+
+#pragma omp parallel for
+		for( size_t i = 0 ; i < particles.count() ; ++i ) {
+			if( particles.geo().centers()(2,i) < zmin ) {
+				particles.remove( i );
+			}
+		}
 	}
 
 private:
@@ -179,23 +192,23 @@ private:
 struct BunnyScenar : public Scenario {
 
 	Scalar particle_density( const Vec &x ) const override {
-		return ( bunny_ls->eval_at( x ) < 0 && 
+		return ( bunny_ls->eval_at( x ) < 0 &&
 				 x[2] > .5*m_config->box[2]
 		) ? 1 : 0 ;
 	}
 
 	void init( const Params& params ) override {
 		bunny_ls = LevelSet::from_mesh( "../scenes/bunny.obj" ) ;
-		bunny_ls->scale(25.e1) ; 
+		bunny_ls->scale(25.e1) ;
 		bunny_ls->compute() ;
 	}
 
-	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override 
+	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
 	{
 		rbs.emplace_back( bunny_ls, 1.e99 );
 	}
 
-	mutable LevelSet::Ptr bunny_ls ;	
+	mutable LevelSet::Ptr bunny_ls ;
 };
 
 

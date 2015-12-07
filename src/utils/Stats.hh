@@ -9,7 +9,7 @@ namespace d6 {
 #define EXPAND_STAT \
 	STAT_FIELD( stepId					, unsigned		, "step"	) \
 	STAT_FIELD( frameId					, unsigned		, "frame"	) \
-	STAT_FIELD( delta_t					, Scalar		, "dtSI"	) \
+	STAT_FIELD( delta_t					, Scalar		, "dt"		) \
 	STAT_FIELD( nParticles				, unsigned		, "nPart"	) \
 	STAT_FIELD( nNodes					, unsigned		, "totNds"  ) \
 	STAT_FIELD( nActiveNodes			, unsigned		, "actNds"  ) \

@@ -7,13 +7,14 @@ namespace d6 {
 
 struct Config ;
 struct Phase ;
+class Scenario ;
 
 class DynParticles {
 
 public:
 	DynParticles() ;
 
-	void generate( const Config &c, const MeshType& mesh ) ;
+	void generate( const Config &c, const MeshType& mesh, const Scenario &scenario ) ;
 
 	void update( const Config&c, const Phase& phase ) ;
 	void read(std::vector< bool > &activeCells,
@@ -27,9 +28,7 @@ public:
 
 	size_t count() const { return m_geo.count() ; }
 
-	void clamp_particle( size_t i, const MeshType &mesh ) ;
-
-	void splitMerge( const MeshType & mesh ) ;
+	void remove( size_t particleId ) ;
 
 	const Particles::EventLog& events() const {
 		return m_events ;
@@ -42,6 +41,10 @@ public:
 	const Particles::Data< 1 >::Type& cohesion() const { return m_cohesion ; }
 
 private:
+
+	void clamp_particle( size_t i, const MeshType &mesh ) ;
+
+	void splitMerge( const MeshType & mesh ) ;
 
 	void resize( size_t n ) ;
 

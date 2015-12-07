@@ -25,10 +25,17 @@ int main( int argc, const char* argv[] ) {
 
 
 	const char * base_dir = "out" ;
+	unsigned last_frame = -1 ;
 
 	for( int i = 1 ; i < argc ; ++i )
 	{
 		if( argv[i][0] == '-' ){
+			switch(argv[i][1]) {
+			case 'n':
+				if( ++i == argc ) break ;
+				last_frame = d6::to_uint( argv[i] ) ;
+				break ;
+			}
 		} else {
 			base_dir = argv[i] ;
 		}
@@ -40,7 +47,7 @@ int main( int argc, const char* argv[] ) {
 	Log::Config::get().level = Log::L_Error ; ;
 
 	for( unsigned cur_frame = 0 ;
-		 offline.load_frame( cur_frame ) ;
+		 ( last_frame > cur_frame ) && offline.load_frame( cur_frame ) ;
 		 ++cur_frame )
 	{
 		const Scalar t =config.time( cur_frame, 0 ) ;

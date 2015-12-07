@@ -16,7 +16,7 @@ public:
 	};
 
 	struct Event {
-		enum Type { Split, Merge } ;
+		enum Type { Split, Merge, Remove } ;
 		Type   type   ;
 		size_t first  ;
 		size_t second ;
@@ -31,6 +31,9 @@ public:
 		}
 		static Event merge( size_t first, size_t second, Vec dx ) {
 			return Event{ Merge, first, second, dx } ;
+		}
+		static Event remove( size_t removed, size_t reloc  ) {
+			return Event{ Remove, removed, reloc, Vec::Zero() } ;
 		}
 	};
 	struct EventLog {

@@ -24,17 +24,17 @@ namespace d6 {
 
 Simu::Simu(const Config &config, const char *base_dir)
 	: m_config(config), m_base_dir( base_dir ),
-	  m_stats( m_base_dir ),
+	  m_stats( m_base_dir ), m_scenario( Scenario::parse( config ) ),
 	  m_solver( m_particles )
 {
 	m_mesh = new MeshImpl( config.box, config.res ) ;
 
-	m_particles.generate( config, mesh() );
+	m_particles.generate( config, mesh(), *m_scenario );
 
 	m_grains = new Phase( mesh() ) ;
 
 	// Rigid bodies
-	Scenario::parse( config )->add_rigid_bodies( m_rigidBodies ) ;
+	m_scenario->add_rigid_bodies( m_rigidBodies ) ;
 
 	for( unsigned i = 0 ; i < m_rigidBodies.size() ; ++i ) {
 		m_rbStresses.emplace_back( mesh() );
@@ -61,6 +61,7 @@ void Simu::run()
 		dump_particles( 0 ) ;
 		dump_fields( 0 ) ;
 	}
+	m_particles.events().start();
 
 	for( unsigned frame = 0 ; frame < m_config.nFrames ; ++ frame ) {
 		bogus::Timer timer ;
@@ -74,11 +75,12 @@ void Simu::run()
 									s+1, m_config.substeps,
 									t * m_config.units().toSI( Units::Time ) ) << std::endl ;
 
-			Scenario::parse( m_config )->update( *this, t ) ;
+			m_scenario->update( *this, t ) ;
 
 			// Dump particles at last substep of each frame
 			if( m_config.output && m_config.substeps == s+1 ) {
 				dump_particles( frame+1 ) ;
+				m_particles.events().clear();
 			}
 			m_particles.events().start();
 
@@ -89,7 +91,6 @@ void Simu::run()
 
 		if( m_config.output ) {
 			dump_fields( frame+1 ) ;
-			m_particles.events().clear();
 		}
 	}
 
@@ -103,7 +104,7 @@ void Simu::step()
 
 	// TODO adapt mesh
 
-	m_stats.delta_t = m_config.dt() * m_config.units().toSI( Units::Time ) ;
+	m_stats.delta_t = m_config.dt() ;
 	m_stats.nParticles = m_particles.count() ;
 	m_stats.nNodes = m_mesh->nNodes() ;
 
@@ -118,6 +119,9 @@ void Simu::step()
 
 	m_stats.totalTime = timer.elapsed() ;
 	m_stats.advectionTime = timer.elapsed() - solverTime ;
+
+	m_stats.maxVelocity = m_particles.geo().velocities().leftCols(m_particles.count()).lpNorm< Eigen::Infinity >() ;
+	Log::Debug() << "Max particle vel: " << m_stats.maxVelocity << std::endl ;
 
 	Log::Verbose() << arg( "Step done in %1 s", m_stats.totalTime ) << std::endl ;
 	m_stats.dump();
@@ -149,6 +153,14 @@ void Simu::dump_particles( unsigned frame ) const
 			oa << ptr ;
 		}
 	}
+
+	// Log -- save at prevbious frame
+	if( frame > 0 ) {
+		FileInfo dir( FileInfo(m_base_dir).filePath( arg("frame-%1", frame-1 ) ) );
+		std::ofstream ofs( dir.filePath("log") );
+		boost::archive::binary_oarchive oa(ofs);
+		oa << m_particles.events() ;
+	}
 }
 
 
@@ -170,12 +182,6 @@ void Simu::dump_fields( unsigned frame ) const
 		std::ofstream ofs( dir.filePath("fields") );
 		boost::archive::binary_oarchive oa(ofs);
 		oa << *m_grains ;
-	}
-	// Log
-	{
-		std::ofstream ofs( dir.filePath("log") );
-		boost::archive::binary_oarchive oa(ofs);
-		oa << m_particles.events() ;
 	}
 }
 

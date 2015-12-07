@@ -26,9 +26,9 @@ DynParticles::DynParticles()
 	resize( Particles::s_MAX ) ;
 }
 
-void DynParticles::generate(const Config &c, const MeshType &mesh)
+void DynParticles::generate(const Config &c, const MeshType &mesh, const Scenario &scenario)
 {
-	m_geo.generate( Scenario::parse( c )->generator(), c.nSamples, mesh );
+	m_geo.generate( scenario.generator(), c.nSamples, mesh );
 
 	  m_affine.leftCols( count() ).setZero() ;
 	 m_inertia.leftCols( count() ).setZero() ;
@@ -429,6 +429,29 @@ void DynParticles::splitMerge( const MeshType & mesh )
 #endif
 
 #endif
+}
+
+void DynParticles::remove(size_t j)
+{
+	size_t src = 0 ;
+#pragma omp critical
+{
+	src = --m_geo.m_count ;
+	m_events.log( Particles::Event::remove(j, src) );
+
+	if( j < src ) {
+		m_geo.m_volumes[j] = m_geo.m_volumes[src] ;
+		m_geo.m_centers.col(j) = m_geo.m_centers.col(src) ;
+		m_geo.m_velocities.col(j) = m_geo.m_velocities.col(src) ;
+		m_geo.m_orient.col(j) = m_geo.m_orient.col(src) ;
+		m_geo.m_frames.col(j) = m_geo.m_frames.col(src) ;
+
+		m_inertia.col(j) = m_inertia.col(src) ;
+		m_cohesion.col(j) = m_cohesion.col(src) ;
+		m_affine.col(j) = m_affine.col(src) ;
+	}
+}
+
 }
 
 void DynParticles::resize( size_t n )

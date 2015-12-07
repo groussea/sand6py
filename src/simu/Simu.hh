@@ -8,11 +8,14 @@
 
 #include "utils/Stats.hh"
 
+#include <memory>
+
 namespace d6 {
 
 struct Config ;
 struct Phase ;
 class RigidBody ;
+class Scenario ;
 
 class Simu {
 
@@ -39,6 +42,9 @@ public:
 		return m_rigidBodies ;
 	}
 
+	DynParticles& particles() { return m_particles ; }
+	const DynParticles& particles() const { return m_particles ; }
+
 private:
 
 	class Fields ;
@@ -51,6 +57,7 @@ private:
 
 	Stats		  m_stats ;
 	DynParticles  m_particles ;
+	std::unique_ptr<Scenario>  m_scenario ;
 
 	std::vector< RigidBody   > m_rigidBodies ;
 

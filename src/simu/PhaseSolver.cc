@@ -423,9 +423,6 @@ void PhaseSolver::step(const Config &config, Phase &phase, Stats& stats,
 			phase.spi_grad.divide_by_positive( intPhi ) ;
 		}
 	}
-
-	stats.maxVelocity = phase.velocity.max_abs() ;
-	Log::Debug() << "Max vel: " << stats.maxVelocity << std::endl ;
 }
 
 void PhaseSolver::computeGradPhi( const ScalarField& fraction, const ScalarField& volumes, VectorField &grad_phi ) const
