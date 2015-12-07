@@ -36,6 +36,7 @@ namespace d6 {
 	CONFIG_FIELD( brownian			, Scalar		,	Units::None			) \
 	\
 	CONFIG_FIELD( enforceMaxFrac	, bool			,	Units::None			) \
+	CONFIG_FIELD( weakStressBC		, bool			,	Units::None			) \
 	\
 	CONFIG_FIELD( scenario			, std::string	,	Units::None			) \
 	CONFIG_FIELD( boundary			, std::string	,	Units::None			) \

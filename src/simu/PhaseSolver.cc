@@ -61,6 +61,7 @@ PhaseSolver::~PhaseSolver()
 }
 
 void PhaseSolver::computeProjectors(PhaseMatrices& mats,
+									const bool weakStressBC,
 									const std::vector<RigidBodyData> &rbData) const
 {
 	const Index m  = m_phaseNodes.count() ;
@@ -76,7 +77,11 @@ void PhaseSolver::computeProjectors(PhaseMatrices& mats,
 		const Index idx = m_phaseNodes.revIndices[ i ] ;
 
 		m_surfaceNodes[idx].   velProj( mats.   Pvel.insertBack( i,i ) ) ;
-		m_surfaceNodes[idx].stressProj( mats.Pstress.insertBack( i,i ) ) ;
+
+		if( weakStressBC )
+			mats.Pstress.insertBack( i,i ).setIdentity() ;
+		else
+			m_surfaceNodes[idx].stressProj( mats.Pstress.insertBack( i,i ) ) ;
 	}
 
 	for( unsigned k = 0 ; k < rbData.size() ; ++k ) {
@@ -113,7 +118,7 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 	const Scalar dyn_regul = 1.e-8 ;
 	const Scalar con_regul = 1.e-8 ;
 
-	computeProjectors( mats, rbData ) ;
+	computeProjectors( mats, config.weakStressBC, rbData ) ;
 
 	// Lumped mass matrix
 	{
@@ -217,8 +222,6 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 
 	mats.A *= 2 * config.viscosity ;
 	mats.A += mats.M_lumped ;
-#else
-	(void) config ;
 #endif
 
 
@@ -677,16 +680,8 @@ void PhaseSolver::enforceMaxFrac(const Config &c, const PhaseMatrices &matrices,
 			* matrices.S.array()    // 1/d * Tr \tau = \sqrt{2}{d} \tau_N
 			;
 
-	// Apply pressure projection
-#pragma omp parallel for
-	for( Index i = 0 ; i < data.H.rowsOfBlocks() ; ++i ) {
-		for( LCPData::HType::InnerIterator it = data.H.innerIterator(i) ; it ; ++it ) {
-			data.H.block( it.ptr() ) *= matrices.Pstress.block( it.inner() )(0,0) ;
-		}
-	}
-	for( Index i = 0 ; i < data.n() ; ++i ) {
-		data.w(i) *= matrices.Pstress.block( i )(0,0) ;
-	}
+	// No pressure projection:
+	// c = div(phi u) p + int_BN( jump(phiu) p ) ~ int on Omega instead of Omega_active
 
 	DynVec x = DynVec::Zero( data.n() ) ;
 	LCP lcp( data ) ;

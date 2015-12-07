@@ -46,7 +46,7 @@ private:
 
 
 
-	void computeProjectors( PhaseMatrices& matrices,
+	void computeProjectors( PhaseMatrices& matrices, const bool weakStressBC,
 							const std::vector< RigidBodyData >& rbData
 							) const ;
 

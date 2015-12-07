@@ -172,6 +172,8 @@ struct HourGlassScenar : public Scenario {
 
 	void update( Simu& simu, Scalar /*time*/ ) const override
 	{
+		return ;
+
 		DynParticles &particles = simu.particles() ;
 		const Scalar zmin = m_config->box[2] / 3 ;
 

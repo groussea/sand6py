@@ -76,7 +76,7 @@ void BoundaryInfo::combine( const Bc bc_, const Vec n )
 void BoundaryInfo::stressProj( Mat66 &proj ) const
 {
 	proj.setIdentity() ;
-	
+
 	switch( bc )
 	{
 	case BoundaryInfo::Corner:
