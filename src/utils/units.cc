@@ -27,33 +27,15 @@ namespace d6 {
 	}
 
 	Scalar Units::fromSI(Unit u) const {
-		switch( u ) {
-		case Length:
-			return 1 / L ;
-		case VolumicMass:
-			return 1 / R ;
-		case Acceleration:
-			return 1 / G ;
-		case Velocity:
-			return 1 / U ;
-		case Time:
-			return 1 / T ;
-		case Frequency:
-			return 1 * T ;
-		case Viscosity:
-			return 1 / M ;
-		case Stress:
-			return 1 / P ;
-		case None:
-			return 1;
-		}
-		return 1;
+		return 1/toSI( u ) ;
 	}
 
 	Scalar Units::toSI(Unit u) const {
 		switch( u ) {
 		case Length:
 			return 1 * L ;
+		case Volume:
+			return std::pow( L, 3 ) ;
 		case VolumicMass:
 			return 1 * R ;
 		case Acceleration:

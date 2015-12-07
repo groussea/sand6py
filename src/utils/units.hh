@@ -12,6 +12,7 @@ struct Units {
 	enum Unit {
 		None,
 		Length,
+		Volume,
 		VolumicMass,
 		Acceleration,
 		Velocity,

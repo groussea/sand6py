@@ -63,6 +63,9 @@ struct Config
 	Scalar dt() const {
 		return 1./ inv_dt() ;
 	}
+	Scalar time( unsigned frame_nb, unsigned substep ) const {
+		return (frame_nb * substeps + substep ) * dt() ;
+	}
 
 #define CONFIG_FIELD( name, type, u ) \
 	type name ;

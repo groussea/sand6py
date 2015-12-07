@@ -46,6 +46,10 @@ public:
 		return m_events ;
 	}
 
+	const Config& config() const {
+		return m_config ;
+	}
+
 private:
 	const char* m_base_dir ;
 	Config m_config ;

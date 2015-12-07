@@ -3,9 +3,9 @@
 # Git info
 SET( D6_VERSION_FILE ${CMAKE_CURRENT_BINARY_DIR}/generated/d6_version.cc )
 
-add_custom_target(d6_version ALL 
-	${CMAKE_COMMAND} 
-	-DTEMPLATE=${CMAKE_CURRENT_SOURCE_DIR}/d6_version.tpl.cc 
+add_custom_target(d6_version ALL
+    ${CMAKE_COMMAND}
+    -DTEMPLATE=${CMAKE_CURRENT_SOURCE_DIR}/d6_version.tpl.cc
     -DOUTPUT=${D6_VERSION_FILE}
     -P ${CMAKE_SOURCE_DIR}/cmake/GenVersion.cmake )
 
@@ -22,6 +22,9 @@ target_link_libraries ( d6 d6_simu )
 
 add_executable ( d62vtk d62vtk.cc )
 target_link_libraries ( d62vtk d6_visu )
+
+add_executable ( d6_analyze d6_analyze.cc )
+target_link_libraries ( d6_analyze d6_visu )
 
 if( OPENGL_FOUND )
     ## GL Viewer

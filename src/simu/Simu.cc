@@ -69,8 +69,10 @@ void Simu::run()
 		for( unsigned s = 0 ; s < m_config.substeps ; ++ s ) {
 
 			m_stats.frameId = frame ;
-			const Scalar t = (frame * m_config.substeps + s ) * m_config.dt() ;
-			Log::Verbose() << arg3( "Step %1/%2 \t t=%3", s+1, m_config.substeps, t ) << std::endl ;
+			const Scalar t = m_config.time( frame, s ) ;
+			Log::Verbose() << arg3( "Step %1/%2 \t t=%3 s",
+									s+1, m_config.substeps,
+									t * m_config.units().toSI( Units::Time ) ) << std::endl ;
 
 			Scenario::parse( m_config )->update( *this, t ) ;
 
