@@ -39,6 +39,7 @@ public:
 	static Ptr make_plane( ) ;
 	static Ptr make_torus( Scalar radius ) ;
 	static Ptr make_cylinder( Scalar height ) ;
+	static Ptr make_hole( Scalar radius ) ;
 	static Ptr from_mesh( const char* objFile ) ;
 
 	virtual bool compute() { return true ; }

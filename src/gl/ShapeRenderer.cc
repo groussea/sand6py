@@ -108,6 +108,7 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 
 		const CylinderLevelSet* cylinder = nullptr ;
 		const TorusLevelSet* torus = nullptr ;
+		const HoleLevelSet* hole = nullptr ;
 		const MeshLevelSet* mesh = nullptr ;
 
 		if ( dynamic_cast<const PlaneLevelSet*>(&ls) ) {
@@ -156,6 +157,39 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 				}
 				glEnd( ) ;
 			}
+		} else if ( (hole = dynamic_cast<const HoleLevelSet*>(&ls)) ) {
+
+			const unsigned res= 10 ;
+			for( unsigned i = 0 ; i < res ; ++i ) {
+
+				const float alpha0 = (2*M_PI*(i+0)) / res ;
+				const float alpha1 = (2*M_PI*(i+1)) / res ;
+
+				const Eigen::Vector3f p0( std::cos(alpha0), std::sin(alpha0), 0 ) ;
+				const Eigen::Vector3f p1( std::cos(alpha1), std::sin(alpha1), 0 ) ;
+
+				glBegin( GL_QUAD_STRIP );
+				for( unsigned j = 0 ; j < res ; ++j )
+				{
+					const float beta0 = (2*M_PI*(j+0)) / (res-1) ;
+
+					Eigen::Vector3f n0 = std::cos(beta0)*p0.normalized() ;
+					n0[2] = std::sin(beta0) ;
+
+					Eigen::Vector3f n1 = std::cos(beta0)*p1.normalized() ;
+					n1[2] = std::sin(beta0) ;
+
+					Eigen::Vector3f v0 = hole->radius() * p0 + n0 ;
+					Eigen::Vector3f v1 = hole->radius() * p1 + n1 ;
+
+					glNormal3fv( n0.data() );
+					glVertex3fv( v0.data() );
+					glNormal3fv( n1.data() );
+					glVertex3fv( v1.data() );
+
+				}
+				glEnd( ) ;
+			}
 
 		} else if ( (cylinder = dynamic_cast<const CylinderLevelSet*>(&ls)) ) {
 
@@ -188,7 +222,7 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 				triMesh.loadObj( mesh->objFile().c_str() ) ;
 				if( !triMesh.hasVertexNormals() )
 					triMesh.computeFaceNormals() ;
-				
+
 				renderer.reset( triMesh ) ;
 			}
 

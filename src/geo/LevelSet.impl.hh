@@ -62,7 +62,7 @@ struct TorusLevelSet : public LevelSet
 
 	Scalar radius() const { return m_radius ; }
 
-	Scalar eval_local(const Vec &x) const override 
+	Scalar eval_local(const Vec &x) const override
 	{
 		Vec proj ;
 		proj_on_circle( x, proj );
@@ -110,6 +110,62 @@ private:
 	Scalar m_radius ;
 };
 
+struct HoleLevelSet : public LevelSet
+{
+	explicit HoleLevelSet( Scalar rad = 1. )
+		: m_radius( rad )
+	{}
+
+	Scalar radius() const { return m_radius ; }
+
+	Scalar eval_local(const Vec &x) const override {
+		Vec proj ;
+		proj_on_plane( x, proj );
+
+		return 1. - (x - proj).norm() ;
+	}
+
+	Vec grad_local(const Vec &x ) const override {
+		Vec proj ;
+		proj_on_plane( x, proj );
+
+		const Scalar n = (x - proj).norm() ;
+		return (proj - x) / (1.e-12 + n) ;
+	}
+
+	void local_inv_inertia( Mat& I ) const override {
+		I.setZero() ;
+	}
+
+	Scalar local_volume() const override {
+		return std::numeric_limits<Scalar>::infinity() ;
+	}
+
+	template<class Archive>
+	void serialize(Archive &ar, const unsigned int version ) ;
+
+private:
+
+	void proj_on_plane( const Vec&x, Vec& proj ) const
+	{
+
+		proj.head<2>() = x.head<2>() ;
+		proj[2] = 0 ;
+
+		const Scalar n = proj.norm() ;
+
+		if( n < m_radius ) {
+			if( n < 1.e-12 ) {
+				proj = Vec(0,m_radius,0) ;
+			} else {
+				proj.head<2>() *= m_radius/n ;
+			}
+		}
+	}
+
+	Scalar m_radius ;
+};
+
 struct CylinderLevelSet : public LevelSet
 {
 
@@ -119,7 +175,7 @@ struct CylinderLevelSet : public LevelSet
 
 	Scalar height() const { return m_height ; }
 
-	Scalar eval_local(const Vec &x) const override 
+	Scalar eval_local(const Vec &x) const override
 	{
 		Vec proj ;
 		proj_on_axis( x, proj );
@@ -183,13 +239,13 @@ struct MeshLevelSet : public LevelSet
 	template<class Archive>
 	void serialize(Archive &ar, const unsigned int version ) ;
 
-	const std::string& objFile() const 
+	const std::string& objFile() const
 	{ return m_objFile ; }
 
 private:
 	std::string m_objFile ;
 	Scalar m_radius ;
-	
+
 	Grid m_grid ;
 	Vec  m_offset ;
 	Scalar m_emptyVal ;

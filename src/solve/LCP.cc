@@ -24,8 +24,6 @@ Scalar LCP::solve(DynVec &x) const
 	WType W = m_data.H.transpose() * m_data.H ;
 
 	bogus::GaussSeidel< WType > gs( W ) ;
-	gs.setMaxIters( 1000 );
-	gs.setTol( 1.e-7 );
 	gs.callback().connect( ackResidual );
 
 	return gs.solve( bogus::LCPLaw< Scalar>(), m_data.w, x ) ;

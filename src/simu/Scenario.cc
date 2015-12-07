@@ -148,7 +148,7 @@ private:
 struct HourGlassScenar : public Scenario {
 
 	Scalar particle_density( const Vec &x ) const override {
-		return ( x[2] > ( .5*m_config->box[2] + (1-Dbar)*R )
+		return ( x[2] > ( .5*m_config->box[2] + 2 ) //(1-Dbar)*R )
 			//	|| x[2] < h*m_config->box[2]
 				) ? 1. : 0. ;
 	}
@@ -161,18 +161,20 @@ struct HourGlassScenar : public Scenario {
 
 	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
 	{
-		LevelSet::Ptr ls = LevelSet::make_torus( 1. - Dbar ) ;
-		ls->scale(R).set_origin( .5 * m_config->box ) ;
+		//LevelSet::Ptr ls = LevelSet::make_torus( 1. - Dbar ) ;
+		//ls->scale(R).set_origin( .5 * m_config->box ) ;
+		LevelSet::Ptr ls = LevelSet::make_hole( Dbar*R ) ;
+		ls->scale(2).set_origin( .5 * m_config->box ) ;
 		rbs.emplace_back( ls, 1.e99 );
 
-		LevelSet::Ptr ls2 = LevelSet::make_plane() ;
-		ls2->set_origin( .5 * m_config->box - Vec(0,0,.4*m_config->box[2]) ) ;
+		//LevelSet::Ptr ls2 = LevelSet::make_plane() ;
+		//ls2->set_origin( .5 * m_config->box - Vec(0,0,.4*m_config->box[2]) ) ;
 		//rbs.emplace_back( ls2, 1. );
 	}
 
 	void update( Simu& simu, Scalar /*time*/ ) const override
 	{
-		return ;
+//		return ;
 
 		DynParticles &particles = simu.particles() ;
 		const Scalar zmin = m_config->box[2] / 3 ;
@@ -199,7 +201,7 @@ struct BunnyScenar : public Scenario {
 		) ? 1 : 0 ;
 	}
 
-	void init( const Params& params ) override {
+	void init( const Params& /*params*/ ) override {
 		bunny_ls = LevelSet::from_mesh( "../scenes/bunny.obj" ) ;
 		bunny_ls->scale(25.e1) ;
 		bunny_ls->compute() ;

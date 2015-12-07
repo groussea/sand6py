@@ -246,6 +246,26 @@ void Sampler::reassign( )
 		}
 
 
+		// Remove -- Impossible without destroyign samples
+		/*
+		relocs.assign( nParticles, NoEvent );
+		for( unsigned eId = 0 ; eId < events.size() ; ++eId ) {
+			const Event& e = events[eId] ;
+
+			if( e.type == Event::Remove ) {
+				relocs[ e.second ] = e.first ;
+				m_predPos.col( e.first ) = m_predPos.col( e.second ) ;
+			}
+		}
+#pragma omp parallel for
+		for( Index i = 0 ; i < n ; ++i ) {
+
+			const unsigned pid = m_particleIds[i] ;
+			if( relocs[ pid ] == NoEvent ) continue ;
+
+			m_particleIds[ i ] = relocs[pid] ;
+		}*/
+
 	}
 
 	m_particlesCount = nParticles ;
