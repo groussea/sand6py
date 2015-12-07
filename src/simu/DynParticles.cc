@@ -13,9 +13,11 @@
 
 #include <Eigen/Eigenvalues>
 
+#include <random>
+
+
 #define SPLIT
 #define MERGE
-
 
 namespace d6 {
 
@@ -33,6 +35,29 @@ void DynParticles::generate(const Config &c, const MeshType &mesh)
 	m_cohesion.leftCols( count() ).setConstant( 1. ) ;
 
 	m_meanVolume = m_geo.volumes().segment( 0, m_geo.count() ).sum() / m_geo.count() ;
+
+	// Randomize
+	if( c.randomize > 0 ) {
+
+		//std::normal_distribution<Scalar> dist( 0., c.randomize );
+		std::uniform_real_distribution<Scalar> dist( -c.randomize, c.randomize );
+
+#pragma omp parallel
+		{
+			std::random_device rd;
+			std::default_random_engine e( rd() ) ;
+
+#pragma omp for
+			for( size_t i = 0 ; i < count() ; ++i ) {
+				const Scalar size = std::sqrt( m_geo.frames().col(i)[0] ) ;
+				Vec rd_depl( dist(e), dist(e), dist(e) ) ;
+				m_geo.m_centers.col(i) += size * rd_depl ;
+				clamp_particle( i, mesh );
+			}
+
+		}
+	}
+
 }
 
 void DynParticles::clamp_particle(size_t i, const MeshType &mesh)
@@ -244,7 +269,7 @@ void DynParticles::splitMerge( const MeshType & mesh )
 		if( //ev.minCoeff() < 1.e-6
 				   evMax > evMin * 4.
 				&& evMax > defLength
-				&& m_geo.volumes()[i] > m_meanVolume / 64 
+				&& m_geo.volumes()[i] > m_meanVolume / 64
 				&& m_geo.m_count + 1 != Particles::s_MAX )
 		{
 			// Split

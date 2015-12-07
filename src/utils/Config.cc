@@ -21,7 +21,8 @@ void rescale( Eigen::Matrix<Scalar, D, 1> &src, Scalar s ) { src *= s ; }
 
 Config::Config() :
 	fps(240), substeps(1), nFrames( 1 ),
-	box(1,1,1), res(10,10,10), nSamples(2),
+	box(1,1,1), res(10,10,10),
+	nSamples(2), randomize( 0 ),
 	volMass( 1.5e3 ),
 	viscosity( 1.e-3 ),
 	gravity( 0, 0, -9.81 ),
