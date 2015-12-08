@@ -101,7 +101,7 @@ void PhaseSolver::computeProjectors(PhaseMatrices& mats,
 	mats.Pvel   .finalize();
 }
 
-void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, const ScalarField &phiInt,
+void PhaseSolver::assembleMatrices(const Config &config, const Scalar dt, const MeshType &mesh, const ScalarField &phiInt,
 								   PhaseMatrices& mats,
 								   std::vector< RigidBodyData >& rbData
 								   ) const
@@ -218,7 +218,7 @@ void PhaseSolver::assembleMatrices(const Config &config, const MeshType &mesh, c
 
 	// A = mass + viscosity
 #ifndef FULL_FEM
-	mats.M_lumped *= config.volMass * config.inv_dt() ;
+	mats.M_lumped *= config.volMass / dt  ;
 
 	mats.A *= 2 * config.viscosity ;
 	mats.A += mats.M_lumped ;
@@ -267,7 +267,7 @@ void PhaseSolver::computeAnisotropy(const DynVec &orientation, const Config& con
 
 }
 
-void PhaseSolver::step(const Config &config, Phase &phase, Stats& stats,
+void PhaseSolver::step(const Config &config, const Scalar dt, Phase &phase, Stats& stats,
 					   std::vector< RigidBody   >& rigidBodies,
 					   std::vector<TensorField > &rbStresses)
 {
@@ -336,7 +336,7 @@ void PhaseSolver::step(const Config &config, Phase &phase, Stats& stats,
 
 		// Matrices
 		mesh.make_bc( StrBoundaryMapper( config.boundary ), m_surfaceNodes ) ;
-		assembleMatrices( config, mesh, intPhi, matrices, rbData );
+		assembleMatrices( config, dt, mesh, intPhi, matrices, rbData );
 
 		Log::Debug() << "Matrices assembled  at " << timer.elapsed() << std::endl ;
 
@@ -377,12 +377,12 @@ void PhaseSolver::step(const Config &config, Phase &phase, Stats& stats,
 				VectorField gravity ( mesh ) ;
 				gravity.set_constant( config.gravity );
 				DynVec grav ; m_phaseNodes.field2var( gravity, grav ) ;
-				forces = config.dt() * matrices.M_lumped * grav ;
+				forces = dt * matrices.M_lumped * grav ;
 			}
 
 			// Inertia
 #ifndef  FULL_FEM
-			forces += config.inv_dt() * config.volMass * phiu_int ;
+			forces += config.volMass/dt * phiu_int ;
 #endif
 
 			rhs = matrices.Pvel * forces ;
@@ -401,7 +401,7 @@ void PhaseSolver::step(const Config &config, Phase &phase, Stats& stats,
 			enforceMaxFrac( config, matrices, rbData, fraction, depl );
 
 			m_phaseNodes.var2field( depl, phase.geo_proj ) ; //Purely geometric
-			// u += depl/config.dt() ; // Includes proj into inertia
+			// u += depl/dt ; // Includes proj into inertia
 
 			stats.lcpSolveTime = timer.elapsed() - stats.assemblyTime - stats.linSolveTime ;
 		}
@@ -409,7 +409,7 @@ void PhaseSolver::step(const Config &config, Phase &phase, Stats& stats,
 		// Friction solve
 		{
 
-			solveComplementarity( config, matrices, rbData, fraction, cohesion, inertia, u, phase, stats );
+			solveComplementarity( config, dt, matrices, rbData, fraction, cohesion, inertia, u, phase, stats );
 			Log::Debug() << "Complementarity solve at " << timer.elapsed() << std::endl ;
 		}
 
@@ -527,7 +527,7 @@ void PhaseSolver::computeActiveBodies( std::vector<RigidBody> &rigidBodies,
 
 }
 
-void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &matrices,
+void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const PhaseMatrices &matrices,
 									   std::vector<RigidBodyData> &rbData,
 									   const DynVec &fraction, const DynVec &cohesion, const DynVec &inertia,
 									   DynVec &u, Phase& phase, Stats &simuStats ) const
@@ -588,7 +588,7 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 			continue ;
 
 		coupledRbIndices.push_back( k ) ;
-		data.inv_inertia_matrices.block<6,6>( 0, 6*data.jacobians.size() ) = inv_inertia * c.dt() ;
+		data.inv_inertia_matrices.block<6,6>( 0, 6*data.jacobians.size() ) = inv_inertia * dt ;
 		data.jacobians.emplace_back( J * rb.projection.transpose() );
 	}
 
@@ -596,7 +596,7 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 	{
 		const DynVec q = ( ( c.phiMax - totFraction.array() )
 						   * s_sqrt_23 * matrices.S.array()    // 1/d * Tr \tau = \sqrt{2}{d} \tau_N
-						   * c.inv_dt()
+						   / dt
 						   ).max( 0 ) ;
 
 		component< 6 >( data.w, 0 ).head(q.rows()) += q ;
@@ -646,7 +646,7 @@ void PhaseSolver::solveComplementarity(const Config &c, const PhaseMatrices &mat
 	for( unsigned k = 0 ; k < coupledRbIndices.size() ; ++k ) {
 		RigidBodyData& rb = rbData[ coupledRbIndices[k] ] ;
 		const Vec6 forces = data.jacobians[k].transpose() * x ;
-		rb.rb.integrate_forces( c.dt(), forces );
+		rb.rb.integrate_forces( dt, forces );
 	}
 
 }

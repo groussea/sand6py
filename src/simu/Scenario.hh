@@ -35,7 +35,7 @@ public:
 	virtual Scalar particle_density( const Vec &x ) const = 0 ;
 
 	virtual void add_rigid_bodies( std::vector< RigidBody >& /*rbs*/ ) const {}
-	virtual void update( Simu& /*simu*/, Scalar /*time*/ ) const {}
+	virtual void update( Simu& /*simu*/, Scalar /*time*/, Scalar /*dt*/ ) const {}
 
 protected:
 	typedef std::unordered_map< std::string, std::string > Params ;

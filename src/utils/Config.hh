@@ -59,14 +59,8 @@ struct Config
 		return m_units ;
 	}
 
-	Scalar inv_dt() const {
-		return ( fps * substeps ) ;
-	}
-	Scalar dt() const {
-		return 1./ inv_dt() ;
-	}
-	Scalar time( unsigned frame_nb, unsigned substep ) const {
-		return (frame_nb * substeps + substep ) * dt() ;
+	Scalar time( unsigned frame_nb ) const {
+		return (frame_nb / fps ) ;
 	}
 
 #define CONFIG_FIELD( name, type, u ) \

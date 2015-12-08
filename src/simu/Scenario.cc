@@ -85,10 +85,10 @@ struct TowerScenar : public Scenario {
 		rbs.back().set_velocity( Vec(hvel/M_SQRT2, hvel/M_SQRT2, zvel), Vec(avel,0,0) ) ;
 	}
 
-	void update( Simu& simu, Scalar /*time*/ ) const override
+	void update( Simu& simu, Scalar /*time*/, Scalar dt ) const override
 	{
 		for( RigidBody& rb: simu.rigidBodies() ) {
-			rb.integrate_gravity( m_config->dt(), m_config->gravity );
+			rb.integrate_gravity( dt, m_config->gravity );
 		}
 
 	}
@@ -131,10 +131,10 @@ struct ImpactScenar : public Scenario {
 		rbs.back().set_velocity( Vec(0,0,-zvel), Vec(avel,0,0) ) ;
 	}
 
-	void update( Simu& simu, Scalar /*time*/ ) const override
+	void update( Simu& simu, Scalar /*time*/, Scalar dt ) const override
 	{
 		for( RigidBody& rb: simu.rigidBodies() ) {
-			rb.integrate_gravity( m_config->dt(), m_config->gravity );
+			rb.integrate_gravity( dt, m_config->gravity );
 		}
 
 	}
@@ -145,37 +145,30 @@ private:
 	Scalar avel ;
 };
 
-struct HourGlassScenar : public Scenario {
+struct SiloScenar : public Scenario {
+
+	constexpr static Scalar s_h = 2 ;
 
 	Scalar particle_density( const Vec &x ) const override {
-		return ( x[2] > ( .5*m_config->box[2] + 2 ) //(1-Dbar)*R )
+		return ( x[2] > ( .5*m_config->box[2] + s_h ) //(1-Dbar)*R )
 			//	|| x[2] < h*m_config->box[2]
 				) ? 1. : 0. ;
 	}
 
 	virtual void init( const Params& params ) override {
-		Dbar = scalar_param( params, "d", Units::None, 0.5 ) ;
-		h    = scalar_param( params, "h", Units::None, 0.1 ) ;
-		R = .5*m_config->box[0]*M_SQRT2 ;
+		W = .5*m_config->box[0] ;
+		R = scalar_param( params, "d", Units::None, 0.5 ) * W ;
 	}
 
 	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
 	{
-		//LevelSet::Ptr ls = LevelSet::make_torus( 1. - Dbar ) ;
-		//ls->scale(R).set_origin( .5 * m_config->box ) ;
-		LevelSet::Ptr ls = LevelSet::make_hole( Dbar*R ) ;
-		ls->scale(2).set_origin( .5 * m_config->box ) ;
+		LevelSet::Ptr ls = LevelSet::make_hole( R/s_h + 1 ) ;
+		ls->scale(s_h).set_origin( .5 * m_config->box ) ;
 		rbs.emplace_back( ls, 1.e99 );
-
-		//LevelSet::Ptr ls2 = LevelSet::make_plane() ;
-		//ls2->set_origin( .5 * m_config->box - Vec(0,0,.4*m_config->box[2]) ) ;
-		//rbs.emplace_back( ls2, 1. );
 	}
 
-	void update( Simu& simu, Scalar /*time*/ ) const override
+	void update( Simu& simu, Scalar /*time*/, Scalar /*dt*/ ) const override
 	{
-//		return ;
-
 		DynParticles &particles = simu.particles() ;
 		const Scalar zmin = m_config->box[2] / 3 ;
 
@@ -188,9 +181,8 @@ struct HourGlassScenar : public Scenario {
 	}
 
 private:
-	Scalar h ;
+	Scalar W ;
 	Scalar R ;
-	Scalar Dbar ;
 };
 
 struct BunnyScenar : public Scenario {
@@ -234,8 +226,8 @@ struct DefaultScenarioFactory : public ScenarioFactory
 			return std::unique_ptr< Scenario >( new RbPlaneTestScenar() ) ;
 		if( str == "impact")
 			return std::unique_ptr< Scenario >( new ImpactScenar() ) ;
-		if( str == "hourglass")
-			return std::unique_ptr< Scenario >( new HourGlassScenar() ) ;
+		if( str == "silo")
+			return std::unique_ptr< Scenario >( new SiloScenar() ) ;
 		if( str == "bunny")
 			return std::unique_ptr< Scenario >( new BunnyScenar() ) ;
 

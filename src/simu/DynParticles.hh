@@ -16,7 +16,7 @@ public:
 
 	void generate( const Config &c, const MeshType& mesh, const Scenario &scenario ) ;
 
-	void update( const Config&c, const Phase& phase ) ;
+	void update( const Config&c, const Scalar dt, const Phase& phase ) ;
 	void read(std::vector< bool > &activeCells,
 			   ScalarField &phi, VectorField &phiVel,
 			   ScalarField &phiInertia, TensorField &phiOrient,

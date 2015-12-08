@@ -67,24 +67,37 @@ void Simu::run()
 		bogus::Timer timer ;
 		Log::Info() << "Starting frame " << (frame+1) << std::endl ;
 
-		for( unsigned s = 0 ; s < m_config.substeps ; ++ s ) {
+		unsigned substeps = m_config.substeps ;
+		if( substeps == 0 ) { //Adaptative timestepping
+			substeps = std::ceil( std::max(1., m_stats.maxVelocity) / m_config.fps ) ;
+		}
+
+		for( unsigned s = 0 ; s < substeps ; ++ s ) {
 
 			m_stats.frameId = frame ;
-			const Scalar t = m_config.time( frame, s ) ;
+			m_stats.delta_t = 1./(m_config.fps * substeps) ;
+
+			const Scalar t = m_config.time( frame ) + s * m_stats.delta_t ;
 			Log::Verbose() << arg3( "Step %1/%2 \t t=%3 s",
-									s+1, m_config.substeps,
+									s+1, substeps,
 									t * m_config.units().toSI( Units::Time ) ) << std::endl ;
 
-			m_scenario->update( *this, t ) ;
+			m_scenario->update( *this, t, m_stats.delta_t ) ;
 
 			// Dump particles at last substep of each frame
-			if( m_config.output && m_config.substeps == s+1 ) {
+			if( m_config.output && substeps == s+1 ) {
 				dump_particles( frame+1 ) ;
 				m_particles.events().clear();
 			}
 			m_particles.events().start();
 
-			step() ;
+			step( m_stats.delta_t ) ;
+
+			// Log max particle velocity (useful for adaptative timestep )
+			m_stats.maxVelocity = m_particles.geo().velocities().leftCols(m_particles.count()).lpNorm< Eigen::Infinity >() ;
+			Log::Debug() << "Max particle vel: " << m_stats.maxVelocity << std::endl ;
+
+			m_stats.dump();
 		}
 
 		Log::Info() << arg( "Frame done in %1 s", timer.elapsed() ) << std::endl ;
@@ -98,33 +111,28 @@ void Simu::run()
 
 }
 
-void Simu::step()
+void Simu::step(const Scalar dt)
 {
 	bogus::Timer timer ;
 
 	// TODO adapt mesh
 
-	m_stats.delta_t = m_config.dt() ;
 	m_stats.nParticles = m_particles.count() ;
 	m_stats.nNodes = m_mesh->nNodes() ;
 
-	m_solver.step( m_config, *m_grains, m_stats, m_rigidBodies, m_rbStresses ) ;
+	m_solver.step( m_config, dt, *m_grains, m_stats, m_rigidBodies, m_rbStresses ) ;
 	const Scalar solverTime = timer.elapsed() ;
 
-	m_particles.update( m_config, *m_grains ) ;
+	m_particles.update( m_config, dt, *m_grains ) ;
 
 	for( RigidBody& rb: m_rigidBodies ) {
-		rb.move( m_config.dt() );
+		rb.move( dt );
 	}
 
 	m_stats.totalTime = timer.elapsed() ;
 	m_stats.advectionTime = timer.elapsed() - solverTime ;
 
-	m_stats.maxVelocity = m_particles.geo().velocities().leftCols(m_particles.count()).lpNorm< Eigen::Infinity >() ;
-	Log::Debug() << "Max particle vel: " << m_stats.maxVelocity << std::endl ;
-
 	Log::Verbose() << arg( "Step done in %1 s", m_stats.totalTime ) << std::endl ;
-	m_stats.dump();
 }
 
 void Simu::dump_particles( unsigned frame ) const

@@ -25,7 +25,7 @@ public:
 	~Simu() ;
 
 	void run() ;
-	void step() ;
+	void step( const Scalar dt ) ;
 
 	void dump_fields(unsigned frame) const ;
 	void dump_particles(unsigned frame) const ;

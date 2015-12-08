@@ -50,7 +50,7 @@ int main( int argc, const char* argv[] ) {
 		 ( last_frame > cur_frame ) && offline.load_frame( cur_frame ) ;
 		 ++cur_frame )
 	{
-		const Scalar t =config.time( cur_frame, 0 ) ;
+		const Scalar t =config.time( cur_frame ) ;
 		const Scalar vol = remaining_volume( offline.particles(), config.box )  ;
 		std::cout << cur_frame << "\t" << t << "\t" << (t * config.units().toSI( Units::Time ))
 				  << "\t" << vol << "\t" << (vol * config.units().toSI( Units::Volume ) )

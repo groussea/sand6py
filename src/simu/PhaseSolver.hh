@@ -31,7 +31,8 @@ public:
 
 	~PhaseSolver() ;
 
-	void step(const Config &config, Phase& phase, Stats &stats,
+	void step(const Config &config, const Scalar dt,
+			  Phase& phase, Stats &stats,
 			  std::vector<RigidBody> &rigidBodies,
 			  std::vector<TensorField> &rbStresses
 			  ) ;
@@ -53,13 +54,15 @@ private:
 	void computeAnisotropy(const DynVec& orientation,
 						   const Config &config, PhaseMatrices& matrices) const ;
 
-	void assembleMatrices( const Config& c, const MeshType& mesh,
+	void assembleMatrices( const Config& c, const Scalar dt,
+						   const MeshType& mesh,
 						   const ScalarField &phiInt,
 						   PhaseMatrices& matrices,
 						   std::vector< RigidBodyData >& rbData
 						   ) const ;
 
-	void solveComplementarity(const Config&c, const PhaseMatrices& matrices ,
+	void solveComplementarity(const Config&c, const Scalar dt,
+							  const PhaseMatrices& matrices ,
 							  std::vector< RigidBodyData >& rbData,
 							  const DynVec &fraction,
 							  const DynVec &cohesion, const DynVec &inertia,

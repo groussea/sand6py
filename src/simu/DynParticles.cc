@@ -74,11 +74,10 @@ void DynParticles::clamp_particle(size_t i, const MeshType &mesh)
 	m_geo.m_centers.col(i) = p ;
 }
 
-void DynParticles::update(const Config &config, const Phase &phase )
+void DynParticles::update(const Config &config, const Scalar dt, const Phase &phase )
 {
 	bogus::Timer timer ;
 
-	const Scalar dt = config.dt() ;
 	const std::size_t n = count() ;
 
 	const MeshType& mesh = phase.velocity.mesh() ;
@@ -118,7 +117,7 @@ void DynParticles::update(const Config &config, const Phase &phase )
 			tensor_view( m_affine.col(i) ).set( Bp );
 
 
-			m_cohesion(i) /= ( 1. + config.dt() * config.cohesion_decay * (Bp+Bp.transpose()).norm() ) ;
+			m_cohesion(i) /= ( 1. + dt * config.cohesion_decay * (Bp+Bp.transpose()).norm() ) ;
 		}
 
 
