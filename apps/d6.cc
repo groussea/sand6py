@@ -9,14 +9,15 @@
 #include <fenv.h>
 
 namespace d6 {
-	extern const char* g_git_branch ; 
-	extern const char* g_git_commit ; 
-	extern const char* g_timestamp  ; 
+	extern const char* g_git_branch ;
+	extern const char* g_git_commit ;
+	extern const char* g_timestamp  ;
 }
 
 int main( int argc, const char* argv[] )
 {
-       feenableexcept (FE_INVALID|FE_DIVBYZERO|FE_OVERFLOW);
+	feenableexcept (FE_INVALID|FE_DIVBYZERO|FE_OVERFLOW);
+
 	d6::Config config ;
 
 	const char * base_dir = "out" ;
@@ -50,6 +51,8 @@ int main( int argc, const char* argv[] )
 
 	config.dump( d6::FileInfo(base_dir).filePath("config"), info.c_str() );
 	config.internalize();
+
+	d6::Log::Verbose() << "Re = " << config.viscosity << std::endl ;
 
 	d6::Simu( config, base_dir ).run() ;
 

@@ -82,6 +82,7 @@ void BoundaryInfo::stressProj( Mat66 &proj ) const
 	case BoundaryInfo::Corner:
 	case BoundaryInfo::Interior:
 	case BoundaryInfo::Stick:
+	case BoundaryInfo::Free:
 		return ;
 	default:
 		break ;

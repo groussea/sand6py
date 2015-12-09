@@ -30,7 +30,7 @@ namespace d6 {
 
 struct PhaseMatrices
 {
-	DynVec S  ;	// Volume aossciated to each node, computed from active cells only
+	DynVec volumes  ;	// Volume aossciated to each node
 
 	// Lumped mass matrix, its inverse and a factorization
 	typename FormMat<3,3>::SymType M_lumped ;
@@ -146,9 +146,6 @@ void PhaseSolver::assembleMatrices(const Config &config, const Scalar dt, const 
 
 		Log::Debug() << "Index computation: " << timer.elapsed() << std::endl ;
 
-		// S -- used to integrate (phi_max - phi)
-		mats.S.setZero( m );
-
 		// A
 		mats.A.clear();
 		mats.A.setRows( m );
@@ -184,9 +181,6 @@ void PhaseSolver::assembleMatrices(const Config &config, const Scalar dt, const 
 		builder.integrate_qp( m_phaseNodes.cells, [&]( Scalar w, Loc, Itp itp, Dcdx dc_dx )
 			{
 				FormBuilder:: addDuDv( mats.A, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
-				for( Index k = 0 ; k < MeshType::NQ ; ++k ) {
-					mats.S[ m_phaseNodes.indices[itp.nodes[k]] ] += w / MeshType::NQ ;
-				}
 			}
 		);
 		Log::Debug() << "Integrate grid: " << timer.elapsed() << std::endl ;
@@ -336,6 +330,7 @@ void PhaseSolver::step(const Config &config, const Scalar dt, Phase &phase, Stat
 
 		// Matrices
 		mesh.make_bc( StrBoundaryMapper( config.boundary ), m_surfaceNodes ) ;
+		m_phaseNodes.field2var( volumes, matrices.volumes ) ;
 		assembleMatrices( config, dt, mesh, intPhi, matrices, rbData );
 
 		Log::Debug() << "Matrices assembled  at " << timer.elapsed() << std::endl ;
@@ -486,14 +481,6 @@ void PhaseSolver::computeActiveNodes(const std::vector<bool> &activeCells ,
 			m_phaseNodes.indices[i] = m_phaseNodes.nNodes++ ;
 
 			m_surfaceNodes[i].bc = BoundaryInfo::Interior ;
-
-			if( activeNodes[i] < mesh.nAdjacent(i) &&
-				grad_phi[i].squaredNorm() > 1.e-16) {
-
-				m_surfaceNodes[i].bc = BoundaryInfo::Free ;
-				m_surfaceNodes[i].normal = - grad_phi[ i ].normalized() ;
-
-			}
 		}
 	}
 
@@ -595,7 +582,7 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	// Compressability
 	{
 		const DynVec q = ( ( c.phiMax - totFraction.array() )
-						   * s_sqrt_23 * matrices.S.array()    // 1/d * Tr \tau = \sqrt{2}{d} \tau_N
+						   * s_sqrt_23 * matrices.volumes.array()    // 1/d * Tr \tau = \sqrt{2}{d} \tau_N
 						   / dt
 						   ).max( 0 ) ;
 
@@ -677,11 +664,8 @@ void PhaseSolver::enforceMaxFrac(const Config &c, const PhaseMatrices &matrices,
 	}
 
 	data.w.segment(0, totFraction.rows()) = ( c.phiMax - totFraction.array() )
-			* matrices.S.array()    // 1/d * Tr \tau = \sqrt{2}{d} \tau_N
+			* matrices.volumes.array()    // 1/d * Tr \tau = \sqrt{2}{d} \tau_N
 			;
-
-	// No pressure projection:
-	// c = div(phi u) p + int_BN( jump(phiu) p ) ~ int on Omega instead of Omega_active
 
 	DynVec x = DynVec::Zero( data.n() ) ;
 	LCP lcp( data ) ;
