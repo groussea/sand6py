@@ -178,19 +178,21 @@ void PhaseSolver::assembleMatrices(const Config &config, const Scalar dt, const 
 		mats.B.setBlocksToZero() ;
 
 		timer.reset() ;
+#ifdef FULL_FEM
 		builder.integrate_qp( m_phaseNodes.cells, [&]( Scalar w, Loc, Itp itp, Dcdx dc_dx )
 			{
 				FormBuilder:: addDuDv( mats.A, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
 			}
 		);
 		Log::Debug() << "Integrate grid: " << timer.elapsed() << std::endl ;
-
+#endif
 
 		timer.reset() ;
 		builder.integrate_particle( m_particles.geo(), [&]( Index, Scalar w, Loc, Itp itp, Dcdx dc_dx )
 			{
 				FormBuilder::addTauDu( mats.B, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
 				FormBuilder::addTauWu( mats.J, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
+				FormBuilder:: addDuDv( mats.A, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
 				if( config.enforceMaxFrac ) {
 					FormBuilder::addVDp  ( mats.C, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
 				}
