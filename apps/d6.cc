@@ -49,7 +49,9 @@ int main( int argc, const char* argv[] )
 	std::string info = d6::arg( d6::arg3("%1 %3 on %2 [%4]", argv[0], d6::g_git_branch, d6::g_git_commit ), d6::g_timestamp ) ;
 	d6::Log::Info() << "This is " << info << std::endl ;
 
-	config.dump( d6::FileInfo(base_dir).filePath("config"), info.c_str() );
+	d6::FileInfo outDir ( base_dir ) ;
+	if( !outDir.exists() ) outDir.makeDir() ;
+	config.dump( outDir.filePath("config"), info.c_str() );
 	config.internalize();
 
 	d6::Log::Verbose() << "Re = " << config.viscosity << std::endl ;

@@ -41,10 +41,10 @@ int main( int argc, const char* argv[] ) {
 		}
 	}
 
+	Log::Config::get().level = Log::L_Error ; ;
+
 	Offline offline( base_dir ) ;
 	const Config &config = offline.config() ;
-
-	Log::Config::get().level = Log::L_Error ; ;
 
 	for( unsigned cur_frame = 0 ;
 		 ( last_frame > cur_frame ) && offline.load_frame( cur_frame ) ;

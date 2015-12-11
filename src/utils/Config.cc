@@ -87,8 +87,10 @@ bool Config::from_file(const std::string &file_name)
 bool Config::dump(const std::string &file_name, const char *comment ) const
 {
 	std::ofstream out( file_name ) ;
-	if(!out)
+	if(!out) {
+		Log::Error() << "Could not wrtie config file " << file_name << std::endl ;
 		return false ;
+	}
 
 	if(comment) {
 		out << "# " << comment << std::endl ;
