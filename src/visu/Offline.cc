@@ -40,53 +40,60 @@ bool Offline::load_frame(unsigned frame )
 		return false ;
 	}
 
-	// Grid
-	{
-		std::ifstream ifs( dir.filePath("mesh") );
-		boost::archive::binary_iarchive ia(ifs);
-		ia >> m_mesh->derived() ;
-	}
-	// Velocity, Stress, Phi
-	{
-		std::ifstream ifs( dir.filePath("fields") );
-		boost::archive::binary_iarchive ia(ifs);
-		ia >> *m_grains ;
-	}
-	// Particles
-	{
-		std::ifstream ifs( dir.filePath("particles") );
-		boost::archive::binary_iarchive ia(ifs);
-		ia >> m_particles ;
-	}
-	// Log
-	{
-		m_events.clear() ;
-		std::ifstream ifs( dir.filePath("log") );
-		if(ifs) {
+	try {
+
+		// Grid
+		{
+			std::ifstream ifs( dir.filePath("mesh") );
 			boost::archive::binary_iarchive ia(ifs);
-			ia >> m_events ;
+			ia >> m_mesh->derived() ;
 		}
+		// Velocity, Stress, Phi
+		{
+			std::ifstream ifs( dir.filePath("fields") );
+			boost::archive::binary_iarchive ia(ifs);
+			ia >> *m_grains ;
+		}
+		// Particles
+		{
+			std::ifstream ifs( dir.filePath("particles") );
+			boost::archive::binary_iarchive ia(ifs);
+			ia >> m_particles ;
+		}
+		// Log
+		{
+			m_events.clear() ;
+			std::ifstream ifs( dir.filePath("log") );
+			if(ifs) {
+				boost::archive::binary_iarchive ia(ifs);
+				ia >> m_events ;
+			}
+		}
+
+		//Objects
+		{
+			m_levelSets.clear();
+
+			std::ifstream ifs( dir.filePath("objects") );
+			boost::archive::binary_iarchive ia(ifs);
+
+			unsigned n = 0 ;
+			ia >> n ;
+			LevelSet::register_derived(ia) ;
+			for( unsigned i = 0 ; i < n ; ++i ) {
+				LevelSet* ptr ;
+				ia >> ptr ;
+				m_levelSets.emplace_back( ptr ) ;
+			}
+
+		}
+
+	} catch (boost::archive::archive_exception &e) {
+		Log::Error() << "Error reading frame data: " << e.what() << std::endl ;
+		return false ;
 	}
 
-	//Objects
-	{
-		m_levelSets.clear();
-
-		std::ifstream ifs( dir.filePath("objects") );
-		boost::archive::binary_iarchive ia(ifs);
-
-		unsigned n = 0 ;
-		ia >> n ;
-		LevelSet::register_derived(ia) ;
-		for( unsigned i = 0 ; i < n ; ++i ) {
-			LevelSet* ptr ;
-			ia >> ptr ;
-			m_levelSets.emplace_back( ptr ) ;
-		}
-
-	}
-
-	Log::Info() << "Load frame " << frame << std::endl ;
+	Log::Info() << "Loaded frame " << frame << std::endl ;
 
 	return true ;
 

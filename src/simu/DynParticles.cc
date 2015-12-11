@@ -28,7 +28,7 @@ DynParticles::DynParticles()
 
 void DynParticles::generate(const Config &c, const MeshType &mesh, const Scenario &scenario)
 {
-	m_geo.generate( scenario.generator(), c.nSamples, mesh );
+	m_geo.generate( scenario.generator(), c.nSamples, mesh, c.cohesion > 0 );
 
 	  m_affine.leftCols( count() ).setZero() ;
 	 m_inertia.leftCols( count() ).setZero() ;
@@ -292,6 +292,7 @@ void DynParticles::splitMerge( const MeshType & mesh )
 					m_geo.m_orient.col(j) = m_geo.m_orient.col(i) ;
 					m_affine.col(j) = m_affine.col(i) ;
 					m_inertia(j) = m_inertia(i) ;
+
 					m_cohesion(j) = m_cohesion(i) ;
 
 					clamp_particle( i, mesh );

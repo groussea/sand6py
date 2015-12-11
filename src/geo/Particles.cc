@@ -16,7 +16,8 @@ Particles::Particles()
 	resize(s_MAX) ;
 }
 
-void Particles::generate(const ScalarExpr &expr, const unsigned nSamples, const MeshType &mesh)
+void Particles::generate(const ScalarExpr &expr, const unsigned nSamples,
+						 const MeshType &mesh, const bool alignOnCells )
 {
 	bogus::Timer timer ;
 
@@ -28,14 +29,14 @@ void Particles::generate(const ScalarExpr &expr, const unsigned nSamples, const 
 	for( typename MeshType::CellIterator it = mesh.cellBegin() ; it != mesh.cellEnd() ; ++it ) {
 		mesh.get_geo( *it, cellGeo ) ;
 
-//		if( expr( cellGeo.center() ) == 0. )
-//			continue ;
+		if( alignOnCells && expr( cellGeo.center() ) == 0. )
+			continue ;
 
 		Index n = cellGeo.sample_uniform( nSamples, m_count, m_centers, m_frames ) ;
 		const Scalar volume = cellGeo.volume() / n ;
 
 		for( size_t i = m_count ; i < m_count+n ; ) {
-			if( expr( m_centers.col(i) ) == 0. ) {
+			if( !alignOnCells && expr( m_centers.col(i) ) == 0. ) {
 				-- n ;
 				m_centers.col(i) = m_centers.col(m_count+n) ;
 				m_frames .col(i) = m_frames .col(m_count+n) ;
