@@ -57,8 +57,9 @@ struct TowerScenar : public Scenario {
 	Scalar avel ;
 
 	Scalar particle_density( const Vec &x ) const override {
-		return ( std::fabs( x[0] - center[0] ) < radius
-//		        && std::fabs( x[1] - center[1] ) < radius
+		return ( ( std::fabs( x[0] - center[0] ) < radius
+				&& std::fabs( x[1] - center[1] ) < radius )
+				|| std::fabs( x[2] ) < .25* radius
 				)
 			   ? 1. : 0. ;
 	}
@@ -129,14 +130,6 @@ struct ImpactScenar : public Scenario {
 
 		rbs.emplace_back( ls, volMass );
 		rbs.back().set_velocity( Vec(0,0,-zvel), Vec(avel,0,0) ) ;
-	}
-
-	void update( Simu& simu, Scalar /*time*/, Scalar dt ) const override
-	{
-		for( RigidBody& rb: simu.rigidBodies() ) {
-			rb.integrate_gravity( dt, m_config->gravity );
-		}
-
 	}
 
 private:

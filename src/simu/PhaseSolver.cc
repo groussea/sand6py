@@ -531,15 +531,16 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	data.mu.segment(0,fraction.rows()).array() = c.mu + c.delta_mu / ( 1. + I0bar / inertia.array().max(1.e-12) ) ;
 
 	//Cohesion : add \grad{ c phi } to rhs
+	DynVec cohe_s ;
 	{
-		const Scalar cohe_start = 0.999 * c.phiMax ;
+		const Scalar cohe_start = .999 * c.phiMax ;
 		const DynArr contact_zone = ( ( fraction.array() - cohe_start )/ (c.phiMax - cohe_start) ).max(0).min(1) ;
 
-		DynVec cohe_s  = DynVec::Zero( data.H.rows() ) ;
+		cohe_s  = DynVec::Zero( data.H.rows() ) ;
 		component< 6 >( cohe_s, 0 ).head(cohesion.rows()).array() =
 				c.cohesion * cohesion.array() * contact_zone ;
 
-		u -= matrices.M_lumped_inv_sqrt * ( data.H.transpose() * cohe_s ) ;
+		//u -= matrices.M_lumped_inv_sqrt * ( data.H.transpose() * cohe_s ) ;
 	}
 
 	data.w = matrices.Aniso * ( matrices.Pstress * ( matrices.B * u ) ) ;
@@ -581,6 +582,8 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 		data.jacobians.emplace_back( J * rb.projection.transpose() );
 	}
 
+	data.w -= data.H * ( data.H.transpose() * cohe_s ) ;
+
 	// Compressability
 	{
 		const DynVec q = ( ( c.phiMax - totFraction.array() )
@@ -614,7 +617,7 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	simuStats.frictionIterations = stats.nIterations ;
 
 	// Output
-	u += matrices.M_lumped_inv_sqrt * ( data.H.transpose() * x ) ;
+	u += matrices.M_lumped_inv_sqrt * ( data.H.transpose() * ( x - cohe_s ) ) ;
 
 	// Contact forces -- useless, debug only
 	{
