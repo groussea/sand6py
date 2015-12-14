@@ -26,6 +26,9 @@ target_link_libraries ( d62vtk d6_visu )
 add_executable ( d6_analyze d6_analyze.cc )
 target_link_libraries ( d6_analyze d6_visu )
 
+add_executable ( d6_solvePrimal d6_solvePrimal.cc )
+target_link_libraries ( d6_solvePrimal d6_utils d6_solve )
+
 if( OPENGL_FOUND )
     ## GL Viewer
     find_package( QGLVIEWER )

@@ -16,6 +16,7 @@ namespace d6 {
 Primal::SolverOptions::SolverOptions()
 	: algorithm( GaussSeidel ),
 	  maxIterations(250), maxOuterIterations( 15 ),
+	  projectedGradientVariant( -1  ),
 	  tolerance( 1.e-6 )
 {}
 
@@ -32,6 +33,8 @@ void Primal::SolverStats::ackResidual( unsigned iter, Scalar res )
 
 Scalar Primal::solve( const SolverOptions& options, DynVec &lambda, SolverStats &stats) const
 {
+	//m_data.dump("last.d6") ;
+
 	bogus::Timer timer ;
 
 	typedef typename FormMat<6,6>::SymType WType ;
@@ -81,10 +84,16 @@ Scalar Primal::solve( const SolverOptions& options, DynVec &lambda, SolverStats 
 		} else {
 
 			bogus::ProjectedGradient< WType > pg ;
-			pg.setDefaultVariant( bogus::projected_gradient::APGD );
+
+			if( options.projectedGradientVariant < 0 ) {
+				pg.setDefaultVariant( bogus::projected_gradient::SPG );
+			} else {
+				pg.setDefaultVariant( (bogus::projected_gradient::Variant) options.projectedGradientVariant );
+			}
+
 			pg.setTol( options.tolerance );
 			pg.setMaxIters( options.maxIterations );
-			pg.setLineSearchOptimisticFactor( 1. );
+			//pg.callback().connect( stats, &SolverStats::ackResidual );
 
 			res = bogus::solveCadoux<6>( W, m_data.w.data(), m_data.mu.data(), pg,
 										  lambda.data(), options.maxOuterIterations, &callback ) ;

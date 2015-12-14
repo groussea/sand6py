@@ -24,7 +24,7 @@ public:
 	{
 		enum Algorithm {
 			GaussSeidel,
-			Cadoux_APGD,
+			Cadoux_PG,
 			Cadoux_GS
 		};
 
@@ -32,6 +32,8 @@ public:
 
 		unsigned maxIterations ;	  //Inner
 		unsigned maxOuterIterations ; //For Cadoux algorithm
+
+		int projectedGradientVariant ;
 
 		Scalar tolerance ;
 
