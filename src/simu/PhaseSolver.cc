@@ -23,6 +23,8 @@
 #include <bogus/Core/Block.io.hpp>
 #include <bogus/Core/Utils/Timer.hpp>
 
+#include <utility>
+
 //#define FULL_FEM  // Ignore particles, just solve FEM system
 
 namespace d6 {
@@ -188,6 +190,70 @@ void PhaseSolver::assembleMatrices(const Config &config, const Scalar dt, const 
 #endif
 
 		timer.reset() ;
+
+#ifndef INTEGRATE_PARTICLES_SEQUENTIAL
+		{
+			// Integrating over particles can be slow and not directly parallelizable
+			// To regain some parallelism, we first associate particles to nodes,
+			// then compute separately each row of he form matrices
+
+			const size_t n = m_particles.count() ;
+
+			Eigen::Matrix< Scalar, MeshType::NV, Eigen::Dynamic > coeffs ;
+			Eigen::Matrix<  Index, MeshType::NV, Eigen::Dynamic > nodes  ;
+			coeffs.resize( MeshType::NV, n) ;
+			nodes .resize( MeshType::NV, n) ;
+
+			std::vector< std::vector< std::pair< size_t, Index > > > nodeParticles ( m ) ;
+
+
+			typename MeshType::Location loc ;
+			typename MeshType::Interpolation itp ;
+			typename MeshType::Derivatives dc_dx ;
+
+#pragma omp parallel private( loc, itp )
+			for ( size_t i = 0 ; i < n ; ++i )
+			{
+				mesh.locate( m_particles.geo().centers().col(i), loc );
+				mesh.interpolate( loc, itp );
+				nodes.col(i) = itp.nodes ;
+				coeffs.col(i) = itp.coeffs ;
+			}
+
+			for ( size_t i = 0 ; i < n ; ++i ) {
+				for( Index k = 0 ; k < MeshType::NV ; ++k ) {
+					nodeParticles[ m_phaseNodes.indices[nodes(k,i)] ].push_back( std::make_pair(i,k) ) ;
+				}
+			}
+
+#pragma omp parallel for private( loc, itp, dc_dx )
+			for( Index nidx = 0 ; nidx < m ; ++ nidx )
+			{
+				for( unsigned i = 0 ; i < nodeParticles[nidx].size() ; ++i ) {
+					const size_t pid = nodeParticles[nidx][i].first ;
+					const Index k0   = nodeParticles[nidx][i].second ;
+					mesh.locate( m_particles.geo().centers().col(pid), loc );
+					mesh.get_derivatives( loc, dc_dx );
+					itp.nodes  = nodes.col(pid) ;
+					itp.coeffs = coeffs.col(pid) ;
+
+					const Scalar w = m_particles.geo().volumes()[pid] ;
+					const Scalar m = itp.coeffs[k0] * w ;
+					const Dcdx& const_dcdx = dc_dx ;
+
+					FormBuilder::addTauDu( mats.B, m, nidx, itp, dc_dx, m_phaseNodes.indices ) ;
+					FormBuilder::addTauWu( mats.J, m, nidx, itp, dc_dx, m_phaseNodes.indices ) ;
+					FormBuilder:: addDuDv( mats.A, w, nidx, const_dcdx.row(k0), itp, dc_dx, m_phaseNodes.indices ) ;
+					if( config.enforceMaxFrac ) {
+						FormBuilder::addVDp  ( mats.C, m, nidx, itp, dc_dx, m_phaseNodes.indices ) ;
+					}
+
+				}
+			}
+
+
+		}
+#else
 		builder.integrate_particle( m_particles.geo(), [&]( Index, Scalar w, Loc, Itp itp, Dcdx dc_dx )
 			{
 				FormBuilder::addTauDu( mats.B, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
@@ -198,6 +264,7 @@ void PhaseSolver::assembleMatrices(const Config &config, const Scalar dt, const 
 				}
 			}
 		);
+#endif
 		Log::Debug() << "Integrate particle: " << timer.elapsed() << std::endl ;
 
 	}

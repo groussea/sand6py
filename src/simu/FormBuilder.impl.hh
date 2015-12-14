@@ -85,11 +85,13 @@ void FormBuilder::integrate_node( const CellIterator& cellBegin, const CellItera
 template < typename Func >
 void FormBuilder::integrate_particle( const Particles& particles, Func func ) const
 {
+	const size_t n = particles.count() ;
+
 	typename MeshType::Location loc ;
 	typename MeshType::Interpolation itp ;
 	typename MeshType::Derivatives dc_dx ;
 
-	for ( unsigned i = 0 ; i < particles.count() ; ++i ) {
+	for ( size_t i = 0 ; i < n ; ++i ) {
 		m_mesh.locate( particles.centers().col(i), loc );
 		m_mesh.interpolate( loc, itp );
 		m_mesh.get_derivatives( loc, dc_dx );
