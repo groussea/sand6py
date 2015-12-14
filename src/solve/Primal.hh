@@ -24,8 +24,9 @@ public:
 	{
 		enum Algorithm {
 			GaussSeidel,
+			Cadoux_GS,
 			Cadoux_PG,
-			Cadoux_GS
+			Cadoux_PG_NoAssembly
 		};
 
 		Algorithm algorithm ;

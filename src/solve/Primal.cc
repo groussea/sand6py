@@ -33,70 +33,109 @@ void Primal::SolverStats::ackResidual( unsigned iter, Scalar res )
 
 Scalar Primal::solve( const SolverOptions& options, DynVec &lambda, SolverStats &stats) const
 {
-	//m_data.dump("last.d6") ;
+//	m_data.dump("last.d6") ;
 
 	bogus::Timer timer ;
-
-	typedef typename FormMat<6,6>::SymType WType ;
-	//typedef bogus::SparseBlockMatrix< Eigen::Matrix< Scalar, 6, 6, Eigen::RowMajor >,
-//										bogus::SYMMETRIC > WType ;
-	WType W = m_data.H * m_data.H.transpose() ;
-
-	// Add rigid bodies jacobians
-	bogus::SparseBlockMatrix< Mat66, bogus::SYMMETRIC > Mi ;
-	Mi.setRows(1) ;
-	Mi.insertBack(0,0) ;
-	Mi.finalize();
-
-	for( unsigned i = 0 ; i < m_data.jacobians.size() ; ++i ) {
-
-		Mi.block(0) = m_data.inv_inertia_matrices.block<6,6>(0, 6*i );
-
-		const PrimalData::JacobianType &JM = m_data.jacobians[i] ;
-
-		W +=  JM * Mi * JM.transpose() ;
-	}
-
 	Scalar res = -1 ;
 
-	if( options.algorithm == SolverOptions::GaussSeidel ) {
-		bogus::SOCLaw< 6, Scalar, true > law( m_data.n(), m_data.mu.data() ) ;
+	if( options.algorithm == SolverOptions::Cadoux_PG_NoAssembly ) {
 
-		bogus::GaussSeidel< WType > gs( W ) ;
-		gs.setTol( options.tolerance );
-		gs.setMaxIters( options.maxIterations );
-		gs.callback().connect( stats, &SolverStats::ackResidual );
+		// Keep W as an expression
+		typedef bogus::Product< PrimalData::JacobianType,
+				bogus::Product< PrimalData::InvInertiaType, bogus::Transpose< PrimalData::JacobianType > > >
+				JMJtProd ;
 
-		res = gs.solve( law, m_data.w, lambda ) ;
-	} else  {
+		bogus::NarySum< JMJtProd > rbSum( m_data.n() * 6, m_data.n() * 6 ) ;
+		// Add rigid bodies jacobians
+		for( unsigned i = 0 ; i < m_data.jacobians.size() ; ++i ) {
+			const PrimalData::JacobianType &JM = m_data.jacobians[i] ;
+			rbSum +=  JM * ( m_data.inv_inertia_matrices[i] * JM.transpose() ) ;
+		}
+
+		typedef bogus::Product< PrimalData::HType, bogus::Transpose< PrimalData::HType > > HHtProd ;
+		typedef bogus::Addition< HHtProd, bogus::NarySum< JMJtProd > > Wexpr ;
+
+		const Wexpr W = m_data.H * m_data.H.transpose() + rbSum ;
 
 		bogus::Signal<unsigned, Scalar> callback ;
 		callback.connect( stats, &Primal::SolverStats::ackResidual );
+		bogus::ProjectedGradient< Wexpr > pg ;
 
-		if( options.algorithm == SolverOptions::Cadoux_GS ) {
+		if( options.projectedGradientVariant < 0 ) {
+			pg.setDefaultVariant( bogus::projected_gradient::SPG );
+		} else {
+			pg.setDefaultVariant( (bogus::projected_gradient::Variant) options.projectedGradientVariant );
+		}
 
-			bogus::GaussSeidel< WType > gs ;
+		pg.setTol( options.tolerance );
+		pg.setMaxIters( options.maxIterations );
+
+		res = bogus::solveCadoux<6>( W, m_data.w.data(), m_data.mu.data(), pg,
+									 lambda.data(), options.maxOuterIterations, &callback ) ;
+
+	} else {
+
+		// Explicit assembly of W
+
+		typedef typename FormMat<6,6>::SymType WType ;
+		//typedef bogus::SparseBlockMatrix< Eigen::Matrix< Scalar, 6, 6, Eigen::RowMajor >,
+	//										bogus::SYMMETRIC > WType ;
+		WType W = m_data.H * m_data.H.transpose() ;
+
+		// Add rigid bodies jacobians
+		for( unsigned i = 0 ; i < m_data.jacobians.size() ; ++i ) {
+			const PrimalData::JacobianType &JM = m_data.jacobians[i] ;
+
+			W +=  JM * m_data.inv_inertia_matrices[i] * JM.transpose() ;
+		}
+
+		if( options.algorithm == SolverOptions::GaussSeidel ) {
+			// Direct Gauss-Seidel solver
+
+			bogus::SOCLaw< 6, Scalar, true > law( m_data.n(), m_data.mu.data() ) ;
+
+			bogus::GaussSeidel< WType > gs( W ) ;
 			gs.setTol( options.tolerance );
 			gs.setMaxIters( options.maxIterations );
+			gs.callback().connect( stats, &SolverStats::ackResidual );
 
-			res = bogus::solveCadoux<6>( W, m_data.w.data(), m_data.mu.data(), gs,
-										  lambda.data(), options.maxOuterIterations, &callback ) ;
-		} else {
+			res = gs.solve( law, m_data.w, lambda ) ;
 
-			bogus::ProjectedGradient< WType > pg ;
+		} else  {
 
-			if( options.projectedGradientVariant < 0 ) {
-				pg.setDefaultVariant( bogus::projected_gradient::SPG );
+			// Cadoux fixed-point algorithm
+
+			bogus::Signal<unsigned, Scalar> callback ;
+			callback.connect( stats, &Primal::SolverStats::ackResidual );
+
+			if( options.algorithm == SolverOptions::Cadoux_GS ) {
+
+				// Gauss-Seidel inner solver
+
+				bogus::GaussSeidel< WType > gs ;
+				gs.setTol( options.tolerance );
+				gs.setMaxIters( options.maxIterations );
+
+				res = bogus::solveCadoux<6>( W, m_data.w.data(), m_data.mu.data(), gs,
+											  lambda.data(), options.maxOuterIterations, &callback ) ;
 			} else {
-				pg.setDefaultVariant( (bogus::projected_gradient::Variant) options.projectedGradientVariant );
+
+				// Projected Gradient inner solver
+
+				bogus::ProjectedGradient< WType > pg ;
+
+				if( options.projectedGradientVariant < 0 ) {
+					pg.setDefaultVariant( bogus::projected_gradient::SPG );
+				} else {
+					pg.setDefaultVariant( (bogus::projected_gradient::Variant) options.projectedGradientVariant );
+				}
+
+				pg.setTol( options.tolerance );
+				pg.setMaxIters( options.maxIterations );
+
+				res = bogus::solveCadoux<6>( W, m_data.w.data(), m_data.mu.data(), pg,
+											  lambda.data(), options.maxOuterIterations, &callback ) ;
 			}
-
-			pg.setTol( options.tolerance );
-			pg.setMaxIters( options.maxIterations );
-			//pg.callback().connect( stats, &SolverStats::ackResidual );
-
-			res = bogus::solveCadoux<6>( W, m_data.w.data(), m_data.mu.data(), pg,
-										  lambda.data(), options.maxOuterIterations, &callback ) ;
 		}
 	}
 

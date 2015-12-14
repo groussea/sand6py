@@ -16,6 +16,7 @@ namespace  d6 {
 struct PrimalData {
 	typedef typename FormMat<6,3>::Type HType ;
 	typedef typename FormMat<6,6>::Type JacobianType ;
+	typedef typename FormMat<6,6>::SymType InvInertiaType ;
 
 	HType H   ;
 	DynVec w  ;
@@ -23,7 +24,7 @@ struct PrimalData {
 	DynVec mu ;
 
 	std::vector< JacobianType > jacobians ;
-	DynMat6 inv_inertia_matrices ;
+	std::vector< InvInertiaType > inv_inertia_matrices ;
 
 	Index n() const { return H.rowsOfBlocks() ; }
 

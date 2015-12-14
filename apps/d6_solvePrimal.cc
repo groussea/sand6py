@@ -55,6 +55,8 @@ int main( int argc, char* argv[] ) {
 	case Primal::SolverOptions::Cadoux_GS:
 		Log::Verbose() << "Cadoux / Gauss-Seidel " ;
 		break ;
+	case Primal::SolverOptions::Cadoux_PG_NoAssembly:
+		Log::Verbose() << "[No Assembly] " ;
 	default:
 		Log::Verbose() << "Cadoux / Projected Gradient -- " ;
 

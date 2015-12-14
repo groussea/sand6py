@@ -546,7 +546,7 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	data.w = matrices.Aniso * ( matrices.Pstress * ( matrices.B * u ) ) ;
 
 	data.jacobians.reserve( rbData.size() ) ;
-	data.inv_inertia_matrices.resize( 6, 6*rbData.size() ) ;
+	data.inv_inertia_matrices.reserve( rbData.size() ) ;
 	std::vector< unsigned > coupledRbIndices ;
 
 	DynVec totFraction = fraction ;
@@ -572,13 +572,17 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 
 		data.mu.segment( rb.nodes.offset, rb.nodes.count() ).setConstant( c.muRigid ) ;
 
-		Mat66 inv_inertia ;
-		rb.rb.inv_inertia( inv_inertia ) ;
-		if( inv_inertia.squaredNorm() < 1.e-16 )
+		PrimalData::InvInertiaType inv_inertia( 1, 1 ) ;
+
+		rb.rb.inv_inertia( inv_inertia.insertBack(0,0) ) ;
+		if( inv_inertia.block(0).squaredNorm() < 1.e-16 )
 			continue ;
 
 		coupledRbIndices.push_back( k ) ;
-		data.inv_inertia_matrices.block<6,6>( 0, 6*data.jacobians.size() ) = inv_inertia * dt ;
+
+		inv_inertia.finalize();
+		data.inv_inertia_matrices.push_back( inv_inertia * dt ) ;
+
 		data.jacobians.emplace_back( J * rb.projection.transpose() );
 	}
 
@@ -606,8 +610,10 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 
 	// Proper solving
 	Primal::SolverOptions options ;
-	//options.algorithm = Primal::SolverOptions::Cadoux_GS ;
-	//options.maxIterations = 100 ;
+//	options.tolerance = 1.e-8 ;
+//	options.algorithm = Primal::SolverOptions::Cadoux_PG_NoAssembly ;
+//	options.projectedGradientVariant = 4 ; // 2 = Conjugated, 3 = APGD, 4 = SPG
+
 	Primal::SolverStats stats ;
 	Primal( data ).solve( options, x, stats ) ;
 	Log::Verbose() << arg3( "Primal: %1 iterations,\t err= %2,\t time= %3 ",
