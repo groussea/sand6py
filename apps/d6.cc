@@ -54,7 +54,7 @@ int main( int argc, const char* argv[] )
 	config.dump( outDir.filePath("config"), info.c_str() );
 	config.internalize();
 
-	d6::Log::Verbose() << "Re = " << config.viscosity << std::endl ;
+	d6::Log::Verbose() << "1/Re = " << config.viscosity << std::endl ;
 
 	d6::Simu( config, base_dir ).run() ;
 

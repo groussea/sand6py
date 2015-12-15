@@ -105,7 +105,11 @@ bool cast ( std::istringstream& stream, T& res )
 template< >
 inline bool cast ( std::istringstream& stream, std::string& res )
 {
-	res = trim( stream.str() );
+	std::string remaining ;
+
+	if( ! std::getline( stream, remaining ) )
+		return false ;
+	res = trim( remaining );
 	return true ;
 }
 

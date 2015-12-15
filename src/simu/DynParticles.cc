@@ -28,7 +28,7 @@ DynParticles::DynParticles()
 
 void DynParticles::generate(const Config &c, const MeshType &mesh, const Scenario &scenario)
 {
-	m_geo.generate( scenario.generator(), c.nSamples, mesh, c.cohesion > 0 );
+	m_geo.generate( scenario.generator(), c.nSamples, mesh, c.cohesion > 0, c.initialOri );
 
 	  m_affine.leftCols( count() ).setZero() ;
 	 m_inertia.leftCols( count() ).setZero() ;

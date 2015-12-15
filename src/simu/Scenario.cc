@@ -57,9 +57,13 @@ struct TowerScenar : public Scenario {
 	Scalar avel ;
 
 	Scalar particle_density( const Vec &x ) const override {
-		return ( /*( std::fabs( x[0] - center[0] ) < radius
-				&& std::fabs( x[1] - center[1] ) < radius )*/
-				std::pow( x[1] - center[1], 2 ) + std::pow( x[0] - center[0], 2 ) < radius * radius
+		return (
+					( std::fabs( x[0] - center[0] ) < radius/2
+				&& std::fabs( x[1] - center[1] ) < radius )
+				||	( std::fabs( x[0] - center[0] ) < radius
+				&& std::fabs( x[1] - center[1] ) < radius/2 )
+
+				//std::pow( x[1] - center[1], 2 ) + std::pow( x[0] - center[0], 2 ) < radius * radius
 				|| std::fabs( x[2] ) < .25* radius
 				)
 			   ? 1. : 0. ;

@@ -2,6 +2,8 @@
 
 #include "MeshImpl.hh"
 
+#include "Tensor.hh"
+
 #include "utils/Log.hh"
 
 #include <bogus/Core/Utils/Timer.hpp>
@@ -17,7 +19,8 @@ Particles::Particles()
 }
 
 void Particles::generate(const ScalarExpr &expr, const unsigned nSamples,
-						 const MeshType &mesh, const bool alignOnCells )
+						 const MeshType &mesh, const bool alignOnCells,
+						 const Vec& initialOri )
 {
 	bogus::Timer timer ;
 
@@ -50,8 +53,14 @@ void Particles::generate(const ScalarExpr &expr, const unsigned nSamples,
 
 	m_velocities.leftCols( count() ).setZero() ;
 
-	m_orient.leftCols( count() ).setZero( ) ;
-	m_orient.leftCols( count() ).row(0).setConstant( 1./std::sqrt(6.) ) ; // Isotropic ori
+	Vec6 oriCoeffs ;
+	{
+		Mat oriTensor = Mat::Zero() ;
+		oriTensor.diagonal() = initialOri ;
+		tensor_view( oriCoeffs ).set( oriTensor) ;
+	}
+
+	m_orient.leftCols(m_count).colwise() = oriCoeffs ; // Isotropic ori
 
 	Log::Verbose() << arg( "Generated %1 particles in %2 s ", m_count, timer.elapsed() ) << std::endl ;
 }

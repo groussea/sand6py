@@ -69,7 +69,7 @@ public:
 	Particles() ;
 
 	void generate(const ScalarExpr &expr, const unsigned nSamples,
-				  const MeshType& mesh, const bool alignOnCells ) ;
+				  const MeshType& mesh, const bool alignOnCells , const Vec &initialOri) ;
 
 	size_t count() const { return m_count ; }
 

@@ -110,9 +110,9 @@ void PhaseSolver::assembleMatrices(const Config &config, const Scalar dt, const 
 {
 	bogus::Timer timer;
 
-	typedef const typename MeshType::Location& Loc ;
-	typedef const typename MeshType::Interpolation& Itp ;
-	typedef const typename MeshType::Derivatives& Dcdx ;
+	typedef typename MeshType::Location Loc ;
+	typedef typename MeshType::Interpolation Itp ;
+	typedef typename MeshType::Derivatives Dcdx ;
 
 	const Index m  = m_phaseNodes.count() ;
 	const Index mc = nSuppNodes() ;
@@ -181,7 +181,7 @@ void PhaseSolver::assembleMatrices(const Config &config, const Scalar dt, const 
 
 		timer.reset() ;
 #ifdef FULL_FEM
-		builder.integrate_qp( m_phaseNodes.cells, [&]( Scalar w, Loc, Itp itp, Dcdx dc_dx )
+		builder.integrate_qp( m_phaseNodes.cells, [&]( Scalar w, const Loc&, const Itp& itp, const Dcdx& dc_dx )
 			{
 				FormBuilder:: addDuDv( mats.A, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
 			}
@@ -207,9 +207,9 @@ void PhaseSolver::assembleMatrices(const Config &config, const Scalar dt, const 
 			std::vector< std::vector< std::pair< size_t, Index > > > nodeParticles ( m ) ;
 
 
-			typename MeshType::Location loc ;
-			typename MeshType::Interpolation itp ;
-			typename MeshType::Derivatives dc_dx ;
+			Loc loc ;
+			Itp itp ;
+			Dcdx dc_dx ;
 
 #pragma omp parallel private( loc, itp )
 			for ( size_t i = 0 ; i < n ; ++i )
@@ -254,7 +254,7 @@ void PhaseSolver::assembleMatrices(const Config &config, const Scalar dt, const 
 
 		}
 #else
-		builder.integrate_particle( m_particles.geo(), [&]( Index, Scalar w, Loc, Itp itp, Dcdx dc_dx )
+		builder.integrate_particle( m_particles.geo(), [&]( Index, Scalar w, const Loc&, const Itp& itp, const Dcdx& dc_dx )
 			{
 				FormBuilder::addTauDu( mats.B, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;
 				FormBuilder::addTauWu( mats.J, w, itp, dc_dx, m_phaseNodes.indices, m_phaseNodes.indices ) ;

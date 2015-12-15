@@ -31,6 +31,7 @@ Config::Config() :
 	muRigid( 0.5 ),
 	cohesion(0), cohesion_decay(0),
 	anisotropy( 0 ), elongation( 1 ), brownian( 0 ),
+	initialOri( 1./3, 1./3, 1./3 ),
 	enforceMaxFrac( false ), weakStressBC( false ),
 	boundary("cuve"),
 	output( true )
