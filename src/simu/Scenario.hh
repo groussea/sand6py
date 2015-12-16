@@ -43,9 +43,12 @@ protected:
 	Scenario() : m_config(0) {}
 
 	virtual void init( const Params& /*params*/ ) {}
-	Scalar scalar_param( const Params& params, const std::string& key,
+
+	Scalar      scalar_param( const Params& params, const std::string& key,
 						 Units::Unit unit = Units::None,
 						 Scalar def = 0. ) const ;
+	std::string string_param( const Params& params, const std::string& key,
+						 const std::string& def = "" ) const ;
 
 	const Config* m_config ;
 

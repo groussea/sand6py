@@ -212,7 +212,7 @@ private:
 	{
 		proj[0] = 0. ;
 		proj[1] = 0. ;
-		proj[2] = std::min(-.5*m_height, std::max(.5*m_height, x[2])) ;
+		proj[2] = std::max(-.5*m_height, std::min(.5*m_height, x[2])) ;
 	}
 
 	Scalar m_height ;

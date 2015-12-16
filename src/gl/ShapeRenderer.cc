@@ -193,8 +193,8 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 
 		} else if ( (cylinder = dynamic_cast<const CylinderLevelSet*>(&ls)) ) {
 
-			Eigen::Vector3f p0 (0,0,0) ;
-			Eigen::Vector3f p1 (0,0,cylinder->height()) ;
+			Eigen::Vector3f p0 (0,0,-.5*cylinder->height()) ;
+			Eigen::Vector3f p1 (0,0,.5*cylinder->height()) ;
 
 			const unsigned res= 10 ;
 

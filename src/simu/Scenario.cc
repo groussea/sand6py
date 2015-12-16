@@ -191,8 +191,9 @@ struct BunnyScenar : public Scenario {
 		) ? 1 : 0 ;
 	}
 
-	void init( const Params& /*params*/ ) override {
-		bunny_ls = LevelSet::from_mesh( "../scenes/bunny.obj" ) ;
+	void init( const Params& params ) override {
+		const std::string& meshname = string_param( params, "mesh", "../scenes/bunny.obj") ;
+		bunny_ls = LevelSet::from_mesh( meshname.c_str() ) ;
 		bunny_ls->scale(25.e1) ;
 		bunny_ls->compute() ;
 	}
@@ -203,6 +204,52 @@ struct BunnyScenar : public Scenario {
 	}
 
 	mutable LevelSet::Ptr bunny_ls ;
+};
+
+struct WritingScenar : public Scenario {
+
+	Scalar particle_density( const Vec &x ) const override {
+		return ( cyl_ls->eval_at( x ) < 0 &&
+				 x[2] < .5*m_config->box[2]
+		) ? 1 : 0 ;
+	}
+
+	void init( const Params& params ) override {
+
+		const Scalar D = scalar_param( params, "d", Units::None, 0.05 ) * m_config->box[0] ;
+		const Scalar H = scalar_param( params, "h", Units::None, 0.5 ) * m_config->box[2] ;
+
+		Vec origin = .5*m_config->box ;
+		origin[1] += .375 * m_config->box[1] ;
+		origin[2] += .125 * m_config->box[2] ;
+
+		cyl_ls = LevelSet::make_cylinder( H/D ) ;
+		cyl_ls->scale(D).set_origin(origin) ;
+		cyl_ls->compute() ;
+	}
+
+	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
+	{
+		rbs.emplace_back( cyl_ls, 1.e99 );
+	}
+
+	void update( Simu& simu, Scalar time, Scalar /*dt*/ ) const override
+	{
+		const Scalar S = m_config->box[1] * .25 * m_config->units().toSI( Units::Time ) ;
+		const Scalar t = time * m_config->units().toSI( Units::Time ) ;
+
+		const Vec vel = Vec( std::cos(t), -1/M_PI, 0 )  ;
+
+		for( RigidBody& rb: simu.rigidBodies() ) {
+			if( t > 2*M_PI )
+				rb.set_velocity( Vec::Zero(), Vec::Zero() ) ;
+			else
+				rb.set_velocity( S*vel/vel.norm(), Vec::Zero() );
+		}
+
+	}
+
+	mutable LevelSet::Ptr cyl_ls ;
 };
 
 
@@ -228,6 +275,8 @@ struct DefaultScenarioFactory : public ScenarioFactory
 			return std::unique_ptr< Scenario >( new SiloScenar() ) ;
 		if( str == "bunny")
 			return std::unique_ptr< Scenario >( new BunnyScenar() ) ;
+		if( str == "writing")
+			return std::unique_ptr< Scenario >( new WritingScenar() ) ;
 
 		return std::unique_ptr< Scenario >( new BedScenar() ) ;
 	}
@@ -304,6 +353,16 @@ Scalar Scenario::scalar_param(const Params& params, const std::string& key, Unit
 	}
 
 	return s * m_config->units().fromSI( unit ) ;
+
+}
+std::string Scenario::string_param(const Params &params, const std::string &key, const std::string &def) const
+{
+	std::string s = def ;
+	Params::const_iterator it = params.find(key) ;
+	if( it != params.end() ) {
+		s = it->second ;
+	}
+	return s ;
 
 }
 
