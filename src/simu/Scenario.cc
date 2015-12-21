@@ -85,7 +85,9 @@ struct TowerScenar : public Scenario {
 	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
 	{
 		LevelSet::Ptr ls = LevelSet::make_sphere() ;
-		ls->scale(.5*.125*m_config->box[0]).set_origin( center - h0*Vec(1,1,0)/M_SQRT2 ) ;
+		Vec pos = center - h0*Vec(1,1,0)/M_SQRT2 ;
+		pos[2] -= .125 * m_config->box[2];
+		ls->scale(.5*.125*m_config->box[0]).set_origin( pos ) ;
 
 		rbs.emplace_back( ls, volMass );
 		rbs.back().set_velocity( Vec(hvel/M_SQRT2, hvel/M_SQRT2, zvel), Vec(avel,0,0) ) ;
@@ -126,21 +128,38 @@ struct ImpactScenar : public Scenario {
 		volMass = scalar_param( params, "vm", Units::VolumicMass, 1.5*m_config->units().R ) ;
 		zvel = scalar_param( params, "zvel", Units::Velocity, 0. ) ;
 		avel = scalar_param( params, "avel", Units::Frequency, 0. ) ;
+		d = scalar_param( params, "d", Units::None, 0.25 ) ;
 	}
 
 	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
 	{
 		LevelSet::Ptr ls = LevelSet::make_sphere() ;
-		ls->scale(.125*m_config->box[0]).set_origin( .5 * m_config->box + Vec(0,0,.25*m_config->box[2]) ) ;
+		ls->scale( radius() ).set_origin( .5 * m_config->box + Vec(0,0,.25*m_config->box[2]) ) ;
 
 		rbs.emplace_back( ls, volMass );
 		rbs.back().set_velocity( Vec(0,0,-zvel), Vec(avel,0,0) ) ;
+	}
+
+	void update( Simu& simu, Scalar /*time*/, Scalar dt ) const override
+	{
+		for( RigidBody& rb: simu.rigidBodies() ) {
+			rb.integrate_gravity( dt, m_config->gravity );
+			Vec vel = rb.velocity() ;
+			vel[2] = std::max( vel[2], (radius() - rb.levelSet().origin()[2])/dt ) ;
+			rb.set_velocity( vel, rb.angularVelocity() );
+		}
+
+	}
+
+	Scalar radius() const {
+		return d/2*m_config->box[0] ;
 	}
 
 private:
 	Scalar volMass ;
 	Scalar zvel ;
 	Scalar avel ;
+	Scalar d ;
 };
 
 struct SiloScenar : public Scenario {

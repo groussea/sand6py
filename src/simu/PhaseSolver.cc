@@ -616,7 +616,7 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	data.inv_inertia_matrices.reserve( rbData.size() ) ;
 	std::vector< unsigned > coupledRbIndices ;
 
-	DynVec totFraction = fraction ;
+	DynArr totFraction = fraction ;
 
 	// Handle rigid bodies jacobians
 	for( unsigned k = 0 ; k < rbData.size() ; ++k ) {
@@ -657,7 +657,7 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 
 	// Compressability
 	{
-		const DynVec q = ( ( c.phiMax - totFraction.array() )
+		const DynVec q = ( ( c.phiMax - totFraction )
 						   * s_sqrt_23 * matrices.volumes.array()    // 1/d * Tr \tau = \sqrt{2}{d} \tau_N
 						   / dt
 						   ).max( 0 ) ;
@@ -727,7 +727,7 @@ void PhaseSolver::enforceMaxFrac(const Config &c, const PhaseMatrices &matrices,
 	data.H = matrices.Pvel * matrices.C ;
 	data.w.setZero( data.n() );
 
-	DynVec totFraction = fraction ;
+	DynArr totFraction = fraction ;
 
 	for( unsigned k = 0 ; k < rbData.size() ; ++k ) {
 		RigidBodyData& rb = rbData[k] ;
@@ -741,7 +741,7 @@ void PhaseSolver::enforceMaxFrac(const Config &c, const PhaseMatrices &matrices,
 		}
 	}
 
-	data.w.segment(0, totFraction.rows()) = ( c.phiMax - totFraction.array() )
+	data.w.segment(0, totFraction.rows()) = ( c.phiMax - totFraction )
 			* matrices.volumes.array()    // 1/d * Tr \tau = \sqrt{2}{d} \tau_N
 			;
 
