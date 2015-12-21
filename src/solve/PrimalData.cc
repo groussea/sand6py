@@ -3,6 +3,7 @@
 #include "utils/Log.hh"
 
 #include <bogus/Core/Block.io.hpp>
+#include <bogus/Core/Block.impl.hpp>
 
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
