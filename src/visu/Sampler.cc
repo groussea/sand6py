@@ -74,8 +74,7 @@ void Sampler::compute_absolute( )
 	const Particles& particles = m_offline.particles() ;
 	const Phase& grains = m_offline.grains() ;
 
-	std::cout << particles.count() << std::endl ;
-	std::cout << m_particlesCount << std::endl ;
+	assert( particles.count() == m_particlesCount ) ;
 
 	const Index n = count() ;
 
@@ -169,8 +168,6 @@ void Sampler::reassign( )
 				m_predPos.col( e.first  ) = m_predPos.col( e.second ) + e.dx ;
 			}
 		}
-
-		std::cout << " " << splits << " -- " << merges << " -- " << removes << std::endl ;
 
 		//Split -- merge
 #pragma omp parallel for

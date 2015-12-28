@@ -241,6 +241,9 @@ void GLViewer::init()
 	// Restore previous viewer state.
 	restoreStateFromFile();
 
+	resize(1280, 720) ;
+	setBackgroundColor( QColor(255, 255, 255, 255 ) );
+
 	// Camera
 	const Vec& box = m_offline.mesh().box() ;
 	const qglviewer::Vec qgl_box( box[0], box[1], box[2] ) ;
