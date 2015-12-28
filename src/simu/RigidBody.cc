@@ -46,6 +46,11 @@ void RigidBody::move(const Scalar dt) const
 	m_levelSet->move( dt * velocity(), Quaternion( aa ) );
 }
 
+void RigidBody::move_to(const Vec &pos) const
+{
+	m_levelSet->set_origin( pos ) ;
+}
+
 void RigidBody::inv_inertia( Mat66& Mi ) const
 {
 	m_levelSet->inv_inertia( Mi ) ;

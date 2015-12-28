@@ -60,6 +60,7 @@ public:
 
 	void move( const Scalar dt ) const ;
 
+	void move_to( const Vec& pos ) const ;
 
 private:
 	std::unique_ptr< LevelSet > m_levelSet ;

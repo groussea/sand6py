@@ -228,47 +228,72 @@ struct BunnyScenar : public Scenario {
 struct WritingScenar : public Scenario {
 
 	Scalar particle_density( const Vec &x ) const override {
-		return ( cyl_ls->eval_at( x ) < 0 &&
-				 x[2] < .5*m_config->box[2]
-		) ? 1 : 0 ;
+		return ( x[2] < .5*m_config->box[2]	) ? 1 : 0 ;
 	}
 
 	void init( const Params& params ) override {
 
-		const Scalar D = scalar_param( params, "d", Units::None, 0.05 ) * m_config->box[0] ;
-		const Scalar H = scalar_param( params, "h", Units::None, 0.5 ) * m_config->box[2] ;
+		R = scalar_param( params, "d", Units::None, 0.05 ) * m_config->box[0] ;
+		H = scalar_param( params, "h", Units::None, 0.5 ) * m_config->box[2] ;
 
-		Vec origin = .5*m_config->box ;
-		origin[1] += .375 * m_config->box[1] ;
-		origin[2] += .125 * m_config->box[2] ;
+		bezier.resize(2,12) ;
+		bezier <<  0.196,  1.046, -0.358, 0.492, 0.609, 0.858, 0.677, 0.737, 1.068, 0.518, 1.630, 0.990,
+				   0.140,  0.269,  0.450, 0.561, 0.482, 0.686, 0.630, 0.106, 0.574, -0.25, 0.231, 0.364 ;
 
-		cyl_ls = LevelSet::make_cylinder( H/D ) ;
-		cyl_ls->scale(D).set_origin(origin) ;
-		cyl_ls->compute() ;
+		bezier *= m_config->box[0] / 1.4 ;
 	}
 
 	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
 	{
+		LevelSet::Ptr cyl_ls ;
+		cyl_ls = LevelSet::make_cylinder( H/R ) ;
+		cyl_ls->scale(R).set_origin(Vec::Zero()) ;
 		rbs.emplace_back( cyl_ls, 1.e99 );
 	}
 
 	void update( Simu& simu, Scalar time, Scalar /*dt*/ ) const override
 	{
-		const Scalar S = m_config->box[1] * .25 * m_config->units().toSI( Units::Time ) ;
-		const Scalar t = time * m_config->units().toSI( Units::Time ) ;
+		const unsigned nCurves = bezier.cols() / 4 ;
+		const Scalar speed = m_config->units().toSI( Units::Time ) ;
+		const Scalar trans = .1 ;
 
-		const Vec vel = Vec( std::cos(t), -1/M_PI, 0 )  ;
+		const Scalar tw = time * speed ;
+		const unsigned cid = std::floor( tw / ( 1. + trans ) ) ;
+
+		Scalar t = tw - ( 1. + trans )*cid ;
+		const bool inbetween = t < trans ;
+		t -= trans ;
+
+		Vec vel = Vec::Zero() ;
+
+		if( cid < nCurves && !inbetween ) {
+			vel.head<2>() = -3*(1-t)*(1-t)    * bezier.col(0+4*cid)
+					+ 3*( (1-t) - 2*t )*(1-t) * bezier.col(1+4*cid)
+					+ 3*( 2*(1-t) - t )*t     * bezier.col(2+4*cid)
+					+ 3*t*t                   * bezier.col(3+4*cid)
+					;
+			const Scalar S = 5.e1 ;
+			vel[2] = - (H/2-R)*2*S*t*std::exp(-S*t*t) ;
+			vel *= speed ;
+		}
 
 		for( RigidBody& rb: simu.rigidBodies() ) {
-			if( t > 2*M_PI )
-				rb.set_velocity( Vec::Zero(), Vec::Zero() ) ;
-			else
-				rb.set_velocity( S*vel/vel.norm(), Vec::Zero() );
+			if( cid < nCurves && inbetween ) {
+				Vec origin ;
+				origin.head<2>() = bezier.col(4*cid) ;
+				origin[2] = .5 * m_config->box[2] + H/2 ;
+				rb.move_to( origin );
+			}
+
+			rb.set_velocity( vel, Vec::Zero() );
 		}
 
 	}
 
-	mutable LevelSet::Ptr cyl_ls ;
+	Eigen::Matrix< Scalar, 2, Eigen::Dynamic > bezier ;
+	Scalar R ;
+	Scalar H ;
+
 };
 
 
