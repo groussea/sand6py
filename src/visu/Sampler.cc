@@ -94,8 +94,9 @@ void Sampler::compute_absolute( )
 		const Scalar vn = std::max( 1., Scalar( m_offsets.col(i).transpose() *  frame.inverse() * m_offsets.col(i) ) ) ;
 		m_offsets.col( i ) /= std::sqrt(vn)  ;
 
+		const Vec pos = m_offline.mesh().clamp_point(p0 + m_offsets.col(i) ) ;
+		m_offsets.col( i ) = pos - p0 ;
 
-		const Vec pos = (p0 + m_offsets.col(i) ) ;
 		m_positions.col(i) = pos.cast< float >() ;
 
 		Eigen::Vector3f grad_phi = grains.grad_phi( pos ).cast<float>() ;
