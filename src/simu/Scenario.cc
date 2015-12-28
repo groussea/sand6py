@@ -121,7 +121,7 @@ struct RbPlaneTestScenar : public Scenario {
 struct ImpactScenar : public Scenario {
 
 	Scalar particle_density( const Vec &x ) const override {
-		return ( x[2] <  .5*m_config->box[2] ) ? 1. : 0. ;
+		return ( x[2] <  1./3.*m_config->box[2] ) ? 1. : 0. ;
 	}
 
 	virtual void init( const Params& params ) {

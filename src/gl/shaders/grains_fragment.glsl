@@ -15,6 +15,8 @@ out vec4 color ;
 
 void main (void)
 {
+    if( vis < 0 ) discard ;
+
     float alpha = 1 ; //vis ;
 
     vec2 tex_coords = 0.5 * ( shadow_coord.xy / shadow_coord.w ) + vec2(0.5,0.5) ;
@@ -27,7 +29,7 @@ void main (void)
      }
 
     alpha = 0.6 * pow( clamp(alpha,0,1), 3) ;
-	//alpha = vis ;
+    //alpha = vis ;
 
     vec4 ambientMat  = vec4(0,0,0,0) ;
     vec4 diffuseMat  = vec4(0,0,0,0) ;

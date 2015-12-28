@@ -385,7 +385,7 @@ void PhaseSolver::step(const Config &config, const Scalar dt, Phase &phase, Stat
 		m_particles.read( activeCells, intPhi, intPhiVel, intPhiInertia, intPhiOrient, intPhiCohesion ) ;
 	#endif
 
-		// Compute phi and grad_phi
+		// Compute phi and grad_phi (for visu purposes )
 		phase.fraction.flatten() = intPhi.flatten() ;
 		phase.fraction.divide_by( volumes ) ;
 		computeGradPhi( phase.fraction, volumes, phase.grad_phi ) ;
@@ -426,7 +426,7 @@ void PhaseSolver::step(const Config &config, const Scalar dt, Phase &phase, Stat
 
 	{
 
-		// Compute fraction of grains
+		// Volume fraction of grains
 		DynVec fraction ;
 		m_phaseNodes.field2var( phase.fraction, fraction ) ;
 
@@ -459,7 +459,7 @@ void PhaseSolver::step(const Config &config, const Scalar dt, Phase &phase, Stat
 		stats.linSolveTime = timer.elapsed() - stats.assemblyTime ;
 		Log::Debug() << "Linear solve: " << stats.linSolveTime << std::endl ;
 
-		// Maximum fraction projection
+		// Optional : Maximum fraction projection
 		if( config.enforceMaxFrac){
 			Eigen::VectorXd depl ;
 			enforceMaxFrac( config, matrices, rbData, fraction, depl );
@@ -480,7 +480,7 @@ void PhaseSolver::step(const Config &config, const Scalar dt, Phase &phase, Stat
 		m_phaseNodes.var2field( u, phase.velocity ) ;
 
 		{
-			// Velocities gradient
+			// Velocities gradient D(u) and W(u)
 			DynVec int_phiDu = .5 * matrices.Pstress * ( matrices.B * u ) ;
 			m_phaseNodes.var2field( int_phiDu, phase.sym_grad ) ;
 			phase.sym_grad.divide_by_positive( intPhi ) ;

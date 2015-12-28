@@ -68,11 +68,14 @@ void Sampler::compute_absolute( )
 {
 	// offset += DU*offset * st
 
+
 	const Scalar noise = 1. ;
 
 	const Particles& particles = m_offline.particles() ;
 	const Phase& grains = m_offline.grains() ;
 
+	std::cout << particles.count() << std::endl ;
+	std::cout << m_particlesCount << std::endl ;
 
 	const Index n = count() ;
 
@@ -108,7 +111,9 @@ void Sampler::compute_absolute( )
 		Eigen::Quaternionf rot( Eigen::AngleAxisf( noise, m_normalNoise.col(i) ) ) ;
 		m_normals.col(i) =  - ( rot * grad_phi ).normalized() ;
 
-		m_visibility(i) = std::max( 0., std::min( 1., 1.5 - 1.5*grains.fraction(pos) ) ) ;
+		if( m_visibility(i) >= 0 ) {
+			m_visibility(i) = std::max( 0., std::min( 1., 1.5 - 1.5*grains.fraction(pos) ) ) ;
+		}
 	}
 
 }
@@ -118,6 +123,7 @@ void Sampler::reassign( )
 	typedef Particles::Event Event ;
 
 	const unsigned NoEvent = -1 ;
+	const unsigned Destroy = -2 ;
 
 	std::vector< unsigned > eventIds ;
 
@@ -134,14 +140,14 @@ void Sampler::reassign( )
 	const Index n = count() ;
 	unsigned nParticles = m_particlesCount ;
 
-	for( unsigned s = 0 ; s < m_offline.events().log().size() ; ++s ) {
-		const std::vector< Event > &events = m_offline.events().log()[s] ;
+	for(const std::vector< Event > &events :  m_offline.events().log()) {
 
 		unsigned splits = 0 ;
 		unsigned merges = 0 ;
+		unsigned removes = 0 ;
 
 		// Assign event-ids to particles
-		eventIds.assign( n + events.size(), NoEvent );
+		eventIds.assign( nParticles + events.size(), NoEvent );
 		for( unsigned eId = 0 ; eId < events.size() ; ++eId ) {
 			const Event& e = events[eId] ;
 
@@ -152,7 +158,9 @@ void Sampler::reassign( )
 
 				m_predPos.col( e.second ) = m_predPos.col( e.first ) + e.dx ;
 				m_predPos.col( e.first  ) = m_predPos.col( e.first ) - e.dx ;
-			} else {
+			} else if( e.type == Event::Remove ) {
+				++removes ;
+			} else if( e.type == Event::Merge ) {
 				++merges;
 
 				eventIds[ e.first  ] = eId ;
@@ -161,6 +169,8 @@ void Sampler::reassign( )
 				m_predPos.col( e.first  ) = m_predPos.col( e.second ) + e.dx ;
 			}
 		}
+
+		std::cout << " " << splits << " -- " << merges << " -- " << removes << std::endl ;
 
 		//Split -- merge
 #pragma omp parallel for
@@ -217,15 +227,14 @@ void Sampler::reassign( )
 		// Reloc
 		std::vector< unsigned > relocs ;
 		relocs.assign( nParticles, NoEvent );
+		size_t reloc_src = nParticles ;
 		for( unsigned eId = 0 ; eId < events.size() ; ++eId ) {
 			const Event& e = events[eId] ;
 
 			if( e.type == Event::Merge && e.second < nParticles ) {
-				size_t reloc_src = -1 ;
-
 				// Find last non-emptym pos
 				do {
-					reloc_src = --nParticles ;
+					--reloc_src ;
 				} while( reloc_src > e.second && eventIds[reloc_src] != NoEvent
 						 && events[ eventIds[reloc_src] ].type == Event::Merge
 						 && events[ eventIds[reloc_src] ].second == reloc_src
@@ -245,15 +254,16 @@ void Sampler::reassign( )
 			m_particleIds[ i ] = relocs[pid] ;
 		}
 
+		nParticles -= merges ;
 
 		// Remove -- Impossible without destroyign samples
-		/*
 		relocs.assign( nParticles, NoEvent );
 		for( unsigned eId = 0 ; eId < events.size() ; ++eId ) {
 			const Event& e = events[eId] ;
 
 			if( e.type == Event::Remove ) {
 				relocs[ e.second ] = e.first ;
+				relocs[ e.first ] = Destroy ;
 				m_predPos.col( e.first ) = m_predPos.col( e.second ) ;
 			}
 		}
@@ -263,8 +273,16 @@ void Sampler::reassign( )
 			const unsigned pid = m_particleIds[i] ;
 			if( relocs[ pid ] == NoEvent ) continue ;
 
+			if( relocs[ pid ] == Destroy )  {
+				m_particleIds[ i ] = 0 ;
+				m_visibility(i) = -1 ;
+				continue ;
+			}
+
 			m_particleIds[ i ] = relocs[pid] ;
-		}*/
+		}
+
+		nParticles -= removes ;
 
 	}
 
@@ -283,7 +301,9 @@ void Sampler::sampleParticles( unsigned nSamples )
 
 	m_positions.resize( 3, n * nSamples ) ;
 	m_normals.resize( 3, n * nSamples ) ;
+
 	m_visibility.resize( n * nSamples ) ;
+	m_visibility.setZero() ;
 
 #pragma omp parallel
 	{
