@@ -25,11 +25,13 @@ void main (void)
     float zs = texture( depth_texture, tex_coords ).r ;
 
     if ( zs  <  zz ){
-         alpha = 1. - shadow_coord.w*(zz-zs) ; //shadow_coord.z/20;
+         alpha = 1. - (zz-zs)*10 ; //shadow_coord.z/20;
      }
 
-    alpha = 0.6 * pow( clamp(alpha,0,1), 3) ;
+    alpha = pow( clamp(alpha,0,1), 3) ;
     //alpha = vis ;
+    color = alpha * vec4( vec3(0.3,0.3, 0.), 1. );
+    //return ;
 
     vec4 ambientMat  = vec4(0,0,0,0) ;
     vec4 diffuseMat  = vec4(0,0,0,0) ;
@@ -39,16 +41,20 @@ void main (void)
     float mat_1 = clamp( 1 - 2*(material-0.5), 0.0, 1.0 ) ;
     float mat_2 = clamp( 1 - 2*(material-1.0), 0.0, 1.0 ) ;
 
-        ambientMat += mat_0*vec4( vec3(0.3,0.3, 0.), 1. );
-        diffuseMat += mat_0*vec4( alpha*vec3(.8 , .8, 0.), 1. );
+//        ambientMat += vec4( vec3(0.3,0.3, 0.), 1. );
+//        diffuseMat += vec4( vec3(.6 , .6, 0.), 1. );
+//        specMat    += vec4( alpha*alpha*vec3(.7 , .7, .7), 1. );
+
+        ambientMat += mat_0*vec4( vec3(0.2,0.3, 0.1), 1. );
+        diffuseMat += mat_0*vec4( vec3(.2 , .3, 0.1), 1. );
         specMat    += mat_0*vec4( alpha*alpha*vec3(.7 , .7, .7), 1. );
 
-        ambientMat += mat_1*vec4( vec3(0.3,0.2, 0.), 1. );
-        diffuseMat += mat_1*vec4( alpha*vec3(.8 , .6, 0.), 1. );
+        ambientMat += mat_1*vec4( vec3(0.3,0.2, 0.1), 1. );
+        diffuseMat += mat_1*vec4( vec3(.3 , .2, 0.1), 1. );
         specMat    += mat_1*vec4( alpha*alpha*vec3(.7 , .7, .7), 1. );
 
-        ambientMat += mat_2*vec4( vec3(0.,0., 0.), 1. );
-        diffuseMat += mat_2*vec4( alpha*vec3(.5, .5, 0.5), 1. );
+        ambientMat += mat_2*vec4( vec3(0.25,0.2, 0.15), 1. );
+        diffuseMat += mat_2*vec4( vec3(.3, .2, 0.2), 1. );
         specMat    += mat_2*vec4( alpha*alpha*vec3(.7 , .7, .7), 1. );
 
 
@@ -67,6 +73,8 @@ void main (void)
     diffuse = clamp( diffuseMat * max(dot(normal_screen,L), 0.0)  , 0.0, 1.0 ) ;
     spec = clamp ( specMat * pow(max(dot(R,E),0.0),0.3*specPow) , 0.0, 1.0 );
 
-    color = ambient + diffuse + spec;
+    color = ( 0.4 + 0.6*alpha) * ambient ;
+    color += alpha * 0.75*diffuse ;
+
     color.a = 0.5 ;
 }

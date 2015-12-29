@@ -69,7 +69,7 @@ void Sampler::compute_absolute()
 	// offset += DU*offset * st
 
 
-	const Scalar noise = 1. ;
+	const Scalar noise = 1.e-1 ;
 
 	const Particles& particles = m_offline.particles() ;
 	const Phase& grains = m_offline.grains() ;
@@ -100,16 +100,16 @@ void Sampler::compute_absolute()
 		m_positions.col(i) = pos.cast< float >() ;
 
 		Eigen::Vector3f grad_phi = grains.grad_phi( pos ).cast<float>() ;
-		grad_phi += 1.e-2 * Eigen::Vector3f( 0, 0, -1 ) ;
 		const float gn = grad_phi.norm() ;
-		if( gn > 1.e-6 )
+
+		if( gn > 1.e-4 ) {
 			grad_phi /= gn ;
+			Eigen::Quaternionf rot( Eigen::AngleAxisf( noise, m_normalNoise.col(i) ) ) ;
+			m_normals.col(i) =  - ( rot * grad_phi ).normalized() ;
+		}
 		else
-			grad_phi = Eigen::Vector3f( 0, 0, -1 ) ;
+			m_normals.col(i).setZero() ;
 
-
-		Eigen::Quaternionf rot( Eigen::AngleAxisf( noise, m_normalNoise.col(i) ) ) ;
-		m_normals.col(i) =  - ( rot * grad_phi ).normalized() ;
 
 		if( m_velocityCut && m_positions.col(i)[0] < m_offline.config().box[0] * .5 )
 		{
@@ -120,7 +120,7 @@ void Sampler::compute_absolute()
 			if ( m_velocityCut ) {
 				m_visibility(i) = particles.velocities().col(pid).norm();
 			} else {
-				m_visibility(i) = std::max( 0., std::min( 1., 1.5 - 1.5*grains.fraction(pos) ) ) ;
+				m_visibility(i) = std::max( 0., std::min( 1., 1. - grains.fraction(pos) ) ) ;
 			}
 		}
 	}

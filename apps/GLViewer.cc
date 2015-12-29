@@ -21,8 +21,8 @@
 
 #include <iomanip>
 
-#define fb_width  1024
-#define fb_height 1024
+#define fb_width  2*2560
+#define fb_height 2*1440
 
 namespace d6 {
 
@@ -117,7 +117,8 @@ void GLViewer::draw()
 
 			cam.setPosition( lp );
 			cam.lookAt( sceneCenter() );
-			cam.setFieldOfView( std::atan2( m_offline.mesh().box().norm(), lightPosition().norm()/2 ) ) ;
+			//cam.setFieldOfView( M_PI*.9 ) ;//std::atan2( m_offline.mesh().box().norm(), lightPosition().norm()/2 ) ) ;
+			cam.setFOVToFitScene();
 			cam.computeModelViewMatrix();
 			cam.computeProjectionMatrix();
 
@@ -126,6 +127,8 @@ void GLViewer::draw()
 			depthMVP = depthMVP_d.cast< float >() ;
 
 			gl::VertexPointer vp( m_grainVertices ) ;
+
+			glEnable( GL_PROGRAM_POINT_SIZE ) ;
 
 			if(1){
 				// Compute grains shadowing
@@ -141,6 +144,9 @@ void GLViewer::draw()
 				UsingShader sh( m_depthShader ) ;
 
 				glUniformMatrix4fv( m_depthShader.uniform("depth_mvp"), 1, GL_FALSE, depthMVP.data()) ;
+
+				const float grainSize = fb_height / std::tan(cam.horizontalFieldOfView() / 2) * m_offline.config().grainDiameter ;
+				glUniform1f( m_depthShader.uniform("grain_size"), grainSize ) ;
 
 				gl::VertexAttribPointer vap_v( m_grainVertices, m_depthShader.attribute("vertex") ) ;
 				gl::VertexAttribPointer vap_a( m_grainVisibility, m_grainsShader.attribute("visibility") ) ;
@@ -179,6 +185,9 @@ void GLViewer::draw()
 
 				glUniform3fv( m_grainsShader.uniform("light_pos"), 1, lightPosition().data() ) ;
 
+				const float grainSize = height() / std::tan(camera()->horizontalFieldOfView() / 2) * m_offline.config().grainDiameter ;
+				glUniform1f( m_grainsShader.uniform("grain_size"), grainSize ) ;
+
 				UsingTexture tx( m_depthTexture ) ;
 				tx.bindUniform( m_testShader.uniform("in_texture") );
 				tx.bindUniform( m_grainsShader.uniform("depth_texture") );
@@ -189,6 +198,8 @@ void GLViewer::draw()
 				glDrawArrays( GL_POINTS, 0, m_grainVertices.size() );
 
 			}
+
+			glDisable( GL_PROGRAM_POINT_SIZE ) ;
 
 		}
 	}
@@ -249,12 +260,15 @@ void GLViewer::init()
 	const qglviewer::Vec qgl_box( box[0], box[1], box[2] ) ;
 	const qglviewer::Vec qgl_ori(0,0,0) ;
 	setSceneBoundingBox( qgl_ori, qgl_box) ;
-	camera()->setZClippingCoefficient( box.maxCoeff() );
+	camera()->setZNearCoefficient(1.e-3);
+	camera()->setZClippingCoefficient( 1 );
 
 	if( m_velocityCut ) {
 		camera()->setType( qglviewer::Camera::ORTHOGRAPHIC );
 		camera()->setViewDirection( qglviewer::Vec(1,0,0));
 		camera()->setUpVector( qglviewer::Vec(0,0,1));
+	} else {
+		camera()->setType( qglviewer::Camera::PERSPECTIVE );
 	}
 
 	m_shapeRenderer.init();
@@ -280,6 +294,7 @@ void GLViewer::init()
 		m_grainsShader.add_uniform("light_pos") ;
 		m_grainsShader.add_uniform("depth_mvp");
 		m_grainsShader.add_uniform("depth_texture");
+		m_grainsShader.add_uniform("grain_size");
 		if( m_velocityCut )
 			m_grainsShader.load("grains_vertex","grains_vel_fragment") ;
 		else
@@ -300,13 +315,14 @@ void GLViewer::init()
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, m_depthBuffer.width(), m_depthBuffer.height(), 0,GL_DEPTH_COMPONENT, GL_FLOAT, data);
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 		m_depthShader.add_attribute("vertex") ;
 		m_depthShader.add_uniform("depth_mvp");
+		m_depthShader.add_uniform("grain_size");
 		m_depthShader.load("depth_vertex","depth_fragment") ;
 	}
 
@@ -325,7 +341,8 @@ void GLViewer::animate()
 
 Eigen::Vector3f GLViewer::lightPosition() const
 {
-	return Eigen::Vector3f ( 0, 0, m_offline.mesh().box()[2] * 2 ) ;
+	const Eigen::Vector3f dir(-.5,-1,1) ;
+	return ( m_offline.mesh().box() / 2 ).cast< float >() + camera()->sceneRadius() * dir ;
 }
 
 void GLViewer::update_buffers()
