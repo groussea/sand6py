@@ -16,7 +16,7 @@ public:
 	: m_offline( offline ), m_particlesCount( 0 )
 	{}
 
-	void sampleParticles( unsigned nSamples ) ;
+	void sampleParticles( unsigned nSamples, bool velCut ) ;
 
 	void reassign() ;
 	void move( const Scalar dt ) ;
@@ -32,12 +32,13 @@ public:
 	const Eigen::VectorXf& visibility() const { return m_visibility ; }
 
 
-	void compute_absolute() ;
+	void compute_absolute( ) ;
 
 private:
 
 	const Offline& m_offline ;
 	unsigned m_particlesCount ;
+	bool m_velocityCut ;
 
 	std::vector< unsigned > m_particleIds ;
 	DynMat3 m_offsets ;

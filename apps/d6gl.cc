@@ -9,6 +9,7 @@ int main( int argc, char* argv[] ) {
 
 	const char * base_dir = "out" ;
 	unsigned frame = 0 ;
+	bool velCut = false ;
 
 	QApplication application(argc,argv);
 
@@ -26,6 +27,9 @@ int main( int argc, char* argv[] ) {
 				if( ++i == argc ) break ;
 				nSamples = d6::to_uint( argv[i] ) ;
 				break;
+			case 'v':
+				velCut = true ;
+				break;
 			}
 		} else {
 			base_dir = argv[i] ;
@@ -35,7 +39,8 @@ int main( int argc, char* argv[] ) {
 	d6::Offline offline( base_dir ) ;
 
 	d6::GLViewer viewer( offline, nSamples );
-	
+	viewer.cutAndColorVelocities(velCut) ;
+
 	viewer.set_frame( frame );
 
 	viewer.setWindowTitle("D6 glViewer");

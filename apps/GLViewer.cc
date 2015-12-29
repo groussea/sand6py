@@ -251,6 +251,12 @@ void GLViewer::init()
 	setSceneBoundingBox( qgl_ori, qgl_box) ;
 	camera()->setZClippingCoefficient( box.maxCoeff() );
 
+	if( m_velocityCut ) {
+		camera()->setType( qglviewer::Camera::ORTHOGRAPHIC );
+		camera()->setViewDirection( qglviewer::Vec(1,0,0));
+		camera()->setUpVector( qglviewer::Vec(0,0,1));
+	}
+
 	m_shapeRenderer.init();
 
 	m_particlesShader.add_attribute("vertex") ;
@@ -262,7 +268,7 @@ void GLViewer::init()
 	m_particlesShader.load() ;
 
 	if( renderSamples() ) {
-		m_sampler.sampleParticles( m_nSamples ) ;
+		m_sampler.sampleParticles( m_nSamples, m_velocityCut ) ;
 
 		m_grainsShader.add_attribute("vertex") ;
 		m_grainsShader.add_attribute("normal") ;
@@ -274,7 +280,10 @@ void GLViewer::init()
 		m_grainsShader.add_uniform("light_pos") ;
 		m_grainsShader.add_uniform("depth_mvp");
 		m_grainsShader.add_uniform("depth_texture");
-		m_grainsShader.load("grains_vertex","grains_fragment") ;
+		if( m_velocityCut )
+			m_grainsShader.load("grains_vertex","grains_vel_fragment") ;
+		else
+			m_grainsShader.load("grains_vertex","grains_fragment") ;
 
 		m_depthBuffer.reset( fb_width, fb_height );
 
@@ -409,7 +418,7 @@ void GLViewer::set_frame(unsigned frame)
 		m_currentFrame = frame ;
 	}
 
-	m_sampler.compute_absolute() ;
+	m_sampler.compute_absolute( ) ;
 
 	update_buffers();
 }

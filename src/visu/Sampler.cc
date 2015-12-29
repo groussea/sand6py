@@ -64,7 +64,7 @@ void Sampler::move( const Scalar dt )
 
 }
 
-void Sampler::compute_absolute( )
+void Sampler::compute_absolute()
 {
 	// offset += DU*offset * st
 
@@ -111,8 +111,17 @@ void Sampler::compute_absolute( )
 		Eigen::Quaternionf rot( Eigen::AngleAxisf( noise, m_normalNoise.col(i) ) ) ;
 		m_normals.col(i) =  - ( rot * grad_phi ).normalized() ;
 
+		if( m_velocityCut && m_positions.col(i)[0] < m_offline.config().box[0] * .5 )
+		{
+			m_visibility(i) = -1 ;
+		}
+
 		if( m_visibility(i) >= 0 ) {
-			m_visibility(i) = std::max( 0., std::min( 1., 1.5 - 1.5*grains.fraction(pos) ) ) ;
+			if ( m_velocityCut ) {
+				m_visibility(i) = particles.velocities().col(pid).norm();
+			} else {
+				m_visibility(i) = std::max( 0., std::min( 1., 1.5 - 1.5*grains.fraction(pos) ) ) ;
+			}
 		}
 	}
 
@@ -288,7 +297,7 @@ void Sampler::reassign( )
 
 }
 
-void Sampler::sampleParticles( unsigned nSamples )
+void Sampler::sampleParticles( unsigned nSamples, bool velCut )
 {
 	const Particles& particles = m_offline.particles() ;
 	const Index n = particles.count() ;
@@ -321,6 +330,7 @@ void Sampler::sampleParticles( unsigned nSamples )
 				m_particleIds[idx] = i ;
 
 				sampler(v) ;
+				v *= std::sqrt(RAD_FAC) ;
 
 				const Scalar vn = std::max( 1., Scalar( v.transpose() * frame.inverse() * v ) ) ;
 				m_offsets.col( idx ) = v/std::sqrt(vn)  ;
@@ -338,7 +348,8 @@ void Sampler::sampleParticles( unsigned nSamples )
 	m_particlesCount = n ;
 	m_predPos = particles.centers().leftCols( m_particlesCount ) ;
 
-	compute_absolute() ;
+	m_velocityCut = velCut ;
+	compute_absolute( ) ;
 }
 
 
