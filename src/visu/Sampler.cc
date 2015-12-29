@@ -75,6 +75,7 @@ void Sampler::compute_absolute()
 	const Phase& grains = m_offline.grains() ;
 
 	assert( particles.count() == m_particlesCount ) ;
+//	std::cerr << particles.count() << " vs " << m_particlesCount << std::endl ;
 
 	const Index n = count() ;
 
@@ -111,13 +112,13 @@ void Sampler::compute_absolute()
 			m_normals.col(i).setZero() ;
 
 
-		if( m_velocityCut && m_positions.col(i)[0] < m_offline.config().box[0] * .5 )
+		if( m_mode == VelocityCut && m_positions.col(i)[1] < m_offline.config().box[1] * .5 )
 		{
 			m_visibility(i) = -1 ;
 		}
 
 		if( m_visibility(i) >= 0 ) {
-			if ( m_velocityCut ) {
+			if ( m_mode == VelocityCut ) {
 				m_visibility(i) = particles.velocities().col(pid).norm();
 			} else {
 				m_visibility(i) = std::max( 0., std::min( 1., 1. - grains.fraction(pos) ) ) ;
@@ -149,6 +150,8 @@ void Sampler::reassign( )
 	const Index n = count() ;
 	unsigned nParticles = m_particlesCount ;
 
+	std::vector< unsigned > relocs ;
+
 	for(const std::vector< Event > &events :  m_offline.events().log()) {
 
 		unsigned splits = 0 ;
@@ -179,125 +182,136 @@ void Sampler::reassign( )
 			}
 		}
 
-		//Split -- merge
+		if( splits > 0 )
+		{
+
+			//Split
 #pragma omp parallel for
-		for( Index i = 0 ; i < n ; ++i ) {
+			for( Index i = 0 ; i < n ; ++i ) {
 
-			const unsigned pid = m_particleIds[i] ;
-			if( eventIds[ pid ] == NoEvent ) continue ;
+				const unsigned pid = m_particleIds[i] ;
+				if( eventIds[ pid ] == NoEvent ) continue ;
 
-			const Event& e = events[eventIds[pid]] ;
+				const Event& e = events[eventIds[pid]] ;
 
-			if( e.type == Event::Split ) {
+				if( e.type == Event::Split ) {
 
-				const Vec dx = events[eventIds[pid]].dx ;
+					const Vec dx = events[eventIds[pid]].dx ;
 
-				//dx = new_center_2 - old_center = old_center - new_center_1
-				//offset = p - old_center
-				//offset_2 = p - new_center_2 = p - (dx + old_center) = p - dx
-				//offset_1 = p - new_center_1 = p - (old_center - dx) = p + dx
+					//dx = new_center_2 - old_center = old_center - new_center_1
+					//offset = p - old_center
+					//offset_2 = p - new_center_2 = p - (dx + old_center) = p - dx
+					//offset_1 = p - new_center_1 = p - (old_center - dx) = p + dx
 
-				const Vec &off1 = m_offsets.col(i) + dx ;
-				const Vec &off2 = m_offsets.col(i) - dx ;
+					const Vec &off1 = m_offsets.col(i) + dx ;
+					const Vec &off2 = m_offsets.col(i) - dx ;
 
-				if( off1.squaredNorm() < off2.squaredNorm() ) {
-					m_offsets.col(i) = off1 ;
-				} else {
-					m_offsets.col(i) = off2 ;
-					m_particleIds[i] = e.second ;
+					if( off1.squaredNorm() < off2.squaredNorm() ) {
+						m_offsets.col(i) = off1 ;
+					} else {
+						m_offsets.col(i) = off2 ;
+						m_particleIds[i] = e.second ;
+					}
 				}
 			}
+
+			nParticles += splits ;
 		}
 
-#pragma omp parallel for
-		for( Index i = 0 ; i < n ; ++i ) {
+		if( merges > 0 )
+		{
 
-			const unsigned pid = m_particleIds[i] ;
-			if( eventIds[ pid ] == NoEvent ) continue ;
+	#pragma omp parallel for
+			for( Index i = 0 ; i < n ; ++i ) {
 
-			const Event& e = events[eventIds[pid]] ;
+				const unsigned pid = m_particleIds[i] ;
 
-			if( e.type == Event::Merge ) {
+				if( eventIds[ pid ] == NoEvent ) continue ;
 
-				const Vec dx = events[eventIds[pid]].dx ;
-				if( pid == e.first ) {
-					m_offsets.col(i) -= dx ;
-				} else {
-					m_offsets.col(i) += dx ;
-					m_particleIds[i] = e.first ;
+				const Event& e = events[eventIds[pid]] ;
+
+				if( e.type == Event::Merge ) {
+
+					const Vec dx = events[eventIds[pid]].dx ;
+					if( pid == e.first ) {
+						m_offsets.col(i) -= dx ;
+					} else {
+						m_offsets.col(i) += dx ;
+						m_particleIds[i] = e.first ;
+					}
 				}
 			}
-		}
 
-		nParticles += splits ;
+			// Reloc
+			relocs.assign( nParticles, NoEvent );
+			size_t reloc_src = nParticles ;
+			for( unsigned eId = 0 ; eId < events.size() ; ++eId ) {
+				const Event& e = events[eId] ;
 
-		// Reloc
-		std::vector< unsigned > relocs ;
-		relocs.assign( nParticles, NoEvent );
-		size_t reloc_src = nParticles ;
-		for( unsigned eId = 0 ; eId < events.size() ; ++eId ) {
-			const Event& e = events[eId] ;
-
-			if( e.type == Event::Merge && e.second < nParticles ) {
-				// Find last non-emptym pos
-				do {
-					--reloc_src ;
-				} while( reloc_src > e.second && eventIds[reloc_src] != NoEvent
-						 && events[ eventIds[reloc_src] ].type == Event::Merge
-						 && events[ eventIds[reloc_src] ].second == reloc_src
-						 ) ;
-
-				relocs[ reloc_src ] = e.second ;
-				m_predPos.col( e.second ) = m_predPos.col( reloc_src ) ;
+				if( e.type == Event::Merge && e.second + merges < nParticles ) {
+					// Find last non-emptym pos
+					do {
+						--reloc_src ;
+					} while( reloc_src > e.second && eventIds[reloc_src] != NoEvent
+							 && events[ eventIds[reloc_src] ].type == Event::Merge
+							 && events[ eventIds[reloc_src] ].second == reloc_src
+							 ) ;
+					relocs[ reloc_src ] = e.second ;
+					m_predPos.col( e.second ) = m_predPos.col( reloc_src ) ;
+				}
 			}
+
+	#pragma omp parallel for
+			for( Index i = 0 ; i < n ; ++i ) {
+
+				const unsigned pid = m_particleIds[i] ;
+				if( relocs[ pid ] == NoEvent ) continue ;
+
+				m_particleIds[ i ] = relocs[pid] ;
+			}
+
+			nParticles -= merges ;
 		}
 
+		if( removes > 0 )
+		{
+
+			// Remove -- Impossible without destroyign samples
+			relocs.assign( nParticles, NoEvent );
+			for( unsigned eId = 0 ; eId < events.size() ; ++eId ) {
+				const Event& e = events[eId] ;
+
+				if( e.type == Event::Remove ) {
+					relocs[ e.second ] = e.first ;
+					relocs[ e.first ] = Destroy ;
+					m_predPos.col( e.first ) = m_predPos.col( e.second ) ;
+				}
+			}
 #pragma omp parallel for
-		for( Index i = 0 ; i < n ; ++i ) {
+			for( Index i = 0 ; i < n ; ++i ) {
 
-			const unsigned pid = m_particleIds[i] ;
-			if( relocs[ pid ] == NoEvent ) continue ;
+				const unsigned pid = m_particleIds[i] ;
 
-			m_particleIds[ i ] = relocs[pid] ;
-		}
+				if( relocs[ pid ] == NoEvent ) continue ;
 
-		nParticles -= merges ;
+				if( relocs[ pid ] == Destroy )  {
+					m_particleIds[ i ] = 0 ;
+					m_visibility(i) = -1 ;
+					continue ;
+				}
 
-		// Remove -- Impossible without destroyign samples
-		relocs.assign( nParticles, NoEvent );
-		for( unsigned eId = 0 ; eId < events.size() ; ++eId ) {
-			const Event& e = events[eId] ;
-
-			if( e.type == Event::Remove ) {
-				relocs[ e.second ] = e.first ;
-				relocs[ e.first ] = Destroy ;
-				m_predPos.col( e.first ) = m_predPos.col( e.second ) ;
-			}
-		}
-#pragma omp parallel for
-		for( Index i = 0 ; i < n ; ++i ) {
-
-			const unsigned pid = m_particleIds[i] ;
-			if( relocs[ pid ] == NoEvent ) continue ;
-
-			if( relocs[ pid ] == Destroy )  {
-				m_particleIds[ i ] = 0 ;
-				m_visibility(i) = -1 ;
-				continue ;
+				m_particleIds[ i ] = relocs[pid] ;
 			}
 
-			m_particleIds[ i ] = relocs[pid] ;
+			nParticles -= removes ;
 		}
-
-		nParticles -= removes ;
-
 	}
 
 	m_particlesCount = nParticles ;
 
 }
 
-void Sampler::sampleParticles( unsigned nSamples, bool velCut )
+void Sampler::sampleParticles( unsigned nSamples )
 {
 	const Particles& particles = m_offline.particles() ;
 	const Index n = particles.count() ;
@@ -348,7 +362,6 @@ void Sampler::sampleParticles( unsigned nSamples, bool velCut )
 	m_particlesCount = n ;
 	m_predPos = particles.centers().leftCols( m_particlesCount ) ;
 
-	m_velocityCut = velCut ;
 	compute_absolute( ) ;
 }
 

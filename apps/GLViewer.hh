@@ -23,7 +23,6 @@ public:
 		m_currentFrame(-1),
 		m_drawParticles( 0 == nSamples ), m_enableBending( false ),
 		m_fastDraw( true ), m_drawObjects( true ), m_drawOrientations( false ),
-		m_velocityCut( false),
 		m_snapshotting(false), m_lastSnapped( m_currentFrame )
 	{
 
@@ -48,7 +47,9 @@ public:
 	}
 
 	void cutAndColorVelocities( bool doCut = true ) {
-		m_velocityCut = doCut ;
+		if( doCut ) {
+			m_sampler.setMode( Sampler::VelocityCut );
+		}
 	}
 
 protected :
@@ -80,7 +81,6 @@ private:
 	bool	 m_fastDraw ;
 	bool 	 m_drawObjects ;
 	bool 	 m_drawOrientations ;
-	bool	 m_velocityCut ;
 	bool 	 m_snapshotting ;
 	unsigned m_lastSnapped ;
 

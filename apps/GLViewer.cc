@@ -128,9 +128,12 @@ void GLViewer::draw()
 
 			gl::VertexPointer vp( m_grainVertices ) ;
 
-			glEnable( GL_PROGRAM_POINT_SIZE ) ;
 
-			if(1){
+			if( m_sampler.mode() != Sampler::VelocityCut )
+			{
+
+				glEnable( GL_PROGRAM_POINT_SIZE ) ;
+
 				// Compute grains shadowing
 				UsingFrameBuffer fb( m_depthBuffer ) ;
 
@@ -145,7 +148,9 @@ void GLViewer::draw()
 
 				glUniformMatrix4fv( m_depthShader.uniform("depth_mvp"), 1, GL_FALSE, depthMVP.data()) ;
 
-				const float grainSize = fb_height / std::tan(cam.horizontalFieldOfView() / 2) * m_offline.config().grainDiameter ;
+				const float grainSize = cam.type() == qglviewer::Camera::ORTHOGRAPHIC
+						? 2
+						: fb_height / std::tan(cam.horizontalFieldOfView() / 2) * m_offline.config().grainDiameter ;
 				glUniform1f( m_depthShader.uniform("grain_size"), grainSize ) ;
 
 				gl::VertexAttribPointer vap_v( m_grainVertices, m_depthShader.attribute("vertex") ) ;
@@ -153,7 +158,7 @@ void GLViewer::draw()
 
 				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-				glPointSize( 2 ) ;
+				glPointSize( grainSize ) ;
 				glDrawArrays( GL_POINTS, 0, m_grainVertices.size() );
 
 			}
@@ -185,7 +190,9 @@ void GLViewer::draw()
 
 				glUniform3fv( m_grainsShader.uniform("light_pos"), 1, lightPosition().data() ) ;
 
-				const float grainSize = height() / std::tan(camera()->horizontalFieldOfView() / 2) * m_offline.config().grainDiameter ;
+				const float grainSize = cam.type() == qglviewer::Camera::ORTHOGRAPHIC
+						? 1
+						: height() / std::tan(camera()->horizontalFieldOfView() / 2) * m_offline.config().grainDiameter ;
 				glUniform1f( m_grainsShader.uniform("grain_size"), grainSize ) ;
 
 				UsingTexture tx( m_depthTexture ) ;
@@ -194,7 +201,7 @@ void GLViewer::draw()
 
 				glUniformMatrix4fv( m_grainsShader.uniform("depth_mvp"), 1, GL_FALSE, depthMVP.data()) ;
 
-				glPointSize( 1 ) ;
+				glPointSize( grainSize ) ;
 				glDrawArrays( GL_POINTS, 0, m_grainVertices.size() );
 
 			}
@@ -263,9 +270,9 @@ void GLViewer::init()
 	camera()->setZNearCoefficient(1.e-3);
 	camera()->setZClippingCoefficient( 1 );
 
-	if( m_velocityCut ) {
+	if( m_sampler.mode() == Sampler::VelocityCut ) {
 		camera()->setType( qglviewer::Camera::ORTHOGRAPHIC );
-		camera()->setViewDirection( qglviewer::Vec(1,0,0));
+		camera()->setViewDirection( qglviewer::Vec(0,1,0));
 		camera()->setUpVector( qglviewer::Vec(0,0,1));
 	} else {
 		camera()->setType( qglviewer::Camera::PERSPECTIVE );
@@ -282,7 +289,7 @@ void GLViewer::init()
 	m_particlesShader.load() ;
 
 	if( renderSamples() ) {
-		m_sampler.sampleParticles( m_nSamples, m_velocityCut ) ;
+		m_sampler.sampleParticles( m_nSamples ) ;
 
 		m_grainsShader.add_attribute("vertex") ;
 		m_grainsShader.add_attribute("normal") ;
@@ -295,10 +302,13 @@ void GLViewer::init()
 		m_grainsShader.add_uniform("depth_mvp");
 		m_grainsShader.add_uniform("depth_texture");
 		m_grainsShader.add_uniform("grain_size");
-		if( m_velocityCut )
+		if( m_sampler.mode() == Sampler::VelocityCut ) {
 			m_grainsShader.load("grains_vertex","grains_vel_fragment") ;
-		else
+		} else if( m_sampler.mode() == Sampler::Discs ) {
+			m_grainsShader.load("grains_vertex","coins_fragment") ;
+		} else {
 			m_grainsShader.load("grains_vertex","grains_fragment") ;
+		}
 
 		m_depthBuffer.reset( fb_width, fb_height );
 

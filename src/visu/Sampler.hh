@@ -12,11 +12,20 @@ class Offline ;
 class Sampler {
 
 public:
+
+	enum Mode {
+		Normal,
+		VelocityCut,
+		Discs
+	};
+
 	explicit Sampler( const Offline& offline )
-	: m_offline( offline ), m_particlesCount( 0 )
+	: m_offline( offline ), m_particlesCount( 0 ), m_mode( Normal )
 	{}
 
-	void sampleParticles( unsigned nSamples, bool velCut ) ;
+
+
+	void sampleParticles( unsigned nSamples ) ;
 
 	void reassign() ;
 	void move( const Scalar dt ) ;
@@ -31,6 +40,12 @@ public:
 	const Eigen::Matrix3Xf& positions() const { return m_positions ; }
 	const Eigen::VectorXf& visibility() const { return m_visibility ; }
 
+	void setMode( const Mode mode ) {
+		m_mode = mode ;
+	}
+	Mode mode() const {
+		return m_mode ;
+	}
 
 	void compute_absolute( ) ;
 
@@ -38,7 +53,8 @@ private:
 
 	const Offline& m_offline ;
 	unsigned m_particlesCount ;
-	bool m_velocityCut ;
+
+	Mode m_mode ;
 
 	std::vector< unsigned > m_particleIds ;
 	DynMat3 m_offsets ;
