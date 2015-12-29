@@ -128,6 +128,11 @@ void GLViewer::draw()
 
 			gl::VertexPointer vp( m_grainVertices ) ;
 
+			if( m_sampler.mode() == Sampler::Discs )
+			{
+				glEnable( GL_POINT_SPRITE ) ;
+			}
+
 
 			if( m_sampler.mode() != Sampler::VelocityCut )
 			{
@@ -207,6 +212,7 @@ void GLViewer::draw()
 			}
 
 			glDisable( GL_PROGRAM_POINT_SIZE ) ;
+			glDisable( GL_POINT_SPRITE ) ;
 
 		}
 	}

@@ -9,7 +9,9 @@ int main( int argc, char* argv[] ) {
 
 	const char * base_dir = "out" ;
 	unsigned frame = 0 ;
+
 	bool velCut = false ;
+	bool discs  = false ;
 
 	QApplication application(argc,argv);
 
@@ -30,6 +32,9 @@ int main( int argc, char* argv[] ) {
 			case 'v':
 				velCut = true ;
 				break;
+			case 'd':
+				discs = true ;
+				break;
 			}
 		} else {
 			base_dir = argv[i] ;
@@ -39,7 +44,12 @@ int main( int argc, char* argv[] ) {
 	d6::Offline offline( base_dir ) ;
 
 	d6::GLViewer viewer( offline, nSamples );
-	viewer.cutAndColorVelocities(velCut) ;
+
+	if( velCut ) {
+		viewer.cutAndColorVelocities() ;
+	} else if ( discs ) {
+		viewer.useDiscs() ;
+	}
 
 	viewer.set_frame( frame );
 

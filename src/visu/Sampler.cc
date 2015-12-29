@@ -103,14 +103,15 @@ void Sampler::compute_absolute()
 		Eigen::Vector3f grad_phi = grains.grad_phi( pos ).cast<float>() ;
 		const float gn = grad_phi.norm() ;
 
-		if( gn > 1.e-4 ) {
-			grad_phi /= gn ;
-			Eigen::Quaternionf rot( Eigen::AngleAxisf( noise, m_normalNoise.col(i) ) ) ;
-			m_normals.col(i) =  - ( rot * grad_phi ).normalized() ;
+		if( m_mode == Normal ) {
+			if( gn > 1.e-4 ) {
+				grad_phi /= gn ;
+				Eigen::Quaternionf rot( Eigen::AngleAxisf( noise, m_normalNoise.col(i) ) ) ;
+				m_normals.col(i) =  - ( rot * grad_phi ).normalized() ;
+			}
+			else
+				m_normals.col(i).setZero() ;
 		}
-		else
-			m_normals.col(i).setZero() ;
-
 
 		if( m_mode == VelocityCut && m_positions.col(i)[1] < m_offline.config().box[1] * .5 )
 		{
@@ -353,6 +354,7 @@ void Sampler::sampleParticles( unsigned nSamples )
 				sampler( v ) ;
 
 				m_normalNoise.col( idx ) = v.cast< float >() ;
+				m_normals.col( idx ) = Eigen::Vector3f( 0, 0, 1 ) ;
 
 			}
 

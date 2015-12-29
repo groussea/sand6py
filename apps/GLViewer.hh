@@ -46,10 +46,11 @@ public:
 		return 0 < m_nSamples ;
 	}
 
-	void cutAndColorVelocities( bool doCut = true ) {
-		if( doCut ) {
-			m_sampler.setMode( Sampler::VelocityCut );
-		}
+	void cutAndColorVelocities() {
+		m_sampler.setMode( Sampler::VelocityCut );
+	}
+	void useDiscs() {
+		m_sampler.setMode( Sampler::Discs );
 	}
 
 protected :
