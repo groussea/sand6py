@@ -48,13 +48,14 @@ int main( int argc, char* argv[] ) {
 
 	d6::Offline offline( base_dir ) ;
 
-	d6::GLViewer viewer( offline, nSamples, grainSizeFactor );
+	d6::GLViewer viewer( offline, nSamples );
 
 	if( velCut ) {
-		viewer.cutAndColorVelocities() ;
+		viewer.grainsRenderer().cutAndColorVelocities() ;
 	} else if ( discs ) {
-		viewer.useDiscs() ;
+		viewer.grainsRenderer().useDiscs() ;
 	}
+	viewer.grainsRenderer().setGrainSizeFactor( grainSizeFactor );
 
 	viewer.set_frame( frame );
 

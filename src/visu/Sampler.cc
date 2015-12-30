@@ -39,10 +39,9 @@ struct BallSampler {
 	std::uniform_real_distribution<Scalar> dist;
 } ;
 
-void Sampler::move( const Scalar dt )
+void Sampler::move( )
 {
-	// offset += DU*offset * st
-
+	const Scalar dt = m_offline.frame_dt() ;
 	const Phase& grains = m_offline.grains() ;
 
 	const Index n = count() ;
@@ -312,7 +311,7 @@ void Sampler::reassign( )
 
 }
 
-void Sampler::sampleParticles( unsigned nSamples, const Vec& initialOri )
+void Sampler::sampleParticles( unsigned nSamples )
 {
 	const Particles& particles = m_offline.particles() ;
 	const Index n = particles.count() ;
@@ -327,7 +326,7 @@ void Sampler::sampleParticles( unsigned nSamples, const Vec& initialOri )
 	m_visibility.resize( n * nSamples ) ;
 	m_visibility.setZero() ;
 
-	Arr oris = initialOri.array().max(1.e-12).sqrt() ;
+	Arr oris = m_offline.config().initialOri.array().max(1.e-12).sqrt() ;
 
 #pragma omp parallel
 	{
@@ -369,8 +368,6 @@ void Sampler::sampleParticles( unsigned nSamples, const Vec& initialOri )
 
 	m_particlesCount = n ;
 	m_predPos = particles.centers().leftCols( m_particlesCount ) ;
-
-	compute_absolute( ) ;
 }
 
 

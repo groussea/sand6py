@@ -7,8 +7,6 @@
 #include "geo/MeshImpl.hh"
 #include "geo/LevelSet.hh"
 
-#include "gl/ShapeRenderer.hh"
-
 #include "utils/Log.hh"
 #include "utils/File.hh"
 
@@ -106,115 +104,68 @@ void GLViewer::draw()
 
 	if( renderSamples() )
 	{
-		if( m_grainsShader.ok() ) {
+		Eigen::Matrix4f depthMVP ;
 
-			Eigen::Matrix4f depthMVP ;
-
+		// Set-up light POV camera
 //			qglviewer::Camera& cam = *camera() ; //Debug mode
-			qglviewer::Camera  cam = *camera() ;
-			Eigen::Vector3f light_pos = lightPosition() ;
-			qglviewer::Vec lp( light_pos[0], light_pos[1], light_pos[2] )  ;
+		qglviewer::Camera  cam = *camera() ;
+		const Eigen::Vector3f& light_pos = lightPosition() ;
+		qglviewer::Vec lp( light_pos[0], light_pos[1], light_pos[2] )  ;
 
-			cam.setPosition( lp );
-			cam.lookAt( sceneCenter() );
-			//cam.setFieldOfView( M_PI*.9 ) ;//std::atan2( m_offline.mesh().box().norm(), lightPosition().norm()/2 ) ) ;
-			cam.setFOVToFitScene();
-			cam.computeModelViewMatrix();
-			cam.computeProjectionMatrix();
+		cam.setPosition( lp );
+		cam.lookAt( sceneCenter() );
+		//cam.setFieldOfView( M_PI*.9 ) ;//std::atan2( m_offline.mesh().box().norm(), lightPosition().norm()/2 ) ) ;
+		cam.setFOVToFitScene();
+		cam.computeModelViewMatrix();
+		cam.computeProjectionMatrix();
 
-			Eigen::Matrix4d depthMVP_d ;
-			cam.getModelViewProjectionMatrix(depthMVP_d.data());
-			depthMVP = depthMVP_d.cast< float >() ;
+		Eigen::Matrix4d depthMVP_d ;
+		cam.getModelViewProjectionMatrix(depthMVP_d.data());
+		depthMVP = depthMVP_d.cast< float >() ;
 
-			gl::VertexPointer vp( m_grainVertices ) ;
-
-			if( m_sampler.mode() == Sampler::Discs )
-			{
-				glEnable( GL_POINT_SPRITE ) ;
-			}
+		if( m_grainsRenderer.sampler().mode() != Sampler::VelocityCut )
+		{
 
 
-			if( m_sampler.mode() != Sampler::VelocityCut )
-			{
+			// Compute grains shadowing
+			UsingFrameBuffer fb( m_depthBuffer ) ;
 
-				glEnable( GL_PROGRAM_POINT_SIZE ) ;
+			glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depthTexture.id(), 0);
+			glDrawBuffer(GL_NONE); // No color buffer is drawn to.
 
-				// Compute grains shadowing
-				UsingFrameBuffer fb( m_depthBuffer ) ;
+			if( m_depthBuffer.check_complete() )
+				Log::Error() << "Frame buffer incomplete" << std::endl ;
 
-				glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depthTexture.id(), 0);
-				glDrawBuffer(GL_NONE); // No color buffer is drawn to.
+			const Scalar baseGrainSize = cam.type() == qglviewer::Camera::ORTHOGRAPHIC
+					? 0
+					: fb_height / std::tan(cam.horizontalFieldOfView() / 2) * m_offline.config().grainDiameter ;
 
-				if( m_depthBuffer.check_complete() )
-					Log::Error() << "Frame buffer incomplete" << std::endl ;
+			m_grainsRenderer.compute_shadow( baseGrainSize, depthMVP );
+		}
 
+		if(0){
+			UsingShader sh( m_testShader ) ;
 
-				UsingShader sh( m_depthShader ) ;
+			UsingTexture tx( m_depthTexture ) ;
+			tx.bindUniform( m_testShader.uniform("in_texture") );
 
-				glUniformMatrix4fv( m_depthShader.uniform("depth_mvp"), 1, GL_FALSE, depthMVP.data()) ;
-
-				const float grainSize = cam.type() == qglviewer::Camera::ORTHOGRAPHIC
-						? 2
-						: fb_height / std::tan(cam.horizontalFieldOfView() / 2) * m_offline.config().grainDiameter ;
-				glUniform1f( m_depthShader.uniform("grain_size"), grainSize * m_grainSizeFactor ) ;
-
-				gl::VertexAttribPointer vap_v( m_grainVertices, m_depthShader.attribute("vertex") ) ;
-				gl::VertexAttribPointer vap_a( m_grainVisibility, m_grainsShader.attribute("visibility") ) ;
-
-				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-				glPointSize( grainSize * m_grainSizeFactor ) ;
-				glDrawArrays( GL_POINTS, 0, m_grainVertices.size() );
-
-			}
-
-			if(0){
-				UsingShader sh( m_testShader ) ;
-
-				UsingTexture tx( m_depthTexture ) ;
-				tx.bindUniform( m_testShader.uniform("in_texture") );
-
-				gl::VertexAttribPointer vap_v( m_shapeRenderer.squareVertices(), m_testShader.attribute("vertex") ) ;
-				gl::VertexPointer vp( m_shapeRenderer.squareVertices() ) ;
-				glDrawArrays( GL_QUADS, 0, m_shapeRenderer.squareVertices().size() ) ;
-
-			}
-
-			if(1){
-
-				UsingShader sh( m_grainsShader ) ;
-				// Model-view
-				sh.bindMVP() ;
-
-				//Vertices
-				gl::VertexAttribPointer vap_v( m_grainVertices, m_grainsShader.attribute("vertex") ) ;
-				gl::VertexAttribPointer vap_n( m_grainNormals, m_grainsShader.attribute("normal") ) ;
-
-				gl::VertexAttribPointer vap_a( m_grainVisibility, m_grainsShader.attribute("visibility") ) ;
-				gl::VertexAttribPointer vap_s( m_grainNoise, m_grainsShader.attribute("noise") ) ;
-
-				glUniform3fv( m_grainsShader.uniform("light_pos"), 1, lightPosition().data() ) ;
-
-				const float grainSize = cam.type() == qglviewer::Camera::ORTHOGRAPHIC
-						? 1
-						: height() / std::tan(camera()->horizontalFieldOfView() / 2) * m_offline.config().grainDiameter ;
-				glUniform1f( m_grainsShader.uniform("grain_size"), grainSize * m_grainSizeFactor ) ;
-
-				UsingTexture tx( m_depthTexture ) ;
-				tx.bindUniform( m_testShader.uniform("in_texture") );
-				tx.bindUniform( m_grainsShader.uniform("depth_texture") );
-
-				glUniformMatrix4fv( m_grainsShader.uniform("depth_mvp"), 1, GL_FALSE, depthMVP.data()) ;
-
-				glPointSize( grainSize * m_grainSizeFactor ) ;
-				glDrawArrays( GL_POINTS, 0, m_grainVertices.size() );
-
-			}
-
-			glDisable( GL_PROGRAM_POINT_SIZE ) ;
-			glDisable( GL_POINT_SPRITE ) ;
+			gl::VertexAttribPointer vap_v( m_shapeRenderer.squareVertices(), m_testShader.attribute("vertex") ) ;
+			gl::VertexPointer vp( m_shapeRenderer.squareVertices() ) ;
+			glDrawArrays( GL_QUADS, 0, m_shapeRenderer.squareVertices().size() ) ;
 
 		}
+
+		if(1){
+			const Scalar baseGrainSize = cam.type() == qglviewer::Camera::ORTHOGRAPHIC
+					? 0
+					: height() / std::tan(camera()->horizontalFieldOfView() / 2) * m_offline.config().grainDiameter ;
+
+			m_grainsRenderer.draw( m_depthTexture, lightPosition(), baseGrainSize, depthMVP  );
+		}
+
+		glDisable( GL_PROGRAM_POINT_SIZE ) ;
+		glDisable( GL_POINT_SPRITE ) ;
+
 	}
 
 	glDisable (GL_BLEND);
@@ -276,7 +227,7 @@ void GLViewer::init()
 	camera()->setZNearCoefficient(1.e-3);
 	camera()->setZClippingCoefficient( 1 );
 
-	if( m_sampler.mode() == Sampler::VelocityCut ) {
+	if( m_grainsRenderer.sampler().mode() == Sampler::VelocityCut ) {
 		camera()->setType( qglviewer::Camera::ORTHOGRAPHIC );
 		camera()->setViewDirection( qglviewer::Vec(0,1,0));
 		camera()->setUpVector( qglviewer::Vec(0,0,1));
@@ -295,26 +246,7 @@ void GLViewer::init()
 	m_particlesShader.load() ;
 
 	if( renderSamples() ) {
-		m_sampler.sampleParticles( m_nSamples, m_offline.config().initialOri ) ;
-
-		m_grainsShader.add_attribute("vertex") ;
-		m_grainsShader.add_attribute("normal") ;
-		m_grainsShader.add_attribute("visibility") ;
-		m_grainsShader.add_attribute("noise") ;
-
-		m_grainsShader.add_uniform("model_view") ;
-		m_grainsShader.add_uniform("projection") ;
-		m_grainsShader.add_uniform("light_pos") ;
-		m_grainsShader.add_uniform("depth_mvp");
-		m_grainsShader.add_uniform("depth_texture");
-		m_grainsShader.add_uniform("grain_size");
-		if( m_sampler.mode() == Sampler::VelocityCut ) {
-			m_grainsShader.load("grains_vertex","grains_vel_fragment") ;
-		} else if( m_sampler.mode() == Sampler::Discs ) {
-			m_grainsShader.load("grains_vertex","coins_fragment") ;
-		} else {
-			m_grainsShader.load("grains_vertex","grains_fragment") ;
-		}
+		m_grainsRenderer.init();
 
 		m_depthBuffer.reset( fb_width, fb_height );
 
@@ -336,10 +268,6 @@ void GLViewer::init()
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-		m_depthShader.add_attribute("vertex") ;
-		m_depthShader.add_uniform("depth_mvp");
-		m_depthShader.add_uniform("grain_size");
-		m_depthShader.load("depth_vertex","depth_fragment") ;
 	}
 
 	m_testShader.add_attribute("vertex") ;
@@ -425,10 +353,7 @@ void GLViewer::update_buffers()
 	}
 
 	if( renderSamples() ) {
-		m_grainVertices  .reset( m_sampler.count(), m_sampler.positions().data() , GL_DYNAMIC_DRAW )  ;
-		m_grainNormals   .reset( m_sampler.count(), m_sampler.normals().data()   , GL_DYNAMIC_DRAW )  ;
-		m_grainVisibility.reset( m_sampler.count(), m_sampler.visibility().data(), GL_DYNAMIC_DRAW )  ;
-		m_grainNoise     .reset( m_sampler.count(), m_sampler.noise().data()     , GL_DYNAMIC_DRAW )  ;
+		m_grainsRenderer.update_buffers();
 	}
 }
 
@@ -442,16 +367,13 @@ void GLViewer::set_frame(unsigned frame)
 {
 
 	if( frame == m_currentFrame+1 && renderSamples() ) {
-		m_sampler.reassign();
-		m_sampler.move( m_offline.frame_dt() ) ;
+		m_grainsRenderer.move() ;
 	}
 
 	if( m_offline.load_frame( frame ) ) {
 
 		m_currentFrame = frame ;
 	}
-
-	m_sampler.compute_absolute( ) ;
 
 	update_buffers();
 }

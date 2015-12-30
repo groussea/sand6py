@@ -2,10 +2,10 @@
 #define D6_GLVIEWER_HH
 
 #include "visu/Offline.hh"
-#include "visu/Sampler.hh"
 
 #include "gl/VertexBuffer.hh"
 #include "gl/Shader.hh"
+#include "gl/GrainRenderer.hh"
 #include "gl/ShapeRenderer.hh"
 #include "gl/Texture.hh"
 
@@ -18,13 +18,13 @@ class GLViewer : public QGLViewer
 
 public:
 
-	GLViewer( Offline & offline, unsigned nSamples, float grainSizeFactor ) :
-		m_offline( offline ), m_sampler( offline ), m_nSamples( nSamples ),
+	GLViewer( Offline & offline, unsigned nSamples ) :
+		m_offline( offline ),
 		m_currentFrame(-1),
 		m_drawParticles( 0 == nSamples ), m_enableBending( false ),
 		m_fastDraw( true ), m_drawObjects( true ), m_drawOrientations( false ),
 		m_snapshotting(false), m_lastSnapped( m_currentFrame ),
-		m_grainSizeFactor( grainSizeFactor )
+		m_grainsRenderer( offline, nSamples )
 	{
 
 	}
@@ -44,14 +44,14 @@ public:
 	}
 
 	bool renderSamples() const {
-		return 0 < m_nSamples ;
+		return m_grainsRenderer.valid() ;
 	}
 
-	void cutAndColorVelocities() {
-		m_sampler.setMode( Sampler::VelocityCut );
+	GrainRenderer& grainsRenderer() {
+		return m_grainsRenderer ;
 	}
-	void useDiscs() {
-		m_sampler.setMode( Sampler::Discs );
+	const GrainRenderer& grainsRenderer() const {
+		return m_grainsRenderer ;
 	}
 
 protected :
@@ -73,9 +73,7 @@ private:
 	void snap() ;
 
 	Offline& m_offline ;
-	Sampler  m_sampler ;
 
-	unsigned m_nSamples  ;
 	unsigned m_currentFrame ;
 
 	bool 	 m_drawParticles ;
@@ -86,7 +84,6 @@ private:
 	bool 	 m_snapshotting ;
 
 	unsigned m_lastSnapped ;
-	float 	 m_grainSizeFactor ;
 
 	gl::VertexBuffer3d m_centers ;
 	gl::VertexBuffer4f m_colors  ;
@@ -97,20 +94,13 @@ private:
 	Eigen::VectorXf m_densities ;
 	gl::ArrayBufferf m_alpha ;
 
-	gl::VertexBuffer3f m_grainVertices ;
-	gl::VertexBuffer3f m_grainNormals ;
-	gl::ArrayBufferf m_grainVisibility ;
-	gl::ArrayBufferf m_grainNoise ;
-
 	Shader m_particlesShader ;
-	Shader m_grainsShader ;
-
-	Shader m_depthShader ;
 	Shader m_testShader ;
 
 	Texture     m_depthTexture ;
 	FrameBuffer m_depthBuffer  ;
 
+	GrainRenderer m_grainsRenderer ;
 	ShapeRenderer m_shapeRenderer ;
 
 } ;

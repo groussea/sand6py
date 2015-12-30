@@ -25,10 +25,10 @@ public:
 
 
 
-	void sampleParticles(unsigned nSamples , const Vec &initialOri) ;
+	void sampleParticles(unsigned nSamples ) ;
 
 	void reassign() ;
-	void move( const Scalar dt ) ;
+	void move( ) ;
 
 	size_t count() const { return m_particleIds.size() ; }
 
