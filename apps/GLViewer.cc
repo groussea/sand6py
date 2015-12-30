@@ -295,7 +295,7 @@ void GLViewer::init()
 	m_particlesShader.load() ;
 
 	if( renderSamples() ) {
-		m_sampler.sampleParticles( m_nSamples ) ;
+		m_sampler.sampleParticles( m_nSamples, m_offline.config().initialOri ) ;
 
 		m_grainsShader.add_attribute("vertex") ;
 		m_grainsShader.add_attribute("normal") ;

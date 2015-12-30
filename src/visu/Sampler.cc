@@ -312,7 +312,7 @@ void Sampler::reassign( )
 
 }
 
-void Sampler::sampleParticles( unsigned nSamples )
+void Sampler::sampleParticles( unsigned nSamples, const Vec& initialOri )
 {
 	const Particles& particles = m_offline.particles() ;
 	const Index n = particles.count() ;
@@ -326,6 +326,8 @@ void Sampler::sampleParticles( unsigned nSamples )
 
 	m_visibility.resize( n * nSamples ) ;
 	m_visibility.setZero() ;
+
+	Arr oris = initialOri.array().max(1.e-12).sqrt() ;
 
 #pragma omp parallel
 	{
@@ -352,9 +354,13 @@ void Sampler::sampleParticles( unsigned nSamples )
 				m_positions.col( idx ) = ( particles.centers().col(i) + m_offsets.col( idx )).cast<float>() ;
 
 				sampler( v ) ;
-
 				m_normalNoise.col( idx ) = v.cast< float >() ;
-				m_normals.col( idx ) = Eigen::Vector3f( 0, 0, 1 ) ;
+
+
+				if( m_mode == Discs ) {
+					sampler( v ) ;
+					m_normals.col( idx ) = (v.array() * oris).matrix().normalized().cast<float>() ;
+				}
 
 			}
 

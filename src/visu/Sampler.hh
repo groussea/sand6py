@@ -25,7 +25,7 @@ public:
 
 
 
-	void sampleParticles( unsigned nSamples ) ;
+	void sampleParticles(unsigned nSamples , const Vec &initialOri) ;
 
 	void reassign() ;
 	void move( const Scalar dt ) ;
