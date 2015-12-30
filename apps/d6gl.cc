@@ -12,6 +12,7 @@ int main( int argc, char* argv[] ) {
 
 	bool velCut = false ;
 	bool discs  = false ;
+	float grainSizeFactor = 1 ;
 
 	QApplication application(argc,argv);
 
@@ -35,6 +36,10 @@ int main( int argc, char* argv[] ) {
 			case 'd':
 				discs = true ;
 				break;
+			case 'g':
+				if( ++i == argc ) break ;
+				grainSizeFactor = d6::to_float( argv[i] ) ;
+				break;
 			}
 		} else {
 			base_dir = argv[i] ;
@@ -43,7 +48,7 @@ int main( int argc, char* argv[] ) {
 
 	d6::Offline offline( base_dir ) ;
 
-	d6::GLViewer viewer( offline, nSamples );
+	d6::GLViewer viewer( offline, nSamples, grainSizeFactor );
 
 	if( velCut ) {
 		viewer.cutAndColorVelocities() ;

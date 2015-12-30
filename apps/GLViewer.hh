@@ -18,12 +18,13 @@ class GLViewer : public QGLViewer
 
 public:
 
-	GLViewer( Offline & offline, unsigned nSamples ) :
+	GLViewer( Offline & offline, unsigned nSamples, float grainSizeFactor ) :
 		m_offline( offline ), m_sampler( offline ), m_nSamples( nSamples ),
 		m_currentFrame(-1),
 		m_drawParticles( 0 == nSamples ), m_enableBending( false ),
 		m_fastDraw( true ), m_drawObjects( true ), m_drawOrientations( false ),
-		m_snapshotting(false), m_lastSnapped( m_currentFrame )
+		m_snapshotting(false), m_lastSnapped( m_currentFrame ),
+		m_grainSizeFactor( grainSizeFactor )
 	{
 
 	}
@@ -83,7 +84,9 @@ private:
 	bool 	 m_drawObjects ;
 	bool 	 m_drawOrientations ;
 	bool 	 m_snapshotting ;
+
 	unsigned m_lastSnapped ;
+	float 	 m_grainSizeFactor ;
 
 	gl::VertexBuffer3d m_centers ;
 	gl::VertexBuffer4f m_colors  ;

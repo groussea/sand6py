@@ -20,7 +20,7 @@ void main (void)
 
     vec3 nproj = normal_screen  ;
 
-    //Assume GL_POINT_SPRITE_COORD_ORIGIN is GL_UPPERER_LEFT
+    //Assume GL_POINT_SPRITE_COORD_ORIGIN is GL_UPPER_LEFT
     vec2 pos = vec2( gl_PointCoord.x - .5, .5 - gl_PointCoord.y ) ;
 
     if( abs(dot(nproj.st, pos)) > .25 )

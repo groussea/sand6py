@@ -73,8 +73,8 @@ void main (void)
     diffuse = clamp( diffuseMat * max(dot(normal_screen,L), 0.0)  , 0.0, 1.0 ) ;
     spec = clamp ( specMat * pow(max(dot(R,E),0.0),0.3*specPow) , 0.0, 1.0 );
 
-    color = ( 0.4 + 0.6*alpha) * ambient ;
-    color += alpha * 0.75*diffuse ;
+    color = ( 0.5) * ambient ;
+    color += alpha * diffuse;
 
     color.a = 0.5 ;
 }

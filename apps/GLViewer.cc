@@ -156,14 +156,14 @@ void GLViewer::draw()
 				const float grainSize = cam.type() == qglviewer::Camera::ORTHOGRAPHIC
 						? 2
 						: fb_height / std::tan(cam.horizontalFieldOfView() / 2) * m_offline.config().grainDiameter ;
-				glUniform1f( m_depthShader.uniform("grain_size"), grainSize ) ;
+				glUniform1f( m_depthShader.uniform("grain_size"), grainSize * m_grainSizeFactor ) ;
 
 				gl::VertexAttribPointer vap_v( m_grainVertices, m_depthShader.attribute("vertex") ) ;
 				gl::VertexAttribPointer vap_a( m_grainVisibility, m_grainsShader.attribute("visibility") ) ;
 
 				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-				glPointSize( grainSize ) ;
+				glPointSize( grainSize * m_grainSizeFactor ) ;
 				glDrawArrays( GL_POINTS, 0, m_grainVertices.size() );
 
 			}
@@ -198,7 +198,7 @@ void GLViewer::draw()
 				const float grainSize = cam.type() == qglviewer::Camera::ORTHOGRAPHIC
 						? 1
 						: height() / std::tan(camera()->horizontalFieldOfView() / 2) * m_offline.config().grainDiameter ;
-				glUniform1f( m_grainsShader.uniform("grain_size"), grainSize ) ;
+				glUniform1f( m_grainsShader.uniform("grain_size"), grainSize * m_grainSizeFactor ) ;
 
 				UsingTexture tx( m_depthTexture ) ;
 				tx.bindUniform( m_testShader.uniform("in_texture") );
@@ -206,7 +206,7 @@ void GLViewer::draw()
 
 				glUniformMatrix4fv( m_grainsShader.uniform("depth_mvp"), 1, GL_FALSE, depthMVP.data()) ;
 
-				glPointSize( grainSize ) ;
+				glPointSize( grainSize * m_grainSizeFactor ) ;
 				glDrawArrays( GL_POINTS, 0, m_grainVertices.size() );
 
 			}
