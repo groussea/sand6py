@@ -24,6 +24,8 @@ void main (void)
     vec2 nrot = vec2( -nproj[1], nproj[0] ) ;
 
     float h = (normal_screen[2] + 0.1)/1.1 ; //max( nproj[2] * nproj[2]) ;
+    float z = dot(pos,nproj)/(normal_screen[2]+1.e-3) * sqrt(1-normal_screen[2]*normal_screen[2]) ;
+    gl_FragDepth = gl_FragCoord.z + gl_FragCoord.w*z ;
 
     mat2 A  = 1./(h*h) * outerProduct(nproj.xy, nproj.xy) + outerProduct(nrot, nrot) ;
 
