@@ -52,6 +52,29 @@ void Sampler::move( )
 		const Vec p0 = m_positions.col(i).cast< Scalar >()  ;
 		const Vec p1 = p0 + dt * grains.velocity( p0 ) ;
 		m_positions.col(i) = p1.cast< float >() ;
+
+		// Orientation
+		if( m_mode == Discs ) {
+			Mat Wu, Du ;
+			tensor_view( grains.sym_grad(p0) ).get( Du ) ;
+			tensor_view( grains.spi_grad(p0) ).get( Wu ) ;
+
+			Vec t0 ;
+			if ( std::fabs(m_normals(i,0)) > 1.e-6 ) {
+				t0 = Vec( -m_normals(i,1), m_normals(i,0), 0 ).normalized() ;
+			} else {
+				t0 = Vec( 0, -m_normals(i,2), m_normals(i,1) ).normalized() ;
+			}
+			Vec t1 = m_normals.col(i).cast<Scalar>().cross(t0) ;
+
+			t0 += dt * ( Wu*t0 + m_offline.config().elongation*
+						 ( Du*t0 - (Du.cwiseProduct(t0*t0.transpose()).sum())*t0) ) ;
+			t1 += dt * ( Wu*t1 + m_offline.config().elongation*
+						 ( Du*t1 - (Du.cwiseProduct(t1*t1.transpose()).sum())*t1) ) ;
+
+			m_normals.col(i) = t0.cross(t1).normalized().cast<float>() ;
+		}
+
 	}
 
 	// Predict particle positions
@@ -65,9 +88,6 @@ void Sampler::move( )
 
 void Sampler::compute_absolute()
 {
-	// offset += DU*offset * st
-
-
 	const Scalar noise = 1.e-1 ;
 
 	const Particles& particles = m_offline.particles() ;
