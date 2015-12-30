@@ -60,6 +60,14 @@ public:
 		m_frame = Eigen::AngleAxis< Scalar >( angle, axis )  ;
 		return *this ;
 	}
+	LevelSet& rotate( const Quaternion& frame ) {
+		m_frame = frame * m_frame ;
+		return *this ;
+	}
+	LevelSet& rotate( const Vec& axis, Scalar angle ) {
+		m_frame = Eigen::AngleAxis< Scalar >( angle, axis ) * m_frame  ;
+		return *this ;
+	}
 
 	void inv_inertia( Mat66 & Mi ) const ;
 

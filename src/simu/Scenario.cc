@@ -206,20 +206,47 @@ struct BunnyScenar : public Scenario {
 
 	Scalar particle_density( const Vec &x ) const override {
 		return ( bunny_ls->eval_at( x ) < 0 &&
-				 x[2] > .5*m_config->box[2]
+				 x[2] < .5*m_config->box[2]
 		) ? 1 : 0 ;
 	}
 
 	void init( const Params& params ) override {
 		const std::string& meshname = string_param( params, "mesh", "../scenes/bunny.obj") ;
 		bunny_ls = LevelSet::from_mesh( meshname.c_str() ) ;
-		bunny_ls->scale(25.e1) ;
-		bunny_ls->compute() ;
+
+		Eigen::AngleAxis< Scalar > aa( ) ;
+
+		const Scalar S = m_config->box[0] ;
+
+		bunny_ls->scale( S*4 )
+				.rotate( Vec(0,1,0), M_PI/4 )
+				.rotate( Vec(1,0,0), M_PI/4 )
+				.set_origin( S * Vec(.5,.25,-.25) ) ;
+		bunny_ls->compute( ) ;
 	}
 
 	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
 	{
 		rbs.emplace_back( bunny_ls, 1.e99 );
+	}
+
+	void update( Simu& simu, Scalar time, Scalar /*dt*/ ) const override
+	{
+		const Scalar speed = m_config->units().toSI( Units::Time ) ;
+
+		const Scalar tw = time * speed ;
+		Vec vel = Vec::Zero() ;
+
+		if( tw > .25 ) {
+			const Scalar t = tw-.25 ;
+			if( t < 1 ) {
+				vel = Vec(0,0,6*(t - t*t)) * speed * ( .35 * m_config->box[2] );
+			}
+		}
+
+		for( RigidBody& rb: simu.rigidBodies() ) {
+			rb.set_velocity( vel, Vec::Zero() );
+		}
 	}
 
 	mutable LevelSet::Ptr bunny_ls ;
