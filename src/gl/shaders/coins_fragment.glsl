@@ -18,13 +18,21 @@ void main (void)
 {
     if( vis < 0 ) discard ;
 
-    vec3 nproj = normal_screen  ;
-
+    vec2 nproj = normalize( normal_screen.xy )  ;
     //Assume GL_POINT_SPRITE_COORD_ORIGIN is GL_UPPER_LEFT
     vec2 pos = vec2( gl_PointCoord.x - .5, .5 - gl_PointCoord.y ) ;
+    vec2 nrot = vec2( -nproj[1], nproj[0] ) ;
 
-    if( abs(dot(nproj.st, pos)) > .25 )
+    float h = (normal_screen[2] + 0.1)/1.1 ; //max( nproj[2] * nproj[2]) ;
+
+    mat2 A  = 1./(h*h) * outerProduct(nproj.xy, nproj.xy) + outerProduct(nrot, nrot) ;
+
+    if( dot( pos, A*pos) > 0.25 )
         discard ;
+
+
+//    if( abs(dot(nproj.st, pos)) > .25 )
+//        discard ;
 //    if( gl_PointCoord.t > 0. )
 //        discard ;
 
@@ -58,15 +66,14 @@ void main (void)
 
         ambientMat += mat_0*vec4( vec3(0.2,0.3, 0.1), 1. );
         diffuseMat += mat_0*vec4( vec3(.2 , .3, 0.1), 1. );
-        specMat    += mat_0*vec4( alpha*alpha*vec3(.7 , .7, .7), 1. );
 
         ambientMat += mat_1*vec4( vec3(0.3,0.2, 0.1), 1. );
         diffuseMat += mat_1*vec4( vec3(.3 , .2, 0.1), 1. );
-        specMat    += mat_1*vec4( alpha*alpha*vec3(.7 , .7, .7), 1. );
 
         ambientMat += mat_2*vec4( vec3(0.25,0.2, 0.15), 1. );
         diffuseMat += mat_2*vec4( vec3(.3, .2, 0.2), 1. );
-        specMat    += mat_2*vec4( alpha*alpha*vec3(.7 , .7, .7), 1. );
+
+        specMat    = vec4( 1., 1., 1., 1. );
 
 
     float specPow = 15.0;
@@ -86,6 +93,7 @@ void main (void)
 
     color = ( 0.4 + 0.6*alpha) * ambient ;
     color += alpha * 0.75*diffuse ;
+    color += alpha*alpha*0.5*spec;
 
     color.a = 0.5 ;
 }
