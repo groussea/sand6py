@@ -11,18 +11,10 @@
  *
  */
 
-//! If defined, do not ensure thread-safety of textual output
-//#define D6_LOG_NO_THREAD_SAFETY
-
 #include "LogLevels.hh"
 #include "string.hh"
 
-#ifndef D6_LOG_NO_THREAD_SAFETY
-#include "Mutex.hh"
-#endif
-
-#include "ThreadLocal.hh"
-
+#include <mutex>
 #include <iostream>
 #include <sstream>
 
@@ -145,13 +137,11 @@ template< > struct  LevelNames< L_##level > { \
 	  return ( Config::get().no_prefix ) ? "" : s_prefix ;
 	 }
 
-#ifndef D6_LOG_NO_THREAD_SAFETY
-	 static Mutex& global_mutex()
+	 static std::recursive_mutex& global_mutex()
 	 {
-	   static Mutex s_global( Mutex::Recursive ) ;
+	   static std::recursive_mutex s_global ;
 	   return s_global ;
 	 }
-#endif
 
 	std::ostream stream ;
 
@@ -160,16 +150,12 @@ template< > struct  LevelNames< L_##level > { \
   template < Level L   >
    struct Buf : public std::stringbuf {
 	 std::ostream* &stream ;
-#ifndef D6_LOG_NO_THREAD_SAFETY
-	 Mutex mutex ;
+	
+	 std::recursive_mutex mutex ;
 	 volatile bool locked ;
-#endif
 
 	 Buf( std::ostream* &stream_ptr )
 	   : stream( stream_ptr )
-#ifndef D6_LOG_NO_THREAD_SAFETY
-	   , mutex( Mutex::Recursive )
-  #endif
 	 {}
 
 	 //! Called each time the stream is flushed ( e.g. for each std::endl )
@@ -177,9 +163,8 @@ template< > struct  LevelNames< L_##level > { \
 	 {
 	   {
 		 //Output prefix + buffered string
-#ifndef D6_LOG_NO_THREAD_SAFETY
-		 LockGuard lock( LogBase::global_mutex() ) ;
-#endif
+		 std::lock_guard<std::recursive_mutex> lock( LogBase::global_mutex() ) ;
+		 
 		 *stream << LogBase::prefix<L>( ) << str();
 		 stream->flush();
 	   }
@@ -187,34 +172,27 @@ template< > struct  LevelNames< L_##level > { \
 	   str("");
 
 		// Release mutex
-#ifndef D6_LOG_NO_THREAD_SAFETY
 	   if( locked )
 	   {
 		 locked = false ;
 		 mutex.unlock() ;
 	   }
-#endif
 
 	   return 0;
 	 }
 
-#ifndef D6_LOG_NO_THREAD_SAFETY
 	 virtual std::streamsize xsputn (const char* s, std::streamsize n)
 	 {
 	   acquire_mutex();
 	   return std::stringbuf::xsputn( s, n ) ;
 	 }
-#endif
-
 
 	 void acquire_mutex()
 	 {
-#ifndef D6_LOG_NO_THREAD_SAFETY
 	   mutex.lock() ;
 	   if( locked ) mutex.unlock() ; //This thread was already owning the recursive mutex, release it once
 
 	   locked = true ;
-#endif
 	 }
 
    } ;
@@ -252,21 +230,34 @@ template< > struct  LevelNames< L_##level > { \
   }
 
 
-  template < > struct Stream< L_Nothing > : public std::ostream {
-
-	Stream(): std::ostream(0)
-	{
-	}
+  template < > struct Stream< L_Nothing >  {
 
 	static std::ostream& as_std_ostream( )
 	{
-	  D6_TLS( Stream< L_Nothing >, black_hole ) ;
-	  return *black_hole ;
+	  return impl() ;
 	}
 
 	static std::ostream& unsafe( )
 	{
 	  return as_std_ostream() ;
+	}
+
+private:
+
+	struct black_hole_buf : public std::streambuf {
+		std::streamsize xsputn (const char *, std::streamsize n) override {
+			return n;
+		}
+		int overflow (int) override {
+			return 1;
+		}
+	};
+	
+	static std::ostream& impl() 
+	{
+		static black_hole_buf s_buf ;
+		static std::ostream s_stream(&s_buf) ;
+		return s_stream ;
 	}
   };
 

@@ -4,8 +4,6 @@ utils/File.cc
 utils/File.hh
 utils/Log.hh
 utils/LogLevels.hh
-utils/Mutex.cc
-utils/Mutex.hh
 utils/Stats.cc
 utils/Stats.hh
 utils/ThreadLocal.hh

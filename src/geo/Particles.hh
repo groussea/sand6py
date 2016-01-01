@@ -2,7 +2,8 @@
 #define D6_PARTICLES_HH
 
 #include "Expr.hh"
-#include "utils/Mutex.hh"
+
+#include <mutex>
 
 namespace d6 {
 
@@ -60,7 +61,7 @@ public:
 
 	private:
 		std::vector< std::vector< Event > > m_log ;
-		Mutex m_log_mutex ;
+		std::mutex m_log_mutex ;
 
 	};
 

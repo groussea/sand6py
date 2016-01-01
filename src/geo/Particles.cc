@@ -78,7 +78,7 @@ void Particles::resize(size_t n)
 
 void Particles::EventLog::log(const Event& event)
 {
-	LockGuard lock( m_log_mutex ) ;
+	std::lock_guard<std::mutex> lock( m_log_mutex ) ;
 	m_log.back().push_back( event );
 }
 
