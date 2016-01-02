@@ -3,6 +3,7 @@
 uniform mat4 model_view ;
 uniform mat4 projection ;
 uniform vec3 light_pos ;
+uniform float grain_size ;
 uniform sampler2D depth_texture;
 
 in vec3 normal_screen ;
@@ -24,8 +25,6 @@ void main (void)
     vec2 nrot = vec2( -nproj[1], nproj[0] ) ;
 
     float h = (normal_screen[2] + 0.1)/1.1 ; //max( nproj[2] * nproj[2]) ;
-    float z = dot(pos,nproj)/(normal_screen[2]+1.e-3) * sqrt(1-normal_screen[2]*normal_screen[2]) ;
-    gl_FragDepth = gl_FragCoord.z + gl_FragCoord.w*z ;
 
     mat2 A  = 1./(h*h) * outerProduct(nproj.xy, nproj.xy) + outerProduct(nrot, nrot) ;
 
@@ -90,8 +89,8 @@ void main (void)
     vec3 R = normalize(reflect(-L, normal_screen ));
 
     ambient = ambientMat;
-    diffuse = clamp( diffuseMat * max(dot(normal_screen,L), 0.0)  , 0.0, 1.0 ) ;
-    spec = clamp ( specMat * pow(max(dot(R,E),0.0),0.3*specPow) , 0.0, 1.0 );
+    diffuse = clamp( diffuseMat * max(abs(dot(normal_screen,L)), 0.0)  , 0.0, 1.0 ) ;
+    spec = clamp ( specMat * pow(max(abs(dot(R,E)),0.0),0.3*specPow) , 0.0, 1.0 );
 
     color = ( 0.4 + 0.6*alpha) * ambient ;
     color += alpha * 0.75*diffuse ;

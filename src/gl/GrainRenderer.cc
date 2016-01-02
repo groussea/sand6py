@@ -2,20 +2,23 @@
 
 #include "Texture.hh"
 
+#include "visu/Offline.hh"
+
 namespace d6 {
 
 void GrainRenderer::compute_shadow(
-		const float baseGrainSize, const Eigen::Matrix4f &depthMVP )
+		const float pixelSize, const Eigen::Matrix4f &depthMVP )
 {
 	if( !m_grainsShader.ok() )
 		return ;
 
 	UsingShader sh( m_depthShader ) ;
 
-	if( baseGrainSize > 0 )
+	if( pixelSize > 0 )
 	{
 		glEnable( GL_PROGRAM_POINT_SIZE ) ;
-		glUniform1f( m_depthShader.uniform("grain_size"), baseGrainSize * m_grainSizeFactor ) ;
+		glUniform1f( m_depthShader.uniform("grain_size"), m_offline.config().grainDiameter * m_grainSizeFactor ) ;
+		glUniform1f( m_depthShader.uniform("pixel_size"), pixelSize ) ;
 	} else {
 		glPointSize( 2 * m_grainSizeFactor ) ;
 	}
@@ -37,7 +40,7 @@ void GrainRenderer::compute_shadow(
 }
 
 void GrainRenderer::draw(const Texture& depthTexture, const Eigen::Vector3f &lightPosition,
-		const float baseGrainSize, const Eigen::Matrix4f &depthMVP )
+		const float pixelSize, const Eigen::Matrix4f &depthMVP )
 {
 	if( !m_grainsShader.ok() )
 		return ;
@@ -50,10 +53,11 @@ void GrainRenderer::draw(const Texture& depthTexture, const Eigen::Vector3f &lig
 	{
 		glEnable( GL_POINT_SPRITE ) ;
 	}
-	if( baseGrainSize > 0 )
+	if( pixelSize > 0 )
 	{
 		glEnable( GL_PROGRAM_POINT_SIZE ) ;
-		glUniform1f( m_grainsShader.uniform("grain_size"), baseGrainSize * m_grainSizeFactor ) ;
+		glUniform1f( m_grainsShader.uniform("grain_size"), m_offline.config().grainDiameter * m_grainSizeFactor ) ;
+		glUniform1f( m_grainsShader.uniform("pixel_size"), pixelSize ) ;
 	} else {
 		glPointSize( m_grainSizeFactor ) ;
 	}
@@ -96,6 +100,7 @@ void GrainRenderer::init()
 	m_grainsShader.add_uniform("depth_mvp");
 	m_grainsShader.add_uniform("depth_texture");
 	m_grainsShader.add_uniform("grain_size");
+	m_grainsShader.add_uniform("pixel_size");
 	if( m_sampler.mode() == Sampler::VelocityCut ) {
 		m_grainsShader.load("grains_vertex","grains_vel_fragment") ;
 	} else if( m_sampler.mode() == Sampler::Discs ) {
@@ -107,6 +112,7 @@ void GrainRenderer::init()
 	m_depthShader.add_attribute("vertex") ;
 	m_depthShader.add_uniform("depth_mvp");
 	m_depthShader.add_uniform("grain_size");
+	m_depthShader.add_uniform("pixel_size");
 	m_depthShader.load("depth_vertex","depth_fragment") ;
 }
 

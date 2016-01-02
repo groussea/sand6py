@@ -136,11 +136,11 @@ void GLViewer::draw()
 			if( m_depthBuffer.check_complete() )
 				Log::Error() << "Frame buffer incomplete" << std::endl ;
 
-			const Scalar baseGrainSize = cam.type() == qglviewer::Camera::ORTHOGRAPHIC
+			const Scalar pixelSize = cam.type() == qglviewer::Camera::ORTHOGRAPHIC
 					? 0
-					: fb_height / std::tan(cam.horizontalFieldOfView() / 2) * m_offline.config().grainDiameter ;
+					: fb_height / std::tan(cam.horizontalFieldOfView() / 2)  ;
 
-			m_grainsRenderer.compute_shadow( baseGrainSize, depthMVP );
+			m_grainsRenderer.compute_shadow( pixelSize, depthMVP );
 		}
 
 		if(0){
@@ -156,11 +156,11 @@ void GLViewer::draw()
 		}
 
 		if(1){
-			const Scalar baseGrainSize = cam.type() == qglviewer::Camera::ORTHOGRAPHIC
+			const Scalar pixelSize = cam.type() == qglviewer::Camera::ORTHOGRAPHIC
 					? 0
-					: height() / std::tan(camera()->horizontalFieldOfView() / 2) * m_offline.config().grainDiameter ;
+					: height() / std::tan(camera()->horizontalFieldOfView() / 2) ;
 
-			m_grainsRenderer.draw( m_depthTexture, lightPosition(), baseGrainSize, depthMVP  );
+			m_grainsRenderer.draw( m_depthTexture, lightPosition(), pixelSize, depthMVP  );
 		}
 
 		glDisable( GL_PROGRAM_POINT_SIZE ) ;

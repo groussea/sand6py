@@ -4,6 +4,7 @@ uniform mat4 model_view ;
 uniform mat4 projection ;
 uniform mat4 depth_mvp  ;
 uniform float grain_size  ;
+uniform float pixel_size  ;
 
 in vec3 vertex ;
 in vec3 normal ;
@@ -29,5 +30,5 @@ void main()
     gl_Position = projection *  ip ;
     shadow_coord = ( depth_mvp * vec4( vertex, 1 ) ) ;
 
-    gl_PointSize = max( 1, 3 * grain_size / gl_Position.w );
+    gl_PointSize = max( 1, pixel_size * grain_size / gl_Position.w );
 }
