@@ -41,6 +41,7 @@ private:
 	gl::VertexBuffer3f m_squareVertices ;
 
 	Shader m_ballShader ;
+	Shader m_solidShader ;
 
 	typedef std::unordered_map< std::string, MeshRenderer > MeshRenderers ;
 	mutable MeshRenderers m_meshRenderers ;

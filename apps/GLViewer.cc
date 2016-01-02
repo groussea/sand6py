@@ -243,7 +243,7 @@ void GLViewer::init()
 
 	m_particlesShader.add_uniform("model_view") ;
 	m_particlesShader.add_uniform("projection") ;
-	m_particlesShader.load() ;
+	m_particlesShader.load("particles_vertex", "particles_fragment") ;
 
 	if( renderSamples() ) {
 		m_grainsRenderer.init();

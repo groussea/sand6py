@@ -41,6 +41,57 @@ static void genSphere( const unsigned parallels, const unsigned meridians,
 
 }
 
+static void genPointyCylinder( const float height, const unsigned parallels, 
+					   Eigen::Matrix3Xf& vertices,
+					   Eigen::Matrix3Xf& normals, 
+					   std::vector< GLuint >& quadIndices )
+{
+	quadIndices.clear() ;
+	quadIndices.reserve( parallels * 4 * 3 ) ;
+	vertices.resize( 3, 2 + parallels * 2 ) ;
+	normals.resize( 3, 2 + parallels * 2 ) ;
+
+	const double dphi = 2*M_PI / (parallels - 1.);
+	
+	Eigen::Vector3f p0 (0,0,-.5*height) ;
+	Eigen::Vector3f p1 (0,0, .5*height) ;
+
+	vertices.col(0) = p0 + Eigen::Vector3f(0,0,-1) ;
+	normals.col(0) = Eigen::Vector3f(0,0,-1) ; 
+	vertices.col(1) = p1 + Eigen::Vector3f(0,0, 1); 
+	normals.col(1) = Eigen::Vector3f(0,0, 1) ; 
+
+	for(unsigned i = 0; i < parallels; ++i)
+	{
+		const float beta0 = i*dphi ;
+		const unsigned id_cur = 2+2*i ;
+		const unsigned id_nxt = 2+2*((i+1)%parallels) ;
+
+		Eigen::Vector3f n ( std::cos(beta0), std::sin(beta0),0) ;
+		vertices.col(id_cur+0) = p0 + n ;
+		vertices.col(id_cur+1) = p1 + n ;
+		normals .col(id_cur+0) = n ;
+		normals .col(id_cur+1) = n ;
+
+		quadIndices.push_back( 0 ) ;
+		quadIndices.push_back( id_cur+0 ) ;
+		quadIndices.push_back( id_nxt+0 ) ;
+		quadIndices.push_back( 0 ) ;
+		
+		quadIndices.push_back( id_cur+0 ) ;
+		quadIndices.push_back( id_nxt+0 ) ;
+		quadIndices.push_back( id_nxt+1 ) ;
+		quadIndices.push_back( id_cur+1 ) ;
+		
+		quadIndices.push_back( 1 ) ;
+		quadIndices.push_back( id_cur+1 ) ;
+		quadIndices.push_back( id_nxt+1 ) ;
+		quadIndices.push_back( 1 ) ;
+
+	}
+
+}
+
 void ShapeRenderer::init()
 {
 	// Gen glyph vertices
@@ -66,6 +117,15 @@ void ShapeRenderer::init()
 	m_ballShader.add_uniform("light_pos") ;
 	m_ballShader.add_attribute("vertex") ;
 	m_ballShader.load("ball_vertex","ball_fragment") ;
+	
+	// Default solid shader
+	m_solidShader.add_uniform("model_view") ;
+	m_solidShader.add_uniform("projection") ;
+	m_solidShader.add_uniform("light_pos") ;
+	m_solidShader.add_uniform("ambient") ;
+	m_solidShader.add_attribute("vertex") ;
+	m_solidShader.add_attribute("normal") ;
+	m_solidShader.load("vertex","fragment") ;
 
 }
 
@@ -192,29 +252,42 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 			}
 
 		} else if ( (cylinder = dynamic_cast<const CylinderLevelSet*>(&ls)) ) {
+			// Generate points = normales
+			Eigen::Matrix3Xf cylVertices, cylNormals ;
+			std::vector< GLuint > quadIndices ;
+			genPointyCylinder( cylinder->height(), 30, cylVertices, cylNormals, quadIndices );
 
-			Eigen::Vector3f p0 (0,0,-.5*cylinder->height()) ;
-			Eigen::Vector3f p1 (0,0,.5*cylinder->height()) ;
+			// Transfer to VBO
+			gl::VertexBuffer3f cylv, cyln ;
+			gl::IndexBuffer cylqi ;
+			cylv.reset( cylVertices.cols(), cylVertices.data(), GL_DYNAMIC_DRAW );
+			cyln.reset( cylNormals .cols(), cylNormals .data(), GL_DYNAMIC_DRAW );
+			cylqi.reset( quadIndices.size(), quadIndices.data() );
 
-			const unsigned res= 10 ;
+			cylqi.bind() ;
 
-			glBegin( GL_QUAD_STRIP );
-			for( unsigned j = 0 ; j < res ; ++j )
-			{
-				const float beta0 = (2*M_PI*(j+0)) / (res-1) ;
+			Eigen::Vector3f color(0.3,0.15,0.1) ;
 
-				Eigen::Vector3f n ( std::cos(beta0), std::sin(beta0),0) ;
+			if( m_solidShader.ok() ) {
+				UsingShader sh( m_solidShader ) ;
+				sh.bindMVP() ;
+				
+				gl::VertexAttribPointer vap( cylv, m_solidShader.attribute("vertex") ) ;
+				gl::VertexAttribPointer nap( cyln, m_solidShader.attribute("normal") ) ;
+			
+				glUniform3fv( m_solidShader.uniform("light_pos"), 1, lightPos.data() ) ;
+				glUniform3fv( m_solidShader.uniform("ambient"), 1, color.data() ) ;
+				
+				glDrawElements( GL_QUADS, cylqi.size(), GL_UNSIGNED_INT, 0 );
 
-				Eigen::Vector3f v0 = p0 + n ;
-				Eigen::Vector3f v1 = p1 + n ;
-
-				glNormal3fv( n.data() );
-				glVertex3fv( v0.data() );
-				glNormal3fv( n.data() );
-				glVertex3fv( v1.data() );
-
+			} else {
+				gl::VertexPointer vp( cylv ) ;
+				gl::NormalPointer np( cyln ) ;
+				glColor3fv( color.data() ) ;
+				
+				glDrawElements( GL_QUADS, cylqi.size(), GL_UNSIGNED_INT, 0 );
 			}
-			glEnd( ) ;
+
 		} else if ( (mesh = dynamic_cast<const MeshLevelSet*>(&ls)) ) {
 			MeshRenderer& renderer = m_meshRenderers[ mesh->objFile() ] ;
 			if( !renderer.ok() ) {
@@ -226,8 +299,20 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 				renderer.reset( triMesh ) ;
 			}
 
-			renderer.draw() ;
+			UsingShader sh( m_solidShader ) ;
+
+			Eigen::Vector3f color(0.3,0.15,0.1) ;
+			glColor3fv( color.data() ) ;
+
+			if( m_solidShader.ok() ) {
+				sh.bindMVP() ;
+				glUniform3fv( m_solidShader.uniform("light_pos"), 1, lightPos.data() ) ;
+				glUniform3fv( m_solidShader.uniform("ambient"), 1, color.data() ) ;
+			}
+
+			renderer.draw( m_solidShader ) ;
 		}
+				
 
 		glPopMatrix();
 	}

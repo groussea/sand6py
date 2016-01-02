@@ -11,24 +11,24 @@ in vec3 normal ;
 in float visibility ;
 in float noise ;
 
-out vec3 normal_screen ;
-out vec3 vertex_screen ;
+out vec3 normal_eye ;
+out vec3 vertex_eye ;
 out vec4 shadow_coord  ;
 out float vis ;
 out float material ;
 
 void main()
 {
-    vec4 ip = model_view * vec4( vertex, 1)  ;
-    vertex_screen  = ip.xyz ;
-    normal_screen  = normalize( mat3(model_view) * normal ) ;
+	vec4 ip = model_view * vec4( vertex, 1)  ;
+	vertex_eye  = ip.xyz ;
+	normal_eye  = normalize( model_view * vec4(normal,0) ).xyz ;
 
-    vis = visibility ;
+	vis = visibility ;
 
-    material = noise ;
+	material = noise ;
 
-    gl_Position = projection *  ip ;
-    shadow_coord = ( depth_mvp * vec4( vertex, 1 ) ) ;
+	gl_Position = projection *  ip ;
+	shadow_coord = ( depth_mvp * vec4( vertex, 1 ) ) ;
 
-    gl_PointSize = max( 1, pixel_size * grain_size / gl_Position.w );
+	gl_PointSize = max( 1, pixel_size * grain_size / gl_Position.w );
 }

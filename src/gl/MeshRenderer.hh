@@ -8,6 +8,7 @@
 namespace d6 {
 
 class TriangularMesh ;
+class Shader ;
 
 class MeshRenderer 
 {
@@ -15,7 +16,7 @@ class MeshRenderer
 	
 	void reset( const TriangularMesh& mesh ) ;
 
-	void draw( ) const ;
+	void draw( const Shader &shader ) const ;
 
 	bool ok() const 
 	{

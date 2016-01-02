@@ -1,4 +1,5 @@
 #include "MeshRenderer.hh"
+#include "Shader.hh"
 
 #include "geo/TriangularMesh.hh"
 
@@ -47,13 +48,23 @@ void MeshRenderer::reset( const TriangularMesh& mesh )
 
 }
 
-void MeshRenderer::draw() const {
-	
+void MeshRenderer::draw( const Shader &shader ) const 
+{
 	gl::VertexPointer vp( m_vertices ) ;
-	gl::NormalPointer np( m_normals ) ;
+	if( shader.ok() )
+	{
+		gl::VertexAttribPointer vap( m_vertices, shader.attribute("vertex") ) ;
+		gl::VertexAttribPointer nap( m_normals,  shader.attribute("normal") ) ;
+		
+		glDrawArrays( GL_TRIANGLES, 0, m_vertices.size() ) ;
+		
+	} else {
 
-	glDrawArrays( GL_TRIANGLES, 0, m_vertices.size() ) ;
+		gl::NormalPointer np( m_normals ) ;
 
+		glDrawArrays( GL_TRIANGLES, 0, m_vertices.size() ) ;
+
+	}
 }
 
 } //d6

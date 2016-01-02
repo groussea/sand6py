@@ -6,7 +6,6 @@ utils/Log.hh
 utils/LogLevels.hh
 utils/Stats.cc
 utils/Stats.hh
-utils/ThreadLocal.hh
 utils/alg.hh
 utils/block_mat.hh
 utils/endian.hh
