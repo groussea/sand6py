@@ -25,6 +25,13 @@ void TorusLevelSet::serialize(Archive &ar, const unsigned int )
 	ar & m_radius ;
 }
 template<class Archive>
+void HourglassLevelSet::serialize(Archive &ar, const unsigned int )
+{
+	ar & boost::serialization::base_object<LevelSet>(*this);
+	ar & m_height ;
+	ar & m_radius ;
+}
+template<class Archive>
 void HoleLevelSet::serialize(Archive &ar, const unsigned int )
 {
 	ar & boost::serialization::base_object<LevelSet>(*this);
@@ -48,12 +55,13 @@ void MeshLevelSet::serialize(Archive &ar, const unsigned int )
 template<class Archive>
 void LevelSet::register_derived(Archive &ar )
 {
-	ar.register_type(static_cast<  SphereLevelSet *>(NULL));
-	ar.register_type(static_cast<   PlaneLevelSet *>(NULL));
-	ar.register_type(static_cast<   TorusLevelSet *>(NULL));
-	ar.register_type(static_cast<CylinderLevelSet *>(NULL));
-	ar.register_type(static_cast<    MeshLevelSet *>(NULL));
-	ar.register_type(static_cast<    HoleLevelSet *>(NULL));
+	ar.register_type(static_cast<   SphereLevelSet *>(NULL));
+	ar.register_type(static_cast<    PlaneLevelSet *>(NULL));
+	ar.register_type(static_cast<    TorusLevelSet *>(NULL));
+	ar.register_type(static_cast< CylinderLevelSet *>(NULL));
+	ar.register_type(static_cast<HourglassLevelSet *>(NULL));
+	ar.register_type(static_cast<     MeshLevelSet *>(NULL));
+	ar.register_type(static_cast<     HoleLevelSet *>(NULL));
 }
 
 //base class serilization

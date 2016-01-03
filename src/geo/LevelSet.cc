@@ -63,6 +63,7 @@ LevelSet::Ptr LevelSet::make_cylinder(Scalar height) { return Ptr( new CylinderL
 LevelSet::Ptr LevelSet::make_plane() { return Ptr( new PlaneLevelSet() ) ; }
 LevelSet::Ptr LevelSet::make_torus(Scalar radius) { return Ptr( new TorusLevelSet( radius ) ) ; }
 LevelSet::Ptr LevelSet::make_hole(Scalar radius) { return Ptr( new HoleLevelSet( radius ) ) ; }
+LevelSet::Ptr LevelSet::make_hourglass(Scalar height, Scalar radius) { return Ptr( new HourglassLevelSet( height, radius ) ) ; }
 LevelSet::Ptr LevelSet::from_mesh(const char* objFile) { return Ptr( new MeshLevelSet( objFile ) ) ; }
 
 } //d6

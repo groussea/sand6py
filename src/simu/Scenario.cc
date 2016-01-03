@@ -202,6 +202,33 @@ private:
 	Scalar R ;
 };
 
+struct HourglassScenar : public Scenario {
+
+	Scalar particle_density( const Vec &x ) const override {
+		return ( hg_ls->eval_at( x ) < 0 &&
+				 x[2] > .5*m_config->box[2] && x[2] < .8*m_config->box[2]
+		) ? 1 : 0 ;
+	}
+
+	void init( const Params& params ) override {
+		const Scalar D = scalar_param( params, "D", Units::None, 0.9 ) ;
+		const Scalar d = scalar_param( params, "d", Units::None, 0.25 ) ;
+		
+		const Scalar S = .5*D*m_config->box[1] ;
+		const Scalar H = m_config->box[2]/2 / S ;
+
+		hg_ls = LevelSet::make_hourglass( H, d ) ;
+		hg_ls->scale( S ).set_origin( .5 * m_config->box ) ;
+	}
+
+	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
+	{
+		rbs.emplace_back( hg_ls, 1.e99 );
+	}
+
+	mutable LevelSet::Ptr hg_ls ;
+};
+
 struct BunnyScenar : public Scenario {
 
 	Scalar particle_density( const Vec &x ) const override {
@@ -348,6 +375,8 @@ struct DefaultScenarioFactory : public ScenarioFactory
 			return std::unique_ptr< Scenario >( new BunnyScenar() ) ;
 		if( str == "writing")
 			return std::unique_ptr< Scenario >( new WritingScenar() ) ;
+		if( str == "hourglass")
+			return std::unique_ptr< Scenario >( new HourglassScenar() ) ;
 
 		return std::unique_ptr< Scenario >( new BedScenar() ) ;
 	}

@@ -218,6 +218,80 @@ private:
 	Scalar m_height ;
 };
 
+struct HourglassLevelSet : public LevelSet
+{
+
+	explicit HourglassLevelSet( Scalar h = 2., Scalar r = .1 )
+		: m_height( h ), m_radius(r)
+	{}
+
+	Scalar height() const { return m_height ; }
+	Scalar outletRadius() const { return m_radius ; }
+
+	Scalar eval_local(const Vec &x) const override
+	{
+		Vec proj_e, proj_a ;
+		proj_on_axis( x, proj_a );
+		proj_on_ends( x, proj_e );
+
+		Scalar phi_e = 1.       - (x-proj_e).norm() ;
+		Scalar phi_a = m_radius - (x-proj_a).norm() ;
+
+		return - std::max(phi_e, phi_a) ;
+	}
+
+	Vec grad_local(const Vec &x) const override 
+	{
+		Vec proj_e, proj_a ;
+		proj_on_axis( x, proj_a );
+		proj_on_ends( x, proj_e );
+
+		Scalar phi_e = 1.       - (x-proj_e).norm() ;
+		Scalar phi_a = m_radius - (x-proj_a).norm() ;
+
+		if( phi_e > phi_a ) {
+			const Scalar n = (x - proj_e).norm() ;
+			return -(proj_e - x) / (1.e-12 + n) ;
+		} else {
+			const Scalar n = (x - proj_a).norm() ;
+			return -(proj_a - x) / (1.e-12 + n) ;
+		}
+	}
+
+	void local_inv_inertia( Mat& I ) const override {
+		I.setZero() ;
+	}
+
+	Scalar local_volume() const override {
+		return 1 ;
+	}
+
+	template<class Archive>
+	void serialize(Archive &ar, const unsigned int version ) ;
+
+private:
+
+	void proj_on_ends( const Vec&x, Vec& proj ) const
+	{
+		proj[0] = 0. ;
+		proj[1] = 0. ;
+		if(x[2]>0)
+			proj[2] =  .5*m_height ;
+		else
+			proj[2] = -.5*m_height ;
+	}
+
+	void proj_on_axis( const Vec&x, Vec& proj ) const
+	{
+		proj[0] = 0. ;
+		proj[1] = 0. ;
+		proj[2] = std::max(-.5*m_height, std::min(.5*m_height, x[2])) ;
+	}
+
+	Scalar m_height ;
+	Scalar m_radius ;
+};
+
 struct MeshLevelSet : public LevelSet
 {
 	explicit MeshLevelSet( const char* objFile = "" ) ;
