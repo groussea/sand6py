@@ -59,9 +59,9 @@ void LevelSet::register_derived(Archive &ar )
 	ar.register_type(static_cast<    PlaneLevelSet *>(NULL));
 	ar.register_type(static_cast<    TorusLevelSet *>(NULL));
 	ar.register_type(static_cast< CylinderLevelSet *>(NULL));
-	ar.register_type(static_cast<HourglassLevelSet *>(NULL));
 	ar.register_type(static_cast<     MeshLevelSet *>(NULL));
 	ar.register_type(static_cast<     HoleLevelSet *>(NULL));
+	ar.register_type(static_cast<HourglassLevelSet *>(NULL));
 }
 
 //base class serilization

@@ -240,7 +240,7 @@ struct HourglassLevelSet : public LevelSet
 		return - std::max(phi_e, phi_a) ;
 	}
 
-	Vec grad_local(const Vec &x) const override 
+	Vec grad_local(const Vec &x) const override
 	{
 		Vec proj_e, proj_a ;
 		proj_on_axis( x, proj_a );

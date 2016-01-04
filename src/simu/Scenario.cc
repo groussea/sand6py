@@ -213,7 +213,7 @@ struct HourglassScenar : public Scenario {
 	void init( const Params& params ) override {
 		const Scalar D = scalar_param( params, "D", Units::None, 0.9 ) ;
 		const Scalar d = scalar_param( params, "d", Units::None, 0.25 ) ;
-		
+
 		const Scalar S = .5*D*m_config->box[1] ;
 		const Scalar H = m_config->box[2]/2 / S ;
 
@@ -289,6 +289,7 @@ struct WritingScenar : public Scenario {
 
 		R = scalar_param( params, "d", Units::None, 0.05 ) * m_config->box[0] ;
 		H = scalar_param( params, "h", Units::None, 0.5 ) * m_config->box[2] ;
+		S = scalar_param( params, "s", Units::None, 1. ) ;
 
 		bezier.resize(2,12) ;
 		bezier <<  0.196,  1.046, -0.358, 0.492, 0.609, 0.858, 0.677, 0.737, 1.068, 0.518, 1.630, 0.990,
@@ -308,7 +309,7 @@ struct WritingScenar : public Scenario {
 	void update( Simu& simu, Scalar time, Scalar /*dt*/ ) const override
 	{
 		const unsigned nCurves = bezier.cols() / 4 ;
-		const Scalar speed = m_config->units().toSI( Units::Time ) ;
+		const Scalar speed = m_config->units().toSI( Units::Time ) * S ;
 		const Scalar trans = .1 ;
 
 		const Scalar tw = time * speed ;
@@ -347,6 +348,7 @@ struct WritingScenar : public Scenario {
 	Eigen::Matrix< Scalar, 2, Eigen::Dynamic > bezier ;
 	Scalar R ;
 	Scalar H ;
+	Scalar S ;
 
 };
 
