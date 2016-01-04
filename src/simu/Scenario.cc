@@ -29,6 +29,13 @@ struct CollapseScenar : public Scenario {
 	Scalar particle_density( const Vec &x ) const override {
 		return ( x[0] > .75*m_config->box[0] ) ? 1. : 0. ;
 	}
+	
+        virtual void init( const Params& params ) override {
+  	  l0 = scalar_param( params,   "l0", Units::None, .25 ) ;
+        }
+
+        private:
+        Scalar l0 ;
 };
 struct BridsonScenar : public Scenario {
 	Vec center ;
