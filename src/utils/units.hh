@@ -19,7 +19,8 @@ struct Units {
 		Time,
 		Frequency,
 		Viscosity,
-		Stress
+		Stress,
+		Torque
 	} ;
 
 	Scalar L ;  //!< Typical length (m)

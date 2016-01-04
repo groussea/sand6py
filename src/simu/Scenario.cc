@@ -29,13 +29,13 @@ struct CollapseScenar : public Scenario {
 	Scalar particle_density( const Vec &x ) const override {
 		return ( x[0] > .75*m_config->box[0] ) ? 1. : 0. ;
 	}
-	
-        virtual void init( const Params& params ) override {
-  	  l0 = scalar_param( params,   "l0", Units::None, .25 ) ;
-        }
 
-        private:
-        Scalar l0 ;
+		virtual void init( const Params& params ) override {
+	  l0 = scalar_param( params,   "l0", Units::None, .25 ) ;
+		}
+
+		private:
+		Scalar l0 ;
 };
 struct BridsonScenar : public Scenario {
 	Vec center ;
@@ -169,6 +169,60 @@ private:
 	Scalar d ;
 };
 
+struct WheelScenar : public Scenario {
+
+	Scalar particle_density( const Vec &x ) const override {
+		return ( x[2] <  1./2.*m_config->box[2] ) ? 1. : 0. ;
+	}
+
+	virtual void init( const Params& params ) {
+		volMass = scalar_param( params, "vm", Units::VolumicMass, 1.5*m_config->units().R ) ;
+		xvel = scalar_param( params, "xvel", Units::Velocity, 0. ) ;
+		avel = scalar_param( params, "avel", Units::Frequency, 0. ) ;
+		torque = scalar_param( params, "torque", Units::Torque, 0. ) ;
+		tilt = scalar_param( params, "tilt", Units::None, 0. ) ;
+		R = scalar_param( params, "R", Units::None, 0.125 ) ;
+		r = scalar_param( params, "r", Units::None, 0.375 ) ;
+	}
+
+	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
+	{
+		LevelSet::Ptr ls = LevelSet::make_torus(r) ;
+		ls->scale( radius() )
+				.rotate(Vec(1,0,0), (1-tilt) * M_PI_2)
+				.set_origin( .5 * m_config->box + Vec(.375*m_config->box[1],0,.375*m_config->box[2]) ) ;
+
+		rbs.emplace_back( ls, volMass );
+		rbs.back().set_velocity( Vec(0,0,-xvel), Vec(0,-avel,0) ) ;
+	}
+
+	void update( Simu& simu, Scalar /*time*/, Scalar dt ) const override
+	{
+		Vec6 forces ;
+		forces.head<3>().setZero() ;
+		forces.tail<3>() = Vec(0,-torque,0 ) ;
+
+		for( RigidBody& rb: simu.rigidBodies() ) {
+			rb.integrate_gravity( dt, m_config->gravity );
+			rb.integrate_forces ( dt, forces );
+		}
+
+	}
+
+	Scalar radius() const {
+		return R*m_config->box[0] ;
+	}
+
+private:
+	Scalar volMass ;
+	Scalar xvel ;
+	Scalar avel ;
+	Scalar torque ;
+	Scalar tilt ;
+	Scalar R ;
+	Scalar r ;
+};
+
 struct SiloScenar : public Scenario {
 
 	constexpr static Scalar s_h = 2 ;
@@ -255,7 +309,7 @@ struct BunnyScenar : public Scenario {
 		bunny_ls->scale( S*4 )
 				.rotate( Vec(0,1,0), M_PI/4 )
 				.rotate( Vec(1,0,0), M_PI/4 )
-				.set_origin( S * Vec(.5,.25,-.25) ) ;
+				.set_origin( S * Vec(.5,.25,-.15) ) ;
 		bunny_ls->compute( ) ;
 	}
 
@@ -274,7 +328,7 @@ struct BunnyScenar : public Scenario {
 		if( tw > .25 ) {
 			const Scalar t = tw-.25 ;
 			if( t < 1 ) {
-				vel = Vec(0,0,6*(t - t*t)) * speed * ( .35 * m_config->box[2] );
+				vel = Vec(0,0,6*(t - t*t)) * speed * ( .175 * m_config->box[2] );
 			}
 		}
 
@@ -359,6 +413,56 @@ struct WritingScenar : public Scenario {
 
 };
 
+struct DiggingScenar : public Scenario {
+
+	Scalar particle_density( const Vec &x ) const override {
+		return ( hand_ls->eval_at( x ) < 0 &&
+				 x[2] < .5*m_config->box[2]
+		) ? 1 : 0 ;
+	}
+
+	void init( const Params& params ) override {
+		const std::string& meshname = string_param( params, "mesh", "../scenes/Schmuck2.obj") ;
+		hand_ls = LevelSet::from_mesh( meshname.c_str() ) ;
+
+		Eigen::AngleAxis< Scalar > aa( ) ;
+
+		const Scalar S = m_config->box[0] ;
+
+		hand_ls->scale( S*4 )
+				.rotate( Vec(0,1,0), M_PI/4 )
+				.rotate( Vec(1,0,0), M_PI/4 )
+				.set_origin( S * Vec(.5,.25,-.25) ) ;
+		hand_ls->compute( ) ;
+	}
+
+	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
+	{
+		rbs.emplace_back( hand_ls, 1.e99 );
+	}
+
+	void update( Simu& simu, Scalar time, Scalar /*dt*/ ) const override
+	{
+		const Scalar speed = m_config->units().toSI( Units::Time ) ;
+
+		const Scalar tw = time * speed ;
+		Vec vel = Vec::Zero() ;
+
+		if( tw > .25 ) {
+			const Scalar t = tw-.25 ;
+			if( t < 1 ) {
+				vel = Vec(0,0,6*(t - t*t)) * speed * ( .35 * m_config->box[2] );
+			}
+		}
+
+		for( RigidBody& rb: simu.rigidBodies() ) {
+			rb.set_velocity( vel, Vec::Zero() );
+		}
+	}
+
+	mutable LevelSet::Ptr hand_ls ;
+};
+
 
 // Factories & stuff
 
@@ -386,6 +490,10 @@ struct DefaultScenarioFactory : public ScenarioFactory
 			return std::unique_ptr< Scenario >( new WritingScenar() ) ;
 		if( str == "hourglass")
 			return std::unique_ptr< Scenario >( new HourglassScenar() ) ;
+		if( str == "wheel")
+			return std::unique_ptr< Scenario >( new WheelScenar() ) ;
+		if( str == "digging")
+			return std::unique_ptr< Scenario >( new DiggingScenar() ) ;
 
 		return std::unique_ptr< Scenario >( new BedScenar() ) ;
 	}

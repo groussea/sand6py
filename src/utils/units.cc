@@ -50,6 +50,8 @@ namespace d6 {
 			return 1 * M ;
 		case Stress:
 			return 1 * P ;
+		case Torque:
+			return std::pow( L, 3 ) * P ;
 		case None:
 			return 1;
 		}
