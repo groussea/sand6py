@@ -183,6 +183,10 @@ struct WheelScenar : public Scenario {
 		tilt = scalar_param( params, "tilt", Units::None, 0. ) ;
 		R = scalar_param( params, "R", Units::None, 0.125 ) ;
 		r = scalar_param( params, "r", Units::None, 0.375 ) ;
+		angFric = scalar_param( params, "af", Units::None, 0 )
+				* m_config->units().fromSI( Units::Torque )
+				* m_config->units().fromSI( Units::Time )
+				;
 	}
 
 	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
@@ -190,7 +194,7 @@ struct WheelScenar : public Scenario {
 		LevelSet::Ptr ls = LevelSet::make_torus(r) ;
 		ls->scale( radius() )
 				.rotate(Vec(1,0,0), (1-tilt) * M_PI_2)
-				.set_origin( .5 * m_config->box + Vec(.375*m_config->box[1],0,.375*m_config->box[2]) ) ;
+				.set_origin( .5 * m_config->box + Vec(.25*m_config->box[0],-.25*m_config->box[1], radius()*(1+2*r)) ) ;
 
 		rbs.emplace_back( ls, volMass );
 		rbs.back().set_velocity( Vec(0,0,-xvel), Vec(0,-avel,0) ) ;
@@ -200,9 +204,10 @@ struct WheelScenar : public Scenario {
 	{
 		Vec6 forces ;
 		forces.head<3>().setZero() ;
-		forces.tail<3>() = Vec(0,-torque,0 ) ;
 
 		for( RigidBody& rb: simu.rigidBodies() ) {
+			forces.tail<3>() = rb.levelSet().rotation()
+					* Vec(0,0,torque - angFric * rb.angularVelocity().norm() ) ;
 			rb.integrate_gravity( dt, m_config->gravity );
 			rb.integrate_forces ( dt, forces );
 		}
@@ -221,6 +226,7 @@ private:
 	Scalar tilt ;
 	Scalar R ;
 	Scalar r ;
+	Scalar angFric ;
 };
 
 struct SiloScenar : public Scenario {
@@ -416,51 +422,75 @@ struct WritingScenar : public Scenario {
 struct DiggingScenar : public Scenario {
 
 	Scalar particle_density( const Vec &x ) const override {
-		return ( hand_ls->eval_at( x ) < 0 &&
-				 x[2] < .5*m_config->box[2]
+		return ( x[2] < .5*m_config->box[2]
 		) ? 1 : 0 ;
 	}
 
 	void init( const Params& params ) override {
-		const std::string& meshname = string_param( params, "mesh", "../scenes/Schmuck2.obj") ;
-		hand_ls = LevelSet::from_mesh( meshname.c_str() ) ;
+		speedup = scalar_param( params, "s", Units::None, .5 ) ;
 
-		Eigen::AngleAxis< Scalar > aa( ) ;
+		std::string meshname = string_param( params, "mesh", "../scenes/Schmuck2l.obj") ;
+		left_hand_ls = LevelSet::from_mesh( meshname.c_str() ) ;
+		meshname = string_param( params, "mesh", "../scenes/Schmuck2r.obj") ;
+		right_hand_ls = LevelSet::from_mesh( meshname.c_str() ) ;
 
 		const Scalar S = m_config->box[0] ;
+		const Scalar H = m_config->box[2] ;
+		const Scalar dist = .85 ;
 
-		hand_ls->scale( S*4 )
-				.rotate( Vec(0,1,0), M_PI/4 )
-				.rotate( Vec(1,0,0), M_PI/4 )
-				.set_origin( S * Vec(.5,.25,-.25) ) ;
-		hand_ls->compute( ) ;
+		left_hand_ls->scale( .5*S )
+				.rotate( Vec(0,1,0), M_PI_2 )
+				.set_origin( Vec(S/2,(1-dist)*S,H) ) ;
+		left_hand_ls->compute( ) ;
+
+		right_hand_ls->scale( .5*S )
+				.rotate( Vec(0,1,0), -M_PI_2 )
+				.rotate( Vec(0,0,1), -M_PI )
+				.set_origin( Vec(S/2,dist*S,H) ) ;
+		right_hand_ls->compute( ) ;
 	}
 
 	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
 	{
-		rbs.emplace_back( hand_ls, 1.e99 );
+		rbs.emplace_back( left_hand_ls, 1.e99 );
+		rbs.emplace_back( right_hand_ls, 1.e99 );
 	}
 
 	void update( Simu& simu, Scalar time, Scalar /*dt*/ ) const override
 	{
-		const Scalar speed = m_config->units().toSI( Units::Time ) ;
+		const Scalar speed = speedup * M_PI_2 * m_config->units().toSI( Units::Time ) ;
 
 		const Scalar tw = time * speed ;
-		Vec vel = Vec::Zero() ;
+		Vec  vel = Vec::Zero() ;
+		Vec avel = Vec::Zero() ;
 
-		if( tw > .25 ) {
-			const Scalar t = tw-.25 ;
+		if( tw > 1 ) {
+			const Scalar t = tw - 1;
 			if( t < 1 ) {
-				vel = Vec(0,0,6*(t - t*t)) * speed * ( .35 * m_config->box[2] );
+				avel = Vec(0,0,0);
+				vel = Vec(0, 0, 6*(t-t*t) ) * .5 * m_config->box[2] ;
+			}
+		}else if( tw > 0 ) {
+			const Scalar t = tw;
+			if( t < 1 ) {
+				avel = Vec(.8*M_PI_2,0,0);
+				vel = Vec(0, std::sin(t), -std::cos(t)) * .9 * m_config->box[2] ;
 			}
 		}
 
+		vel *= speed ;
+		avel *= speed ;
+
+		int i = 1 ;
 		for( RigidBody& rb: simu.rigidBodies() ) {
-			rb.set_velocity( vel, Vec::Zero() );
+			rb.set_velocity( Vec(vel[0], i*vel[1], vel[2]), i * avel );
+			i = -i ;
 		}
 	}
 
-	mutable LevelSet::Ptr hand_ls ;
+	Scalar speedup ;
+	mutable LevelSet::Ptr  left_hand_ls ;
+	mutable LevelSet::Ptr right_hand_ls ;
 };
 
 

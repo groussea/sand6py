@@ -9,7 +9,7 @@ namespace d6 {
 MeshLevelSet::MeshLevelSet( const char* objFile )
 	: m_objFile( objFile ),
 	  m_radius( 1.e-1 ),
-	  m_grid( Vec::Ones(), Vec3i::Constant( 25 ) ),
+	  m_grid( Vec::Ones(), Vec3i::Constant( 50 ) ),
 	  m_values( m_grid )
 {}
 
