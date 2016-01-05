@@ -41,48 +41,53 @@ static void genSphere( const unsigned parallels, const unsigned meridians,
 
 }
 
-static void genPointyCylinder( const float height, const unsigned parallels, 
+static void genPointyCylinder( const float height, const unsigned res,
 					   Eigen::Matrix3Xf& vertices,
-					   Eigen::Matrix3Xf& normals, 
+					   Eigen::Matrix3Xf& normals,
+					   Eigen::Matrix3Xf& uvs,
 					   std::vector< GLuint >& quadIndices )
 {
 	quadIndices.clear() ;
-	quadIndices.reserve( parallels * 4 * 3 ) ;
-	vertices.resize( 3, 2 + parallels * 2 ) ;
-	normals.resize( 3, 2 + parallels * 2 ) ;
+	quadIndices.reserve( res * 4 * 3 ) ;
+	vertices.resize( 3, 2 + res * 2 ) ;
+	normals.resize( 3, 2 + res * 2 ) ;
+	uvs.resize( 3, 2 + res * 2 ) ;
 
-	const double dphi = 2*M_PI / (parallels - 1.);
-	
+	const double dphi = 2*M_PI / (res);
+
 	Eigen::Vector3f p0 (0,0,-.5*height) ;
 	Eigen::Vector3f p1 (0,0, .5*height) ;
 
 	vertices.col(0) = p0 + Eigen::Vector3f(0,0,-1) ;
-	normals.col(0) = Eigen::Vector3f(0,0,-1) ; 
-	vertices.col(1) = p1 + Eigen::Vector3f(0,0, 1); 
-	normals.col(1) = Eigen::Vector3f(0,0, 1) ; 
+	normals.col(0) = Eigen::Vector3f(0,0,-1) ;
+	uvs.col(0) = Eigen::Vector3f(0,0,0) ;
+	vertices.col(1) = p1 + Eigen::Vector3f(0,0, 1);
+	uvs.col(1) = Eigen::Vector3f(1,0, 0) ;
 
-	for(unsigned i = 0; i < parallels; ++i)
+	for(unsigned i = 0; i < res; ++i)
 	{
 		const float beta0 = i*dphi ;
 		const unsigned id_cur = 2+2*i ;
-		const unsigned id_nxt = 2+2*((i+1)%parallels) ;
+		const unsigned id_nxt = 2+2*((i+1)%res) ;
 
 		Eigen::Vector3f n ( std::cos(beta0), std::sin(beta0),0) ;
 		vertices.col(id_cur+0) = p0 + n ;
 		vertices.col(id_cur+1) = p1 + n ;
 		normals .col(id_cur+0) = n ;
 		normals .col(id_cur+1) = n ;
+		uvs     .col(id_cur+0) = Eigen::Vector3f(1/(height+2),beta0/(2*M_PI),0) ;
+		uvs     .col(id_cur+1) = Eigen::Vector3f((1+height)/(height+2),beta0/(2*M_PI),0) ;
 
 		quadIndices.push_back( 0 ) ;
 		quadIndices.push_back( id_cur+0 ) ;
 		quadIndices.push_back( id_nxt+0 ) ;
 		quadIndices.push_back( 0 ) ;
-		
+
 		quadIndices.push_back( id_cur+0 ) ;
 		quadIndices.push_back( id_nxt+0 ) ;
 		quadIndices.push_back( id_nxt+1 ) ;
 		quadIndices.push_back( id_cur+1 ) ;
-		
+
 		quadIndices.push_back( 1 ) ;
 		quadIndices.push_back( id_cur+1 ) ;
 		quadIndices.push_back( id_nxt+1 ) ;
@@ -90,6 +95,49 @@ static void genPointyCylinder( const float height, const unsigned parallels,
 
 	}
 
+}
+
+static void genTorus( const float radius,
+					  const unsigned parallels, const unsigned meridians,
+					  Eigen::Matrix3Xf& vertices,
+					  Eigen::Matrix3Xf& normals,
+					  Eigen::Matrix3Xf& uvs,
+					  std::vector< GLuint >& quadIndices )
+{
+	quadIndices.clear() ;
+	quadIndices.reserve( parallels * meridians * 4 ) ;
+	vertices.resize( 3, parallels * meridians ) ;
+	normals.resize( 3, parallels * meridians ) ;
+	uvs.resize( 3, parallels * meridians ) ;
+
+	const Scalar dalpha = (2*M_PI)/(meridians-1) ;
+	const Scalar dbeta  = (2*M_PI)/(parallels-1) ;
+
+	for( unsigned i = 0 ; i < meridians ; ++i )
+	{
+
+		const float alpha0 = i*dalpha  ;
+		const Eigen::Vector3f p0 ( std::cos(alpha0), std::sin(alpha0), 0 ) ;
+
+		for( unsigned j = 0 ; j < parallels ; ++j )
+		{
+			const unsigned idx = i*parallels + j ;
+			const float beta0 = j * dbeta ;
+
+			Eigen::Vector3f n0 = std::cos(beta0)*p0.normalized() ;
+			n0[2] = std::sin(beta0) ;
+			normals.col(idx) = n0 ;
+			uvs.col(idx) = Eigen::Vector3f(alpha0/(2*M_PI),beta0/(2*M_PI),0) ;
+
+			vertices.col(idx) = p0 + radius * n0 ;
+
+			quadIndices.push_back( i*parallels + j );
+			quadIndices.push_back( i*parallels + ((j+1)%parallels) );
+			quadIndices.push_back( ((i+1)%meridians)*parallels + ((j+1)%parallels)  );
+			quadIndices.push_back( ((i+1)%meridians)*parallels + j  );
+
+		}
+	}
 }
 
 void ShapeRenderer::init()
@@ -117,7 +165,7 @@ void ShapeRenderer::init()
 	m_ballShader.add_uniform("light_pos") ;
 	m_ballShader.add_attribute("vertex") ;
 	m_ballShader.load("ball_vertex","ball_fragment") ;
-	
+
 	// Default solid shader
 	m_solidShader.add_uniform("model_view") ;
 	m_solidShader.add_uniform("projection") ;
@@ -125,6 +173,7 @@ void ShapeRenderer::init()
 	m_solidShader.add_uniform("ambient") ;
 	m_solidShader.add_attribute("vertex") ;
 	m_solidShader.add_attribute("normal") ;
+	m_solidShader.add_attribute("uv") ;
 	m_solidShader.load("vertex","fragment") ;
 
 }
@@ -184,39 +233,6 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 			glVertex3d(  box[0], -box[1], 0 );
 			glEnd( ) ;
 
-		} else if ( (torus = dynamic_cast<const TorusLevelSet*>(&ls)) ) {
-
-			const unsigned res= 10 ;
-			for( unsigned i = 0 ; i < res ; ++i ) {
-
-				const float alpha0 = (2*M_PI*(i+0)) / res ;
-				const float alpha1 = (2*M_PI*(i+1)) / res ;
-
-				const Eigen::Vector3f p0( std::cos(alpha0), std::sin(alpha0), 0 ) ;
-				const Eigen::Vector3f p1( std::cos(alpha1), std::sin(alpha1), 0 ) ;
-
-				glBegin( GL_QUAD_STRIP );
-				for( unsigned j = 0 ; j < res ; ++j )
-				{
-					const float beta0 = (2*M_PI*(j+0)) / (res-1) ;
-
-					Eigen::Vector3f n0 = std::cos(beta0)*p0.normalized() ;
-					n0[2] = std::sin(beta0) ;
-
-					Eigen::Vector3f n1 = std::cos(beta0)*p1.normalized() ;
-					n1[2] = std::sin(beta0) ;
-
-					Eigen::Vector3f v0 = p0 + torus->radius() * n0 ;
-					Eigen::Vector3f v1 = p1 + torus->radius() * n1 ;
-
-					glNormal3fv( n0.data() );
-					glVertex3fv( v0.data() );
-					glNormal3fv( n1.data() );
-					glVertex3fv( v1.data() );
-
-				}
-				glEnd( ) ;
-			}
 		} else if ( (hole = dynamic_cast<const HoleLevelSet*>(&ls)) ) {
 
 			const unsigned res= 10 ;
@@ -250,18 +266,25 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 				}
 				glEnd( ) ;
 			}
+		} else if ( (torus = dynamic_cast<const TorusLevelSet*>(&ls))
+				 || (cylinder = dynamic_cast<const CylinderLevelSet*>(&ls)) ) {
 
-		} else if ( (cylinder = dynamic_cast<const CylinderLevelSet*>(&ls)) ) {
 			// Generate points = normales
-			Eigen::Matrix3Xf cylVertices, cylNormals ;
+			Eigen::Matrix3Xf cylVertices, cylNormals, cylUVs ;
 			std::vector< GLuint > quadIndices ;
-			genPointyCylinder( cylinder->height(), 30, cylVertices, cylNormals, quadIndices );
+
+			if( torus ) {
+				genTorus( torus->radius(), 30, 30, cylVertices, cylNormals, cylUVs, quadIndices );
+			} else {
+				genPointyCylinder( cylinder->height(), 30, cylVertices, cylNormals, cylUVs, quadIndices );
+			}
 
 			// Transfer to VBO
-			gl::VertexBuffer3f cylv, cyln ;
+			gl::VertexBuffer3f cylv, cyln, cyluv ;
 			gl::IndexBuffer cylqi ;
 			cylv.reset( cylVertices.cols(), cylVertices.data(), GL_DYNAMIC_DRAW );
 			cyln.reset( cylNormals .cols(), cylNormals .data(), GL_DYNAMIC_DRAW );
+			cyluv.reset( cylUVs    .cols(), cylUVs     .data(), GL_DYNAMIC_DRAW );
 			cylqi.reset( quadIndices.size(), quadIndices.data() );
 
 			cylqi.bind() ;
@@ -271,20 +294,21 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 			if( m_solidShader.ok() ) {
 				UsingShader sh( m_solidShader ) ;
 				sh.bindMVP() ;
-				
+
 				gl::VertexAttribPointer vap( cylv, m_solidShader.attribute("vertex") ) ;
 				gl::VertexAttribPointer nap( cyln, m_solidShader.attribute("normal") ) ;
-			
+				gl::VertexAttribPointer uap( cyln, m_solidShader.attribute("uv") ) ;
+
 				glUniform3fv( m_solidShader.uniform("light_pos"), 1, lightPos.data() ) ;
 				glUniform3fv( m_solidShader.uniform("ambient"), 1, color.data() ) ;
-				
+
 				glDrawElements( GL_QUADS, cylqi.size(), GL_UNSIGNED_INT, 0 );
 
 			} else {
 				gl::VertexPointer vp( cylv ) ;
 				gl::NormalPointer np( cyln ) ;
 				glColor3fv( color.data() ) ;
-				
+
 				glDrawElements( GL_QUADS, cylqi.size(), GL_UNSIGNED_INT, 0 );
 			}
 
@@ -312,7 +336,7 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 
 			renderer.draw( m_solidShader ) ;
 		}
-				
+
 
 		glPopMatrix();
 	}
