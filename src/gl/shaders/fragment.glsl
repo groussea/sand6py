@@ -14,13 +14,14 @@ out vec4 color ;
 void main (void)
 {
     vec4 ambientMat = vec4(ambient, 1. );
+    vec4 diffuseMat = vec4(.9 , .6, .4, 1. );
+    vec4 specMat    = vec4(1. , .8, .7, 1. );
 
     if( bool( (int(tex_coord.x*10)&1) ^ (int(tex_coord.y*10)&1) ) ) {
         ambientMat *= .7 ;
+        diffuseMat *= .7 ;
     }
 
-    vec4 diffuseMat = vec4(.9 , .6, .4, 1. );
-    vec4 specMat    = vec4(1. , .8, .7, 1. );
     float specPow = 12.0;
 
     vec4 diffuse;

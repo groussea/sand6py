@@ -136,11 +136,19 @@ void GLViewer::draw()
 			if( m_depthBuffer.check_complete() )
 				Log::Error() << "Frame buffer incomplete" << std::endl ;
 
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 			const Scalar pixelSize = cam.type() == qglviewer::Camera::ORTHOGRAPHIC
 					? 0
 					: fb_height / std::tan(cam.horizontalFieldOfView() / 2)  ;
 
 			m_grainsRenderer.compute_shadow( pixelSize, depthMVP );
+			
+			if( m_drawObjects ) {
+				for( const LevelSet::Ptr& ls: m_offline.levelSets() ) {
+					m_shapeRenderer.compute_shadow( *ls, depthMVP ) ;
+				}
+			}
 		}
 
 		if(0){

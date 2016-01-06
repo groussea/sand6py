@@ -22,6 +22,7 @@ class ShapeRenderer
 public:
 	void init() ;
 
+	void compute_shadow( const LevelSet &ls, const Eigen::Matrix4f& depthMVP ) const ;
 	void draw(const LevelSet &ls, const Vec &box, const Eigen::Vector3f &lightPos) const ;
 
 
@@ -42,6 +43,7 @@ private:
 
 	Shader m_ballShader ;
 	Shader m_solidShader ;
+	Shader m_solidDepthShader ;
 
 	typedef std::unordered_map< std::string, MeshRenderer > MeshRenderers ;
 	mutable MeshRenderers m_meshRenderers ;

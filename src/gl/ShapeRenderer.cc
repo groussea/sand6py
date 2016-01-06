@@ -140,6 +140,38 @@ static void genTorus( const float radius,
 	}
 }
 
+static void get_ls_matrix( const LevelSet &ls, Eigen::Matrix4f & mat )
+{
+	const Eigen::Matrix3f rotation = ls.rotation().matrix().cast < GLfloat >() ;
+	const Eigen::Vector3f translation = ls.origin().cast < GLfloat >() ;
+	mat.setIdentity() ;
+	mat.block<3,3>(0,0) = rotation * ls.scale()  ;
+	mat.block<3,1>(0,3) = translation ;
+}
+
+static void draw_solid( const Shader& shader, 
+			const Eigen::Matrix3Xf& cylVertices,
+			const Eigen::Matrix3Xf& cylNormals,
+			const Eigen::Matrix3Xf& cylUVs,
+			const std::vector< GLuint > &quadIndices )
+{
+	// Transfer to VBO
+	gl::VertexBuffer3f cylv, cyln, cyluv ;
+	gl::IndexBuffer cylqi ;
+	cylv.reset( cylVertices.cols(), cylVertices.data(), GL_DYNAMIC_DRAW );
+	cyln.reset( cylNormals .cols(), cylNormals .data(), GL_DYNAMIC_DRAW );
+	cyluv.reset( cylUVs    .cols(), cylUVs     .data(), GL_DYNAMIC_DRAW );
+	cylqi.reset( quadIndices.size(), quadIndices.data() );
+
+	cylqi.bind() ;
+	
+	gl::VertexAttribPointer vap( cylv, shader.attribute("vertex") ) ;
+	gl::VertexAttribPointer nap( cyln, shader.attribute("normal") ) ;
+	gl::VertexAttribPointer uap( cyln, shader.attribute("uv") ) ;
+
+	glDrawElements( GL_QUADS, cylqi.size(), GL_UNSIGNED_INT, 0 );
+}
+
 void ShapeRenderer::init()
 {
 	// Gen glyph vertices
@@ -175,7 +207,52 @@ void ShapeRenderer::init()
 	m_solidShader.add_attribute("normal") ;
 	m_solidShader.add_attribute("uv") ;
 	m_solidShader.load("vertex","fragment") ;
+	
+	// Default solid depth shader
+	m_solidDepthShader.add_uniform("depth_mvp") ;
+	m_solidDepthShader.add_attribute("vertex") ;
+	m_solidDepthShader.add_attribute("normal") ;
+	m_solidDepthShader.add_attribute("uv") ;
+	m_solidDepthShader.load("depth_vertex","depth_fragment") ;
 
+}
+
+void ShapeRenderer::compute_shadow( const LevelSet &ls, const Eigen::Matrix4f& depthMVP ) const
+{
+
+	if( dynamic_cast<const SphereLevelSet*>(&ls) )
+	{
+		// TODO
+	} else {
+		// Solid shader
+		Eigen::Matrix4f mat ;
+		get_ls_matrix( ls, mat ) ;
+	
+		Eigen::Matrix4f completeMVP = depthMVP * mat ;
+
+		const CylinderLevelSet* cylinder = nullptr ;
+		const TorusLevelSet* torus = nullptr ;
+		//const HoleLevelSet* hole = nullptr ;
+		//const MeshLevelSet* mesh = nullptr ;
+
+		if ( (torus = dynamic_cast<const TorusLevelSet*>(&ls))
+				 || (cylinder = dynamic_cast<const CylinderLevelSet*>(&ls)) ) {
+
+			Eigen::Matrix3Xf cylVertices, cylNormals, cylUVs ;
+			std::vector< GLuint > quadIndices ;
+
+			if( torus ) {
+				genTorus( torus->radius(), 30, 30, cylVertices, cylNormals, cylUVs, quadIndices );
+			} else {
+				genPointyCylinder( cylinder->height(), 30, cylVertices, cylNormals, cylUVs, quadIndices );
+			}
+
+			UsingShader sh( m_solidDepthShader ) ;
+			glUniformMatrix4fv( m_solidDepthShader.uniform("depth_mvp"), 1, GL_FALSE, completeMVP.data()) ;
+
+			draw_solid( m_solidDepthShader, cylVertices, cylNormals, cylUVs, quadIndices ) ;
+		}	
+	}
 }
 
 void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vector3f& lightPos ) const
@@ -205,9 +282,7 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 	} else {
 
 		Eigen::Matrix4f mat ;
-		mat.setIdentity() ;
-		mat.block<3,3>(0,0) = rotation * ls.scale()  ;
-		mat.block<3,1>(0,3) = translation ;
+		get_ls_matrix( ls, mat ) ; 
 
 		glColor4f(1., 0., .8, 1);
 
@@ -280,39 +355,17 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 				genPointyCylinder( cylinder->height(), 30, cylVertices, cylNormals, cylUVs, quadIndices );
 			}
 
-			// Transfer to VBO
-			gl::VertexBuffer3f cylv, cyln, cyluv ;
-			gl::IndexBuffer cylqi ;
-			cylv.reset( cylVertices.cols(), cylVertices.data(), GL_DYNAMIC_DRAW );
-			cyln.reset( cylNormals .cols(), cylNormals .data(), GL_DYNAMIC_DRAW );
-			cyluv.reset( cylUVs    .cols(), cylUVs     .data(), GL_DYNAMIC_DRAW );
-			cylqi.reset( quadIndices.size(), quadIndices.data() );
-
-			cylqi.bind() ;
-
 			Eigen::Vector3f color(0.3,0.15,0.1) ;
 
 			if( m_solidShader.ok() ) {
 				UsingShader sh( m_solidShader ) ;
 				sh.bindMVP() ;
 
-				gl::VertexAttribPointer vap( cylv, m_solidShader.attribute("vertex") ) ;
-				gl::VertexAttribPointer nap( cyln, m_solidShader.attribute("normal") ) ;
-				gl::VertexAttribPointer uap( cyln, m_solidShader.attribute("uv") ) ;
-
 				glUniform3fv( m_solidShader.uniform("light_pos"), 1, objLight.data() ) ;
 				glUniform3fv( m_solidShader.uniform("ambient"), 1, color.data() ) ;
 
-				glDrawElements( GL_QUADS, cylqi.size(), GL_UNSIGNED_INT, 0 );
-
-			} else {
-				gl::VertexPointer vp( cylv ) ;
-				gl::NormalPointer np( cyln ) ;
-				glColor3fv( color.data() ) ;
-
-				glDrawElements( GL_QUADS, cylqi.size(), GL_UNSIGNED_INT, 0 );
+				draw_solid( m_solidShader, cylVertices, cylNormals, cylUVs, quadIndices ) ;
 			}
-
 		} else if ( (mesh = dynamic_cast<const MeshLevelSet*>(&ls)) ) {
 			MeshRenderer& renderer = m_meshRenderers[ mesh->objFile() ] ;
 			if( !renderer.ok() ) {

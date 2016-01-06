@@ -31,8 +31,6 @@ void GrainRenderer::compute_shadow(
 	gl::VertexAttribPointer vap_v( m_grainVertices, m_depthShader.attribute("vertex") ) ;
 	gl::VertexAttribPointer vap_a( m_grainVisibility, m_grainsShader.attribute("visibility") ) ;
 
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 	glDrawArrays( GL_POINTS, 0, m_grainVertices.size() );
 
 	glDisable( GL_PROGRAM_POINT_SIZE ) ;
@@ -113,7 +111,7 @@ void GrainRenderer::init()
 	m_depthShader.add_uniform("depth_mvp");
 	m_depthShader.add_uniform("grain_size");
 	m_depthShader.add_uniform("pixel_size");
-	m_depthShader.load("depth_vertex","depth_fragment") ;
+	m_depthShader.load("grain_depth_vertex","grain_depth_fragment") ;
 }
 
 void GrainRenderer::move()
