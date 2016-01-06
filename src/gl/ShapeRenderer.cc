@@ -211,9 +211,10 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 
 		glColor4f(1., 0., .8, 1);
 
-
 		glPushMatrix();
 		glMultMatrixf( mat.data() );
+
+		const Eigen::Vector3f objLight = rotation.inverse() / ls.scale() * (lightPos - translation) ;
 
 		const CylinderLevelSet* cylinder = nullptr ;
 		const TorusLevelSet* torus = nullptr ;
@@ -299,7 +300,7 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 				gl::VertexAttribPointer nap( cyln, m_solidShader.attribute("normal") ) ;
 				gl::VertexAttribPointer uap( cyln, m_solidShader.attribute("uv") ) ;
 
-				glUniform3fv( m_solidShader.uniform("light_pos"), 1, lightPos.data() ) ;
+				glUniform3fv( m_solidShader.uniform("light_pos"), 1, objLight.data() ) ;
 				glUniform3fv( m_solidShader.uniform("ambient"), 1, color.data() ) ;
 
 				glDrawElements( GL_QUADS, cylqi.size(), GL_UNSIGNED_INT, 0 );
@@ -330,7 +331,7 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 
 			if( m_solidShader.ok() ) {
 				sh.bindMVP() ;
-				glUniform3fv( m_solidShader.uniform("light_pos"), 1, lightPos.data() ) ;
+				glUniform3fv( m_solidShader.uniform("light_pos"), 1, objLight.data() ) ;
 				glUniform3fv( m_solidShader.uniform("ambient"), 1, color.data() ) ;
 			}
 
