@@ -315,7 +315,7 @@ struct BunnyScenar : public Scenario {
 		bunny_ls->scale( S*4 )
 				.rotate( Vec(0,1,0), M_PI/4 )
 				.rotate( Vec(1,0,0), M_PI/4 )
-				.set_origin( S * Vec(.5,.25,-.375) ) ;
+				.set_origin( S * Vec(.5,.25,-.425) ) ;
 		bunny_ls->compute( ) ;
 	}
 
@@ -334,7 +334,7 @@ struct BunnyScenar : public Scenario {
 		if( tw > .25 ) {
 			const Scalar t = tw-.25 ;
 			if( t < 1 ) {
-				vel = Vec(0,0,6*(t - t*t)) * speed * ( .25 * m_config->box[2] );
+				vel = Vec(0,0,6*(t - t*t)) * speed * ( .35 * m_config->box[2] );
 			}
 		}
 

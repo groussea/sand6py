@@ -143,7 +143,7 @@ void GLViewer::draw()
 					: fb_height / std::tan(cam.horizontalFieldOfView() / 2)  ;
 
 			m_grainsRenderer.compute_shadow( pixelSize, depthMVP );
-			
+
 			if( m_drawObjects ) {
 				for( const LevelSet::Ptr& ls: m_offline.levelSets() ) {
 					m_shapeRenderer.compute_shadow( *ls, depthMVP ) ;
@@ -220,7 +220,7 @@ void GLViewer::drawWithNames()
 void GLViewer::drawObject(const LevelSet &ls)
 {
 	if(!m_drawObjects) return ;
-	m_shapeRenderer.draw( ls, m_offline.mesh().box(), lightPosition(), false, m_depthTexture, Eigen::Matrix4f() );
+	m_shapeRenderer.draw( ls, m_offline.mesh().box(), lightPosition(), false, m_depthTexture, Eigen::Matrix4f::Zero() );
 }
 
 void GLViewer::init()
