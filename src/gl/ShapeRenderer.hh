@@ -5,7 +5,6 @@
 
 #include "VertexBuffer.hh"
 #include "Shader.hh"
-#include "MeshRenderer.hh"
 
 #include <string>
 #include <unordered_map>
@@ -47,9 +46,6 @@ private:
 	Shader m_ballShader ;
 	Shader m_solidShader ;
 	Shader m_solidDepthShader ;
-
-	typedef std::unordered_map< std::string, MeshRenderer > MeshRenderers ;
-	mutable MeshRenderers m_meshRenderers ;
 };
 
 } //d6

@@ -4,6 +4,8 @@
 #include "TriangularMesh.hh"
 #include "Texture.hh"
 
+#include "MeshRenderer.hh"
+
 #include "geo/LevelSet.impl.hh"
 
 namespace d6 {
@@ -173,6 +175,44 @@ static void draw_solid( const Shader& shader,
 	glDrawElements( GL_QUADS, cylqi.size(), GL_UNSIGNED_INT, 0 );
 }
 
+static void draw_shape_elements( const LevelSet &ls, const Shader& shader ) 
+{
+
+	typedef std::unordered_map< std::string, MeshRenderer > MeshRenderers ;
+	MeshRenderers s_meshRenderers ;
+
+	const CylinderLevelSet* cylinder = dynamic_cast< const CylinderLevelSet* > (&ls) ;
+	const TorusLevelSet*       torus = dynamic_cast< const    TorusLevelSet* > (&ls) ;
+	const MeshLevelSet*         mesh = dynamic_cast< const     MeshLevelSet* > (&ls) ;
+
+	if( mesh ) {
+		MeshRenderer& renderer = s_meshRenderers[ mesh->objFile() ] ;
+		if( !renderer.ok() ) {
+			TriangularMesh triMesh ;
+			triMesh.loadObj( mesh->objFile().c_str() ) ;
+			if( !triMesh.hasVertexNormals() )
+				triMesh.computeFaceNormals() ;
+
+			renderer.reset( triMesh ) ;
+		}
+
+		renderer.draw( shader ) ;
+
+	} else if( torus || cylinder ) {
+		Eigen::Matrix3Xf cylVertices, cylNormals, cylUVs ;
+		std::vector< GLuint > quadIndices ;
+
+		if( torus ) {
+			genTorus( torus->radius(), 30, 30, cylVertices, cylNormals, cylUVs, quadIndices );
+		} else if( cylinder ) {
+			genPointyCylinder( cylinder->height(), 30, cylVertices, cylNormals, cylUVs, quadIndices );
+		}
+
+		draw_solid( shader, cylVertices, cylNormals, cylUVs, quadIndices ) ;
+	}
+
+}	
+
 void ShapeRenderer::init()
 {
 	// Gen glyph vertices
@@ -233,28 +273,10 @@ void ShapeRenderer::compute_shadow( const LevelSet &ls, const Eigen::Matrix4f& d
 	
 		Eigen::Matrix4f completeMVP = depthMVP * mat ;
 
-		const CylinderLevelSet* cylinder = nullptr ;
-		const TorusLevelSet* torus = nullptr ;
-		//const HoleLevelSet* hole = nullptr ;
-		//const MeshLevelSet* mesh = nullptr ;
+		UsingShader sh( m_solidDepthShader ) ;
+		glUniformMatrix4fv( m_solidDepthShader.uniform("depth_mvp"), 1, GL_FALSE, completeMVP.data()) ;
 
-		if ( (torus = dynamic_cast<const TorusLevelSet*>(&ls))
-				 || (cylinder = dynamic_cast<const CylinderLevelSet*>(&ls)) ) {
-
-			Eigen::Matrix3Xf cylVertices, cylNormals, cylUVs ;
-			std::vector< GLuint > quadIndices ;
-
-			if( torus ) {
-				genTorus( torus->radius(), 30, 30, cylVertices, cylNormals, cylUVs, quadIndices );
-			} else {
-				genPointyCylinder( cylinder->height(), 30, cylVertices, cylNormals, cylUVs, quadIndices );
-			}
-
-			UsingShader sh( m_solidDepthShader ) ;
-			glUniformMatrix4fv( m_solidDepthShader.uniform("depth_mvp"), 1, GL_FALSE, completeMVP.data()) ;
-
-			draw_solid( m_solidDepthShader, cylVertices, cylNormals, cylUVs, quadIndices ) ;
-		}	
+		draw_shape_elements( ls, m_solidDepthShader ) ;
 	}
 }
 
@@ -297,10 +319,7 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 
 		const Eigen::Vector3f objLight = rotation.inverse() / ls.scale() * (lightPos - translation) ;
 
-		const CylinderLevelSet* cylinder = nullptr ;
-		const TorusLevelSet* torus = nullptr ;
 		const HoleLevelSet* hole = nullptr ;
-		const MeshLevelSet* mesh = nullptr ;
 
 		if ( dynamic_cast<const PlaneLevelSet*>(&ls) ) {
 
@@ -348,18 +367,7 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 				}
 				glEnd( ) ;
 			}
-		} else if ( (torus = dynamic_cast<const TorusLevelSet*>(&ls))
-				 || (cylinder = dynamic_cast<const CylinderLevelSet*>(&ls)) ) {
-
-			// Generate points = normales
-			Eigen::Matrix3Xf cylVertices, cylNormals, cylUVs ;
-			std::vector< GLuint > quadIndices ;
-
-			if( torus ) {
-				genTorus( torus->radius(), 30, 30, cylVertices, cylNormals, cylUVs, quadIndices );
-			} else {
-				genPointyCylinder( cylinder->height(), 30, cylVertices, cylNormals, cylUVs, quadIndices );
-			}
+		} else  {
 
 			Eigen::Vector3f color(0.3,0.15,0.1) ;
 
@@ -376,31 +384,8 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 					glUniformMatrix4fv( m_solidShader.uniform("depth_mvp"), 1, GL_FALSE, completeMVP.data()) ;
 				}
 
-				draw_solid( m_solidShader, cylVertices, cylNormals, cylUVs, quadIndices ) ;
+				draw_shape_elements( ls, m_solidShader ) ;
 			}
-		} else if ( (mesh = dynamic_cast<const MeshLevelSet*>(&ls)) ) {
-			MeshRenderer& renderer = m_meshRenderers[ mesh->objFile() ] ;
-			if( !renderer.ok() ) {
-				TriangularMesh triMesh ;
-				triMesh.loadObj( mesh->objFile().c_str() ) ;
-				if( !triMesh.hasVertexNormals() )
-					triMesh.computeFaceNormals() ;
-
-				renderer.reset( triMesh ) ;
-			}
-
-			UsingShader sh( m_solidShader ) ;
-
-			Eigen::Vector3f color(0.3,0.15,0.1) ;
-			glColor3fv( color.data() ) ;
-
-			if( m_solidShader.ok() ) {
-				sh.bindMVP() ;
-				glUniform3fv( m_solidShader.uniform("light_pos"), 1, objLight.data() ) ;
-				glUniform3fv( m_solidShader.uniform("ambient"), 1, color.data() ) ;
-			}
-
-			renderer.draw( m_solidShader ) ;
 		}
 
 
