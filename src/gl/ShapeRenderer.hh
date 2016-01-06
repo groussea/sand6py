@@ -15,6 +15,7 @@ namespace d6 {
 class LevelSet ;
 class MeshRenderer ;
 class TriangularMesh ;
+class Texture ;
 
 class ShapeRenderer
 {
@@ -23,7 +24,9 @@ public:
 	void init() ;
 
 	void compute_shadow( const LevelSet &ls, const Eigen::Matrix4f& depthMVP ) const ;
-	void draw(const LevelSet &ls, const Vec &box, const Eigen::Vector3f &lightPos) const ;
+	void draw(const LevelSet &ls, const Vec &box, const Eigen::Vector3f &lightPos,
+		bool shadowed, const Texture& depthTexture, const Eigen::Matrix4f &depthMVP
+	) const ;
 
 
 	const gl::VertexBuffer3f& sphereVertices() const

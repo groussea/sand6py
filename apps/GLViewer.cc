@@ -60,6 +60,8 @@ void GLViewer::draw()
 		glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
 
+	bool shadowed = false ;
+	Eigen::Matrix4f depthMVP ;
 
 	if( m_drawParticles )
 	{
@@ -104,7 +106,6 @@ void GLViewer::draw()
 
 	if( renderSamples() )
 	{
-		Eigen::Matrix4f depthMVP ;
 
 		// Set-up light POV camera
 //			qglviewer::Camera& cam = *camera() ; //Debug mode
@@ -125,7 +126,6 @@ void GLViewer::draw()
 
 		if( m_grainsRenderer.sampler().mode() != Sampler::VelocityCut )
 		{
-
 
 			// Compute grains shadowing
 			UsingFrameBuffer fb( m_depthBuffer ) ;
@@ -149,6 +149,8 @@ void GLViewer::draw()
 					m_shapeRenderer.compute_shadow( *ls, depthMVP ) ;
 				}
 			}
+
+			shadowed = true ;
 		}
 
 		if(0){
@@ -178,8 +180,10 @@ void GLViewer::draw()
 
 	glDisable (GL_BLEND);
 
-	for( const LevelSet::Ptr& ls: m_offline.levelSets() ) {
-		drawObject( *ls );
+	if(m_drawObjects) {
+		for( const LevelSet::Ptr& ls: m_offline.levelSets() ) {
+			m_shapeRenderer.draw( *ls, m_offline.mesh().box(), lightPosition(), shadowed, m_depthTexture, depthMVP );
+		}
 	}
 
 	if( m_snapshotting )
@@ -216,7 +220,7 @@ void GLViewer::drawWithNames()
 void GLViewer::drawObject(const LevelSet &ls)
 {
 	if(!m_drawObjects) return ;
-	m_shapeRenderer.draw( ls, m_offline.mesh().box(), lightPosition() );
+	m_shapeRenderer.draw( ls, m_offline.mesh().box(), lightPosition(), false, m_depthTexture, Eigen::Matrix4f() );
 }
 
 void GLViewer::init()

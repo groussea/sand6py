@@ -2,6 +2,7 @@
 
 uniform mat4 model_view ;
 uniform mat4 projection ;
+uniform mat4 depth_mvp ;
 
 in vec3 vertex ;
 in vec3 normal ;
@@ -10,6 +11,7 @@ in vec3 uv ;
 out vec3 normal_eye ;
 out vec3 vertex_eye ;
 out vec3 tex_coord ;
+out vec4 shadow_coord  ;
 
 void main()
 {
@@ -20,4 +22,5 @@ void main()
     gl_Position = projection * ip ;
 
     tex_coord = uv ;
+	shadow_coord = ( depth_mvp * vec4( vertex, 1 ) ) ;
 }

@@ -2,6 +2,7 @@
 
 #include "MeshRenderer.hh"
 #include "TriangularMesh.hh"
+#include "Texture.hh"
 
 #include "geo/LevelSet.impl.hh"
 
@@ -203,6 +204,8 @@ void ShapeRenderer::init()
 	m_solidShader.add_uniform("projection") ;
 	m_solidShader.add_uniform("light_pos") ;
 	m_solidShader.add_uniform("ambient") ;
+	m_solidShader.add_uniform("depth_mvp") ;
+	m_solidShader.add_uniform("depth_texture") ;
 	m_solidShader.add_attribute("vertex") ;
 	m_solidShader.add_attribute("normal") ;
 	m_solidShader.add_attribute("uv") ;
@@ -255,7 +258,9 @@ void ShapeRenderer::compute_shadow( const LevelSet &ls, const Eigen::Matrix4f& d
 	}
 }
 
-void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vector3f& lightPos ) const
+void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vector3f& lightPos,
+		bool shadowed, const Texture& depthTexture, const Eigen::Matrix4f &depthMVP
+	) const
 {
 	const Eigen::Matrix3f rotation = ls.rotation().matrix().cast < GLfloat >() ;
 	const Eigen::Vector3f translation = ls.origin().cast < GLfloat >() ;
@@ -283,6 +288,7 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 
 		Eigen::Matrix4f mat ;
 		get_ls_matrix( ls, mat ) ; 
+		Eigen::Matrix4f completeMVP = depthMVP * mat ;
 
 		glColor4f(1., 0., .8, 1);
 
@@ -363,6 +369,12 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 
 				glUniform3fv( m_solidShader.uniform("light_pos"), 1, objLight.data() ) ;
 				glUniform3fv( m_solidShader.uniform("ambient"), 1, color.data() ) ;
+	
+				UsingTexture tx( depthTexture ) ;
+				if( shadowed ) {
+					tx.bindUniform( m_solidShader.uniform("depth_texture") );
+					glUniformMatrix4fv( m_solidShader.uniform("depth_mvp"), 1, GL_FALSE, completeMVP.data()) ;
+				}
 
 				draw_solid( m_solidShader, cylVertices, cylNormals, cylUVs, quadIndices ) ;
 			}
