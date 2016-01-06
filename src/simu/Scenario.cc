@@ -436,17 +436,16 @@ struct DiggingScenar : public Scenario {
 
 		const Scalar S = m_config->box[0] ;
 		const Scalar H = m_config->box[2] ;
-		const Scalar dist = .85 ;
 
 		left_hand_ls->scale( .5*S )
 				.rotate( Vec(0,1,0), M_PI_2 )
-				.set_origin( Vec(S/2,(1-dist)*S,H) ) ;
+				.set_origin( Vec(S/2,0,H) ) ;
 		left_hand_ls->compute( ) ;
 
 		right_hand_ls->scale( .5*S )
 				.rotate( Vec(0,1,0), -M_PI_2 )
 				.rotate( Vec(0,0,1), -M_PI )
-				.set_origin( Vec(S/2,dist*S,H) ) ;
+				.set_origin( Vec(S/2,S,H) ) ;
 		right_hand_ls->compute( ) ;
 	}
 
@@ -464,17 +463,26 @@ struct DiggingScenar : public Scenario {
 		Vec  vel = Vec::Zero() ;
 		Vec avel = Vec::Zero() ;
 
-		if( tw > 1 ) {
+		if( tw > 2 ) {
+			const Scalar t = tw - 2;
+			if( t < 1 ) {
+				avel = Vec(-M_PI_2,0,0);
+			}
+		}else if( tw > 1 ) {
 			const Scalar t = tw - 1;
 			if( t < 1 ) {
-				avel = Vec(0,0,0);
 				vel = Vec(0, 0, 6*(t-t*t) ) * .5 * m_config->box[2] ;
 			}
 		}else if( tw > 0 ) {
 			const Scalar t = tw;
+
+			const Eigen::AngleAxis<Scalar> firstRot(
+					Eigen::AngleAxis<Scalar>(   -M_PI/6, Vec(0,1,0) ) *
+					Eigen::AngleAxis<Scalar>( .8*M_PI_2, Vec(1,0,0) ) );
+
 			if( t < 1 ) {
-				avel = Vec(.8*M_PI_2,0,0);
-				vel = Vec(0, std::sin(t), -std::cos(t)) * .9 * m_config->box[2] ;
+				avel = firstRot.angle() * firstRot.axis();
+				vel = Vec(0, std::sin(t) * .75 * m_config->box[1], -std::cos(t) * .7 * m_config->box[2]) ;
 			}
 		}
 
@@ -483,7 +491,7 @@ struct DiggingScenar : public Scenario {
 
 		int i = 1 ;
 		for( RigidBody& rb: simu.rigidBodies() ) {
-			rb.set_velocity( Vec(vel[0], i*vel[1], vel[2]), i * avel );
+			rb.set_velocity( Vec(vel[0], i*vel[1], vel[2]), Vec( i*avel[0], avel[1], i*avel[2] ) );
 			i = -i ;
 		}
 	}

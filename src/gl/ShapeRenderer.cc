@@ -65,6 +65,7 @@ static void genPointyCylinder( const float height, const unsigned res,
 	normals.col(0) = Eigen::Vector3f(0,0,-1) ;
 	uvs.col(0) = Eigen::Vector3f(0,0,0) ;
 	vertices.col(1) = p1 + Eigen::Vector3f(0,0, 1);
+	normals.col(1) = Eigen::Vector3f(0,0, 1) ;
 	uvs.col(1) = Eigen::Vector3f(1,0, 0) ;
 
 	for(unsigned i = 0; i < res; ++i)
@@ -152,7 +153,7 @@ static void get_ls_matrix( const LevelSet &ls, Eigen::Matrix4f & mat )
 	mat.block<3,1>(0,3) = translation ;
 }
 
-static void draw_solid( const Shader& shader, 
+static void draw_solid( const Shader& shader,
 			const Eigen::Matrix3Xf& cylVertices,
 			const Eigen::Matrix3Xf& cylNormals,
 			const Eigen::Matrix3Xf& cylUVs,
@@ -167,7 +168,7 @@ static void draw_solid( const Shader& shader,
 	cylqi.reset( quadIndices.size(), quadIndices.data() );
 
 	cylqi.bind() ;
-	
+
 	gl::VertexAttribPointer vap( cylv, shader.attribute("vertex") ) ;
 	gl::VertexAttribPointer nap( cyln, shader.attribute("normal") ) ;
 	gl::VertexAttribPointer uap( cyln, shader.attribute("uv") ) ;
@@ -175,7 +176,7 @@ static void draw_solid( const Shader& shader,
 	glDrawElements( GL_QUADS, cylqi.size(), GL_UNSIGNED_INT, 0 );
 }
 
-static void draw_shape_elements( const LevelSet &ls, const Shader& shader ) 
+static void draw_shape_elements( const LevelSet &ls, const Shader& shader )
 {
 
 	typedef std::unordered_map< std::string, MeshRenderer > MeshRenderers ;
@@ -211,7 +212,7 @@ static void draw_shape_elements( const LevelSet &ls, const Shader& shader )
 		draw_solid( shader, cylVertices, cylNormals, cylUVs, quadIndices ) ;
 	}
 
-}	
+}
 
 void ShapeRenderer::init()
 {
@@ -250,7 +251,7 @@ void ShapeRenderer::init()
 	m_solidShader.add_attribute("normal") ;
 	m_solidShader.add_attribute("uv") ;
 	m_solidShader.load("vertex","fragment") ;
-	
+
 	// Default solid depth shader
 	m_solidDepthShader.add_uniform("depth_mvp") ;
 	m_solidDepthShader.add_attribute("vertex") ;
@@ -270,7 +271,7 @@ void ShapeRenderer::compute_shadow( const LevelSet &ls, const Eigen::Matrix4f& d
 		// Solid shader
 		Eigen::Matrix4f mat ;
 		get_ls_matrix( ls, mat ) ;
-	
+
 		Eigen::Matrix4f completeMVP = depthMVP * mat ;
 
 		UsingShader sh( m_solidDepthShader ) ;
@@ -309,7 +310,7 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 	} else {
 
 		Eigen::Matrix4f mat ;
-		get_ls_matrix( ls, mat ) ; 
+		get_ls_matrix( ls, mat ) ;
 		Eigen::Matrix4f completeMVP = depthMVP * mat ;
 
 		glColor4f(1., 0., .8, 1);
@@ -377,7 +378,7 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 
 				glUniform3fv( m_solidShader.uniform("light_pos"), 1, objLight.data() ) ;
 				glUniform3fv( m_solidShader.uniform("ambient"), 1, color.data() ) ;
-	
+
 				UsingTexture tx( depthTexture ) ;
 				if( shadowed ) {
 					tx.bindUniform( m_solidShader.uniform("depth_texture") );
