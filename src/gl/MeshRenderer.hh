@@ -26,6 +26,7 @@ class MeshRenderer
 private:
 	gl::VertexBuffer3f m_vertices ;
 	gl::VertexBuffer3f m_normals ;
+	gl::VertexBuffer3f m_uvs ;
 
 } ;
 
