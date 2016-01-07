@@ -61,7 +61,8 @@ void GLViewer::draw()
 	}
 
 	bool shadowed = false ;
-	Eigen::Matrix4f depthMVP ;
+	Eigen::Matrix4f depthModelView ;
+	Eigen::Matrix4f depthProjection ;
 
 	if( m_drawParticles )
 	{
@@ -121,8 +122,13 @@ void GLViewer::draw()
 		cam.computeProjectionMatrix();
 
 		Eigen::Matrix4d depthMVP_d ;
-		cam.getModelViewProjectionMatrix(depthMVP_d.data());
-		depthMVP = depthMVP_d.cast< float >() ;
+		cam.getModelViewMatrix(depthMVP_d.data());
+		depthModelView = depthMVP_d.cast< float >() ;
+		cam.getProjectionMatrix(depthMVP_d.data());
+		depthProjection = depthMVP_d.cast< float >() ;
+		
+		const Eigen::Matrix4f depthMVP = depthProjection*depthModelView ;
+
 
 		if( m_grainsRenderer.sampler().mode() != Sampler::VelocityCut )
 		{
@@ -146,7 +152,7 @@ void GLViewer::draw()
 
 			if( m_drawObjects ) {
 				for( const LevelSet::Ptr& ls: m_offline.levelSets() ) {
-					m_shapeRenderer.compute_shadow( *ls, depthMVP ) ;
+					m_shapeRenderer.compute_shadow( *ls, depthModelView, depthProjection ) ;
 				}
 			}
 
@@ -182,7 +188,7 @@ void GLViewer::draw()
 
 	if(m_drawObjects) {
 		for( const LevelSet::Ptr& ls: m_offline.levelSets() ) {
-			m_shapeRenderer.draw( *ls, m_offline.mesh().box(), lightPosition(), shadowed, m_depthTexture, depthMVP );
+			m_shapeRenderer.draw( *ls, m_offline.mesh().box(), lightPosition(), shadowed, m_depthTexture, depthModelView, depthProjection );
 		}
 	}
 
@@ -220,7 +226,7 @@ void GLViewer::drawWithNames()
 void GLViewer::drawObject(const LevelSet &ls)
 {
 	if(!m_drawObjects) return ;
-	m_shapeRenderer.draw( ls, m_offline.mesh().box(), lightPosition(), false, m_depthTexture, Eigen::Matrix4f::Zero() );
+	m_shapeRenderer.draw( ls, m_offline.mesh().box(), lightPosition(), false, m_depthTexture, Eigen::Matrix4f::Zero(), Eigen::Matrix4f::Zero() );
 }
 
 void GLViewer::init()

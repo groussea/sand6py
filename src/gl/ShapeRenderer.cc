@@ -153,6 +153,22 @@ static void get_ls_matrix( const LevelSet &ls, Eigen::Matrix4f & mat )
 	mat.block<3,1>(0,3) = translation ;
 }
 
+static void draw_fake_ball( const LevelSet &ls, const Shader& shader, const gl::VertexBuffer3f& squareVertices )
+{
+	const Eigen::Matrix3f rotation = ls.rotation().matrix().cast < GLfloat >() ;
+	const Eigen::Vector3f translation = ls.origin().cast < GLfloat >() ;
+	
+	//Vertices
+	gl::VertexAttribPointer vap_v( squareVertices, shader.attribute("vertex") ) ;
+
+	glUniform1f( shader.uniform("radius"), ls.scale() ) ;
+	glUniformMatrix3fv( shader.uniform("rotation"), 1, GL_FALSE, rotation.data() ) ;
+	glUniform3fv( shader.uniform("center"), 1, translation.data() ) ;
+
+	gl::VertexPointer vp( squareVertices ) ;
+	glDrawArrays( GL_QUADS, 0, squareVertices.size() ) ;
+}
+
 static void draw_solid( const Shader& shader,
 			const Eigen::Matrix3Xf& cylVertices,
 			const Eigen::Matrix3Xf& cylNormals,
@@ -239,6 +255,15 @@ void ShapeRenderer::init()
 	m_ballShader.add_uniform("light_pos") ;
 	m_ballShader.add_attribute("vertex") ;
 	m_ballShader.load("ball_vertex","ball_fragment") ;
+	
+	// Ball depth shader
+	m_ballDepthShader.add_uniform("model_view") ;
+	m_ballDepthShader.add_uniform("projection") ;
+	m_ballDepthShader.add_uniform("radius") ;
+	m_ballDepthShader.add_uniform("rotation") ;
+	m_ballDepthShader.add_uniform("center") ;
+	m_ballDepthShader.add_attribute("vertex") ;
+	m_ballDepthShader.load("ball_depth_vertex","ball_depth_fragment") ;
 
 	// Default solid shader
 	m_solidShader.add_uniform("model_view") ;
@@ -261,18 +286,25 @@ void ShapeRenderer::init()
 
 }
 
-void ShapeRenderer::compute_shadow( const LevelSet &ls, const Eigen::Matrix4f& depthMVP ) const
+void ShapeRenderer::compute_shadow( const LevelSet &ls, 
+		const Eigen::Matrix4f& depthModelView, const Eigen::Matrix4f& depthProjection ) const 
 {
 
 	if( dynamic_cast<const SphereLevelSet*>(&ls) )
 	{
-		// TODO
+		UsingShader sh( m_ballDepthShader ) ;
+	
+		// Model-view
+		glUniformMatrix4fv( m_ballDepthShader.uniform("model_view"), 1, GL_FALSE, depthModelView.data()) ;
+		glUniformMatrix4fv( m_ballDepthShader.uniform("projection"), 1, GL_FALSE, depthProjection.data()) ;
+
+		draw_fake_ball( ls, m_ballDepthShader, m_squareVertices ) ;
 	} else {
 		// Solid shader
 		Eigen::Matrix4f mat ;
 		get_ls_matrix( ls, mat ) ;
 
-		Eigen::Matrix4f completeMVP = depthMVP * mat ;
+		Eigen::Matrix4f completeMVP = depthProjection * depthModelView * mat ;
 
 		UsingShader sh( m_solidDepthShader ) ;
 		glUniformMatrix4fv( m_solidDepthShader.uniform("depth_mvp"), 1, GL_FALSE, completeMVP.data()) ;
@@ -282,36 +314,24 @@ void ShapeRenderer::compute_shadow( const LevelSet &ls, const Eigen::Matrix4f& d
 }
 
 void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vector3f& lightPos,
-		bool shadowed, const Texture& depthTexture, const Eigen::Matrix4f &depthMVP
-	) const
+		bool shadowed, const Texture& depthTexture, 
+		const Eigen::Matrix4f& depthModelView, const Eigen::Matrix4f& depthProjection ) const 
 {
 	const Eigen::Matrix3f rotation = ls.rotation().matrix().cast < GLfloat >() ;
 	const Eigen::Vector3f translation = ls.origin().cast < GLfloat >() ;
 
 	if( dynamic_cast<const SphereLevelSet*>(&ls) )
 	{
-
 		UsingShader sh( m_ballShader ) ;
 		// Model-view
 		sh.bindMVP() ;
 
-		//Vertices
-		gl::VertexAttribPointer vap_v( m_squareVertices, m_ballShader.attribute("vertex") ) ;
-
-		glUniform1f( m_ballShader.uniform("radius"), ls.scale() ) ;
-		glUniformMatrix3fv( m_ballShader.uniform("rotation"), 1, GL_FALSE, rotation.data() ) ;
-		glUniform3fv( m_ballShader.uniform("center"), 1, translation.data() ) ;
-
-		glUniform3fv( m_ballShader.uniform("light_pos"), 1, lightPos.data() ) ;
-
-		gl::VertexPointer vp( m_squareVertices ) ;
-		glDrawArrays( GL_QUADS, 0, m_squareVertices.size() ) ;
-
+		draw_fake_ball( ls, m_ballShader, m_squareVertices ) ;
 	} else {
 
 		Eigen::Matrix4f mat ;
 		get_ls_matrix( ls, mat ) ;
-		Eigen::Matrix4f completeMVP = depthMVP * mat ;
+		Eigen::Matrix4f completeDepthMVP = depthProjection * depthModelView * mat ;
 
 		glColor4f(1., 0., .8, 1);
 
@@ -382,7 +402,7 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 				UsingTexture tx( depthTexture ) ;
 				if( shadowed ) {
 					tx.bindUniform( m_solidShader.uniform("depth_texture") );
-					glUniformMatrix4fv( m_solidShader.uniform("depth_mvp"), 1, GL_FALSE, completeMVP.data()) ;
+					glUniformMatrix4fv( m_solidShader.uniform("depth_mvp"), 1, GL_FALSE, completeDepthMVP.data()) ;
 				}
 
 				draw_shape_elements( ls, m_solidShader ) ;
