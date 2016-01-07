@@ -51,7 +51,7 @@ int main( int argc, char* argv[] ) {
 	QGLFormat fmt = QGLFormat::defaultFormat() ;
 	if( nSamples > 0 ) {
 		fmt.setSampleBuffers( true );
-		fmt.setSamples( 16 );
+		fmt.setSamples( 8 );
 	}
 	d6::GLViewer viewer( fmt, offline, nSamples );
 

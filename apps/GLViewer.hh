@@ -25,7 +25,7 @@ public:
 		m_drawParticles( 0 == nSamples ), m_enableBending( false ),
 		m_fastDraw( true ), m_drawObjects( true ), m_drawOrientations( false ),
 		m_snapshotting(false), m_lastSnapped( m_currentFrame ),
-		m_grainsRenderer( offline, nSamples )
+		m_grainsRenderer( offline, m_shapeRenderer, nSamples )
 	{
 
 	}
@@ -101,8 +101,8 @@ private:
 	Texture     m_depthTexture ;
 	FrameBuffer m_depthBuffer  ;
 
-	GrainRenderer m_grainsRenderer ;
 	ShapeRenderer m_shapeRenderer ;
+	GrainRenderer m_grainsRenderer ;
 
 } ;
 

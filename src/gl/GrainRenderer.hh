@@ -9,13 +9,14 @@
 namespace d6 {
 
 struct Texture ;
+class ShapeRenderer ;
 
 class GrainRenderer
 {
 
 public:
-	GrainRenderer( const Offline & offline, unsigned nSamples )
-		: m_offline( offline ), m_sampler(offline),
+	GrainRenderer( const Offline & offline, const ShapeRenderer &shapeRenderer, unsigned nSamples )
+		: m_offline( offline ), m_shapeRenderer( shapeRenderer ), m_sampler(offline),
 		  m_nSamples( nSamples ),  m_grainSizeFactor( 1 )
 	{
 
@@ -48,7 +49,13 @@ public:
 	void move() ;
 
 private:
+
+	void draw_grains ( const Shader &shader, const float pixelSize,
+					   const Eigen::Matrix4f &depthMVP, bool instanced ) const ;
+
 	const Offline& m_offline ;
+	const ShapeRenderer &m_shapeRenderer ;
+
 	Sampler  m_sampler ;
 
 	unsigned m_nSamples  ;
