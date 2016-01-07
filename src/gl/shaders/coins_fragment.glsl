@@ -28,7 +28,7 @@ void main (void)
     float zs = texture( depth_texture, tex_coords ).r ;
 
     if ( zs  <  zz ){
-         alpha = 1. - (zz-zs)*10 ; //shadow_coord.z/20;
+         alpha = 1. - (zz-zs)*25 ; //shadow_coord.z/20;
      }
 
     alpha = pow( clamp(alpha,0,1), 3) ;
@@ -38,20 +38,14 @@ void main (void)
     vec4 ambientMat  = vec4(0,0,0,0) ;
     vec4 diffuseMat  = vec4(0,0,0,0) ;
 
-    float mat_0 = clamp( 1 - 2*(material-0.0), 0.0, 1.0 ) ;
-    float mat_1 = clamp( 1 - 2*(material-0.5), 0.0, 1.0 ) ;
-    float mat_2 = clamp( 1 - 2*(material-1.0), 0.0, 1.0 ) ;
+    if( material < .4 )
+        ambientMat = vec4( 212,175,55, 255.)/255;
+    else if( material < .7 )
+        ambientMat = vec4( 192,192,192, 255.)/255;
+    else
+        ambientMat = vec4( 200,117,51, 255.)/255;
 
-
-    ambientMat += mat_0*vec4( vec3(0.3,0.3, 0.1), 1. );
-    //diffuseMat += mat_0*vec4( vec3(.3 , .3, 0.1), 1. );
-
-    ambientMat += mat_1*vec4( vec3(0.3,0.2, 0.1), 1. );
-    //diffuseMat += mat_1*vec4( vec3(.3 , .2, 0.1), 1. );
-
-    ambientMat += mat_2*vec4( vec3(0.25,0.2, 0.25), 1. );
-    //diffuseMat += mat_2*vec4( vec3(.3, .2, 0.25), 1. );
-
+    diffuseMat = ambientMat ;
     vec4 specMat    = vec4( .8, .8, .8, 1. );
 
 
@@ -67,12 +61,12 @@ void main (void)
     vec3 R = normalize(reflect(-L, normal_eye ));
 
     ambient = ambientMat;
-    diffuse = clamp( diffuseMat * abs(dot(normal_eye,L)) , 0.0, 1.0 ) ;
-    spec = clamp ( specMat * pow(abs(dot(R,E)),0.3*specPow) , 0.0, 1.0 );
+    diffuse = diffuseMat * clamp( abs(dot(normal_eye,L)) , 0.0, 1.0 ) ;
+    spec =  specMat * clamp (pow(abs(dot(R,E)),0.3*specPow) , 0.0, 1.0 );
 
-    color = ( 0.4 + 0.6*alpha) * ambient ;
-    color += alpha * 0.75*diffuse ;
-    color += alpha*alpha*spec;
+    color = ( 0.4 + 0.6*alpha) * .5 * ambient ;
+    color += ( 0.2 + 0.8*alpha ) * .5 * diffuse ;
+    color += alpha*alpha*.5*spec;
 
     color.a = 0.5 ;
 }
