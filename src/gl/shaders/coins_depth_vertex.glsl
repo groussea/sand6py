@@ -13,8 +13,8 @@ out float vis ;
 
 void main()
 {
-    coord.x = 1 - 2*(gl_VertexID%2) ;
-    coord.y = 2*((gl_VertexID>>1)%2) - 1;
+    coord.y = 1 - 2*((gl_VertexID>>1)%2) ;
+    coord.x = 1 - 2*(((gl_VertexID>>1)%2) ^ (gl_VertexID%2)) ;
 
     vec3 t1, t2 ;
     if( normal.x > 1.e-12 ) {
