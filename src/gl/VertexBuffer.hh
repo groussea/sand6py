@@ -175,9 +175,11 @@ struct VertexAttribPointer
 		bool normalized = false, int divisor = 0 )
 		: m_attrib( attrib )
 	{
-		vb.set_vertex_attrib_pointer( attrib, normalized );
-		glEnableVertexAttribArray( attrib );
-		glVertexAttribDivisor( m_attrib, divisor ) ;
+		if( vb.valid() && vb.size() > 0 ) {
+			vb.set_vertex_attrib_pointer( attrib, normalized );
+			glEnableVertexAttribArray( attrib );
+			glVertexAttribDivisor( m_attrib, divisor ) ;
+		}
 	}
 	~VertexAttribPointer()
 	{

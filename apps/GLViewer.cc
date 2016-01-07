@@ -126,7 +126,7 @@ void GLViewer::draw()
 		depthModelView = depthMVP_d.cast< float >() ;
 		cam.getProjectionMatrix(depthMVP_d.data());
 		depthProjection = depthMVP_d.cast< float >() ;
-		
+
 		const Eigen::Matrix4f depthMVP = depthProjection*depthModelView ;
 
 
@@ -264,6 +264,14 @@ void GLViewer::init()
 	m_particlesShader.load("particles_vertex", "particles_fragment") ;
 
 	if( renderSamples() ) {
+
+		glEnable( GL_MULTISAMPLE );
+
+		GLint bufs, samples ;
+		glGetIntegerv( GL_SAMPLE_BUFFERS, &bufs ) ;
+		glGetIntegerv( GL_SAMPLES, &samples ) ;
+		Log::Debug() << "Using " << bufs << " buffers and " << samples << " samples" << std::endl ;
+
 		m_grainsRenderer.init();
 
 		m_depthBuffer.reset( fb_width, fb_height );

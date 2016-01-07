@@ -13,7 +13,7 @@ void MeshRenderer::reset( const TriangularMesh& mesh )
 	const unsigned n = mesh.nFaces() ;
 
 	Eigen::Matrix3Xf vertices( 3, n*3 ) ;
-	
+
 #pragma omp parallel for
 	for( unsigned i = 0 ; i < n ; ++i ) {
 		vertices.col(3*i+0) = mesh.vertex( i,0 ).cast<float>() ;
@@ -21,7 +21,7 @@ void MeshRenderer::reset( const TriangularMesh& mesh )
 		vertices.col(3*i+2) = mesh.vertex( i,2 ).cast<float>() ;
 	}
 	m_vertices.reset( 3*n, vertices.data() ) ;
-	
+
 	if ( mesh.hasVertexNormals() ) {
 		Eigen::Matrix3Xf normals( 3, n*3 ) ;
 
@@ -32,7 +32,7 @@ void MeshRenderer::reset( const TriangularMesh& mesh )
 			normals.col(3*i+2) = mesh.normal( i,2 ).cast<float>() ;
 		}
 		m_normals.reset( 3*n, normals.data() ) ;
-	
+
 	} else if ( mesh.hasFaceNormals() ) {
 		Eigen::Matrix3Xf normals( 3, n*3 ) ;
 
@@ -43,13 +43,13 @@ void MeshRenderer::reset( const TriangularMesh& mesh )
 			normals.col(3*i+2) = mesh.faceNormal( i ).cast<float>() ;
 		}
 		m_normals.reset( 3*n, normals.data() ) ;
-	
+
 	}
 
 	if( mesh.hasVertexUVs() )
 	{
 		Eigen::Matrix3Xf uvs( 3, n*3 ) ;
-		
+
 #pragma omp parallel for
 		for( unsigned i = 0 ; i < n ; ++i ) {
 			uvs.col(3*i+0) = mesh.uv( i,0 ).cast<float>() ;
@@ -61,7 +61,7 @@ void MeshRenderer::reset( const TriangularMesh& mesh )
 
 }
 
-void MeshRenderer::draw( const Shader &shader ) const 
+void MeshRenderer::draw( const Shader &shader ) const
 {
 	gl::VertexPointer vp( m_vertices ) ;
 	if( shader.ok() )
@@ -69,9 +69,9 @@ void MeshRenderer::draw( const Shader &shader ) const
 		gl::VertexAttribPointer vap( m_vertices, shader.attribute("vertex") ) ;
 		gl::VertexAttribPointer nap( m_normals,  shader.attribute("normal") ) ;
 		gl::VertexAttribPointer uap( m_uvs,  shader.attribute("uv") ) ;
-		
+
 		glDrawArrays( GL_TRIANGLES, 0, m_vertices.size() ) ;
-		
+
 	} else {
 		gl::NormalPointer np( m_normals ) ;
 

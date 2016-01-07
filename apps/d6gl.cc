@@ -48,7 +48,12 @@ int main( int argc, char* argv[] ) {
 
 	d6::Offline offline( base_dir ) ;
 
-	d6::GLViewer viewer( offline, nSamples );
+	QGLFormat fmt = QGLFormat::defaultFormat() ;
+	if( nSamples > 0 ) {
+		fmt.setSampleBuffers( true );
+		fmt.setSamples( 16 );
+	}
+	d6::GLViewer viewer( fmt, offline, nSamples );
 
 	if( velCut ) {
 		viewer.grainsRenderer().cutAndColorVelocities() ;

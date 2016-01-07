@@ -18,7 +18,8 @@ class GLViewer : public QGLViewer
 
 public:
 
-	GLViewer( Offline & offline, unsigned nSamples ) :
+	GLViewer( const QGLFormat& glFormat, Offline & offline, unsigned nSamples ) :
+		QGLViewer( glFormat ),
 		m_offline( offline ),
 		m_currentFrame(-1),
 		m_drawParticles( 0 == nSamples ), m_enableBending( false ),
