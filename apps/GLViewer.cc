@@ -247,7 +247,7 @@ void GLViewer::init()
 
 	if( m_grainsRenderer.sampler().mode() == Sampler::VelocityCut ) {
 		camera()->setType( qglviewer::Camera::ORTHOGRAPHIC );
-		camera()->setViewDirection( qglviewer::Vec(0,1,0));
+		camera()->setViewDirection( qglviewer::Vec(0,-1,0));
 		camera()->setUpVector( qglviewer::Vec(0,0,1));
 	} else {
 		camera()->setType( qglviewer::Camera::PERSPECTIVE );
@@ -279,13 +279,7 @@ void GLViewer::init()
 		m_depthTexture.reset( GL_TEXTURE_2D );
 		m_depthTexture.bind() ;
 
-		//float data[ fb_width * fb_height ]	;
-		//for( unsigned j = 0 ; j < fb_height ; ++j )
-		//	for( unsigned i = 0 ; i < fb_width ; ++i ) {
-		//		daaa[ j*fb_width + i ] = (1.*i)/fb_width ;
-		//	}
 		float* data = 0 ;
-
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, m_depthBuffer.width(), m_depthBuffer.height(), 0,GL_DEPTH_COMPONENT, GL_FLOAT, data);
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

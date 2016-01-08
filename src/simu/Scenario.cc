@@ -334,7 +334,7 @@ struct BunnyScenar : public Scenario {
 		if( tw > .5 ) {
 			const Scalar t = tw-.5 ;
 			if( t < 1 ) {
-				vel = Vec(0,0,6*(t - t*t)) * speed * ( .35 * m_config->box[2] );
+				vel = Vec(0,0,6*(t - t*t)) * speed * ( .5 * m_config->box[2] );
 			}
 		}
 
