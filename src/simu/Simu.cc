@@ -81,7 +81,7 @@ void Simu::run()
 			Log::Verbose() << arg3( "Step %1/%2 \t t=%3 s",
 									s+1, substeps,
 									t * m_config.units().toSI( Units::Time ) ) << std::endl ;
-
+			// Update external objects (moving boundaries,...)
 			m_scenario->update( *this, t, m_stats.delta_t ) ;
 
 			// Dump particles at last substep of each frame
@@ -91,6 +91,7 @@ void Simu::run()
 			}
 			m_particles.events().start();
 
+			// Proper simulation step
 			step( m_stats.delta_t ) ;
 
 			// Log max particle velocity (useful for adaptative timestep )
@@ -115,14 +116,16 @@ void Simu::step(const Scalar dt)
 {
 	bogus::Timer timer ;
 
-	// TODO adapt mesh
+	// TODO: if we were to adapt the mesh, it would be here
 
 	m_stats.nParticles = m_particles.count() ;
 	m_stats.nNodes = m_mesh->nNodes() ;
 
+	//! Compute new grid velocities
 	m_solver.step( m_config, dt, *m_grains, m_stats, m_rigidBodies, m_rbStresses ) ;
 	const Scalar solverTime = timer.elapsed() ;
 
+	//! Advance particles
 	m_particles.update( m_config, dt, *m_grains ) ;
 
 	for( RigidBody& rb: m_rigidBodies ) {

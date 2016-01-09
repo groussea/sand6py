@@ -32,6 +32,7 @@ public:
 
 	~PhaseSolver() ;
 
+	//! Solve for end-of-steps velocities, reading initial quantities from the particles
 	void step(const Config &config, const Scalar dt,
 			  Phase& phase, Stats &stats,
 			  std::vector<RigidBody> &rigidBodies,
@@ -39,24 +40,26 @@ public:
 			  ) const ;
 
 private:
-
-
-
+	//! Two-steps solve of the momentum balance w/ frictional rheology
 	void solve(const Config& config, const Scalar dt,
 			   const PhaseStepData &stepData,
 			   Phase& phase, std::vector< RigidBodyData > &rbData, Stats& stats ) const ;
 
-	void addRigidBodyContrib(const Config &c, const Scalar dt, const PhaseStepData &stepData,
-							 const DynVec &u, const RigidBodyData &rb,
-							 PrimalData& primalData, DynArr &totFraction ) const ;
-	void addCohesionContrib (const Config&c, const PhaseStepData &stepData,
-							  PrimalData& primalData, DynVec &u ) const ;
-
+	//! Assemble and solve the friction problem
 	void solveComplementarity(const Config&c, const Scalar dt,
 							  const PhaseStepData& stepData ,
 							  std::vector< RigidBodyData >& rbData,
 							  DynVec &u, Phase &phase, Stats &stats ) const ;
 
+	//! Add contbutions from a rigid body to the friction problem
+	void addRigidBodyContrib(const Config &c, const Scalar dt, const PhaseStepData &stepData,
+							 const DynVec &u, const RigidBodyData &rb,
+							 PrimalData& primalData, DynArr &totFraction ) const ;
+	//! Add contribution from chesive forces to the friction problem
+	void addCohesionContrib (const Config&c, const PhaseStepData &stepData,
+							  PrimalData& primalData, DynVec &u ) const ;
+
+	//! Compute displacement for volume correction
 	void enforceMaxFrac(const Config &c, const PhaseStepData &stepData,
 									   const std::vector<RigidBodyData> &rbData,
 									   DynVec &depl ) const ;

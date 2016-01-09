@@ -20,8 +20,6 @@
 #include <bogus/Core/Block.impl.hpp>
 #include <bogus/Core/Utils/Timer.hpp>
 
-#include <utility>
-
 namespace d6 {
 
 
@@ -44,6 +42,7 @@ void PhaseSolver::step(const Config &config, const Scalar dt, Phase &phase, Stat
 	PhaseStepData stepData ;
 	std::vector< RigidBodyData > rbData ;
 
+	// Read data from particles, assemble matrices, etc
 	stepData.compute( m_particles, config, dt, phase, rigidBodies, rbStresses, rbData );
 
 	stats.nActiveNodes = stepData.nNodes() ;
@@ -79,7 +78,7 @@ void PhaseSolver::solve(
 	DynVec u = stepData.forms.M_lumped_inv * rhs ;
 	solveSDP( stepData.forms.A, stepData.forms.M_lumped_inv, rhs, u ) ;
 
-	stats.linSolveTime = timer.elapsed() - stats.assemblyTime ;
+	stats.linSolveTime = timer.elapsed() ;
 	Log::Debug() << "Linear solve: " << stats.linSolveTime << std::endl ;
 
 	// Optional : Maximum fraction projection
@@ -90,16 +89,13 @@ void PhaseSolver::solve(
 		stepData.nodes.var2field( depl, phase.geo_proj ) ; //Purely geometric
 		// u += depl/dt ; // Includes proj into inertia
 
-		stats.lcpSolveTime = timer.elapsed() - stats.assemblyTime - stats.linSolveTime ;
+		stats.lcpSolveTime = timer.elapsed() -  stats.linSolveTime ;
 	}
 
 	// Friction solve
-	{
+	solveComplementarity( config, dt, stepData, rbData,  u, phase, stats );
 
-		solveComplementarity( config, dt, stepData, rbData,  u, phase, stats );
-		Log::Debug() << "Complementarity solve at " << timer.elapsed() << std::endl ;
-	}
-
+	// Output
 	stepData.nodes.var2field( u, phase.velocity ) ;
 
 	{
@@ -130,6 +126,7 @@ void PhaseSolver::addRigidBodyContrib( const Config &c, const Scalar dt, const P
 
 	pbData.w -= J * delta_u  ;
 
+	// Add volume fraction taken by rb
 	for( Index i = 0 ; i < rb.nodes.count() ; ++i ) {
 		totFraction( stepData.nodes.indices[ rb.nodes.revIndices[i] ] ) += rb.fraction[i] ;
 	}

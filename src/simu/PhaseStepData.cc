@@ -15,6 +15,8 @@
 #include <bogus/Core/Block.impl.hpp>
 #include <bogus/Core/Utils/Timer.hpp>
 
+#include <utility>
+
 //#define FULL_FEM  // Ignore particles, just solve FEM system
 
 namespace d6 {
@@ -34,7 +36,7 @@ void PhaseStepData::computeProjectors(const bool weakStressBC, const std::vector
 	for( Index i = 0 ; i < nodes.count() ; ++i  ) {
 		const Index idx = nodes.revIndices[ i ] ;
 
-		m_surfaceNodes[idx].   velProj( mats.vel.insertBack( i,i ) ) ;
+		m_surfaceNodes[idx].velProj( mats.vel.insertBack( i,i ) ) ;
 
 		if( weakStressBC )
 			mats.stress.insertBack( i,i ).setIdentity() ;
@@ -265,6 +267,7 @@ void PhaseStepData::assembleMatrices(
 void PhaseStepData::computeAnisotropy(const DynVec &orientation, const Config& config,
 									 typename FormMat<6,6>::SymType &Aniso ) const
 {
+	// Compute anisotropy matrix from interpolated orientation distributions
 
 	Aniso = proj.stress.Identity() ;
 
@@ -320,7 +323,6 @@ void PhaseStepData::compute(const DynParticles& particles,
 	TensorField intPhiOrient  ( mesh ) ;
 	std::vector< bool > activeCells ;
 
-
 #if defined(FULL_FEM)
 	intPhi.set_constant( 1. ) ;
 	intPhiVel.set_zero() ;
@@ -364,6 +366,7 @@ void PhaseStepData::compute(const DynParticles& particles,
 
 	computeAnisotropy( orientation, config, Aniso );
 
+	// External forces
 	VectorField gravity ( mesh ) ;
 	gravity.set_constant( config.gravity );
 	gravity.multiply_by( intPhi ) ;

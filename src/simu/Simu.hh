@@ -24,11 +24,8 @@ public:
 	explicit Simu( const Config& config, const char* base_dir ) ;
 	~Simu() ;
 
+	//! Runs the simulation
 	void run() ;
-	void step( const Scalar dt ) ;
-
-	void dump_fields(unsigned frame) const ;
-	void dump_particles(unsigned frame) const ;
 
 	MeshType& mesh() { return * m_mesh ;  }
 	const MeshType& mesh() const { return * m_mesh ;  }
@@ -46,11 +43,16 @@ public:
 	const DynParticles& particles() const { return m_particles ; }
 
 private:
+	//! Advances the simulation with time step \p dt
+	void step( const Scalar dt ) ;
 
-	class Fields ;
+	// Output
+	void dump_fields(unsigned frame) const ;
+	void dump_particles(unsigned frame) const ;
 
-	Simu( const Simu& ) ;
-	Simu& operator=( const Simu& ) ;
+	Simu( const Simu& ) = delete ;
+	Simu& operator=( const Simu& ) = delete ;
+
 
 	const Config& m_config ;
 	const char* m_base_dir ;
@@ -63,6 +65,7 @@ private:
 
 	MeshType*  m_mesh ;
 	Phase*     m_grains ;
+	// Useful for warm-starting stresses at frictional boundary conditions
 	std::vector< TensorField > m_rbStresses  ;
 
 	PhaseSolver m_solver ;
