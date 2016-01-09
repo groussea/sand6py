@@ -10,6 +10,8 @@ simu/LinearSolver.hh
 simu/Phase.hh
 simu/PhaseSolver.cc
 simu/PhaseSolver.hh
+simu/PhaseStepData.cc
+simu/PhaseStepData.hh
 simu/RigidBody.cc
 simu/RigidBody.hh
 simu/RigidBodyData.cc

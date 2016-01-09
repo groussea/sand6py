@@ -14,7 +14,7 @@ namespace d6 {
 
 class DynParticles ;
 struct Phase ;
-struct PhaseMatrices ;
+struct PhaseStepData ;
 
 class RigidBody ;
 struct RigidBodyData ;
@@ -36,78 +36,34 @@ public:
 			  Phase& phase, Stats &stats,
 			  std::vector<RigidBody> &rigidBodies,
 			  std::vector<TensorField> &rbStresses
-			  ) ;
+			  ) const ;
 
 private:
-	void prepareStep(const Config &config, const Scalar dt, Phase &phase,
-		std::vector< RigidBody   >& rigidBodies,
-		std::vector<TensorField > &rbStresses,
-		PhaseMatrices &matrices, std::vector<RigidBodyData> &rbData,
-		DynVec &phiu_int, DynVec& externalForces_int, DynVec &cohesion, DynVec &inertia
-		) ;
-
-	void computeActiveNodes(const std::vector< bool >& activeCells,
-							const VectorField &grad_phi ) ;
-	void computeActiveBodies( std::vector<RigidBody> &rigidBodies,
-							  std::vector<TensorField> &rbStresses,
-							  std::vector< RigidBodyData >& rbData ) ;
-
-	void computeProjectors( PhaseMatrices& matrices, const bool weakStressBC,
-							const std::vector< RigidBodyData >& rbData
-							) const ;
-
-	void computeAnisotropy(const DynVec& orientation,
-						   const Config &config, PhaseMatrices& matrices) const ;
-
-	void computeGradPhi( const ScalarField& fraction, const ScalarField& volumes, VectorField &grad_phi ) const ;
-
-	void assembleMatrices( const Config& c, const Scalar dt,
-						   const MeshType& mesh,
-						   const ScalarField &phiInt,
-						   PhaseMatrices& matrices,
-						   std::vector< RigidBodyData >& rbData
-						   ) const ;
 
 
 
-	void solveStep(const Config& config, const Scalar dt, const PhaseMatrices& matrices,
-			const DynVec& phiu_int, const DynVec &externalForces_int,
-			const DynVec& cohesion, const DynVec& inertia ,
-			Phase& phase, std::vector< RigidBodyData > &rbData, Stats& stats ) const ;
+	void solve(const Config& config, const Scalar dt,
+			   const PhaseStepData &stepData,
+			   Phase& phase, std::vector< RigidBodyData > &rbData, Stats& stats ) const ;
 
-	void addRigidBodyContrib(const Config &c, const Scalar dt, const PhaseMatrices &matrices,
+	void addRigidBodyContrib(const Config &c, const Scalar dt, const PhaseStepData &stepData,
 							 const DynVec &u, const RigidBodyData &rb,
-							 PrimalData& data, DynArr &totFraction ) const ;
-	void addCohesionContrib (const Config&c, const PhaseMatrices &matrices,
-							  const DynVec &fraction, const DynVec &cohesion,
-							  PrimalData& data, DynVec &u ) const ;
+							 PrimalData& primalData, DynArr &totFraction ) const ;
+	void addCohesionContrib (const Config&c, const PhaseStepData &stepData,
+							  PrimalData& primalData, DynVec &u ) const ;
 
 	void solveComplementarity(const Config&c, const Scalar dt,
-							  const PhaseMatrices& matrices ,
+							  const PhaseStepData& stepData ,
 							  std::vector< RigidBodyData >& rbData,
-							  const DynVec &fraction,
-							  const DynVec &cohesion, const DynVec &inertia,
 							  DynVec &u, Phase &phase, Stats &stats ) const ;
-	void enforceMaxFrac(const Config &c, const PhaseMatrices &matrices,
-									   std::vector<RigidBodyData> &rbData,
-									   const DynVec &fraction,
+
+	void enforceMaxFrac(const Config &c, const PhaseStepData &stepData,
+									   const std::vector<RigidBodyData> &rbData,
 									   DynVec &depl ) const ;
-
-
-	Index nSuppNodes() const
-	{
-		return m_totRbNodes ;
-	}
 
 
 	const DynParticles& m_particles ;
 
-	Active m_phaseNodes ;
-	Active m_couplingNodes ;
-
-	BoundaryConditions m_surfaceNodes ;
-
-	Index m_totRbNodes ;
 };
 
 
