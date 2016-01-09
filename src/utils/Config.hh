@@ -45,6 +45,7 @@ namespace d6 {
 	CONFIG_FIELD( scenario			, std::string	,	Units::None			) \
 	CONFIG_FIELD( boundary			, std::string	,	Units::None			) \
 	CONFIG_FIELD( output			, bool			,	Units::None			) \
+	CONFIG_FIELD( dumpPrimalData	, unsigned		,	Units::None			) \
 
 
 struct Config

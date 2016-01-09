@@ -86,6 +86,7 @@ void PhaseSolver::computeProjectors(PhaseMatrices& mats,
 			m_surfaceNodes[idx].stressProj( mats.Pstress.insertBack( i,i ) ) ;
 	}
 
+	// Additional nodes for frictional boundaries
 	for( unsigned k = 0 ; k < rbData.size() ; ++k ) {
 		for( Index i = 0 ; i < rbData[k].nodes.count() ; ++i  ) {
 			const Index   j = rbData[k].nodes.offset + i ;
@@ -108,17 +109,16 @@ void PhaseSolver::assembleMatrices(const Config &config, const Scalar dt, const 
 								   std::vector< RigidBodyData >& rbData
 								   ) const
 {
-	bogus::Timer timer;
-
 	typedef typename MeshType::Location Loc ;
 	typedef typename MeshType::Interpolation Itp ;
 	typedef typename MeshType::Derivatives Dcdx ;
 
+	bogus::Timer timer;
+
 	const Index m  = m_phaseNodes.count() ;
 	const Index mc = nSuppNodes() ;
 
-	const Scalar dyn_regul = 1.e-8 ;
-	const Scalar con_regul = 1.e-8 ;
+	const Scalar mass_regul = 1.e-8 ;
 
 	computeProjectors( mats, config.weakStressBC, rbData ) ;
 
@@ -294,12 +294,12 @@ void PhaseSolver::assembleMatrices(const Config &config, const Scalar dt, const 
 
 #pragma omp parallel for
 	for( Index i = 0 ; i < m ; ++i ) {
-		const Scalar m = mats.M_lumped.block(i).trace() / 3 ;
-		mats.M_lumped         .block(i) = mats.Pvel.block(i) * m
+		const Scalar mass = mats.M_lumped.block(i).trace() / 3 ;
+		mats.M_lumped         .block(i) = mats.Pvel.block(i) * mass
 				+ Mat::Identity() - mats.Pvel.block(i) ;
-		mats.M_lumped_inv     .block(i) = mats.Pvel.block(i) * 1./(m + dyn_regul )
+		mats.M_lumped_inv     .block(i) = mats.Pvel.block(i) * 1./(mass + mass_regul )
 				+ Mat::Identity() - mats.Pvel.block(i) ;
-		mats.M_lumped_inv_sqrt.block(i) = mats.Pvel.block(i) * 1./std::sqrt( m + con_regul ) ;
+		mats.M_lumped_inv_sqrt.block(i) = mats.Pvel.block(i) * 1./std::sqrt( mass + mass_regul ) ;
 	}
 
 
@@ -336,159 +336,177 @@ void PhaseSolver::step(const Config &config, const Scalar dt, Phase &phase, Stat
 {
 	bogus::Timer timer ;
 
-	const MeshType& mesh = phase.fraction.mesh() ;
-
 	PhaseMatrices matrices ;
 	std::vector< RigidBodyData > rbData ;
 
-	ScalarField intPhi ( mesh ) ;
 	DynVec phiu_int ;
+	DynVec externalForces_int ;
 	DynVec cohesion ;
 	DynVec inertia  ;
 
-	{
-
-		m_surfaceNodes.clear();
-		m_surfaceNodes.resize( mesh.nNodes() );
-
-		// Compute volumes of cells
-		ScalarField volumes(mesh) ; volumes.set_zero();
-		for( typename MeshType::CellIterator it = mesh.cellBegin() ; it != mesh.cellEnd() ; ++it ) {
-			typename MeshType::CellGeo geo ;
-			typename MeshType::NodeList nodes ;
-
-			mesh.get_geo( *it, geo );
-			const Scalar vol = geo.volume() / MeshType::NV ;
-
-			mesh.list_nodes( *it, nodes );
-			for( Index k = 0 ; k < MeshType::NV ; ++k ) {
-				volumes[nodes[k]] += vol ;
-			}
-		}
-
-		// Rasterize particles
-		VectorField intPhiVel     ( mesh ) ;
-		ScalarField intPhiInertia ( mesh ) ;
-		ScalarField intPhiCohesion( mesh ) ;
-		TensorField intPhiOrient  ( mesh ) ;
-		std::vector< bool > activeCells ;
-
-
-	#if defined(FULL_FEM)
-		intPhi.set_constant( 1. ) ;
-		intPhiVel.set_zero() ;
-		intPhiInertia.set_zero() ;
-		intPhiCohesion.set_zero() ;
-		intPhiOrient.set_zero() ;
-		activeCells.assign( activeCells.size(), true ) ;
-	#else
-		m_particles.read( activeCells, intPhi, intPhiVel, intPhiInertia, intPhiOrient, intPhiCohesion ) ;
-	#endif
-
-		// Compute phi and grad_phi (for visu purposes )
-		phase.fraction.flatten() = intPhi.flatten() ;
-		phase.fraction.divide_by( volumes ) ;
-		computeGradPhi( phase.fraction, volumes, phase.grad_phi ) ;
-
-		// Active nodes
-		computeActiveNodes( activeCells, phase.grad_phi ) ;
-		Log::Verbose() << "Active nodes: " << m_phaseNodes.count() << " / " << mesh.nNodes() << std::endl;
-
-		//Rigid bodies and frictional boundaries
-		computeActiveBodies( rigidBodies, rbStresses, rbData );
-
-		// Matrices
-		mesh.make_bc( StrBoundaryMapper( config.boundary ), m_surfaceNodes ) ;
-		m_phaseNodes.field2var( volumes, matrices.volumes ) ;
-		assembleMatrices( config, dt, mesh, intPhi, matrices, rbData );
-
-		Log::Debug() << "Matrices assembled  at " << timer.elapsed() << std::endl ;
-
-
-		m_phaseNodes.field2var( intPhiVel, phiu_int ) ;
-
-		// Cohesion, inertia, orientation
-		DynVec orientation ;
-		intPhiCohesion.divide_by_positive( intPhi ) ;
-		intPhiInertia .divide_by_positive( intPhi ) ;
-		intPhiOrient  .divide_by_positive( intPhi ) ;
-
-		m_phaseNodes.field2var( intPhiCohesion, cohesion ) ;
-		m_phaseNodes.field2var( intPhiInertia , inertia  ) ;
-		m_phaseNodes.field2var( intPhiOrient  , orientation  ) ;
-
-		computeAnisotropy( orientation, config, matrices );
-	}
+	prepareStep( config, dt, phase, rigidBodies, rbStresses,
+				 matrices, rbData, phiu_int, externalForces_int, cohesion, inertia );
 
 	stats.nActiveNodes = m_phaseNodes.count() ;
 	stats.nCouplingNodes = m_totRbNodes ;
 	stats.assemblyTime = timer.elapsed() ;
+	Log::Debug() << "Step assembled  at " << timer.elapsed() << std::endl ;
 
-	{
+	solveStep( config, dt, matrices,
+			   phiu_int, externalForces_int, cohesion, inertia, phase, rbData, stats ) ;
 
-		// Volume fraction of grains
-		DynVec fraction ;
-		m_phaseNodes.field2var( phase.fraction, fraction ) ;
+}
+
+void PhaseSolver::prepareStep(
+		const Config &config, const Scalar dt, Phase &phase,
+		std::vector< RigidBody   >& rigidBodies,
+		std::vector<TensorField > &rbStresses,
+		PhaseMatrices &matrices, std::vector< RigidBodyData > &rbData,
+		DynVec &phiu_int, DynVec& externalForces_int, DynVec &cohesion, DynVec &inertia
+		)
+{
+	const MeshType& mesh = phase.fraction.mesh() ;
+
+	m_surfaceNodes.clear();
+	m_surfaceNodes.resize( mesh.nNodes() );
+
+	// Compute volumes of cells
+	ScalarField volumes(mesh) ; volumes.set_zero();
+	for( typename MeshType::CellIterator it = mesh.cellBegin() ; it != mesh.cellEnd() ; ++it ) {
+		typename MeshType::CellGeo geo ;
+		typename MeshType::NodeList nodes ;
+
+		mesh.get_geo( *it, geo );
+		const Scalar vol = geo.volume() / MeshType::NV ;
+
+		mesh.list_nodes( *it, nodes );
+		for( Index k = 0 ; k < MeshType::NV ; ++k ) {
+			volumes[nodes[k]] += vol ;
+		}
+	}
+
+	// Transfer particles quantities to grid
+	ScalarField intPhi ( mesh ) ;
+	VectorField intPhiVel     ( mesh ) ;
+	ScalarField intPhiInertia ( mesh ) ;
+	ScalarField intPhiCohesion( mesh ) ;
+	TensorField intPhiOrient  ( mesh ) ;
+	std::vector< bool > activeCells ;
 
 
-		// Compute rhs of momentum conservation -- gravity + u(t)
-		DynVec rhs ;
-		{
-			DynVec forces ;
-
-			//Gravity
-			{
-				VectorField gravity ( mesh ) ;
-				gravity.set_constant( config.gravity );
-				DynVec grav ; m_phaseNodes.field2var( gravity, grav ) ;
-				forces = dt * matrices.M_lumped * grav ;
-			}
-
-			// Inertia
-#ifndef  FULL_FEM
-			forces += config.volMass/dt * phiu_int ;
+#if defined(FULL_FEM)
+	intPhi.set_constant( 1. ) ;
+	intPhiVel.set_zero() ;
+	intPhiInertia.set_zero() ;
+	intPhiCohesion.set_zero() ;
+	intPhiOrient.set_zero() ;
+	activeCells.assign( activeCells.size(), true ) ;
+#else
+	m_particles.read( activeCells, intPhi, intPhiVel, intPhiInertia, intPhiOrient, intPhiCohesion ) ;
 #endif
 
-			rhs = matrices.Pvel * forces ;
-		}
+	// Compute phi and grad_phi (for visualization purposes )
+	phase.fraction.flatten() = intPhi.flatten() ;
+	phase.fraction.divide_by( volumes ) ;
+	computeGradPhi( phase.fraction, volumes, phase.grad_phi ) ;
 
-		// Solve unconstrained momentum equation
-		DynVec u = matrices.M_lumped_inv * rhs ;
-		solveSDP( matrices.A, matrices.M_lumped_inv, rhs, u ) ;
+	// Active nodes
+	computeActiveNodes( activeCells, phase.grad_phi ) ;
+	Log::Verbose() << "Active nodes: " << m_phaseNodes.count() << " / " << mesh.nNodes() << std::endl;
 
-		stats.linSolveTime = timer.elapsed() - stats.assemblyTime ;
-		Log::Debug() << "Linear solve: " << stats.linSolveTime << std::endl ;
+	//Rigid bodies and frictional boundaries
+	computeActiveBodies( rigidBodies, rbStresses, rbData );
 
-		// Optional : Maximum fraction projection
-		if( config.enforceMaxFrac){
-			Eigen::VectorXd depl ;
-			enforceMaxFrac( config, matrices, rbData, fraction, depl );
+	// Bilinear forms matrices
+	mesh.make_bc( StrBoundaryMapper( config.boundary ), m_surfaceNodes ) ;
+	m_phaseNodes.field2var( volumes, matrices.volumes ) ;
+	assembleMatrices( config, dt, mesh, intPhi, matrices, rbData );
 
-			m_phaseNodes.var2field( depl, phase.geo_proj ) ; //Purely geometric
-			// u += depl/dt ; // Includes proj into inertia
+	m_phaseNodes.field2var( intPhiVel, phiu_int ) ;
 
-			stats.lcpSolveTime = timer.elapsed() - stats.assemblyTime - stats.linSolveTime ;
-		}
+	// Cohesion, inertia, orientation
+	DynVec orientation ;
+	intPhiCohesion.divide_by_positive( intPhi ) ;
+	intPhiInertia .divide_by_positive( intPhi ) ;
+	intPhiOrient  .divide_by_positive( intPhi ) ;
 
-		// Friction solve
-		{
+	m_phaseNodes.field2var( intPhiCohesion, cohesion ) ;
+	m_phaseNodes.field2var( intPhiInertia , inertia  ) ;
+	m_phaseNodes.field2var( intPhiOrient  , orientation  ) ;
 
-			solveComplementarity( config, dt, matrices, rbData, fraction, cohesion, inertia, u, phase, stats );
-			Log::Debug() << "Complementarity solve at " << timer.elapsed() << std::endl ;
-		}
+	computeAnisotropy( orientation, config, matrices );
 
-		m_phaseNodes.var2field( u, phase.velocity ) ;
+	VectorField gravity ( mesh ) ;
+	gravity.set_constant( config.gravity );
+	gravity.multiply_by( intPhi ) ;
+	gravity.flatten() *= config.volMass ;
+	m_phaseNodes.field2var( gravity, externalForces_int ) ;
+}
 
-		{
-			// Velocities gradient D(u) and W(u)
-			DynVec int_phiDu = .5 * matrices.Pstress * ( matrices.B * u ) ;
-			m_phaseNodes.var2field( int_phiDu, phase.sym_grad ) ;
-			phase.sym_grad.divide_by_positive( intPhi ) ;
+void PhaseSolver::solveStep(
+	const Config& config, const Scalar dt, const PhaseMatrices& matrices,
+	const DynVec& phiu_int, const DynVec& externalForces_int,
+	const DynVec& cohesion, const DynVec& inertia ,
+	Phase& phase, std::vector< RigidBodyData > &rbData, Stats& stats ) const
+{
+	bogus::Timer timer ;
 
-			DynVec int_phiWu = .5 * matrices.J * u ;
-			m_phaseNodes.var2field( int_phiWu, phase.spi_grad ) ;
-			phase.spi_grad.divide_by_positive( intPhi ) ;
-		}
+	// Volume fraction of grains
+	DynVec fraction ;
+	m_phaseNodes.field2var( phase.fraction, fraction ) ;
+
+
+	// Compute rhs of momentum conservation -- gravity + u(t)
+	DynVec rhs ;
+	{
+		DynVec forces = externalForces_int ;
+
+		// Inertia
+#ifndef  FULL_FEM
+		forces += config.volMass/dt * phiu_int ;
+#endif
+
+		rhs = matrices.Pvel * forces ;
+	}
+
+	// Solve unconstrained momentum equation
+	DynVec u = matrices.M_lumped_inv * rhs ;
+	solveSDP( matrices.A, matrices.M_lumped_inv, rhs, u ) ;
+
+	stats.linSolveTime = timer.elapsed() - stats.assemblyTime ;
+	Log::Debug() << "Linear solve: " << stats.linSolveTime << std::endl ;
+
+	// Optional : Maximum fraction projection
+	if( config.enforceMaxFrac){
+		Eigen::VectorXd depl ;
+		enforceMaxFrac( config, matrices, rbData, fraction, depl );
+
+		m_phaseNodes.var2field( depl, phase.geo_proj ) ; //Purely geometric
+		// u += depl/dt ; // Includes proj into inertia
+
+		stats.lcpSolveTime = timer.elapsed() - stats.assemblyTime - stats.linSolveTime ;
+	}
+
+	// Friction solve
+	{
+
+		solveComplementarity( config, dt, matrices, rbData, fraction, cohesion, inertia, u, phase, stats );
+		Log::Debug() << "Complementarity solve at " << timer.elapsed() << std::endl ;
+	}
+
+	m_phaseNodes.var2field( u, phase.velocity ) ;
+
+	{
+		// Velocities gradient D(u) and W(u)
+		DynVec int_phiDu = .5 * ( matrices.Pstress * matrices.B * u ).head( 6 * m_phaseNodes.count() ) ;
+		DynVec int_phiWu = .5 * matrices.J * u ;
+		const DynVec int_phi = matrices.volumes.array()*fraction.array().max( 1.e-16 ) ;
+
+		div_compwise<6>( int_phiDu, int_phi ) ;
+		div_compwise<3>( int_phiWu, int_phi ) ;
+
+		m_phaseNodes.var2field( int_phiWu, phase.spi_grad ) ;
+		m_phaseNodes.var2field( int_phiDu, phase.sym_grad ) ;
 	}
 }
 
@@ -583,13 +601,65 @@ void PhaseSolver::computeActiveBodies( std::vector<RigidBody> &rigidBodies,
 
 }
 
+void PhaseSolver::addRigidBodyContrib( const Config &c, const Scalar dt, const PhaseMatrices &matrices,
+									   const DynVec &u, const RigidBodyData &rb,
+									   PrimalData& data, DynArr &totFraction ) const
+{
+
+	typename FormMat<6,3>::Type J =	matrices.Aniso * ( matrices.Pstress * ( rb.jacobian ) ) ;
+
+	data.H -= J * matrices.M_lumped_inv_sqrt ;
+
+	const DynVec delta_u = u - rb.projection.transpose() * rb.rb.velocities() ;
+
+	data.w -= J * delta_u  ;
+
+	for( Index i = 0 ; i < rb.nodes.count() ; ++i ) {
+		totFraction( m_phaseNodes.indices[ rb.nodes.revIndices[i] ] ) += rb.fraction[i] ;
+	}
+
+	data.mu.segment( rb.nodes.offset, rb.nodes.count() ).setConstant( c.muRigid ) ;
+
+	// Two-ways coupling
+	PrimalData::InvInertiaType inv_inertia( 1, 1 ) ;
+	rb.rb.inv_inertia( inv_inertia.insertBack(0,0) ) ;
+	inv_inertia.finalize();
+
+	data.inv_inertia_matrices.emplace_back( inv_inertia * dt ) ;
+	data.jacobians.emplace_back( J * rb.projection.transpose() );
+}
+void PhaseSolver::addCohesionContrib (const Config&c, const PhaseMatrices &matrices,
+									  const DynVec &fraction, const DynVec &cohesion,
+									  PrimalData& data, DynVec &u ) const
+{
+	//Cohesion : add \grad{ c phi } to rhs
+	DynVec cohe_force ;
+	{
+		const Scalar cohe_start = .999 * c.phiMax ;
+		const DynArr contact_zone = ( ( fraction.array() - cohe_start )/ (c.phiMax - cohe_start) ).max(0).min(1) ;
+
+		DynVec cohe_stress  = DynVec::Zero( data.H.rows() ) ;
+		component< 6 >( cohe_stress, 0 ).head(cohesion.rows()).array() =
+				c.cohesion * cohesion.array() * contact_zone ;
+		cohe_force = data.H.transpose() * cohe_stress ;
+	}
+
+	data.w -= data.H * cohe_force ;
+	u -= matrices.M_lumped_inv_sqrt * cohe_force ;
+
+}
+
 void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const PhaseMatrices &matrices,
 									   std::vector<RigidBodyData> &rbData,
 									   const DynVec &fraction, const DynVec &cohesion, const DynVec &inertia,
 									   DynVec &u, Phase& phase, Stats &simuStats ) const
 {
+	// Step counter, only useful for dumping friction problem data
+	static unsigned s_stepId = 0 ;
+
 	PrimalData	data ;
 	data.H = matrices.Aniso * ( matrices.Pstress * ( matrices.B * matrices.M_lumped_inv_sqrt ) ) ;
+	data.w = matrices.Aniso * ( matrices.Pstress * ( matrices.B * u ) ) ;
 
 	data.mu.resize( data.n() ) ;
 
@@ -597,106 +667,70 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	const Scalar I0bar = c.I0 / ( c.grainDiameter * std::sqrt( c.volMass )) ;
 	data.mu.segment(0,fraction.rows()).array() = c.mu + c.delta_mu / ( 1. + I0bar / inertia.array().max(1.e-12) ) ;
 
-	//Cohesion : add \grad{ c phi } to rhs
-	DynVec cohe_s ;
-	{
-		const Scalar cohe_start = .999 * c.phiMax ;
-		const DynArr contact_zone = ( ( fraction.array() - cohe_start )/ (c.phiMax - cohe_start) ).max(0).min(1) ;
+	DynArr totFraction = fraction ;
 
-		cohe_s  = DynVec::Zero( data.H.rows() ) ;
-		component< 6 >( cohe_s, 0 ).head(cohesion.rows()).array() =
-				c.cohesion * cohesion.array() * contact_zone ;
-
-		//u -= matrices.M_lumped_inv_sqrt * ( data.H.transpose() * cohe_s ) ;
-	}
-
-	data.w = matrices.Aniso * ( matrices.Pstress * ( matrices.B * u ) ) ;
-
+	// Rigid bodies
 	data.jacobians.reserve( rbData.size() ) ;
 	data.inv_inertia_matrices.reserve( rbData.size() ) ;
 	std::vector< unsigned > coupledRbIndices ;
 
-	DynArr totFraction = fraction ;
-
-	// Handle rigid bodies jacobians
 	for( unsigned k = 0 ; k < rbData.size() ; ++k ) {
-		RigidBodyData& rb = rbData[k] ;
-
+		const RigidBodyData& rb = rbData[k] ;
 		if( rb.nodes.count() == 0 )
 			continue ;
 
-		typename FormMat<6,3>::Type J =	matrices.Aniso * ( matrices.Pstress * ( rb.jacobian ) ) ;
+		addRigidBodyContrib( c, dt, matrices, u, rb, data, totFraction );
 
-		data.H -= J * matrices.M_lumped_inv_sqrt ;
-
-		const DynVec delta_u = u - rb.projection.transpose() * rb.rb.velocities() ;
-
-		data.w -= J * delta_u  ;
-
-		for( Index i = 0 ; i < rb.nodes.count() ; ++i ) {
-			totFraction( m_phaseNodes.indices[ rb.nodes.revIndices[i] ] ) += rb.fraction[i] ;
+		// Do not use 2-ways coupling for bodies with very high inertias ( fixed boundaries)
+		if( data.inv_inertia_matrices.back().block(0).squaredNorm() < 1.e-16 ) {
+			data.inv_inertia_matrices.pop_back();
+			data.jacobians.pop_back();
+		} else {
+			coupledRbIndices.push_back( k );
 		}
-
-		data.mu.segment( rb.nodes.offset, rb.nodes.count() ).setConstant( c.muRigid ) ;
-
-		PrimalData::InvInertiaType inv_inertia( 1, 1 ) ;
-
-		rb.rb.inv_inertia( inv_inertia.insertBack(0,0) ) ;
-		if( inv_inertia.block(0).squaredNorm() < 1.e-16 )
-			continue ;
-
-		coupledRbIndices.push_back( k ) ;
-
-		inv_inertia.finalize();
-		data.inv_inertia_matrices.push_back( inv_inertia * dt ) ;
-
-		data.jacobians.emplace_back( J * rb.projection.transpose() );
 	}
 
-	data.w -= data.H * ( data.H.transpose() * cohe_s ) ;
+	//Cohesion : add \grad{ c phi } to rhs
+	addCohesionContrib( c, matrices, fraction, cohesion, data, u );
 
-	// Compressability
+	// Compressability beta(phi)
 	{
-		const DynVec q = ( ( c.phiMax - totFraction )
-						   * s_sqrt_23 * matrices.volumes.array()    // 1/d * Tr \tau = \sqrt{2}{d} \tau_N
-						   / dt
-						   ).max( 0 ) ;
-
-		component< 6 >( data.w, 0 ).head(q.rows()) += q ;
+		const DynArr beta = ( c.phiMax - totFraction).max( 0 ) / dt ;
+		component< 6 >( data.w, 0 ).head(beta.rows()).array() += beta * s_sqrt_23 * matrices.volumes.array() ;
 	}
-
-	DynVec x( data.w.rows() ), y( data.w.rows() ) ;
 
 	// Warm-start stresses
+	DynVec x( data.w.rows() ), y( data.w.rows() ) ;
+
 	m_phaseNodes.field2var( phase.stresses, x, false ) ;
 	for( unsigned k = 0 ; k < rbData.size() ; ++k ) {
 		RigidBodyData& rb = rbData[k] ;
 		rb.nodes.field2var( rb.stresses, x, false ) ;
 	}
 
+	// Dump problem data if requested
+	if( c.dumpPrimalData > 0 && (++s_stepId % c.dumpPrimalData) == 0 ) {
+		data.dump( arg("primal-%1", s_stepId).c_str() ) ;
+	}
 
 	// Proper solving
 	Primal::SolverOptions options ;
-//	options.tolerance = 1.e-8 ;
-//	options.algorithm = Primal::SolverOptions::Cadoux_PG_NoAssembly ;
-//	options.projectedGradientVariant = 4 ; // 2 = Conjugated, 3 = APGD, 4 = SPG
-
 	Primal::SolverStats stats ;
 	Primal( data ).solve( options, x, stats ) ;
+
 	Log::Verbose() << arg3( "Primal: %1 iterations,\t err= %2,\t time= %3 ",
 						   stats.nIterations, stats.residual, stats.time ) << std::endl ;
 	simuStats.frictionError      = stats.residual ;
 	simuStats.frictionTime       = stats.time ;
 	simuStats.frictionIterations = stats.nIterations ;
 
-	// Output
-	u += matrices.M_lumped_inv_sqrt * ( data.H.transpose() * ( x - cohe_s ) ) ;
+	// Update velocity
+	u += matrices.M_lumped_inv_sqrt * data.H.transpose() * x  ;
 
 	// Contact forces -- useless, debug only
 	{
-		const DynVec fcontact = matrices.Pvel * ( matrices.B.transpose()
-														* ( matrices.Pstress
-																  * ( matrices.Aniso * x ) ) );
+		const DynVec fcontact = matrices.Pvel * matrices.B.transpose() *
+								matrices.Pstress *  matrices.Aniso * x ;
 		m_phaseNodes.var2field( fcontact, phase.fcontact ) ;
 	}
 

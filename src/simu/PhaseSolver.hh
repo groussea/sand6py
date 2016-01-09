@@ -18,6 +18,7 @@ struct PhaseMatrices ;
 
 class RigidBody ;
 struct RigidBodyData ;
+struct PrimalData ;
 
 struct Config ;
 class Stats ;
@@ -38,14 +39,18 @@ public:
 			  ) ;
 
 private:
+	void prepareStep(const Config &config, const Scalar dt, Phase &phase,
+		std::vector< RigidBody   >& rigidBodies,
+		std::vector<TensorField > &rbStresses,
+		PhaseMatrices &matrices, std::vector<RigidBodyData> &rbData,
+		DynVec &phiu_int, DynVec& externalForces_int, DynVec &cohesion, DynVec &inertia
+		) ;
 
 	void computeActiveNodes(const std::vector< bool >& activeCells,
 							const VectorField &grad_phi ) ;
 	void computeActiveBodies( std::vector<RigidBody> &rigidBodies,
 							  std::vector<TensorField> &rbStresses,
 							  std::vector< RigidBodyData >& rbData ) ;
-
-
 
 	void computeProjectors( PhaseMatrices& matrices, const bool weakStressBC,
 							const std::vector< RigidBodyData >& rbData
@@ -54,12 +59,28 @@ private:
 	void computeAnisotropy(const DynVec& orientation,
 						   const Config &config, PhaseMatrices& matrices) const ;
 
+	void computeGradPhi( const ScalarField& fraction, const ScalarField& volumes, VectorField &grad_phi ) const ;
+
 	void assembleMatrices( const Config& c, const Scalar dt,
 						   const MeshType& mesh,
 						   const ScalarField &phiInt,
 						   PhaseMatrices& matrices,
 						   std::vector< RigidBodyData >& rbData
 						   ) const ;
+
+
+
+	void solveStep(const Config& config, const Scalar dt, const PhaseMatrices& matrices,
+			const DynVec& phiu_int, const DynVec &externalForces_int,
+			const DynVec& cohesion, const DynVec& inertia ,
+			Phase& phase, std::vector< RigidBodyData > &rbData, Stats& stats ) const ;
+
+	void addRigidBodyContrib(const Config &c, const Scalar dt, const PhaseMatrices &matrices,
+							 const DynVec &u, const RigidBodyData &rb,
+							 PrimalData& data, DynArr &totFraction ) const ;
+	void addCohesionContrib (const Config&c, const PhaseMatrices &matrices,
+							  const DynVec &fraction, const DynVec &cohesion,
+							  PrimalData& data, DynVec &u ) const ;
 
 	void solveComplementarity(const Config&c, const Scalar dt,
 							  const PhaseMatrices& matrices ,
@@ -71,8 +92,6 @@ private:
 									   std::vector<RigidBodyData> &rbData,
 									   const DynVec &fraction,
 									   DynVec &depl ) const ;
-
-	void computeGradPhi( const ScalarField& fraction, const ScalarField& volumes, VectorField &grad_phi ) const ;
 
 
 	Index nSuppNodes() const
