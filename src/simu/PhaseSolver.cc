@@ -217,9 +217,9 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 		rb.nodes.field2var( rb.stresses, x, false ) ;
 	}
 
-	// Dump problem pbData if requested
+	// Dump problem data if requested
 	if( c.dumpPrimalData > 0 && (++s_stepId % c.dumpPrimalData) == 0 ) {
-		pbData.dump( arg("primal-%1", s_stepId).c_str() ) ;
+		pbData.dump( arg("primal-%1.d6", s_stepId).c_str() ) ;
 	}
 
 	// Proper solving
@@ -283,8 +283,7 @@ void PhaseSolver::enforceMaxFrac(const Config &c, const PhaseStepData &stepData,
 	}
 
 	pbData.w.segment(0, totFraction.rows()) = ( c.phiMax - totFraction )
-			* stepData.forms.volumes.array()    // 1/d * Tr \tau = \sqrt{2}{d} \tau_N
-			;
+			* stepData.forms.volumes.array()  ;
 
 	DynVec x = DynVec::Zero( pbData.n() ) ;
 	LCP lcp( pbData ) ;
