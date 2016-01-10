@@ -29,10 +29,6 @@ PhaseSolver::PhaseSolver(const DynParticles &particles)
 
 }
 
-PhaseSolver::~PhaseSolver()
-{
-}
-
 void PhaseSolver::step(const Config &config, const Scalar dt, Phase &phase, Stats& stats,
 					   std::vector< RigidBody   >& rigidBodies,
 					   std::vector<TensorField > &rbStresses) const

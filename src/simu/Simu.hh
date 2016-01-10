@@ -63,8 +63,8 @@ private:
 
 	std::vector< RigidBody   > m_rigidBodies ;
 
-	MeshType*  m_mesh ;
-	Phase*     m_grains ;
+	std::unique_ptr<MeshType>  m_mesh ;
+	std::unique_ptr<Phase>     m_grains ;
 	// Useful for warm-starting stresses at frictional boundary conditions
 	std::vector< TensorField > m_rbStresses  ;
 

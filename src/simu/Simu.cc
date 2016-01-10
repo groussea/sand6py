@@ -24,14 +24,14 @@ namespace d6 {
 
 Simu::Simu(const Config &config, const char *base_dir)
 	: m_config(config), m_base_dir( base_dir ),
-	  m_stats( m_base_dir ), m_scenario( Scenario::parse( config ) ),
+	  m_stats( m_base_dir ),
+	  m_scenario( Scenario::parse( config ) ),
+	  m_mesh( new MeshImpl( config.box, config.res ) ),
+	  m_grains( new Phase( mesh() ) ),
 	  m_solver( m_particles )
 {
-	m_mesh = new MeshImpl( config.box, config.res ) ;
 
 	m_particles.generate( config, mesh(), *m_scenario );
-
-	m_grains = new Phase( mesh() ) ;
 
 	// Rigid bodies
 	m_scenario->add_rigid_bodies( m_rigidBodies ) ;
@@ -44,8 +44,6 @@ Simu::Simu(const Config &config, const char *base_dir)
 
 Simu::~Simu()
 {
-	delete m_mesh ;
-	delete m_grains  ;
 }
 
 void Simu::run()

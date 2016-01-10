@@ -30,8 +30,6 @@ public:
 			const DynParticles& particles
 			) ;
 
-	~PhaseSolver() ;
-
 	//! Solve for end-of-steps velocities, reading initial quantities from the particles
 	void step(const Config &config, const Scalar dt,
 			  Phase& phase, Stats &stats,

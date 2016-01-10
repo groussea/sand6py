@@ -57,8 +57,8 @@ private:
 	Particles  m_particles ;
 	Particles::EventLog  m_events ;
 
-	MeshType*  m_mesh ;
-	Phase*     m_grains ;
+	std::unique_ptr< MeshType >  m_mesh ;
+	std::unique_ptr< Phase >     m_grains ;
 
 	std::vector< std::unique_ptr< LevelSet > > m_levelSets ;
 } ;
