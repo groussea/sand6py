@@ -232,10 +232,10 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	Primal( pbData ).solve( options, x, stats ) ;
 
 	Log::Verbose() << arg3( "Primal: %1 iterations,\t err= %2,\t time= %3 ",
-						   stats.nIterations, stats.residual, stats.time ) << std::endl ;
-	simuStats.frictionError      = stats.residual ;
-	simuStats.frictionTime       = stats.time ;
-	simuStats.frictionIterations = stats.nIterations ;
+						   stats.nIterations(), stats.residual(), stats.time() ) << std::endl ;
+	simuStats.frictionError      = stats.residual() ;
+	simuStats.frictionTime       = stats.time() ;
+	simuStats.frictionIterations = stats.nIterations() ;
 
 	// Update velocity
 	u += stepData.forms.M_lumped_inv_sqrt * pbData.H.transpose() * x  ;

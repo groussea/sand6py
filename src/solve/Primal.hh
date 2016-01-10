@@ -2,6 +2,7 @@
 #define D6_PRIMAL_HH
 
 #include "utils/alg.hh"
+#include <vector>
 
 namespace  d6 {
 
@@ -12,12 +13,26 @@ public:
 
 	struct SolverStats
 	{
-		Scalar residual ;
-		Scalar time ;
-		unsigned nIterations ;
+		struct Entry {
+			Scalar   residual ;
+			Scalar   time ;
+			unsigned nIterations ;
+		};
+		typedef std::vector< Entry > Log ;
 
-		// For internal use
-		void ackResidual( unsigned iter, Scalar err ) ;
+		SolverStats() : shouldLogAC( false ) {}
+
+		Scalar   residual()    const { return m_log.back().residual ; }
+		Scalar   time()        const { return m_log.back().time ; }
+		unsigned nIterations() const { return m_log.back().nIterations ; }
+
+		void log( unsigned iter, Scalar err, Scalar time ) ;
+		const Log& log( )  { return m_log ; }
+
+		//! If true, should store residual computed using Alart-Curnier function
+		bool shouldLogAC ;
+	private:
+		Log m_log ;
 	} ;
 
 	struct SolverOptions
