@@ -70,6 +70,7 @@ void Primal::SolverStats::log( unsigned iter, Scalar res, Scalar time )
 {
 	m_log.emplace_back(Primal::SolverStats::Entry{res,time,iter})  ;
 	d6::Log::Debug() << "Primal " << iter << " =\t " << res << std::endl ;
+	if( time > timeOut ) throw TimeOutException() ;
 }
 
 

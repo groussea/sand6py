@@ -9,11 +9,12 @@ BIN_DIR   = ARGV[1] || 'apps'
 OPTIONS = [
 	'-v', 'Error',
 	'-o',
-	'-f', 50
+	'-f', 1e4,
+	'-e', 0.01
 ]
 
 SOLVERS = [ 
-	['-a', 0, '-n', 5000],
+	['-a', 0, '-n', 1e6],
 	['-a', 1],
 	['-a', 3, '-g', 2 ],
 	['-a', 3, '-g', 3 ],
@@ -80,7 +81,7 @@ def gen_diagram( perfs )
 	n = 0
 	diag = { :t => [0], :n => [0] }
 	perfs.each do |t|
-		next if t > MAX_TIME/2 
+		next if t > MAX_TIME * 1e-10 
 
 		diag[:t] << t
 		diag[:n] << n
@@ -90,6 +91,35 @@ def gen_diagram( perfs )
 	end
 
 	diag
+end
+
+def merge_diagrams( perfs )
+	
+	glob = { :t => [], :n => {} }
+	indexes = {}
+
+	perfs.each{ |s, v| 
+		glob[:n][s] = []
+		indexes[s] = 0
+	}
+
+	t = 0
+
+	loop do
+		t = perfs.map{ |s,v| (v[:t][indexes[s]] || MAX_TIME) }.min 
+		break if t == MAX_TIME
+
+		glob[:t] << t
+
+		perfs.each do |s,v|
+			idx = indexes[s]
+			indexes[s] += 1 if v[:t][idx] and v[:t][idx] <= t  	
+			glob[:n][s] << v[:n][indexes[s] -1]
+		end
+
+	end
+
+	glob
 end
 
 # I - Solve problems
@@ -127,7 +157,7 @@ TOLERANCES.each do |tol|
 		# Read solve times
 		dir_path = File.join( BENCH_DIR, scene, "tol-#{tol}" ) 
 		Dir.foreach( dir_path ) do |file|
-			if file.strip =~ /^([-\w0-9]+)\.d6--a([-\w0-9]+).log$/ then
+			if file.strip =~ /^([-\w0-9]+)\.d6--a([-.\w0-9]+).log$/ then
 				s = parse_solver($2)
 				t = read_solve_time( tol, File.join(dir_path, file) )
 				times[$1]  ||= {} 
@@ -170,6 +200,7 @@ end
 
 # III - Output perf diagrams
 TOLERANCES.each_with_index do |tol, idx|
+	diags = {}
 	global_perfs[idx].each do |slv, perfs|
 		diag = gen_diagram perfs
 
@@ -178,6 +209,16 @@ TOLERANCES.each_with_index do |tol, idx|
 				f.puts "#{t}\t#{diag[:n][i]}"
 			}
 		}
+
+		diags[slv] = diag
 	end
+
+	global_diag = merge_diagrams( diags )
+	File.open( File.join(BENCH_DIR, "perf-#{tol}-all" ), "w" ) { |f|
+		f.puts "#t\t#{global_diag[:n].map{ |s,v| s }.join("\t")}"
+		global_diag[:t].each_with_index{ |t, i|
+			f.puts "#{t}\t#{global_diag[:n].map{ |s,v| global_diag[:n][s][i] }.join("\t")}"
+		}
+	}
 end
 

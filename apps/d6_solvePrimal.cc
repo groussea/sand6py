@@ -44,6 +44,9 @@ int main( int argc, char* argv[] ) {
 			case 'o':
 				stats.shouldLogAC = true ;
 				break ;
+			case 'e':
+				if( ++i == argc ) break ;
+				stats.timeOut = to_double( argv[i] ) ;
 			case 'v':
 				if( ++i == argc ) break ;
 				d6::Log::Config::get().setLevel( argv[i] ) ;
@@ -93,11 +96,17 @@ int main( int argc, char* argv[] ) {
 	PrimalData data ;
 	if( data.load( problem ) ) {
 
+		stats.timeOut *= data.n() ;
+
 		DynVec r ( data.n() * 6 ) ;
 		r.setZero() ;
 
 		Primal solver( data ) ;
-		solver.solve( options, r, stats ) ;
+		try {
+			solver.solve( options, r, stats ) ;
+		} catch ( Primal::SolverStats::TimeOutException& ){
+			Log::Warning() << "Solver exceeded allowed time" << std::endl ;
+		}
 
 		Log::Info() << arg3( "Primal: %1 iterations,\t err= %2,\t time= %3 ",
 							 stats.nIterations(), stats.residual(), stats.time() ) << std::endl ;

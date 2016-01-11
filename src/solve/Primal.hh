@@ -18,9 +18,11 @@ public:
 			Scalar   time ;
 			unsigned nIterations ;
 		};
+		struct TimeOutException {} ;
 		typedef std::vector< Entry > Log ;
 
-		SolverStats() : shouldLogAC( false ) {}
+		SolverStats() : shouldLogAC( false ), timeOut( std::numeric_limits<Scalar>::infinity() )
+		{}
 
 		Scalar   residual()    const { return m_log.back().residual ; }
 		Scalar   time()        const { return m_log.back().time ; }
@@ -31,6 +33,9 @@ public:
 
 		//! If true, should store residual computed using Alart-Curnier function
 		bool shouldLogAC ;
+
+		//! Throws time-out exception when solver time exceeds timeOut (seconds)
+		Scalar timeOut ;
 	private:
 		Log m_log ;
 	} ;
