@@ -34,7 +34,7 @@ Config::Config() :
 	initialOri( 1./3, 1./3, 1./3 ),
 	enforceMaxFrac( false ), weakStressBC( false ),
 	boundary("cuve"),
-	output( true )
+	output( true ), dumpPrimalData( 0 )
 {
 }
 

@@ -12,6 +12,68 @@
 
 namespace d6 {
 
+//! Either log directly residual, or re-evaluate it using another complemntarity func
+/** (for objective benchmarking purposes) */
+template <typename MatrixT >
+struct CallbackProxy {
+
+	CallbackProxy( Primal::SolverStats& stats, bogus::Timer &timer,
+				   const MatrixT& W, const DynVec& mu, const DynVec &b, const DynVec &x )
+		: m_stats( stats ), m_timer( timer ),
+		  m_W(W), m_mu(mu), m_b(b), m_x(x)
+	{
+	}
+
+	void ackResidual( unsigned iter, Scalar err )
+	{
+		if( m_stats.shouldLogAC ) err = evalAC() ;
+		m_stats.log( iter, err, m_timer.elapsed() );
+	}
+
+	Scalar evalAC() const {
+		const DynVec y = m_W*m_x + m_b ;
+		const Index n = m_W.rowsOfBlocks() ;
+
+		Scalar err = 0 ;
+#pragma omp parallel for reduction( + : err )
+		for( Index i = 0 ; i < n ; ++i ) {
+			const Vec6 lx = m_x.segment<6>(6*i) ;
+			Vec6  ac = lx -   y.segment<6>(6*i) ;
+			// Normal part
+			ac[0] = std::max(0., ac[0])  ;
+			//Tangential part
+			const Scalar nT = ac.segment<5>(1).norm() ;
+			if( nT > lx[0]*m_mu[i] ) {
+				ac.segment<5>(1) *= lx[0]*m_mu[i]/nT ;
+			}
+			//Error
+			ac -= lx ;
+			const Scalar lerr = ac.squaredNorm() ;
+			err += lerr ;
+		}
+		return err / (1+n) ;
+	}
+
+private:
+	Primal::SolverStats& m_stats ;
+	bogus::Timer& m_timer ;
+	bool m_evalAC ;
+
+	const MatrixT & m_W ;
+	const DynVec  & m_mu ;
+	const DynVec  & m_b ;
+	const DynVec  & m_x ;
+
+};
+
+void Primal::SolverStats::log( unsigned iter, Scalar res, Scalar time )
+{
+	m_log.emplace_back(Primal::SolverStats::Entry{res,time,iter})  ;
+	d6::Log::Debug() << "Primal " << iter << " =\t " << res << std::endl ;
+	if( time > timeOut ) throw TimeOutException() ;
+}
+
+
 
 Primal::SolverOptions::SolverOptions()
 	: algorithm( GaussSeidel ),
@@ -24,12 +86,6 @@ Primal::SolverOptions::SolverOptions()
 Primal::Primal(const PrimalData &data)
 	: m_data( data )
 {}
-
-void Primal::SolverStats::ackResidual( unsigned iter, Scalar res )
-{
-	nIterations = iter ;
-	Log::Debug() << "Primal " << iter << " =\t " << res << std::endl ;
-}
 
 Scalar Primal::solve( const SolverOptions& options, DynVec &lambda, SolverStats &stats) const
 {
@@ -58,7 +114,9 @@ Scalar Primal::solve( const SolverOptions& options, DynVec &lambda, SolverStats 
 		const Wexpr W = m_data.H * m_data.H.transpose() + rbSum ;
 
 		bogus::Signal<unsigned, Scalar> callback ;
-		callback.connect( stats, &Primal::SolverStats::ackResidual );
+		CallbackProxy< Wexpr > callbackProxy( stats, timer, W, m_data.mu, m_data.w, lambda ) ;
+		callback.connect( callbackProxy, &CallbackProxy<Wexpr>::ackResidual );
+
 		bogus::ProjectedGradient< Wexpr > pg ;
 
 		if( options.projectedGradientVariant < 0 ) {
@@ -89,6 +147,8 @@ Scalar Primal::solve( const SolverOptions& options, DynVec &lambda, SolverStats 
 			W +=  JM * m_data.inv_inertia_matrices[i] * JM.transpose() ;
 		}
 
+		CallbackProxy< WType > callbackProxy( stats, timer, W, m_data.mu, m_data.w, lambda ) ;
+
 		if( options.algorithm == SolverOptions::GaussSeidel ) {
 			// Direct Gauss-Seidel solver
 
@@ -97,7 +157,7 @@ Scalar Primal::solve( const SolverOptions& options, DynVec &lambda, SolverStats 
 			bogus::GaussSeidel< WType > gs( W ) ;
 			gs.setTol( options.tolerance );
 			gs.setMaxIters( options.maxIterations );
-			gs.callback().connect( stats, &SolverStats::ackResidual );
+			gs.callback().connect( callbackProxy, &CallbackProxy<WType>::ackResidual );
 
 			res = gs.solve( law, m_data.w, lambda ) ;
 
@@ -106,7 +166,7 @@ Scalar Primal::solve( const SolverOptions& options, DynVec &lambda, SolverStats 
 			// Cadoux fixed-point algorithm
 
 			bogus::Signal<unsigned, Scalar> callback ;
-			callback.connect( stats, &Primal::SolverStats::ackResidual );
+			callback.connect( callbackProxy, &CallbackProxy<WType>::ackResidual );
 
 			if( options.algorithm == SolverOptions::Cadoux_GS ) {
 
@@ -138,9 +198,6 @@ Scalar Primal::solve( const SolverOptions& options, DynVec &lambda, SolverStats 
 			}
 		}
 	}
-
-	stats.residual = res ;
-	stats.time = timer.elapsed() ;
 
 	return res ;
 }

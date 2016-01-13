@@ -14,8 +14,8 @@ int main( int argc, char* argv[] ) {
 
 	const char * problem = nullptr ;
 
+	Primal::SolverStats stats ;
 	Primal::SolverOptions options ;
-
 
 	for( int i = 1 ; i < argc ; ++i )
 	{
@@ -33,7 +33,7 @@ int main( int argc, char* argv[] ) {
 				if( ++i == argc ) break ;
 				options.algorithm = (Primal::SolverOptions::Algorithm) to_uint( argv[i] ) ;
 				break ;
-			case 'v':
+			case 'g':
 				if( ++i == argc ) break ;
 				options.projectedGradientVariant = to_int( argv[i] ) ;
 				break ;
@@ -41,6 +41,15 @@ int main( int argc, char* argv[] ) {
 				if( ++i == argc ) break ;
 				options.tolerance = to_double( argv[i] ) ;
 				break;
+			case 'o':
+				stats.shouldLogAC = true ;
+				break ;
+			case 'e':
+				if( ++i == argc ) break ;
+				stats.timeOut = to_double( argv[i] ) ;
+			case 'v':
+				if( ++i == argc ) break ;
+				d6::Log::Config::get().setLevel( argv[i] ) ;
 			}
 		} else {
 			problem = argv[i] ;
@@ -87,16 +96,25 @@ int main( int argc, char* argv[] ) {
 	PrimalData data ;
 	if( data.load( problem ) ) {
 
-		Primal::SolverStats stats ;
+		stats.timeOut *= data.n() ;
 
 		DynVec r ( data.n() * 6 ) ;
 		r.setZero() ;
 
 		Primal solver( data ) ;
-		solver.solve( options, r, stats ) ;
+		try {
+			solver.solve( options, r, stats ) ;
+		} catch ( Primal::SolverStats::TimeOutException& ){
+			Log::Warning() << "Solver exceeded allowed time" << std::endl ;
+		}
 
 		Log::Info() << arg3( "Primal: %1 iterations,\t err= %2,\t time= %3 ",
-							 stats.nIterations, stats.residual, stats.time ) << std::endl ;
+							 stats.nIterations(), stats.residual(), stats.time() ) << std::endl ;
+
+
+		for( const Primal::SolverStats::Entry& e : stats.log() ) {
+			std::cout << e.nIterations << "\t" << e.time << "\t" << e.residual << "\n" ;
+		}
 
 		return 0 ;
 	}

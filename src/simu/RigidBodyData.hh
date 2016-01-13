@@ -14,10 +14,14 @@ struct RigidBodyData
 {
 	RigidBodyData( RigidBody& rb_, TensorField &s ) ;
 
+	//! Volume fraction taken by the rigid-body at a given point
 	Scalar    phi( const Vec &x ) const ;
+	//! Gradient of the volume fraction taken by the rigid-body at a given point
 	void grad_phi( const Vec &x, Vec &grad ) const ;
 
+	//! Computes nodes that are influenced by the rigid-body
 	void compute_active( const Active& phaseNodes, BoundaryConditions &bc ) ;
+	//! Assembles projection and jacobian matrices
 	void assemble_matrices( const Active& phaseNodes, Index totNodes ) ;
 
 	RigidBody&   rb ;
@@ -26,10 +30,10 @@ struct RigidBodyData
 	Active	    nodes ;
 	typename MeshType::Cells occupiedCells ;
 
-	FormMat<6,3>::Type	jacobian ;
-	FormMat<6,3>::Type	projection ;
+	FormMat<6,3>::Type	jacobian ;     //!< int( (u grad phi):tau )
+	FormMat<6,3>::Type	projection ;   //!< Linear operator giving rb velocities at mesh nodes
 
-	DynVec fraction ;
+	DynVec fraction ;  //!< Interpolated volume fraction at occupied nodes
 
 private:
 	static const Scalar s_splatRad ;
