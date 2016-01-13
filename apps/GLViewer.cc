@@ -234,7 +234,7 @@ void GLViewer::init()
 	// Restore previous viewer state.
 	restoreStateFromFile();
 
-	resize(1280, 720) ;
+	resize( m_vp_width, m_vp_height ) ;
 	setBackgroundColor( QColor(255, 255, 255, 255 ) );
 
 	// Camera
@@ -305,8 +305,7 @@ void GLViewer::animate()
 
 Eigen::Vector3f GLViewer::lightPosition() const
 {
-	const Eigen::Vector3f dir(-.5,-1,1) ;
-	return ( m_offline.mesh().box() / 2 ).cast< float >() + camera()->sceneRadius() * dir ;
+	return ( m_offline.mesh().box() / 2 ).cast< float >() + camera()->sceneRadius() * m_lightDirection ;
 }
 
 void GLViewer::update_buffers()

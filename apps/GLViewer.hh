@@ -18,9 +18,12 @@ class GLViewer : public QGLViewer
 
 public:
 
-	GLViewer( const QGLFormat& glFormat, Offline & offline, unsigned nSamples ) :
+	GLViewer( const QGLFormat& glFormat, Offline & offline, unsigned nSamples,
+            unsigned width, unsigned height
+        ) :
 		QGLViewer( glFormat ),
 		m_offline( offline ),
+                m_vp_width( width ), m_vp_height( height ), m_lightDirection( Eigen::Vector3f::Zero() ),
 		m_currentFrame(-1),
 		m_drawParticles( 0 == nSamples ), m_enableBending( false ),
 		m_fastDraw( true ), m_drawObjects( true ), m_drawOrientations( false ),
@@ -55,6 +58,11 @@ public:
 		return m_grainsRenderer ;
 	}
 
+        void setLightDirection( const Eigen::Vector3f& dir )
+        {
+          m_lightDirection = dir ;
+        }
+
 protected :
   virtual void fastDraw();
   virtual void draw();
@@ -74,6 +82,10 @@ private:
 	void snap() ;
 
 	Offline& m_offline ;
+
+        unsigned m_vp_width ;
+        unsigned m_vp_height ;
+        Eigen::Vector3f m_lightDirection ;
 
 	unsigned m_currentFrame ;
 
