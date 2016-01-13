@@ -68,9 +68,11 @@ puts "Percent assembly: #{asm_time*100/tot_time}"
 config_file = File.join(DIR,'config')
 fps = 0
 File.open( config_file ).each_line{ |l|
-	if l =~ /^fps\s+([-0-9.eE]+)\s*$/
+	if l =~ /^res\s+([-0-9\s.eE]+)\s*$/
+          puts "Grid: #{$1}"
+	end
+        if l =~ /^fps\s+([-0-9.eE]+)\s*$/
 		fps = $1.to_f
-		break
 	end
 }
 puts "Target fps: #{fps}"
