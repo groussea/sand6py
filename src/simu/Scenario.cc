@@ -300,7 +300,7 @@ struct BunnyScenar : public Scenario {
 
 	Scalar particle_density( const Vec &x ) const override {
 		return ( bunny_ls->eval_at( x ) < 0 &&
-				 x[2] < .5*m_config->box[2]
+				 x[2]*5 < m_config->box[0]
 		) ? 1 : 0 ;
 	}
 
@@ -315,7 +315,7 @@ struct BunnyScenar : public Scenario {
 		bunny_ls->scale( S*4 )
 				.rotate( Vec(0,1,0), M_PI/4 )
 				.rotate( Vec(1,0,0), M_PI/4 )
-				.set_origin( S * Vec(.5,.25,-.425) ) ;
+				.set_origin( S * Vec(.5,.25,-.5) ) ;
 		bunny_ls->compute( ) ;
 	}
 
@@ -334,7 +334,7 @@ struct BunnyScenar : public Scenario {
 		if( tw > .5 ) {
 			const Scalar t = tw-.5 ;
 			if( t < 1 ) {
-				vel = Vec(0,0,6*(t - t*t)) * speed * ( .5 * m_config->box[2] );
+				vel = Vec(0,0,6*(t - t*t)) * speed * ( .3 * m_config->box[0] );
 			}
 		}
 
@@ -471,7 +471,7 @@ struct DiggingScenar : public Scenario {
 		}else if( tw > 1 ) {
 			const Scalar t = tw - 1;
 			if( t < 1 ) {
-				vel = Vec(0, 0, 6*(t-t*t) ) * .5 * m_config->box[2] ;
+				vel = Vec(0, 0, 6*(t-t*t) ) * .4 * m_config->box[2] ;
 			}
 		}else if( tw > 0 ) {
 			const Scalar t = tw;

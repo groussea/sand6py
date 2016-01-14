@@ -38,10 +38,10 @@ void GLViewer::fastDraw()
 
 		if( m_drawParticles ) {
 			gl::ColorPointer  cp( m_colors ) ;
-			glDrawArrays( GL_POINTS, 0, m_centers.size() );
+			glDrawArrays( GL_POINTS, 0, std::min(100000u,m_centers.size()) );
 		} else {
 			glColor3f(0,0,1) ;
-			glDrawArrays( GL_POINTS, 0, m_centers.size() );
+			glDrawArrays( GL_POINTS, 0, std::min(100000u,m_centers.size()) );
 		}
 
 	}
