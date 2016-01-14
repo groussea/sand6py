@@ -14,7 +14,7 @@ int main( int argc, char* argv[] ) {
 	bool discs  = false ;
 	float grainSizeFactor = 1 ;
 
-        unsigned width  = 1230 ;
+        unsigned width  = 1280 ;
         unsigned height = 720 ;
         Eigen::Vector3f lightDir (-.5,-1,1.) ;
 

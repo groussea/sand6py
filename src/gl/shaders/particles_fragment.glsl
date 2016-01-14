@@ -12,8 +12,8 @@ void main (void)
 {
     vec3 light_pos = vec3(0,0,100) ;
 
-    vec4 ambientMat = vec4(0.3,0.3, 0., 1. );
-    vec4 diffuseMat = vec4(1. , 1., 0., 1. );
+    vec4 ambientMat = vec4(0.3,0.2, 0.1, 1. );
+    vec4 diffuseMat = vec4(.7 , .6, .2, 1. );
     vec4 specMat    = vec4(1. , 1., 1., 1. );
     float specPow = 15.0;
 

@@ -16,7 +16,7 @@ OPTIONS = [
 SOLVERS = [ 
 	['-a', 0, '-n', 1e6],
 	['-a', 1],
-	['-a', 3, '-g', 2 ],
+#	['-a', 3, '-g', 2 ],
 	['-a', 3, '-g', 3 ],
 	['-a', 3, '-g', 4 ],
 ]
@@ -79,7 +79,7 @@ end
 
 def gen_diagram( perfs )
 	n = 0
-	diag = { :t => [0], :n => [0] }
+	diag = { :t => [1], :n => [0] }
 	perfs.each do |t|
 		next if t > MAX_TIME * 1e-10 
 
@@ -103,7 +103,7 @@ def merge_diagrams( perfs )
 		indexes[s] = 0
 	}
 
-	t = 0
+	t = 1
 
 	loop do
 		t = perfs.map{ |s,v| (v[:t][indexes[s]] || MAX_TIME) }.min 
@@ -173,7 +173,7 @@ TOLERANCES.each do |tol|
 			best_perf = v.map{|s,t| t}.min 
 			v.each do |s,t| 
 				perfs[s] ||= [] 
-				perfs[s] << (t-best_perf)/best_perf
+				perfs[s] << t/best_perf
 			end
 		end
 		
@@ -200,13 +200,16 @@ end
 
 # III - Output perf diagrams
 TOLERANCES.each_with_index do |tol, idx|
+	
+	n_problems = all_solve_times[idx].map{ |scene,files| files.count }.reduce(:+)
+	
 	diags = {}
 	global_perfs[idx].each do |slv, perfs|
 		diag = gen_diagram perfs
 
 		File.open( File.join(BENCH_DIR, "perf-#{tol}-#{slv}" ), "w" ) { |f|
 			diag[:t].each_with_index{ |t, i|
-				f.puts "#{t}\t#{diag[:n][i]}"
+				f.puts "#{t}\t#{diag[:n][i].to_f/n_problems}"
 			}
 		}
 
@@ -217,7 +220,7 @@ TOLERANCES.each_with_index do |tol, idx|
 	File.open( File.join(BENCH_DIR, "perf-#{tol}-all" ), "w" ) { |f|
 		f.puts "#t\t#{global_diag[:n].map{ |s,v| s }.join("\t")}"
 		global_diag[:t].each_with_index{ |t, i|
-			f.puts "#{t}\t#{global_diag[:n].map{ |s,v| global_diag[:n][s][i] }.join("\t")}"
+			f.puts "#{t}\t#{global_diag[:n].map{ |s,v| global_diag[:n][s][i].to_f/n_problems }.join("\t")}"
 		}
 	}
 end
