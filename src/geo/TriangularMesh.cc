@@ -7,28 +7,28 @@
 
 namespace d6 {
 
-bool TriangularMesh::loadObj( const char* fileName ) 
+bool TriangularMesh::loadObj( const char* fileName )
 {
-	
+
 	File meshFile( fileName, std::ios_base::in ) ;
 	if( !meshFile.is_open() ) {
 		Log::Error() << "Could not read " << fileName << std::endl ;
 		return false ;
 	}
-	
+
 	if( !firstObjPass( meshFile ) )
 		return false ;
 
 	meshFile.clear() ;
 	meshFile.seekg(0, std::ios::beg) ;
-	
+
 	if( !secondObjPass( meshFile ) )
 		return false ;
 
 	m_name = fileName ;
 
 	return true ;
-	
+
 } ;
 
 bool TriangularMesh::firstObjPass( File& file )
@@ -44,10 +44,10 @@ bool TriangularMesh::firstObjPass( File& file )
 	std::string line ;
 	std::string tok  ;
 	while( std::getline( file, line ) ) {
-		
+
 		std::istringstream iss(line) ;
 		iss >> tok ;
-		
+
 		if( tok.size() == 0 ) continue ;
 
 		switch( tok[0] ) {
@@ -56,12 +56,12 @@ bool TriangularMesh::firstObjPass( File& file )
 				++vtxCount ;
 			} else {
 				switch(tok[1]) {
-				case 'p': // parameter space 
+				case 'p': // parameter space
 					break ;
 				case 'n':
 					++ vtxNormalsCount ;
 					break ;
-				case 't': // tex coordinates 
+				case 't': // tex coordinates
 					++ vtxUVsCount ;
 					break ;
 				default:
@@ -78,7 +78,7 @@ bool TriangularMesh::firstObjPass( File& file )
 
 	m_vertexIndices.resize( 3, facesCount ) ;
 	m_faceNormals.resize( 3, 0) ;
-	
+
 	m_vertexNormals.resize( 3, vtxNormalsCount ) ;
 	if( vtxNormalsCount > 0 )
 		m_normalIndices.resize( 3, facesCount ) ;
@@ -95,7 +95,7 @@ bool TriangularMesh::firstObjPass( File& file )
 
 error:
 	Log::Error() << "Obj parse error; Token: " << tok << std::endl ;
-	Log::Error() << "\n Line: " << line << std::endl ; 
+	Log::Error() << "\n Line: " << line << std::endl ;
 
 	return false ;
 }
@@ -113,32 +113,32 @@ bool TriangularMesh::secondObjPass( File& file )
 	std::string line ;
 	std::string tok  ;
 	while( std::getline( file, line ) ) {
-		
+
 		std::istringstream iss(line) ;
 		iss >> tok ;
-		
+
 		if( tok.size() == 0 ) continue ;
 
 		switch( tok[0] ) {
 		case 'v':
 			if( tok.length() == 1 ) {
-				iss >> m_vertices( 0, vtxCount ) 
-				    >> m_vertices( 1, vtxCount ) 
+				iss >> m_vertices( 0, vtxCount )
+					>> m_vertices( 1, vtxCount )
 					>> m_vertices( 2, vtxCount )  ;
 				if(! iss ) goto error ;
 				++vtxCount ;
 			} else {
 				switch(tok[1]) {
 				case 'n':
-					iss >> m_vertexNormals( 0, vtxNormalsCount ) 
-						>> m_vertexNormals( 1, vtxNormalsCount ) 
+					iss >> m_vertexNormals( 0, vtxNormalsCount )
+						>> m_vertexNormals( 1, vtxNormalsCount )
 						>> m_vertexNormals( 2, vtxNormalsCount )  ;
 					if(! iss ) goto error ;
 					m_vertexNormals.col( vtxNormalsCount ) = m_vertexNormals.col(vtxNormalsCount).normalized() ;
 					++ vtxNormalsCount ;
 					break ;
 				case 't':
-					iss >> m_vertexUVs( 0, vtxUVsCount ) 
+					iss >> m_vertexUVs( 0, vtxUVsCount )
 						>> m_vertexUVs( 1, vtxUVsCount )  ;
 					if(! iss ) goto error ;
 					iss >> m_vertexUVs( 2, vtxUVsCount )  ;
@@ -151,20 +151,20 @@ bool TriangularMesh::secondObjPass( File& file )
 			}
 			break ;
 		case 'f':
-				
+
 			iss >> tok ;
-				
+
 			for( int k = 0 ; k < 3 ; ++k )
 			{
 				if(! iss ) goto error ;
 				std::istringstream tss(tok) ;
 
 				tss >> m_vertexIndices( k, facesCount ) ;
-				char c ; 
+				char c ;
 				if ( parseNormals || parseTexture ) {
 					tss >> c ;
 					if( c != '/' ) goto error ;
-					if( parseTexture ) 
+					if( parseTexture )
 						tss >> m_uvIndices( k, facesCount ) ;
 					if( parseNormals ) {
 						tss >> c ;
@@ -174,7 +174,7 @@ bool TriangularMesh::secondObjPass( File& file )
 					if( !tss ) goto error ;
 				}
 				iss >> tok ;
-				
+
 			}
 			++facesCount ;
 		}
@@ -187,7 +187,7 @@ bool TriangularMesh::secondObjPass( File& file )
 	return true ;
 
 error:
-	Log::Error() << "Obj value error;  Line: " << line << std::endl ; 
+	Log::Error() << "Obj value error;  Line: " << line << std::endl ;
 
 	return false ;
 }
@@ -211,14 +211,28 @@ void TriangularMesh::computeFaceNormals()
 		if( hasVertexNormals() ) {
 			//Deduce sign from vertex normals
 			for( Index k = 0 ; k < 3 ; ++k ) {
-				if( ccw.dot( normal(i,k) ) < 0 ) 
+				if( ccw.dot( normal(i,k) ) < 0 )
 					++inv ;
 			}
 		}
 
-		m_faceNormals.col(i) = (inv>1 ? -1 : 1.) * ccw ;	
+		m_faceNormals.col(i) = (inv>1 ? -1 : 1.) * ccw ;
 	}
 
+}
+
+Vec TriangularMesh::interpolatedNormal( Index face, const Vec& baryCoords ) const
+{
+
+	if( hasVertexNormals() ) {
+		return ( baryCoords[0] * normal( face, 0 ) +
+				baryCoords[1] * normal( face, 1 ) +
+				baryCoords[2] * normal( face, 2 ) ).normalized() ;
+
+	} else {
+		assert( hasFaceNormals() ) ;
+		return faceNormal( face ) ;
+	}
 }
 
 } //d6

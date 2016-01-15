@@ -8,7 +8,7 @@ namespace d6 {
 
 class File ;
 
-class TriangularMesh 
+class TriangularMesh
 {
 
 public:
@@ -24,49 +24,50 @@ public:
 	Index nFaces() const { return m_vertexIndices.cols() ; }
 	Index nVertices() const { return m_vertices.cols() ; }
 
-	bool hasVertexNormals() const 
+	bool hasVertexNormals() const
 	{ return m_normalIndices.cols() > 0 ; }
-	bool hasVertexUVs() const 
+	bool hasVertexUVs() const
 	{ return m_uvIndices.cols() > 0 ; }
-	bool hasFaceNormals() const 
+	bool hasFaceNormals() const
 	{ return m_faceNormals.cols() > 0 ; }
 
-	DynMat3::ConstColXpr vertex( Index face, Index num ) const 
+	DynMat3::ConstColXpr vertex( Index face, Index num ) const
 	{
 		return m_vertices.col( m_vertexIndices( num, face ) ) ;
 	}
-	DynMat3::ConstColXpr normal( Index face, Index num ) const 
+	DynMat3::ConstColXpr normal( Index face, Index num ) const
 	{
 		assert( hasVertexNormals() ) ;
 		return m_vertexNormals.col( m_normalIndices( num, face ) ) ;
 	}
-	DynMat3::ConstColXpr uv( Index face, Index num ) const 
+	DynMat3::ConstColXpr uv( Index face, Index num ) const
 	{
 		assert( hasVertexUVs() ) ;
 		return m_vertexUVs.col( m_uvIndices( num, face ) ) ;
 	}
 
-	DynMat3::ConstColXpr faceNormal( Index face ) const 
+	DynMat3::ConstColXpr faceNormal( Index face ) const
 	{
 		assert( hasFaceNormals() ) ;
 		return m_faceNormals.col( face ) ;
 	}
+	Vec interpolatedNormal( Index face, const Vec& baryCoords ) const  ;
 
-	const std::string& name() const 
+	const std::string& name() const
 	{ return m_name ; }
 
 	const DynMat3& vertices() const { return m_vertices ; }
 
 private:
 
-	bool firstObjPass( File& file ) ; 
-	bool secondObjPass( File& file ) ; 
+	bool firstObjPass( File& file ) ;
+	bool secondObjPass( File& file ) ;
 
 	// Vertex data
 	DynMat3 m_vertices ;
 	DynMat3 m_vertexNormals ;
 	DynMat3 m_vertexUVs ;
-	
+
 	// Face data
 	DynMat3 m_faceNormals ;
 	Eigen::Matrix< Index, 3, Eigen::Dynamic > m_vertexIndices ;

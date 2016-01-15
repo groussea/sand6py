@@ -30,7 +30,8 @@ Vec MeshLevelSet::grad_local(const Vec &x) const {
 }
 
 static Vec     closestPointOnTriangle( const Vec& p, const Mat& T ) ;
-static Scalar signedDistPointTriangle( const Vec& P, const Mat& T, const Vec& N ) ;
+static Scalar signedDistPointTriangle(const Vec& P, const Mat& T, const TriangularMesh &mesh, const Index face) ;
+static Vec barycentricCoordinates(const Vec& p, const Mat& T ) ;
 
 bool MeshLevelSet::compute()
 {
@@ -76,7 +77,7 @@ bool MeshLevelSet::compute()
 				for( Index l = minCell.cell[2] ; l <= maxCell.cell[2]+1 ; ++l ) {
 					Grid::Vertex node( j, k, l ) ;
 					const Scalar d = signedDistPointTriangle(
-						m_grid.nodePosition( node ), vertices, triMesh.faceNormal(i) ) ;
+						m_grid.nodePosition( node ), vertices, triMesh, i ) ;
 
 					Scalar &val = m_values[ m_grid.nodeIndex(node) ] ;
 					if( std::fabs(d) < std::fabs(val) )
@@ -109,10 +110,12 @@ bool MeshLevelSet::compute()
 	return true ;
 }
 
-static Scalar signedDistPointTriangle( const Vec& P, const Mat& T, const Vec& N )
+static Scalar signedDistPointTriangle(const Vec& P, const Mat& T, const TriangularMesh &mesh, const Index face )
 {
 	const Vec proj = closestPointOnTriangle( P, T ) ;
 	const Scalar dist = (P - proj).norm() ;
+	const Vec bc = barycentricCoordinates( proj, T ) ;
+	const Vec N  = mesh.interpolatedNormal( face, bc ) ;
 	return (P - proj).dot( N ) > 0 ? dist : -dist ;
 }
 
@@ -166,6 +169,29 @@ static Vec closestPointOnTriangle(const Vec& p, const Mat& T )
 	 return a + ab * v + ac * w; // = u*a + v*b + w*c, u = va * denom = 1.0d - v - w
 }
 
+// Compute barycentric coordinates (u, v, w) for
+// point p with respect to triangle (a, b, c)
+static Vec barycentricCoordinates(const Vec& p, const Mat& T )
+{
+	const Mat::ConstColXpr a = T.col(0) ;
+	const Mat::ConstColXpr b = T.col(1) ;
+	const Mat::ConstColXpr c = T.col(2) ;
+
+	Vec v0 = b - a, v1 = c - a, v2 = p - a;
+	const Scalar d00 = v0.dot(v0);
+	const Scalar d01 = v0.dot(v1);
+	const Scalar d11 = v1.dot(v1);
+	const Scalar d20 = v2.dot(v0);
+	const Scalar d21 = v2.dot(v1);
+	const Scalar denom = d00 * d11 - d01 * d01;
+
+	Vec coords ;
+	coords[1] = (d11 * d20 - d01 * d21) / denom;
+	coords[2] = (d00 * d21 - d01 * d20) / denom;
+	coords[0] = 1.0f - coords[1] - coords[2];
+
+	return coords ;
+}
 
 } //d6
 
