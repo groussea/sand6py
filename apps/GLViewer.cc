@@ -231,6 +231,13 @@ void GLViewer::drawObject(const LevelSet &ls)
 
 void GLViewer::init()
 {
+	glEnable( GL_MULTISAMPLE );
+
+	GLint bufs, samples ;
+	glGetIntegerv( GL_SAMPLE_BUFFERS, &bufs ) ;
+	glGetIntegerv( GL_SAMPLES, &samples ) ;
+	Log::Debug() << "Using " << bufs << " buffers and " << samples << " samples" << std::endl ;
+
 	// Restore previous viewer state.
 	restoreStateFromFile();
 
@@ -265,12 +272,6 @@ void GLViewer::init()
 
 	if( renderSamples() ) {
 
-		glEnable( GL_MULTISAMPLE );
-
-		GLint bufs, samples ;
-		glGetIntegerv( GL_SAMPLE_BUFFERS, &bufs ) ;
-		glGetIntegerv( GL_SAMPLES, &samples ) ;
-		Log::Debug() << "Using " << bufs << " buffers and " << samples << " samples" << std::endl ;
 
 		m_grainsRenderer.init();
 
