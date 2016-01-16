@@ -28,6 +28,8 @@ DynParticles::DynParticles()
 
 void DynParticles::generate(const Config &c, const MeshType &mesh, const Scenario &scenario)
 {
+	//Generate particles according to grid
+
 	m_geo.generate( scenario.generator(), c.nSamples, mesh, c.cohesion > 0, c.initialOri );
 
 	  m_affine.leftCols( count() ).setZero() ;
@@ -36,10 +38,9 @@ void DynParticles::generate(const Config &c, const MeshType &mesh, const Scenari
 
 	m_meanVolume = m_geo.volumes().segment( 0, m_geo.count() ).sum() / m_geo.count() ;
 
-	// Randomize
+	// Randomize particle positions
 	if( c.randomize > 0 ) {
 
-		//std::normal_distribution<Scalar> dist( 0., c.randomize );
 		std::uniform_real_distribution<Scalar> dist( -c.randomize, c.randomize );
 
 #pragma omp parallel
@@ -67,7 +68,7 @@ void DynParticles::clamp_particle(size_t i, const MeshType &mesh)
 	const Scalar dpn2 = p.squaredNorm() ;
 
 	if( dpn2 > 1.e-12 ) {
-		// Non-zero projection, project-out normal velocity
+		// Particle was outside domain, project-out normal velocity
 		m_geo.m_velocities.col(i) -= ( dp.dot(m_geo.m_velocities.col(i)) ) * dp / dpn2 ;
 	}
 
@@ -81,6 +82,8 @@ void DynParticles::update(const Config &config, const Scalar dt, const Phase &ph
 	const std::size_t n = count() ;
 
 	const MeshType& mesh = phase.velocity.mesh() ;
+
+	// Split and merge particles before setting their velocities / moving them
 	splitMerge( mesh );
 
 #pragma omp parallel for
@@ -88,6 +91,7 @@ void DynParticles::update(const Config &config, const Scalar dt, const Phase &ph
 
 		const Vec &p0 =  m_geo.m_centers.col(i) ;
 
+		// Grid velocity at current position
 		const Vec  vi ( phase.velocity(p0) ) ;
 
 		m_geo.m_velocities.col(i) = vi ; //PIC
@@ -116,7 +120,7 @@ void DynParticles::update(const Config &config, const Scalar dt, const Phase &ph
 
 			tensor_view( m_affine.col(i) ).set( Bp );
 
-
+			// Debonding function
 			m_cohesion(i) /= ( 1. + dt * config.cohesion_decay * (Bp+Bp.transpose()).norm() ) ;
 		}
 
@@ -211,6 +215,7 @@ void DynParticles::read(std::vector<bool> &activeCells,
 
 		activeCells[ mesh.cellIndex( loc.cell ) ] = true ;
 
+		// Accumulate particle data at grid nodes
 
 			   phi .add_at( itp, m );
 			phiVel .add_at( itp, m * m_geo.velocities().col(i) );
@@ -265,11 +270,11 @@ void DynParticles::splitMerge( const MeshType & mesh )
 		const Scalar evMin = ev.minCoeff(&kMin) ;
 		const Scalar evMax = ev.maxCoeff(&kMax) ;
 
-		if( //ev.minCoeff() < 1.e-6
-				   evMax > evMin * 4.
-				&& evMax > defLength
-				&& m_geo.volumes()[i] > m_meanVolume / 64
-				&& m_geo.m_count + 1 != Particles::s_MAX )
+		if(  	   evMax > evMin * 4.     // Eigenvalues ratio
+				&& evMax > defLength      // Avoid splitting too small particles
+				&& m_geo.volumes()[i] > m_meanVolume / 64 // Avoid splitting too ligth particles
+				&& m_geo.m_count + 1 != Particles::s_MAX // Avoid running out of memory
+				   )
 		{
 			// Split
 			size_t j = 0 ;
@@ -283,7 +288,6 @@ void DynParticles::splitMerge( const MeshType & mesh )
 
 					ev[kMax] *= .5 ;
 					ev[kMin] = std::max( defLength / 8, ev[kMin] ) ;
-//					ev[kMin] = std::max( evMin, evMax/4 ) ;
 
 					m_geo.m_centers.col(j) = m_geo.m_centers.col(i) - ev[kMax] * es.eigenvectors().col(kMax).normalized() ;
 					m_geo.m_centers.col(i) = m_geo.m_centers.col(i) + ev[kMax] * es.eigenvectors().col(kMax).normalized() ;
@@ -315,15 +319,16 @@ void DynParticles::splitMerge( const MeshType & mesh )
 			frame = es.eigenvectors() * ev.asDiagonal() * ev.asDiagonal() * es.eigenvectors().transpose() ;
 			tensor_view( m_geo.m_frames.col(i) ).set( frame ) ;
 
-			if( evMax > 2*evMin ) {
+			// Add particle to merge candidates
 	#ifdef MERGE
+			if( evMax > 2*evMin ) {
 				typename MeshType::Location loc ;
 				mesh.locate( m_geo.centers().col(i), loc );
 				MergeInfo mgi { i, evMin, es.eigenvectors().col(kMin) }  ;
 	#pragma omp critical
 				mg_hash[ mesh.cellIndex( loc.cell ) ].push_back( mgi ) ;
-	#endif
 			}
+	#endif
 
 		}
 
@@ -340,6 +345,7 @@ void DynParticles::splitMerge( const MeshType & mesh )
 	const size_t None = -1 ;
 	std::vector< size_t > mg_indices( count(), None ) ;
 
+	// Look for overlapping particles in each mesh cell
 #pragma omp parallel for
 	for( size_t cidx = 0 ; cidx < mg_hash.size() ; ++ cidx ) {
 		const std::vector< MergeInfo >& list = mg_hash[cidx] ;
@@ -364,6 +370,7 @@ void DynParticles::splitMerge( const MeshType & mesh )
 		}
 	}
 
+	// Compute result of merges
 #pragma omp parallel for
 	for( size_t i = 0 ; i < mg_indices.size() ; ++ i ) {
 		if ( mg_indices[i] != None && mg_indices[i]>i ) {
@@ -386,9 +393,6 @@ void DynParticles::splitMerge( const MeshType & mesh )
 
 			m_geo.m_orient.col(i) = ( vi * m_geo.orient().col(i) + vj * m_geo.orient().col(j) ) / ( vi + vj ) ;
 
-//			m_velocities.col(i) = ( m_masses[i] * m_velocities.col(i) + m_masses[j] * m_velocities.col(j) ) / ( m_masses[i] + m_masses[j ] ) ;
-//			m_affine.col(i) = ( m_masses[i] * m_affine.col(i) + m_masses[j] * m_affine.col(j) ) / ( m_masses[i] + m_masses[j ] ) ;
-//			m_inertia[i] = ( m_masses[i] * m_inertia[i] + m_masses[j] * m_inertia[j] ) / ( m_masses[i] + m_masses[j ] ) ;
 			m_cohesion[i] = ( vi * m_cohesion[i] + vj * m_cohesion[j] ) / ( vi + vj ) ;
 
 			m_geo.m_volumes[i] += vj ;
@@ -396,7 +400,7 @@ void DynParticles::splitMerge( const MeshType & mesh )
 		}
 	}
 
-
+	// Reallocate particles (ensure contiguous indices)
 	for( size_t j = 0 ; j < n_before_merge ; ++ j ) {
 		if ( mg_indices[j] != None && mg_indices[j] < j ) {
 			//i is empty
