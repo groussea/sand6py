@@ -6,6 +6,19 @@
 
 using namespace d6 ;
 
+static void usage( const char *name )
+{
+	std::cout << "Usage: " << name
+			  << " [sim_dir=out] [options] "
+			  << "\nGenerates discharge curves."
+			  << "\n\n" ;
+
+	std::cout << "Options:\n"
+			  << "-? \t Display this help message and exit\n"
+			  << "-n frame_id \t Stop at frame frame_id\n"
+			  << std::endl ;
+}
+
 static Scalar remaining_volume( const Particles& particles, const Vec& box )
 {
 	const Scalar zmin = box[2] / 2 ;
@@ -31,6 +44,9 @@ int main( int argc, const char* argv[] ) {
 	{
 		if( argv[i][0] == '-' ){
 			switch(argv[i][1]) {
+			case '?':
+				usage(argv[0]) ;
+				return 0 ;
 			case 'n':
 				if( ++i == argc ) break ;
 				last_frame = d6::to_uint( argv[i] ) ;

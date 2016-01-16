@@ -10,6 +10,25 @@
 #include "geo/ScalarField.hh"
 #include "geo/TensorField.hh"
 
+#include <iostream>
+
+static void usage( const char *name )
+{
+	std::cout << "Usage: " << name
+			  << " [sim_dir=out] [options] "
+			  << "\nTransform raw simulation output into standard VTK files,"
+			  << "\n sim_dir/vtk/fields-[frame_id].vtk and "
+			  << "\n sim_dir/vtk/particles-[frame_id].vtk if the '-p' switch is present"
+			  << "\n\n" ;
+
+	std::cout << "Options:\n"
+			  << "-? \t Display this help message and exit\n"
+			  << "-n frame_id \t Jump to frame frame_id\n"
+			  << "-a \t Process all subsequent frames\n"
+			  << "-p \t Create VTK file for particles as well \n"
+			  << std::endl ;
+}
+
 void dump_frame( const d6::Offline& offline, bool particles,
 				 const char* base_dir, unsigned frame )
 {
@@ -52,6 +71,9 @@ int main( int argc, const char* argv[] ) {
 	{
 		if( argv[i][0] == '-' ){
 			switch(argv[i][1]) {
+			case '?':
+				usage(argv[0]) ;
+				return 0 ;
 			case 'a':
 				all = true ;
 				break ;

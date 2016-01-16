@@ -17,56 +17,53 @@ out vec4 color ;
 
 void main (void)
 {
-    if( vis < 0 || dot(coord.xy, coord.xy) > 1 )
-        discard ;
+	if( vis < 0 || dot(coord.xy, coord.xy) > 1 )
+		discard ;
 
-    float alpha = 1 ; //vis ;
+	float alpha = 1 ; //vis ;
 
-    vec2 tex_coords = 0.5 * ( shadow_coord.xy / shadow_coord.w ) + vec2(0.5,0.5) ;
+	vec2 tex_coords = 0.5 * ( shadow_coord.xy / shadow_coord.w ) + vec2(0.5,0.5) ;
 
-    float zz = shadow_coord.z / shadow_coord.w  ;
-    float zs = texture( depth_texture, tex_coords ).r ;
+	float zz = shadow_coord.z / shadow_coord.w  ;
+	float zs = texture( depth_texture, tex_coords ).r ;
 
-    if ( zs  <  zz ){
-         alpha = 1. - (zz-zs)*25 ; //shadow_coord.z/20;
-     }
+	if ( zs  <  zz ){
+		 alpha = 1. - (zz-zs)*25 ;
+	 }
+	alpha = pow( clamp(alpha,0,1), 3) ;
 
-    alpha = pow( clamp(alpha,0,1), 3) ;
-    //alpha = vis ;
-    color = alpha * vec4( vec3(0.3,0.3, 0.), 1. );
+	vec4 ambientMat  = vec4(0,0,0,0) ;
+	vec4 diffuseMat  = vec4(0,0,0,0) ;
 
-    vec4 ambientMat  = vec4(0,0,0,0) ;
-    vec4 diffuseMat  = vec4(0,0,0,0) ;
+	if( material < .4 )
+		ambientMat = vec4( 212,175,55, 255.)/255;
+	else if( material < .7 )
+		ambientMat = vec4( 192,192,192, 255.)/255;
+	else
+		ambientMat = vec4( 200,117,51, 255.)/255;
 
-    if( material < .4 )
-        ambientMat = vec4( 212,175,55, 255.)/255;
-    else if( material < .7 )
-        ambientMat = vec4( 192,192,192, 255.)/255;
-    else
-        ambientMat = vec4( 200,117,51, 255.)/255;
-
-    diffuseMat = ambientMat ;
-    vec4 specMat    = vec4( .8, .8, .8, 1. );
+	diffuseMat = ambientMat ;
+	vec4 specMat    = vec4( .8, .8, .8, 1. );
 
 
-    float specPow = 15.0;
+	float specPow = 15.0;
 
-    vec4 diffuse;
-    vec4 spec;
-    vec4 ambient;
+	vec4 diffuse;
+	vec4 spec;
+	vec4 ambient;
 
-    vec4 light = model_view * vec4( light_pos, 1 )  ;
-    vec3 L = normalize( light.xyz - vertex_eye);
-    vec3 E = normalize(- vertex_eye);
-    vec3 R = normalize(reflect(-L, normal_eye ));
+	vec4 light = model_view * vec4( light_pos, 1 )  ;
+	vec3 L = normalize( light.xyz - vertex_eye);
+	vec3 E = normalize(- vertex_eye);
+	vec3 R = normalize(reflect(-L, normal_eye ));
 
-    ambient = ambientMat;
-    diffuse = diffuseMat * clamp( abs(dot(normal_eye,L)) , 0.0, 1.0 ) ;
-    spec =  specMat * clamp (pow(abs(dot(R,E)),0.3*specPow) , 0.0, 1.0 );
+	ambient = ambientMat;
+	diffuse = diffuseMat * clamp( abs(dot(normal_eye,L)) , 0.0, 1.0 ) ;
+	spec =  specMat * clamp (pow(abs(dot(R,E)),0.3*specPow) , 0.0, 1.0 );
 
-    color = ( 0.4 + 0.6*alpha) * .5 * ambient ;
-    color += ( 0.2 + 0.8*alpha ) * .5 * diffuse ;
-    color += alpha*alpha*.5*spec;
+	color = ( 0.4 + 0.6*alpha) * .5 * ambient ;
+	color += ( 0.2 + 0.8*alpha ) * .5 * diffuse ;
+	color += alpha*alpha*.5*spec;
 
-    color.a = 0.5 ;
+	color.a = 1. ;
 }

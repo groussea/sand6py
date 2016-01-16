@@ -14,6 +14,22 @@ namespace d6 {
 	extern const char* g_timestamp  ;
 }
 
+static void usage( const char *name )
+{
+	std::cout << "Usage: " << name
+			  << " [sim_dir=out] [options] "
+			  << "\nGranular material simulator. "
+			  << "\n Output files are created inside the directory sim_dir. "
+			  << "\n\n" ;
+
+	std::cout << "Options:\n"
+			  << "-? \t Display this help message and exit\n"
+			  << "-i file \t Read configuration file  \n"
+			  << "-v level \t Specify verbosity level \n"
+			  << "-key value \t Set configuration option ( see README.md )  \n"
+			  << std::endl ;
+}
+
 int main( int argc, const char* argv[] )
 {
 	feenableexcept (FE_INVALID|FE_DIVBYZERO|FE_OVERFLOW);
@@ -31,6 +47,9 @@ int main( int argc, const char* argv[] )
 				config.from_string( argv[i-1]+1, argv[i] ) ;
 			} else {
 				switch(argv[i][1]) {
+				case '?':
+					usage( argv[0]) ;
+					return 0;
 				case 'i':
 					if( ++i == argc ) break ;
 					if( !config.from_file(argv[i]) ) {

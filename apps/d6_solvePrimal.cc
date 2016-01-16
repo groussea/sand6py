@@ -10,6 +10,27 @@
 
 using namespace d6 ;
 
+static void usage( const char *name )
+{
+	std::cout << "Usage: " << name
+			  << " problem_file [options] "
+			  << "\nOffline DCFP solver. "
+			  << "\n\n" ;
+
+	std::cout << "Options:\n"
+			  << "-? \t Display this help message and exit\n"
+			  << "-a algo \t Algorithm id in [0,3]  \n"
+			  << "-g variant \t PG variant id in [0,4]  \n"
+			  << "-t tol \t Tolerance \n"
+			  << "-n nIters \t Max number of inner solver iterations  \n"
+			  << "-f nIters \t Max number of outer fixed-point iterations  \n"
+			  << "-o  \t Use unbiased residual evaluation function (Alart-Curnier)\n"
+			  << "-e time \t Abort after given computation time budget\n"
+			  << "-v level \t Verbosity level\n"
+			  << std::endl ;
+}
+
+
 int main( int argc, char* argv[] ) {
 
 	const char * problem = nullptr ;
@@ -21,6 +42,9 @@ int main( int argc, char* argv[] ) {
 	{
 		if( argv[i][0] == '-' ){
 			switch(argv[i][1]) {
+			case '?':
+				usage(argv[0]) ;
+				return 0 ;
 			case 'n':
 				if( ++i == argc ) break ;
 				options.maxIterations = to_uint( argv[i] ) ;
@@ -54,6 +78,10 @@ int main( int argc, char* argv[] ) {
 		} else {
 			problem = argv[i] ;
 		}
+	}
+	if( !problem ) {
+		usage(argv[0]) ;
+		return 1 ;
 	}
 
 	Log::Verbose() << "Using algorithm: " ;

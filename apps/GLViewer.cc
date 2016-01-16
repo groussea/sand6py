@@ -24,6 +24,28 @@
 
 namespace d6 {
 
+GLViewer::GLViewer(const QGLFormat &glFormat, Offline &offline,
+				   unsigned nSamples, unsigned width, unsigned height)
+	: QGLViewer( glFormat ),
+	  m_offline( offline ),
+	  m_vp_width( width ), m_vp_height( height ), m_lightDirection( Eigen::Vector3f::Zero() ),
+	  m_currentFrame(-1),
+	  m_drawParticles( 0 == nSamples ), m_enableBending( false ),
+	  m_fastDraw( true ), m_drawObjects( true ), m_drawOrientations( false ),
+	  m_snapshotting(false), m_lastSnapped( m_currentFrame ),
+	  m_grainsRenderer( offline, m_shapeRenderer, nSamples )
+{
+	setKeyDescription(Qt::Key_I, "Go to next frame");
+	setKeyDescription(Qt::Key_P, "Go to previous frame (particles mode only)");
+	setKeyDescription(Qt::Key_Home, "Go to first frame (particles mode only)");
+	setKeyDescription(Qt::Key_O, "Toggle orientation tensors (particles mode only)");
+	setKeyDescription(Qt::Key_D, "Toggle particles display (particles mode only)");
+	setKeyDescription(Qt::Key_F, "Toggle fast-drawing mode when moving camera") ;
+	setKeyDescription(Qt::Key_B, "Toggle alpha blending") ;
+	setKeyDescription(Qt::Key_L, "Toggle rigid-bodies display") ;
+	setKeyDescription(Qt::Key_R, "Toggle snapshotting") ;
+	setKeyDescription(Qt::Key_Q, "Quit without saving viewer state") ;
+}
 
 void GLViewer::fastDraw()
 {
