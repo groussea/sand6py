@@ -24,9 +24,9 @@ static void usage( const char *name )
 
 	std::cout << "Options:\n"
 			  << "-? \t Display this help message and exit\n"
-			  << "-i file \t Read configuration file  \n"
-			  << "-v level \t Specify verbosity level \n"
-			  << "-key value \t Set configuration option ( see README.md )  \n"
+			  << "-i file \t Load a configuration file  \n"
+			  << "-v level \t Specify the verbosity level \n"
+			  << "-key value \t Set the configuration parameter 'key' to 'value' ( see README.md )  \n"
 			  << std::endl ;
 }
 

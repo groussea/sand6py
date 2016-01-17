@@ -35,16 +35,16 @@ GLViewer::GLViewer(const QGLFormat &glFormat, Offline &offline,
 	  m_snapshotting(false), m_lastSnapped( m_currentFrame ),
 	  m_grainsRenderer( offline, m_shapeRenderer, nSamples )
 {
-	setKeyDescription(Qt::Key_I, "Go to next frame");
-	setKeyDescription(Qt::Key_P, "Go to previous frame (particles mode only)");
-	setKeyDescription(Qt::Key_Home, "Go to first frame (particles mode only)");
-	setKeyDescription(Qt::Key_O, "Toggle orientation tensors (particles mode only)");
-	setKeyDescription(Qt::Key_D, "Toggle particles display (particles mode only)");
-	setKeyDescription(Qt::Key_F, "Toggle fast-drawing mode when moving camera") ;
-	setKeyDescription(Qt::Key_B, "Toggle alpha blending") ;
-	setKeyDescription(Qt::Key_L, "Toggle rigid-bodies display") ;
-	setKeyDescription(Qt::Key_R, "Toggle snapshotting") ;
-	setKeyDescription(Qt::Key_Q, "Quit without saving viewer state") ;
+	setKeyDescription(Qt::Key_I, "Jumps to next frame");
+	setKeyDescription(Qt::Key_P, "Jumps to previous frame (particles mode only)");
+	setKeyDescription(Qt::Key_Home, "Jumps to first frame (particles mode only)");
+	setKeyDescription(Qt::Key_O, "Toggles orientation tensors (particles mode only)");
+	setKeyDescription(Qt::Key_D, "Toggles particles display (particles mode only)");
+	setKeyDescription(Qt::Key_F, "Toggles fast-drawing mode when moving camera") ;
+	setKeyDescription(Qt::Key_B, "Toggles alpha blending") ;
+	setKeyDescription(Qt::Key_L, "Toggles rigid-bodies display") ;
+	setKeyDescription(Qt::Key_R, "Toggles snapshots recording in sim_dir/snaps") ;
+	setKeyDescription(Qt::Key_Q, "Quits without saving viewer state") ;
 }
 
 void GLViewer::fastDraw()

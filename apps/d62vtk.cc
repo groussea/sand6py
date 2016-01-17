@@ -18,7 +18,7 @@ static void usage( const char *name )
 			  << " [sim_dir=out] [options] "
 			  << "\nTransform raw simulation output into standard VTK files,"
 			  << "\n sim_dir/vtk/fields-[frame_id].vtk and "
-			  << "\n sim_dir/vtk/particles-[frame_id].vtk if the '-p' switch is present"
+			  << "\n sim_dir/vtk/particles-[frame_id].vtk if the '-p' flag is provided"
 			  << "\n\n" ;
 
 	std::cout << "Options:\n"

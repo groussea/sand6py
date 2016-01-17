@@ -10,7 +10,8 @@ static void usage( const char *name )
 	std::cout << "Usage: " << name
 			  << " [sim_dir=out] [options] "
 			  << "\nOpenGL viewer, based on libQGLViewer."
-			  << "\n Press 'H' for help."
+			  << "\n Displays either the volumes of the simulation particles, or a higher number of grain samples using the '-s' flag."
+			  << "\n Press 'H' for a list of keyboard/mouse commands."
 			  << "\n\n" ;
 
 	std::cout << "Options:\n"

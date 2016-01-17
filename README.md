@@ -23,7 +23,7 @@ This archive is organized as follow:
 
 
 ## Relevant files
-At this stage, the documentation is still very scarse; however, sections
+At this stage, the documentation is still very scarce; however, sections
 that are the most relevant to the article have been more densely annotated.
 
 The reader interested in the implementation of the main simulation loop should start with the method `Simulation::step()` defined in the file `src/simu/Simu.cc`. 
@@ -62,21 +62,21 @@ commands from the archive's root directory
 Successful compilation should generates the following binaries in the `$CMAKE_BUILD_DIR/apps` directory:
 
   - `d6` simulation tool
-  - `d62vtk` Tranform `d6` output to VTK files that can be read with e.g. `paraview`
+  - `d62vtk` Transform `d6` output to VTK files that can be read with e.g. `paraview`
   - `d6gl` OpenGL viewer and rendering utility (requires libQGLViewer)
   - `d6_solvePrimal` offline DCFP solver, for benchmarking purposes
-  - `d6_analyze` postprocessing tool
+  - `d6_analyze` post-processing tool
 
 Usage information for these applications can be obtained with the `-?` flag.
 
 ## Configuration fields
 
-Here is a list of the various configuration options that can be passed to the `d6` application, with their default values.
+Here is a list of the various configuration options that can be passed to the `d6` application, with their default values. Configuration files corresponding to the simulations presented in the article are also provided in the `scenes` directory, and can be used as e.g. `./apps/d6 -i ../scenes/scene_file.conf`.
 
 ### Simulation size and resolution
 
   - `fps`=*240 s^{-1}*  Number of frames to be generated per SI seconds
-  - `substeps`=*1*      Number of simulation substeps per frame. `0` means adaptative.
+  - `substeps`=*1*      Number of simulation sub-steps per frame. `0` means adaptive.
   - `nFrames`=*1*       Number of frames to generate
   - `box`=*(1,1,1) m*   Grid domain
   - `res`=*(10,10,10)*  Number of grid cells for each dimension
@@ -87,7 +87,7 @@ Here is a list of the various configuration options that can be passed to the `d
 
 ### Physical parameters
 
-  - `volMass`=*1.5e3 kg.m^{-3}*     Volumic mass of the grains
+  - `volMass`=*1.5e3 kg.m^{-3}*     Volumetric mass density of the grains
   - `viscosity`=*1.e-3 Pa s*        Newtonian dynamic viscosity 
   - `gravity`=*(0,0,-9.81) m^{-2}*  Acceleration due to gravity
   - `phiMax` = *1*				    Maximum volume fraction of grains
