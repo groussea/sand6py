@@ -3,6 +3,7 @@
 
 #include "Expr.hh"
 
+#include <vector>
 #include <mutex>
 
 namespace d6 {

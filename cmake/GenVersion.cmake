@@ -30,7 +30,9 @@ if( NOT( ${GIT_OK} EQUAL 0 ) )
 	SET( GIT_COMMIT_HASH ${D6_VERSION} )
 endif()
 
-string(TIMESTAMP COMPILE_TIME "%Y-%m-%d %H:%M")
+if( ${CMAKE_VERSION} VERSION_GREATER 3.0.0 )
+  string(TIMESTAMP COMPILE_TIME "%Y-%m-%d %H:%M")
+endif()
 
 configure_file(${TEMPLATE} ${OUTPUT})
 

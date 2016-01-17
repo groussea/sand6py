@@ -308,8 +308,6 @@ struct BunnyScenar : public Scenario {
 		const std::string& meshname = string_param( params, "mesh", "../scenes/bunny.obj") ;
 		bunny_ls = LevelSet::from_mesh( meshname.c_str() ) ;
 
-		Eigen::AngleAxis< Scalar > aa( ) ;
-
 		const Scalar S = m_config->box[0] ;
 
 		bunny_ls->scale( S*4 )

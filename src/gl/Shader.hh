@@ -3,6 +3,7 @@
 
 #include "opengl.hh"
 
+#include <string>
 #include <unordered_map>
 #include <cassert>
 

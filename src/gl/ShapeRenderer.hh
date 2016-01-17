@@ -14,7 +14,7 @@ namespace d6 {
 class LevelSet ;
 class MeshRenderer ;
 class TriangularMesh ;
-class Texture ;
+struct Texture ;
 
 class ShapeRenderer
 {

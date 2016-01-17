@@ -84,6 +84,8 @@ public:
 	template<class Archive>
 	void serialize(Archive &ar, const unsigned int version) ;
 
+        virtual ~LevelSet() {}
+
 protected:
 
 	void to_local( const Vec &world, Vec &local) const ;
