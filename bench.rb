@@ -21,7 +21,7 @@ SOLVERS = [
 	['-a', 3, '-g', 4 ],
 ]
 
-TOLERANCES  = [1e-6,1e-7]
+TOLERANCES  = [1e-6]
 TOL_TIGHTEN = 1e-1
 
 INCREMENTAL = true
