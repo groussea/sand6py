@@ -74,7 +74,7 @@ In a typical workflow, the simulator would be run by typing e.g.
 	> ./apps/d6 -i ../scenes/collapse.conf
 
 This creates an 'out' directory, with one subdirectory per simulation frame.
-If the `d6gl` application was compiled, it can be used the visualize the results:
+If the `d6gl` application was compiled, it can be used to visualize the results:
 
 	> ./apps/d6gl
 	> ./apps/d6gl -s 16 -g .2    #Render grain samples instead of particules
