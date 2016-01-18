@@ -59,7 +59,7 @@ commands from the archive's root directory
 
 ## Applications
 
-Successful compilation should generates the following binaries in the `$CMAKE_BUILD_DIR/apps` directory:
+Successful compilation should generate the following binaries in the `apps` subfolder of the `build` directory:
 
   - `d6` simulation tool
   - `d62vtk` Transform `d6` output to VTK files that can be read with e.g. `paraview`
@@ -68,6 +68,19 @@ Successful compilation should generates the following binaries in the `$CMAKE_BU
   - `d6_analyze` post-processing tool
 
 Usage information for these applications can be obtained with the `-?` flag.
+
+In a typical workflow, the simulator would be run by typing e.g.
+
+	> ./apps/d6 -i ../scenes/collapse.conf
+
+This creates an 'out' directory, with one subdirectory per simulation frame.
+If the `d6gl` application was compiled, it can be used the visualize the results:
+
+	> ./apps/d6gl
+	> ./apps/d6gl -s 16 -g .2    #Render grain samples instead of particules
+
+Pressing 'H' inside the viewer triggers an help window listing libQGLViewer mouse and keyboard commands.
+A useful yet unintuitive shortcut is the 'double-middle-click' which centers the scene.
 
 ## Configuration fields
 

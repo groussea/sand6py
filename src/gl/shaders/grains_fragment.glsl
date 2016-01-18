@@ -25,7 +25,7 @@ void main (void)
 	float zs = texture( depth_texture, tex_coords ).r ;
 
 	if ( zs  <  zz ){
-		 alpha = 1. - (zz-zs)*10 ;
+		 alpha = 1. - (zz-zs)*25 ;
 	 }
 	alpha = pow( clamp(alpha,0,1), 3) ;
 

@@ -17,7 +17,7 @@ static void usage( const char *name )
 	std::cout << "Usage: " << name
 			  << " [sim_dir=out] [options] "
 			  << "\nGranular material simulator. "
-			  << "\n Output files are created inside the directory sim_dir. "
+			  << "\n Output files are created inside the directory specified by `sim_dir`, which defaults to 'out'. "
 			  << "\n\n" ;
 
 	std::cout << "Options:\n"

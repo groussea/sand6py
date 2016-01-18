@@ -10,7 +10,7 @@
 #include <random>
 #include <iostream>
 
-#define RAD_FAC 3
+#define RAD_FAC 2
 
 namespace d6 {
 

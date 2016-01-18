@@ -56,15 +56,18 @@ void GLViewer::fastDraw()
 
 	{
 		glPointSize( 3 );
-		gl::VertexPointer vp( m_centers ) ;
+
+		glEnableClientState( GL_VERTEX_ARRAY );
+		m_centers.set_vertex_pointer( 10*3 );
 
 		if( m_drawParticles ) {
 			gl::ColorPointer  cp( m_colors ) ;
-			glDrawArrays( GL_POINTS, 0, std::min(100000u,m_centers.size()) );
+			glDrawArrays( GL_POINTS, 0, m_centers.size()/10 );
 		} else {
 			glColor3f(0,0,1) ;
-			glDrawArrays( GL_POINTS, 0, std::min(100000u,m_centers.size()) );
+			glDrawArrays( GL_POINTS, 0, m_centers.size()/10 );
 		}
+		glDisableClientState( GL_VERTEX_ARRAY );
 
 	}
 

@@ -22,7 +22,7 @@ void GrainRenderer::draw_grains ( const Shader &shader, const float pixelSize,
 	glUniform1f( shader.uniform("grain_size"), m_offline.config().grainDiameter * m_grainSizeFactor ) ;
 	glUniform1f( shader.uniform("pixel_size"), pixelSize ) ;
 
-	glUniformMatrix4fv( m_depthShader.uniform("depth_mvp"), 1, GL_FALSE, depthMVP.data()) ;
+	glUniformMatrix4fv( shader.uniform("depth_mvp"), 1, GL_FALSE, depthMVP.data()) ;
 
 	//vertices
 	if( instanced )
