@@ -132,7 +132,7 @@ void DynParticles::update(const Config &config, const Scalar dt, const Phase &ph
 
 		// Inertia
 		{
-			const Scalar DuT = ( Du - 1./3. * Du.trace() * Mat::Identity() ).norm()  ;
+			const Scalar DuT = ( Du - 1./WD * Du.trace() * Mat::Identity() ).norm()  ;
 			m_inertia(i) = DuT / std::sqrt( std::max( 1.e-16, phase.stresses(p0)[0] ) ) ;
 		}
 
@@ -171,10 +171,10 @@ void DynParticles::update(const Config &config, const Scalar dt, const Phase &ph
 			es.compute(a2);
 			ev = es.eigenvalues().array().max(0).min(1) ;
 
-			orient = es.eigenvectors() * (1 - 2*ev.array()).matrix().asDiagonal() * es.eigenvectors().transpose() ;
+			orient = es.eigenvectors() * (1 - (WD-1)*ev.array()).matrix().asDiagonal() * es.eigenvectors().transpose() ;
 
 			// Folgar-Tucker brownian motion
-			orient += dt * config.brownian * Du.norm() * ( Mat::Identity() - 3 * orient ) ;
+			orient += dt * config.brownian * Du.norm() * ( Mat::Identity() - WD * orient ) ;
 
 			// Normalize
 			orient /= orient.lpNorm<1>() ;
@@ -250,7 +250,7 @@ void DynParticles::splitMerge( const MeshType & mesh )
 
 #ifdef SPLIT
 	const std::size_t n = count() ;
-	const Scalar defLength = std::pow( m_meanVolume, 1./3 ) ;
+	const Scalar defLength = std::pow( m_meanVolume, 1./WD ) ;
 
 #ifdef MERGE
 	std::vector< std::vector< MergeInfo > > mg_hash( mesh.nCells() ) ;
@@ -460,7 +460,7 @@ void DynParticles::remove(size_t j)
 
 void DynParticles::resize( size_t n )
 {
-	m_affine.resize( 9, n );
+	m_affine.resize( WD*WD, n );
 	m_inertia.resize( 1, n );
 	m_cohesion.resize( 1, n );
 }

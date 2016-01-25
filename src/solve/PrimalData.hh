@@ -14,9 +14,9 @@ namespace  d6 {
  *  (u_i, r_i) \in C(mu[i])
  */
 struct PrimalData {
-	typedef typename FormMat<6,3>::Type HType ;
-	typedef typename FormMat<6,6>::Type JacobianType ;
-	typedef typename FormMat<6,6>::SymType InvInertiaType ;
+	typedef typename FormMat<SD,WD>::Type HType ;
+	typedef typename FormMat<SD,SD>::Type JacobianType ;
+	typedef typename FormMat<SD,SD>::SymType InvInertiaType ;
 
 	HType H   ;
 	DynVec w  ;

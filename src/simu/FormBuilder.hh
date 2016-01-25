@@ -13,7 +13,7 @@ class Particles ;
 //! Utility class for building matrices of bilinear forms
 class FormBuilder {
 
-	typedef typename FormMat< 3,3 >::Type::MajorIndexType          CompressedIndexType ;
+	typedef typename FormMat< WD,WD >::Type::MajorIndexType          CompressedIndexType ;
 	typedef typename CompressedIndexType::Index BgIndex ;
 
 	typedef const std::vector< Index > &Indices ;
@@ -59,21 +59,21 @@ public:
 
 	// Building blocks
 
-	static void addDuDv     ( FormMat<3,3>::Type& A, Scalar w,
+	static void addDuDv     ( FormMat<WD,WD>::Type& A, Scalar w,
 							  Index rowIndex, const typename MeshType::Derivatives::ConstRowXpr& row_dx,
 							   Itp itp, Dcdx dc_dx, Indices colIndices ) ;
 
-	static void addVDp      ( FormMat<3,1>::Type& A, Scalar w, Index rowIndex, Itp itp, Dcdx dc_dx, Indices colIndices ) ;
-	static void addTauDu    ( FormMat<6,3>::Type& A, Scalar w, Index rowIndex, Itp itp, Dcdx dc_dx, Indices colIndices ) ;
-	static void addTauWu    ( FormMat<3,3>::Type& A, Scalar w, Index rowIndex, Itp itp, Dcdx dc_dx, Indices colIndices ) ;
+	static void addVDp      ( FormMat<WD, 1>::Type& A, Scalar w, Index rowIndex, Itp itp, Dcdx dc_dx, Indices colIndices ) ;
+	static void addTauDu    ( FormMat<SD,WD>::Type& A, Scalar w, Index rowIndex, Itp itp, Dcdx dc_dx, Indices colIndices ) ;
+	static void addTauWu    ( FormMat<WD,WD>::Type& A, Scalar w, Index rowIndex, Itp itp, Dcdx dc_dx, Indices colIndices ) ;
 
-	static void addDuDv     ( FormMat<3,3>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
-	static void addVDp      ( FormMat<3,1>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
-	static void addTauDu    ( FormMat<6,3>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
-	static void addTauWu    ( FormMat<3,3>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
+	static void addDuDv     ( FormMat<WD,WD>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
+	static void addVDp      ( FormMat<WD, 1>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
+	static void addTauDu    ( FormMat<SD,WD>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
+	static void addTauWu    ( FormMat<RD,RD>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
 
-	static void addUTaunGphi( FormMat<6,3>::Type& A, Scalar w, Itp itp, const Vec& dphi_dx, Indices rowIndices, Indices colIndices ) ;
-	static void addUTauGphi ( FormMat<6,3>::Type& A, Scalar w, Itp itp, const Vec& dphi_dx, Indices rowIndices, Indices colIndices ) ;
+	static void addUTaunGphi( FormMat<SD,WD>::Type& A, Scalar w, Itp itp, const Vec& dphi_dx, Indices rowIndices, Indices colIndices ) ;
+	static void addUTauGphi ( FormMat<SD,WD>::Type& A, Scalar w, Itp itp, const Vec& dphi_dx, Indices rowIndices, Indices colIndices ) ;
 
 	const CompressedIndexType& index() { return m_compressed ; }
 

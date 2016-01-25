@@ -43,7 +43,7 @@ struct BoundaryInfo {
 
 	void    velProj( Mat &proj ) const ;
 	void   spinProj( Mat &proj ) const ;
-	void stressProj( Mat66 &proj ) const ;
+	void stressProj( MatS &proj ) const ;
 
 };
 

@@ -30,10 +30,10 @@ public:
 		NQ = Traits::NQ
 	} ;
 
-	typedef Eigen::Matrix< Scalar, NC, 1 > Coords ;
-	typedef Eigen::Matrix<  Index, NV, 1 > NodeList ;
-	typedef Eigen::Matrix< Scalar, NV, 1 > CoefList ;
-	typedef Eigen::Matrix< Scalar, NV, 3 > Derivatives ;
+	typedef Eigen::Matrix< Scalar, NC, 1  > Coords ;
+	typedef Eigen::Matrix<  Index, NV, 1  > NodeList ;
+	typedef Eigen::Matrix< Scalar, NV, 1  > CoefList ;
+	typedef Eigen::Matrix< Scalar, NV, WD > Derivatives ;
 
 
 	struct Location {

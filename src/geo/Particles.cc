@@ -69,11 +69,11 @@ void Particles::resize(size_t n)
 {
 	m_volumes.resize( n );
 
-	m_centers.resize( 3, n);
-	m_velocities.resize( 3, n);
+	m_centers.resize( WD, n);
+	m_velocities.resize( WD, n);
 
-	m_frames.resize( 6, n);
-	m_orient.resize( 6, n);
+	m_frames.resize( SD, n);
+	m_orient.resize( SD, n);
 }
 
 void Particles::EventLog::log(const Event& event)

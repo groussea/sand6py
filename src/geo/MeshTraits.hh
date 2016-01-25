@@ -21,7 +21,7 @@ template < >
 struct MeshTraits< Grid > {
 	typedef GridIterator CellIterator ;
 
-	typedef Vec3i Cell    ;
+	typedef VecWi Cell    ;
 	typedef Voxel CellGeo ;
 	static constexpr Index NV = CellGeo::NV ;
 	static constexpr Index NC = CellGeo::NC ;
@@ -39,7 +39,7 @@ template < >
 struct MeshTraits< TetGrid > {
 	typedef TetGridIterator CellIterator ;
 
-	typedef Eigen::Array< int, 4, 1 > Cell  ;
+	typedef Eigen::Array< int, WD+1, 1 > Cell  ;
 	typedef Tet CellGeo ;
 	static constexpr Index NV = CellGeo::NV ;
 	static constexpr Index NC = CellGeo::NC ;

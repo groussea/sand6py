@@ -7,12 +7,12 @@
 namespace d6 {
 
 LevelSet::LevelSet()
-	: m_origin(Vec::Zero()), m_frame( Quaternion::Identity() )
+	: m_origin(Vec::Zero()), m_frame( Rotation::Identity() )
 {
 	scale(1.) ;
 }
 
-void LevelSet::move(const Vec &depl, const Quaternion &rot)
+void LevelSet::move(const Vec &depl, const Rotation &rot)
 {
 	m_origin += depl ;
 	m_frame   = rot * m_frame ;
@@ -45,17 +45,17 @@ void LevelSet::to_local_mat( Mat &mat) const
 void LevelSet::inv_inertia(Mat66 &Mi) const
 {
 	Mi.setIdentity() ;
-	Mi.diagonal().head<3>() /= local_volume() ;
+	Mi.diagonal().head<WD>() /= local_volume() ;
 
 	Mat I ;
 	local_inv_inertia( I );
 	Mat w2l ;
 	to_local_mat( w2l );
 
-	Mi.block<3,3>(3,3) = w2l.transpose() * I * w2l ;
+	Mi.block<WD,WD>(SD-WD,SD-WD) = w2l.transpose() * I * w2l ;
 
 
-	Mi *= std::pow( m_scale, -3. ) ;
+	Mi *= std::pow( m_scale, -WD ) ;
 }
 
 LevelSet::Ptr LevelSet::make_sphere() { return Ptr( new SphereLevelSet() ) ; }

@@ -13,7 +13,7 @@ struct FieldTraits< AbstractVectorField< MeshT > >  {
 
 	typedef MeshT  MeshType ;
 	typedef Vec	   ValueType ;
-	static constexpr Index Dimension = 3 ;
+	static constexpr Index Dimension = WD ;
 };
 
 template < typename MeshT >
@@ -46,8 +46,10 @@ public:
 		return FieldNorm< d6::AbstractVectorField, MeshT >( *this ) ;
 	}
 
+#if (D6_DIM==3)
 	void get_spi_tensor( const Vec& x, Mat& tensor ) const ;
 	void add_spi_tensor( const Vec& x, Mat& tensor ) const ;
+#endif
 
 };
 

@@ -1,8 +1,11 @@
+3d/simu/FormBuilder.cc
+3d/simu/RigidBody.cc
+3d/simu/RigidBody.hh
+3d/simu/Scenario.cc
 simu/ActiveIndices.cc
 simu/ActiveIndices.hh
 simu/DynParticles.cc
 simu/DynParticles.hh
-simu/FormBuilder.cc
 simu/FormBuilder.hh
 simu/FormBuilder.impl.hh
 simu/LinearSolver.cc
@@ -12,11 +15,8 @@ simu/PhaseSolver.cc
 simu/PhaseSolver.hh
 simu/PhaseStepData.cc
 simu/PhaseStepData.hh
-simu/RigidBody.cc
-simu/RigidBody.hh
 simu/RigidBodyData.cc
 simu/RigidBodyData.hh
-simu/Scenario.cc
 simu/Scenario.hh
 simu/Simu.cc
 simu/Simu.hh

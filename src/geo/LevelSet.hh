@@ -8,7 +8,18 @@
 
 namespace d6 {
 
-typedef Eigen::Quaternion< Scalar, Eigen::DontAlign > Quaternion ;
+template< Index Dim >
+struct RotationTraits
+{
+	typedef Scalar Type ;
+};
+template< >
+struct RotationTraits<3>
+{
+	typedef Eigen::Quaternion< Scalar, Eigen::DontAlign > Type ;
+};
+typedef typename RotationTraits<WD>::Type Rotation ;
+
 
 class LevelSet {
 
@@ -24,7 +35,7 @@ public:
 	{
 		return m_origin ;
 	}
-	const Quaternion& rotation() const
+	const Rotation& rotation() const
 	{
 		return m_frame ;
 	}
@@ -51,31 +62,34 @@ public:
 		m_origin = pos ;
 		return *this ;
 	}
-	LevelSet& set_rotation( const Quaternion& frame ) {
+	LevelSet& set_rotation( const Rotation& frame ) {
 		m_frame = frame ;
 		return *this ;
 	}
-	LevelSet& set_rotation( const Vec& axis, Scalar angle ) {
-		m_frame = Eigen::AngleAxis< Scalar >( angle, axis )  ;
+	LevelSet& rotate( const Rotation& frame ) {
+		m_frame = frame * m_frame ;
 		return *this ;
 	}
-	LevelSet& rotate( const Quaternion& frame ) {
-		m_frame = frame * m_frame ;
+
+#if D6_DIM==3
+	LevelSet& set_rotation( const Vec& axis, Scalar angle ) {
+		m_frame = Eigen::AngleAxis< Scalar >( angle, axis )  ;
 		return *this ;
 	}
 	LevelSet& rotate( const Vec& axis, Scalar angle ) {
 		m_frame = Eigen::AngleAxis< Scalar >( angle, axis ) * m_frame  ;
 		return *this ;
 	}
+#endif
 
-	void inv_inertia( Mat66 & Mi ) const ;
+	void inv_inertia( MatS & Mi ) const ;
 
 	Scalar volume() const {
-		return local_volume() * std::pow( m_scale, 3. ) ;
+		return local_volume() * std::pow( m_scale, WD ) ;
 	}
 
 	//Movement
-	void move( const Vec& depl, const Quaternion& rot ) ;
+	void move( const Vec& depl, const Rotation& rot ) ;
 
 	template<class Archive>
 	static void register_derived(Archive &ar) ;
@@ -98,7 +112,7 @@ protected:
 
 private:
 	Vec 	   m_origin ;
-	Quaternion m_frame ;
+	Rotation m_frame ;
 
 	Scalar 	   m_scale ;
 };

@@ -43,7 +43,7 @@ void RigidBody::move(const Scalar dt) const
 			: Vec(1,0,0) ;
 	Eigen::AngleAxis< Scalar > aa( dt * avn, axis ) ;
 
-	m_levelSet->move( dt * velocity(), Quaternion( aa ) );
+	m_levelSet->move( dt * velocity(), Rotation( aa ) );
 }
 
 void RigidBody::move_to(const Vec &pos) const

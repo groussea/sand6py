@@ -134,13 +134,13 @@ void RigidBodyData::assemble_matrices(const Active &phaseNodes, Index totNodes)
 	fraction.resize( nodes.count() );
 	fraction.setConstant( -1 ) ;
 
-	typename FormMat<3,6>::UncompressedType	proj ;
+	typename FormMat<WD,SD>::UncompressedType	proj ;
 	proj.clear() ;
 	proj.setRows( phaseNodes.count() );
 	proj.setCols( 1 );
 
-	typename FormMat<3,6>::BlockT P ;
-	P.block<3,3>(0,0).setIdentity() ;
+	typename FormMat<WD,SD>::BlockT P ;
+	P.block<WD,WD>(0,0).setIdentity() ;
 
 	for( const typename MeshType::Cell& cell : nodes.cells )
 	{
@@ -155,7 +155,7 @@ void RigidBodyData::assemble_matrices(const Active &phaseNodes, Index totNodes)
 			if( fraction( loc_idx ) < 0. ) {
 				fraction( loc_idx ) = phi( pos ) ;
 				const Vec dx = pos - rb.levelSet().origin() ;
-				make_cross_mat( dx, P.block<3,3>(0,3) ) ;
+				make_cross_mat( dx, P.block<RD,RD>(0,WD) ) ;
 				proj.insert( phaseNodes.indices[ glb_idx ], 0  ) = P ;
 			}
 		}

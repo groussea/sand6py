@@ -6,7 +6,7 @@
 namespace  d6 {
 
 struct LCPData {
-	typedef typename FormMat<3,1>::Type HType ;
+	typedef typename FormMat<WD,1>::Type HType ;
 
 	HType H   ;
 	DynVec w  ;

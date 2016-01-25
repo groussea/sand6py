@@ -78,24 +78,24 @@ public:
 	template < typename Archive >
 	void serialize( Archive &ar, unsigned int ) ;
 
-	const typename Data< 1 >::Type&    volumes() const { return    m_volumes ; }
-	const typename Data< 3 >::Type&    centers() const { return    m_centers ; }
-	const typename Data< 3 >::Type& velocities() const { return m_velocities ; }
-	const typename Data< 6 >::Type&     frames() const { return     m_frames ; }
-	const typename Data< 6 >::Type&     orient() const { return     m_orient ; }
+	const typename Data< 1  >::Type&    volumes() const { return    m_volumes ; }
+	const typename Data< WD >::Type&    centers() const { return    m_centers ; }
+	const typename Data< WD >::Type& velocities() const { return m_velocities ; }
+	const typename Data< SD >::Type&     frames() const { return     m_frames ; }
+	const typename Data< SD >::Type&     orient() const { return     m_orient ; }
 
 
 private:
 
 	std::size_t m_count ;
 
-	typename Data< 1 >::Type m_volumes ;
+	typename Data< 1  >::Type m_volumes ;
 
-	typename Data< 3 >::Type m_centers ;
-	typename Data< 3 >::Type m_velocities ;
+	typename Data< WD >::Type m_centers ;
+	typename Data< WD >::Type m_velocities ;
 
-	typename Data< 6 >::Type m_frames ;
-	typename Data< 6 >::Type m_orient ; // Aniso
+	typename Data< SD >::Type m_frames ;
+	typename Data< SD >::Type m_orient ; // Aniso
 
 	void resize( size_t n ) ;
 

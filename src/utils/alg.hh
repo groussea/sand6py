@@ -11,9 +11,11 @@ namespace d6 {
 #ifdef DIM2
 static constexpr Index WD = 2 ;
 static constexpr Index SD = 3 ;
+static constexpr Index RD = 1 ;
 #else
 static constexpr Index WD = 3 ;
 static constexpr Index SD = 6 ;
+static constexpr Index RD = 3 ;
 #endif
 
 typedef Eigen::Matrix< Scalar, Eigen::Dynamic, 1 > DynVec;

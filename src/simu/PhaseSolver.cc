@@ -96,12 +96,12 @@ void PhaseSolver::solve(
 
 	{
 		// Velocities gradient D(u) and W(u)
-		DynVec int_phiDu = .5 * ( stepData.proj.stress * stepData.forms.B * u ).head( 6 * stepData.nodes.count() ) ;
+		DynVec int_phiDu = .5 * ( stepData.proj.stress * stepData.forms.B * u ).head( SD * stepData.nodes.count() ) ;
 		DynVec int_phiWu = .5 * stepData.forms.J * u ;
 		const DynVec int_phi = stepData.forms.volumes.array()*stepData.fraction.array().max( 1.e-16 ) ;
 
-		div_compwise<6>( int_phiDu, int_phi ) ;
-		div_compwise<3>( int_phiWu, int_phi ) ;
+		div_compwise<SD>( int_phiDu, int_phi ) ;
+		div_compwise<RD>( int_phiWu, int_phi ) ;
 
 		stepData.nodes.var2field( int_phiWu, phase.spi_grad ) ;
 		stepData.nodes.var2field( int_phiDu, phase.sym_grad ) ;
@@ -114,7 +114,7 @@ void PhaseSolver::addRigidBodyContrib( const Config &c, const Scalar dt, const P
 									   PrimalData& pbData, DynArr &totFraction ) const
 {
 
-	typename FormMat<6,3>::Type J =	stepData.Aniso * ( stepData.proj.stress * ( rb.jacobian ) ) ;
+	typename FormMat<SD,WD>::Type J =	stepData.Aniso * ( stepData.proj.stress * ( rb.jacobian ) ) ;
 
 	pbData.H -= J * stepData.forms.M_lumped_inv_sqrt ;
 
@@ -148,7 +148,7 @@ void PhaseSolver::addCohesionContrib (const Config&c, const PhaseStepData &stepD
 		const DynArr contact_zone = ( ( stepData.fraction.array() - cohe_start )/ (c.phiMax - cohe_start) ).max(0).min(1) ;
 
 		DynVec cohe_stress  = DynVec::Zero( pbData.H.rows() ) ;
-		component< 6 >( cohe_stress, 0 ).head( stepData.cohesion.rows()).array() =
+		component< SD >( cohe_stress, 0 ).head( stepData.cohesion.rows()).array() =
 				c.cohesion * stepData.cohesion.array() * contact_zone ;
 		cohe_force = pbData.H.transpose() * cohe_stress ;
 	}
@@ -205,7 +205,7 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	// Compressability beta(phi)
 	{
 		const DynArr beta = ( c.phiMax - totFraction).max( 0 ) / dt ;
-		component< 6 >( pbData.w, 0 ).head(beta.rows()).array() += beta * s_sqrt_23 * stepData.forms.volumes.array() ;
+		component< SD >( pbData.w, 0 ).head(beta.rows()).array() += beta * s_sqrt_2_d * stepData.forms.volumes.array() ;
 	}
 
 	// Warm-start stresses
@@ -253,7 +253,7 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	// Add contact forces to rigid bodies
 	for( unsigned k = 0 ; k < coupledRbIndices.size() ; ++k ) {
 		RigidBodyData& rb = rbData[ coupledRbIndices[k] ] ;
-		const Vec6 forces = pbData.jacobians[k].transpose() * x ;
+		const VecS forces = pbData.jacobians[k].transpose() * x ;
 		rb.rb.integrate_forces( dt, forces );
 	}
 

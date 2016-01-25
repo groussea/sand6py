@@ -248,12 +248,12 @@ void PhaseStepData::assembleMatrices(
 
 
 	// Projections
-	const typename FormMat<3,3>::SymType IP = proj.vel.Identity() - proj.vel ;
+	const typename FormMat<WD,WD>::SymType IP = proj.vel.Identity() - proj.vel ;
 	forms.A = proj.vel * ( forms.A * proj.vel ) + IP ;
 
 #pragma omp parallel for
 	for( Index i = 0 ; i < m ; ++i ) {
-		const Scalar mass = forms.M_lumped.block(i).trace() / 3 ;
+		const Scalar mass = forms.M_lumped.block(i).trace() / WD ;
 		forms.M_lumped         .block(i) = proj.vel.block(i) * mass
 				+ Mat::Identity() - proj.vel.block(i) ;
 		forms.M_lumped_inv     .block(i) = proj.vel.block(i) * 1./(mass + mass_regul )
@@ -265,7 +265,7 @@ void PhaseStepData::assembleMatrices(
 }
 
 void PhaseStepData::computeAnisotropy(const DynVec &orientation, const Config& config,
-									 typename FormMat<6,6>::SymType &Aniso ) const
+									 typename FormMat<SD,SD>::SymType &Aniso ) const
 {
 	// Compute anisotropy matrix from interpolated orientation distributions
 
@@ -280,9 +280,9 @@ void PhaseStepData::computeAnisotropy(const DynVec &orientation, const Config& c
 	for( Index i = 0 ; i < m ; ++i ) {
 
 		Mat ori ;
-		tensor_view( Segmenter<6>::segment( orientation, i ) ).get( ori ) ;
+		tensor_view( Segmenter<SD>::segment( orientation, i ) ).get( ori ) ;
 
-		ori = (1. - config.anisotropy) * Mat::Identity() + 3 * config.anisotropy * ori ;
+		ori = (1. - config.anisotropy) * Mat::Identity() + WD * config.anisotropy * ori ;
 
 		compute_anisotropy_matrix( ori, Aniso.block(i) );
 
@@ -408,7 +408,7 @@ void PhaseStepData::computeActiveNodes(const std::vector<bool> &activeCells ,
 
 	std::vector< int > activeNodes( mesh.nNodes(), 0 ) ;
 
-	Eigen::Matrix< Scalar, 3, Eigen::Dynamic > vecs( 3, mesh.nNodes() ) ;
+	Eigen::Matrix< Scalar, WD, Eigen::Dynamic > vecs( WD, mesh.nNodes() ) ;
 	vecs.setZero() ;
 
 	for( typename MeshType::CellIterator it = mesh.cellBegin() ; it != mesh.cellEnd() ; ++it )

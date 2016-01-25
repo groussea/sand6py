@@ -30,8 +30,8 @@ struct RigidBodyData
 	Active	    nodes ;
 	typename MeshType::Cells occupiedCells ;
 
-	FormMat<6,3>::Type	jacobian ;     //!< int( (u grad phi):tau )
-	FormMat<6,3>::Type	projection ;   //!< Linear operator giving rb velocities at mesh nodes
+	FormMat<SD,WD>::Type	jacobian ;     //!< int( (u grad phi):tau )
+	FormMat<SD,WD>::Type	projection ;   //!< Linear operator giving rb velocities at mesh nodes
 
 	DynVec fraction ;  //!< Interpolated volume fraction at occupied nodes
 

@@ -52,7 +52,7 @@ private:
 	Particles::EventLog m_events ;
 	Scalar m_meanVolume ;
 
-	Particles::Data< 9 >::Type m_affine ;
+	Particles::Data< WD*WD >::Type m_affine ;
 	Particles::Data< 1 >::Type m_inertia ;
 	Particles::Data< 1 >::Type m_cohesion ;
 

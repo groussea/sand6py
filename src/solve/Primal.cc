@@ -37,14 +37,14 @@ struct CallbackProxy {
 		Scalar err = 0 ;
 #pragma omp parallel for reduction( + : err )
 		for( Index i = 0 ; i < n ; ++i ) {
-			const Vec6 lx = m_x.segment<6>(6*i) ;
-			Vec6  ac = lx -   y.segment<6>(6*i) ;
+			const VecS lx = m_x.segment<SD>(SD*i) ;
+			VecS  ac = lx -   y.segment<SD>(SD*i) ;
 			// Normal part
 			ac[0] = std::max(0., ac[0])  ;
 			//Tangential part
-			const Scalar nT = ac.segment<5>(1).norm() ;
+			const Scalar nT = ac.segment<SD-1>(1).norm() ;
 			if( nT > lx[0]*m_mu[i] ) {
-				ac.segment<5>(1) *= lx[0]*m_mu[i]/nT ;
+				ac.segment<SD-1>(1) *= lx[0]*m_mu[i]/nT ;
 			}
 			//Error
 			ac -= lx ;
@@ -101,7 +101,7 @@ Scalar Primal::solve( const SolverOptions& options, DynVec &lambda, SolverStats 
 				bogus::Product< PrimalData::InvInertiaType, bogus::Transpose< PrimalData::JacobianType > > >
 				JMJtProd ;
 
-		bogus::NarySum< JMJtProd > rbSum( m_data.n() * 6, m_data.n() * 6 ) ;
+		bogus::NarySum< JMJtProd > rbSum( m_data.n() * SD, m_data.n() * SD ) ;
 		// Add rigid bodies jacobians
 		for( unsigned i = 0 ; i < m_data.jacobians.size() ; ++i ) {
 			const PrimalData::JacobianType &JM = m_data.jacobians[i] ;
@@ -128,14 +128,14 @@ Scalar Primal::solve( const SolverOptions& options, DynVec &lambda, SolverStats 
 		pg.setTol( options.tolerance );
 		pg.setMaxIters( options.maxIterations );
 
-		res = bogus::solveCadoux<6>( W, m_data.w.data(), m_data.mu.data(), pg,
+		res = bogus::solveCadoux<SD>( W, m_data.w.data(), m_data.mu.data(), pg,
 									 lambda.data(), options.maxOuterIterations, &callback ) ;
 
 	} else {
 
 		// Explicit assembly of W
 
-		typedef typename FormMat<6,6>::SymType WType ;
+		typedef typename FormMat<SD,SD>::SymType WType ;
 		//typedef bogus::SparseBlockMatrix< Eigen::Matrix< Scalar, 6, 6, Eigen::RowMajor >,
 	//										bogus::SYMMETRIC > WType ;
 		WType W = m_data.H * m_data.H.transpose() ;
@@ -152,7 +152,7 @@ Scalar Primal::solve( const SolverOptions& options, DynVec &lambda, SolverStats 
 		if( options.algorithm == SolverOptions::GaussSeidel ) {
 			// Direct Gauss-Seidel solver
 
-			bogus::SOCLaw< 6, Scalar, true > law( m_data.n(), m_data.mu.data() ) ;
+			bogus::SOCLaw< SD, Scalar, true > law( m_data.n(), m_data.mu.data() ) ;
 
 			bogus::GaussSeidel< WType > gs( W ) ;
 			gs.setTol( options.tolerance );
@@ -176,7 +176,7 @@ Scalar Primal::solve( const SolverOptions& options, DynVec &lambda, SolverStats 
 				gs.setTol( options.tolerance );
 				gs.setMaxIters( options.maxIterations );
 
-				res = bogus::solveCadoux<6>( W, m_data.w.data(), m_data.mu.data(), gs,
+				res = bogus::solveCadoux<SD>( W, m_data.w.data(), m_data.mu.data(), gs,
 											  lambda.data(), options.maxOuterIterations, &callback ) ;
 			} else {
 
@@ -193,7 +193,7 @@ Scalar Primal::solve( const SolverOptions& options, DynVec &lambda, SolverStats 
 				pg.setTol( options.tolerance );
 				pg.setMaxIters( options.maxIterations );
 
-				res = bogus::solveCadoux<6>( W, m_data.w.data(), m_data.mu.data(), pg,
+				res = bogus::solveCadoux<SD>( W, m_data.w.data(), m_data.mu.data(), pg,
 											  lambda.data(), options.maxOuterIterations, &callback ) ;
 			}
 		}

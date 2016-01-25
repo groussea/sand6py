@@ -13,11 +13,11 @@ void Particles::serialize( Archive &ar, unsigned int ) {
 	using boost::serialization::make_array ;
 
 	ar & m_count ;
-	ar & make_array( m_volumes.data(),      m_count ) ;
-	ar & make_array( m_centers.data(),    3*m_count ) ;
-	ar & make_array( m_velocities.data(), 3*m_count ) ;
-	ar & make_array( m_frames.data(),     6*m_count ) ;
-	ar & make_array( m_orient.data(),     6*m_count ) ;
+	ar & make_array( m_volumes.data(),       m_count ) ;
+	ar & make_array( m_centers.data(),    WD*m_count ) ;
+	ar & make_array( m_velocities.data(), WD*m_count ) ;
+	ar & make_array( m_frames.data(),     SD*m_count ) ;
+	ar & make_array( m_orient.data(),     SD*m_count ) ;
 }
 
 template < typename Archive >

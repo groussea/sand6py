@@ -10,6 +10,7 @@ static constexpr Scalar s_sqrt_3  = 1.73205080756887729352744634151 ;
 static constexpr Scalar s_sqrt_6  = s_sqrt_2 * s_sqrt_3 ;
 static constexpr Scalar s_isqrt_3 = 1./s_sqrt_3;
 static constexpr Scalar s_sqrt_23 = s_sqrt_2 / s_sqrt_3 ;
+static constexpr Scalar s_sqrt_2_d = s_sqrt_23 ;
 
 template< typename Derived >
 struct TensorView
