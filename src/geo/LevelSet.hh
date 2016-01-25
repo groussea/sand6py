@@ -8,13 +8,11 @@
 
 namespace d6 {
 
-typedef Eigen::Quaternion< Scalar > Quaternion ;
+typedef Eigen::Quaternion< Scalar, Eigen::DontAlign > Quaternion ;
 
 class LevelSet {
 
 public:
-
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 	typedef std::unique_ptr< LevelSet > Ptr ;
 
@@ -84,7 +82,7 @@ public:
 	template<class Archive>
 	void serialize(Archive &ar, const unsigned int version) ;
 
-        virtual ~LevelSet() {}
+		virtual ~LevelSet() {}
 
 protected:
 
