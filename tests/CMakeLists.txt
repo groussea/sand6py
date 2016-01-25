@@ -42,7 +42,7 @@ if(UNIX)
 endif()
 
 ExternalProject_Get_Property(googletest source_dir)
-include_directories( ../src ${source_dir}/include)
+include_directories( ../src ../src/${DIM_STR} ${source_dir}/include)
 
 ExternalProject_Get_Property(googletest binary_dir)
 link_directories( ${binary_dir} )

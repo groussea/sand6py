@@ -1,3 +1,7 @@
+3d/geo/Tet.cc
+3d/geo/Tet.hh
+3d/geo/Voxel.cc
+3d/geo/Voxel.hh
 geo/BoundaryInfo.cc
 geo/BoundaryInfo.hh
 geo/Expr.hh
@@ -26,14 +30,10 @@ geo/Tensor.cc
 geo/Tensor.hh
 geo/TensorField.cc
 geo/TensorField.hh
-geo/Tet.cc
-geo/Tet.hh
 geo/TetGrid.cc
 geo/TetGrid.hh
 geo/TriangularMesh.cc
 geo/TriangularMesh.hh
 geo/VectorField.cc
 geo/VectorField.hh
-geo/Voxel.cc
-geo/Voxel.hh
 geo/geo.fwd.hh

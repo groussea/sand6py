@@ -14,7 +14,7 @@ set_source_files_properties(${D6_VERSION_FILE}
 
 # Executables
 
-include_directories( ../src )
+include_directories( ../src ../src/${DIM_STR} )
 
 add_executable ( d6 d6.cc ${D6_VERSION_FILE} )
 add_dependencies( d6 d6_version )
