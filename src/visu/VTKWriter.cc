@@ -116,12 +116,12 @@ static void write_scalar_binary( File& file, const Scalar* data, const size_t si
 template< typename Scalar >
 static void write_vector_ascii( File& file, const Scalar* data, const size_t size )
 {
-	write_scalar_ascii( file, mat.data(), mat.size()*WD ) ;
+	write_scalar_ascii( file, data, size*WD ) ;
 }
 template< typename Scalar >
 static void write_vector_binary( File& file, const Scalar* data, const size_t size )
 {
-	write_scalar_binary( file, mat.data(), mat.size()*WD ) ;
+	write_scalar_binary( file, data, size*WD ) ;
 }
 
 template< typename Scalar >
