@@ -19,14 +19,22 @@ VTKFieldWriter::VTKFieldWriter( const char* base_dir, const MeshType& mesh )
 void VTKFieldWriter::writeMesh( File &vtk ) const
 {
 
-	Eigen::Matrix3Xf vertices( 3, m_mesh.nNodes() ) ;
+	Eigen::Matrix<float, WD, Eigen::Dynamic> vertices( WD, m_mesh.nNodes() ) ;
+	vertices.setZero() ;
 
 	Eigen::Matrix<int, MeshType::NV+1, Eigen::Dynamic > nodeIndices( MeshType::NV+1, m_mesh.nCells() ) ;
 	nodeIndices.row(0).setConstant( MeshType::NV ) ;
 
-	const Eigen::VectorXi cellTypes = 
-		Eigen::VectorXi::Constant( m_mesh.nCells(), 
-		MeshType::NV == 4 ? /*VTK_TETRA*/ 10 : /*VTK_VOXEL*/ 11 ) ;
+	const Index elemType =
+		#if D6_DIM == 3
+		MeshType::NV == 4 ? /*VTK_TETRA*/ 10 : /*VTK_VOXEL*/ 11
+		#else
+		MeshType::NV == 3 ? /*VTK_TRIANGLE*/ 5 : /*VTK_PIXEL*/ 8
+		#endif
+			;
+
+	const Eigen::VectorXi cellTypes =
+		Eigen::VectorXi::Constant( m_mesh.nCells(), elemType ) ;
 
 	typename MeshType::CellGeo cellGeo ;
 	typename MeshType::NodeList cellNodes ;
@@ -39,13 +47,13 @@ void VTKFieldWriter::writeMesh( File &vtk ) const
 		nodeIndices.block< MeshType::NV, 1 >( 1, it.index() ) = cellNodes ;
 
 		for( int k = 0 ; k < MeshType::NV ; ++k ) {
-			vertices.col( cellNodes[k] ) = cellGeo.vertex( k ).cast< float >() ;
+			vertices.col( cellNodes[k] ).head<WD>() = cellGeo.vertex( k ).cast< float >() ;
 		}
 	}
 
 	vtk << "DATASET UNSTRUCTURED_GRID\n" ;
 	vtk << "POINTS " << vertices.cols() << " float\n" ;
-	write( vtk, vertices.data(), 3, vertices.cols() ) ;
+	write( vtk, vertices.data(), WD, vertices.cols() ) ;
 	vtk << "CELLS " << nodeIndices.cols() << " " << nodeIndices.size() << "\n";
 	write( vtk, nodeIndices.data(), 1, nodeIndices.size() ) ;
 	vtk << "CELL_TYPES " << nodeIndices.cols() << "\n";

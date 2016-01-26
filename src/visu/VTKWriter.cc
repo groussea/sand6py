@@ -64,10 +64,10 @@ void VTKWriter::writeAttributeHeader( File& file, const int Dim, const char* nam
 			file << "SCALARS " << name << " float\n" ;
 			file << "LOOKUP_TABLE default\n" ;
 			break ;
-		case 3:
+		case WD:
 			file << "VECTORS " << name << " float\n" ;
 			break ;
-		case 6:
+		case SD:
 			file << "TENSORS " << name << " float\n" ;
 			break ;
 	}
@@ -112,12 +112,24 @@ static void write_scalar_binary( File& file, const Scalar* data, const size_t si
 	}
 }
 
+#if D6_DIM == 3
+template< typename Scalar >
+static void write_vector_ascii( File& file, const Scalar* data, const size_t size )
+{
+	write_scalar_ascii( file, mat.data(), mat.size()*WD ) ;
+}
+template< typename Scalar >
+static void write_vector_binary( File& file, const Scalar* data, const size_t size )
+{
+	write_scalar_binary( file, mat.data(), mat.size()*WD ) ;
+}
+
 template< typename Scalar >
 static void write_tensor_ascii( File& file, const Scalar* data, const size_t size )
 {
 	Mat mat ;
 	for( size_t i = 0 ; i < size ; ++ i ) {
-		tensor_view( Eigen::Matrix<Scalar,6,1>::Map( data + 6*i ) ).get( mat ) ;
+		tensor_view( Eigen::Matrix<Scalar,SD,1>::Map( data + SD*i ) ).get( mat ) ;
 		write_scalar_ascii( file, mat.data(), mat.size() ) ;
 	}
 }
@@ -127,23 +139,71 @@ static void write_tensor_binary( File& file, const Scalar* data, const size_t si
 {
 	Mat mat ;
 	for( size_t i = 0 ; i < size ; ++ i ) {
-		tensor_view( Eigen::Matrix<Scalar,6,1>::Map( data + 6*i ) ).get( mat ) ;
+		tensor_view( Eigen::Matrix<Scalar,SD,1>::Map( data + SD*i ) ).get( mat ) ;
 		write_scalar_binary( file, mat.data(), mat.size() ) ;
 	}
 }
+#else
+template< typename Scalar >
+static void write_vector_ascii( File& file, const Scalar* data, const size_t size )
+{
+	Eigen::Matrix<Scalar,3,1> vec ; vec.setZero() ;
+	for( size_t i = 0 ; i < size ; ++ i ) {
+		vec.template head<WD>() = Eigen::Matrix<Scalar,WD,1>::Map( data + WD*i ) ;
+		write_scalar_ascii( file, vec.data(), vec.size() ) ;
+	}
+}
+template< typename Scalar >
+static void write_vector_binary( File& file, const Scalar* data, const size_t size )
+{
+	Eigen::Matrix<Scalar,3,1> vec ; vec.setZero() ;
+	for( size_t i = 0 ; i < size ; ++ i ) {
+		vec.template head<WD>() = Eigen::Matrix<Scalar,WD,1>::Map( data + WD*i ) ;
+		write_scalar_binary( file, vec.data(), vec.size() ) ;
+	}
+}
+
+template< typename Scalar >
+static void write_tensor_ascii( File& file, const Scalar* data, const size_t size )
+{
+	Mat33 mat ; mat.setZero() ;
+	Mat mat2d ;
+	for( size_t i = 0 ; i < size ; ++ i ) {
+		tensor_view( Eigen::Matrix<Scalar,SD,1>::Map( data + SD*i ) ).get( mat2d ) ;
+		mat.template block<WD,WD>(0,0) = mat2d ;
+		write_scalar_ascii( file, mat.data(), mat.size() ) ;
+	}
+}
+
+template< typename Scalar >
+static void write_tensor_binary( File& file, const Scalar* data, const size_t size )
+{
+	Mat33 mat ; mat.setZero() ;
+	Mat mat2d ;
+	for( size_t i = 0 ; i < size ; ++ i ) {
+		tensor_view( Eigen::Matrix<Scalar,SD,1>::Map( data + SD*i ) ).get( mat2d ) ;
+		mat.template block<WD,WD>(0,0) = mat2d ;
+		write_scalar_binary( file, mat.data(), mat.size() ) ;
+	}
+}
+#endif
 
 template< typename Scalar >
 void VTKWriter::write( File &file, const Scalar* data, int Dim, const size_t size ) const
 {
 	if( m_mode == Ascii ) {
-		if( Dim == 6 ) {
+		if( Dim == SD ) {
 			write_tensor_ascii( file, data, size ) ;
+		} else if( Dim == WD ) {
+			write_vector_ascii( file, data, size ) ;
 		} else {
 			write_scalar_ascii( file, data, size*Dim ) ;
 		}
 	} else {
-		if( Dim == 6 ) {
+		if( Dim == SD ) {
 			write_tensor_binary( file, data, size ) ;
+		} else if( Dim == WD ) {
+			write_vector_binary( file, data, size ) ;
 		} else {
 			write_scalar_binary( file, data, size*Dim ) ;
 		}

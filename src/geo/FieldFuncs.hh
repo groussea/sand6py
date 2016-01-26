@@ -64,9 +64,9 @@ struct FuncTraits< DeviatoricPart< MeshT > > {
 };
 
 template <typename MeshT>
-struct DeviatoricPart : public UnaryFieldFunc<DeviatoricPart<MeshT>, 6>
+struct DeviatoricPart : public UnaryFieldFunc<DeviatoricPart<MeshT>, SD>
 {
-	typedef UnaryFieldFunc<DeviatoricPart<MeshT>, 6> Base ;
+	typedef UnaryFieldFunc<DeviatoricPart<MeshT>, SD> Base ;
 	typedef typename Base::FieldType FieldType ;
 
 	using Base::m_field ;

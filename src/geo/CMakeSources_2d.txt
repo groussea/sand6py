@@ -4,10 +4,10 @@
 2d/geo/LevelSet.cc
 2d/geo/LevelSet.impl.hh
 2d/geo/LevelSet.io.hh
-2d/geo/Tensor.cc
 2d/geo/Tensor.hh
 2d/geo/Voxel.cc
 2d/geo/Voxel.hh
+geo/BoundaryInfo.cc
 geo/BoundaryInfo.hh
 geo/Expr.hh
 geo/FieldBase.hh
@@ -25,6 +25,7 @@ geo/Particles.hh
 geo/Particles.io.hh
 geo/ScalarField.cc
 geo/ScalarField.hh
+geo/Tensor.cc
 geo/TensorField.cc
 geo/TensorField.hh
 geo/VectorField.cc

@@ -1,5 +1,3 @@
-3d/visu/Sampler.cc
-3d/visu/Sampler.hh
 visu/Offline.cc
 visu/Offline.hh
 visu/VTKFieldWriter.cc

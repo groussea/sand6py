@@ -17,7 +17,7 @@ void VTKParticlesWriter::writeMesh( File &vtk ) const
 {
 	vtk << "DATASET POLYDATA\n" ;
 	vtk << "POINTS " << m_particles.count() << " float\n" ;
-	write( vtk, m_particles.centers().data(), 3, m_particles.count() ) ;
+	write( vtk, m_particles.centers().data(), WD, m_particles.count() ) ;
 }
 
 size_t VTKParticlesWriter::nDataPoints() const {

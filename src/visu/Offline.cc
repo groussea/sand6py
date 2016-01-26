@@ -18,7 +18,7 @@ namespace d6 {
 
 Offline::Offline(const char *base_dir)
 	: m_base_dir( base_dir ),
-	  m_mesh( new MeshImpl( Vec::Ones(), Vec3i::Ones() ) ),
+	  m_mesh( new MeshImpl( Vec::Ones(), VecWi::Ones() ) ),
 	  m_grains( new Phase( *m_mesh ) )
 {
 	m_config.from_file( FileInfo( base_dir ).filePath( "config" ) ) ;

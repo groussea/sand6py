@@ -20,16 +20,16 @@ add_executable ( d6 d6.cc ${D6_VERSION_FILE} )
 add_dependencies( d6 d6_version )
 target_link_libraries ( d6 d6_simu )
 
-if(NOT DIM2)
+add_executable ( d62vtk d62vtk.cc )
+target_link_libraries ( d62vtk d6_visu )
 
-    add_executable ( d62vtk d62vtk.cc )
-    target_link_libraries ( d62vtk d6_visu )
+add_executable ( d6_solvePrimal d6_solvePrimal.cc )
+target_link_libraries ( d6_solvePrimal d6_utils d6_solve )
+
+if(NOT DIM2)
 
     add_executable ( d6_analyze d6_analyze.cc )
     target_link_libraries ( d6_analyze d6_visu )
-
-    add_executable ( d6_solvePrimal d6_solvePrimal.cc )
-    target_link_libraries ( d6_solvePrimal d6_utils d6_solve )
 
     if( OPENGL_FOUND )
         ## GL Viewer

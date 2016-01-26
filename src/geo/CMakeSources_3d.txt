@@ -5,7 +5,6 @@
 3d/geo/LevelSet.impl.hh
 3d/geo/LevelSet.io.hh
 3d/geo/MeshLevelSet.cc
-3d/geo/Tensor.cc
 3d/geo/Tensor.hh
 3d/geo/Tet.cc
 3d/geo/Tet.hh
@@ -15,6 +14,7 @@
 3d/geo/TriangularMesh.hh
 3d/geo/Voxel.cc
 3d/geo/Voxel.hh
+geo/BoundaryInfo.cc
 geo/BoundaryInfo.hh
 geo/Expr.hh
 geo/FieldBase.hh
@@ -32,6 +32,7 @@ geo/Particles.hh
 geo/Particles.io.hh
 geo/ScalarField.cc
 geo/ScalarField.hh
+geo/Tensor.cc
 geo/TensorField.cc
 geo/TensorField.hh
 geo/VectorField.cc

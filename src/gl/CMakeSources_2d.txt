@@ -1,9 +1,3 @@
-3d/gl/GrainRenderer.cc
-3d/gl/GrainRenderer.hh
-3d/gl/MeshRenderer.cc
-3d/gl/MeshRenderer.hh
-3d/gl/ShapeRenderer.cc
-3d/gl/ShapeRenderer.hh
 gl/Shader.cc
 gl/Shader.hh
 gl/Texture.cc
