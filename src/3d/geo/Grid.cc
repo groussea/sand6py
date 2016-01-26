@@ -38,7 +38,7 @@ void Grid::set_box( const Vec& box )
 
 void Grid::clamp_cell( Cell & cell ) const
 {
-	cell = Vec3i::Zero().cwiseMax(cell).cwiseMin(m_dim-Vec3i::Ones()) ;
+	cell = Cell::Zero().max(cell).min(m_dim-Cell::Ones()) ;
 }
 
 void Grid::locate(const Vec &x, Location &loc) const
@@ -47,7 +47,7 @@ void Grid::locate(const Vec &x, Location &loc) const
 	loc.cell = loc.coords.cast< Index >();
 	clamp_cell( loc.cell) ;
 
-	loc.coords -= loc.cell.cast< Scalar >() ;
+	loc.coords -= loc.cell.cast< Scalar >().matrix() ;
 }
 
 void Grid::interpolate(const Location &loc, Interpolation &itp) const

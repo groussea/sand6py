@@ -15,7 +15,7 @@ namespace d6 {
 	CONFIG_FIELD( nFrames			, unsigned		,	Units::None			) \
 	\
 	CONFIG_FIELD( box				, Vec			,	Units::Length		) \
-	CONFIG_FIELD( res				, Vec3i			,	Units::None			) \
+	CONFIG_FIELD( res				, VecWi			,	Units::None			) \
 	CONFIG_FIELD( nSamples			, unsigned		,	Units::None			) \
 	CONFIG_FIELD( randomize			, Scalar		,	Units::None			) \
 	\

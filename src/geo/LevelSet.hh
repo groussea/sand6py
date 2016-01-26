@@ -12,14 +12,32 @@ template< Index Dim >
 struct RotationTraits
 {
 	typedef Scalar Type ;
+	static Type rotate( const Type& base, const Type& other ) {
+		return base + other ;
+	}
+	static Vec rotate( const Type& rot, const Vec& vec ) {
+		const Scalar c = std::cos( rot ) ;
+		const Scalar s = std::sin( rot ) ;
+		return Vec( c*vec[0] - s*vec[1], s*vec[0] + c*vec[1] )  ;
+	}
 };
 template< >
 struct RotationTraits<3>
 {
 	typedef Eigen::Quaternion< Scalar, Eigen::DontAlign > Type ;
+	static Type rotate( const Type& base, const Type& other ) {
+		return base * other ;
+	}
+	static Vec3 rotate( const Type& rot, const Vec3& vec ) {
+		return rot * vec ;
+	}
 };
-typedef typename RotationTraits<WD>::Type Rotation ;
 
+typedef typename RotationTraits<WD>::Type Rotation ;
+inline Rotation rotate( const Rotation& base, const Rotation& other )
+{ return RotationTraits<WD>::rotate(base,other) ; }
+inline Vec rotate( const Rotation& rot, const Vec& vec )
+{ return RotationTraits<WD>::rotate(rot,vec) ; }
 
 class LevelSet {
 
@@ -67,7 +85,7 @@ public:
 		return *this ;
 	}
 	LevelSet& rotate( const Rotation& frame ) {
-		m_frame = frame * m_frame ;
+		m_frame = d6::rotate(frame, m_frame) ;
 		return *this ;
 	}
 
@@ -101,18 +119,18 @@ public:
 protected:
 
 	void to_local( const Vec &world, Vec &local) const ;
-	void to_local_mat ( Mat &mat ) const ;
+	void to_local_mat ( MatR &mat ) const ;
 
 	LevelSet() ;
 
 	virtual Scalar eval_local( const Vec&x ) const = 0 ;
 	virtual Vec    grad_local( const Vec&x ) const = 0 ;
 	virtual Scalar local_volume( ) const = 0 ;
-	virtual void local_inv_inertia( Mat &I ) const = 0 ;
+	virtual void local_inv_inertia( MatR &I ) const = 0 ;
 
 private:
 	Vec 	   m_origin ;
-	Rotation m_frame ;
+	Rotation   m_frame ;
 
 	Scalar 	   m_scale ;
 };

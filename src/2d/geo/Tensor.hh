@@ -7,18 +7,15 @@ namespace d6 {
 
 static constexpr Scalar s_sqrt_2  = M_SQRT2 ;
 static constexpr Scalar s_sqrt_3  = 1.73205080756887729352744634151 ;
-static constexpr Scalar s_sqrt_6  = s_sqrt_2 * s_sqrt_3 ;
-static constexpr Scalar s_isqrt_3 = 1./s_sqrt_3;
-static constexpr Scalar s_sqrt_23 = s_sqrt_2 / s_sqrt_3 ;
-static constexpr Scalar s_sqrt_2_d = s_sqrt_23 ;
+static constexpr Scalar s_sqrt_2_d = 1 ;
 
 template< typename Derived >
 struct TensorView
 {
 	static constexpr Index Size = Derived::SizeAtCompileTime ;
-	static constexpr bool HasSymPart = ( Size == 6 || Size == 9 ) ;
-	static constexpr bool HasSpiPart = ( Size == 3 || Size == 9 ) ;
-	static constexpr Index SpiOff = HasSymPart ? 6 : 0 ;
+	static constexpr bool HasSymPart = ( Size == 3 || Size == 4 ) ;
+	static constexpr bool HasSpiPart = ( Size == 1 || Size == 4 ) ;
+	static constexpr Index SpiOff = HasSymPart ? 3 : 0 ;
 
 	explicit TensorView( Derived map )
 		: m_map( map )
@@ -30,9 +27,8 @@ struct TensorView
 		if ( HasSymPart ) {
 			m_map.setZero() ;
 
-			m_map[0] = diag.sum() / s_sqrt_6 ;
+			m_map[0] = diag.sum() / 2 ;
 			m_map[1] = ( diag[0] - diag[1] ) / 2. ;
-			m_map[2] = ( 2*diag[2] - diag[0] - diag[1] ) / (2 * s_sqrt_3) ;
 		}
 		return *this ;
 	}
@@ -40,19 +36,14 @@ struct TensorView
 	TensorView& set( const Mat& mat ) {
 
 		if ( HasSymPart ) {
-			m_map[0] = ( mat(0,0)+mat(1,1)+mat(2,2) ) / s_sqrt_6 ;
+			m_map[0] = ( mat(0,0) + mat(1,1) ) / 2 ;
 			m_map[1] = ( mat(0,0) - mat(1,1) ) / 2. ;
-			m_map[2] = ( 2*mat(2,2) - mat(1,1) - mat(0,0) ) / (2 * s_sqrt_3) ;
 
-			m_map[3] = .5*( mat(0,1) + mat(1,0) ) ;
-			m_map[4] = .5*( mat(0,2) + mat(2,0) ) ;
-			m_map[5] = .5*( mat(1,2) + mat(2,1) ) ;
+			m_map[2] = .5*( mat(0,1) + mat(1,0) ) ;
 		}
 
 		if( HasSpiPart ) {
 			m_map[SpiOff+0] = .5*( mat(0,1) - mat(1,0) ) ;
-			m_map[SpiOff+1] = .5*( mat(0,2) - mat(2,0) ) ;
-			m_map[SpiOff+2] = .5*( mat(1,2) - mat(2,1) ) ;
 		}
 		return *this ;
 	}
@@ -64,24 +55,15 @@ struct TensorView
 	void add( Mat& mat ) const {
 
 		if ( HasSymPart ) {
-			mat(0,0) += 2./s_sqrt_6 * m_map[0] + m_map[1] - 1./s_sqrt_3 * m_map[2] ;
-			mat(1,1) += 2./s_sqrt_6 * m_map[0] - m_map[1] - 1./s_sqrt_3 * m_map[2] ;
-			mat(2,2) += 2./s_sqrt_6 * m_map[0]            + 2./s_sqrt_3 * m_map[2] ;
-			mat(0,1) += m_map[3] ;
-			mat(0,2) += m_map[4] ;
-			mat(1,2) += m_map[5] ;
-			mat(1,0) += m_map[3] ;
-			mat(2,0) += m_map[4] ;
-			mat(2,1) += m_map[5] ;
+			mat(0,0) += m_map[0] + m_map[1] ;
+			mat(1,1) += m_map[0] - m_map[1] ;
+			mat(0,1) += m_map[2] ;
+			mat(1,0) += m_map[2] ;
 		}
 
 		if( HasSpiPart ) {
 			mat(0,1) += m_map[SpiOff+0] ;
 			mat(1,0) -= m_map[SpiOff+0] ;
-			mat(0,2) += m_map[SpiOff+1] ;
-			mat(2,0) -= m_map[SpiOff+1] ;
-			mat(1,2) += m_map[SpiOff+2] ;
-			mat(2,1) -= m_map[SpiOff+2] ;
 		}
 	}
 
@@ -126,22 +108,15 @@ template <typename Derived>
 void make_cross_mat( const Vec& x, const Eigen::MapBase< Derived, Eigen::WriteAccessors >& map )
 {
 	Derived mat = map.derived() ;
-	mat(0,0) =  0. ;
-	mat(1,0) = -x[2] ;
-	mat(2,0) =  x[1] ;
-	mat(0,1) =  x[2] ;
-	mat(1,1) =  0. ;
-	mat(2,1) = -x[0] ;
-	mat(0,2) = -x[1] ;
-	mat(1,2) =  x[0] ;
-	mat(2,2) =  0. ;
+	mat(0) = -x[1] ;
+	mat(1) =  x[0] ;
 }
 inline void make_cross_mat( const Vec& x, Mat& mat ) {
-	return make_cross_mat( x, mat.block<3,3>(0,0) ) ;
+	return make_cross_mat( x, mat.block<WD,RD>(0,0) ) ;
 }
 
 // such that Abar bar(tau) = (tauN ; bar( A Dev(tau) A ) )
-void compute_anisotropy_matrix( const Mat& A, Mat66 & Abar ) ;
+void compute_anisotropy_matrix( const Mat& A, MatS & Abar ) ;
 
 } //d6
 

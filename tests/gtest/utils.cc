@@ -47,14 +47,17 @@ TEST( utils, alg )
 TEST( utils, config )
 {
 	const std::string &test_scene =
-			FileInfo(__FILE__).parentDirectory().filePath("../scenes/test.conf") ;
+			FileInfo(__FILE__).parentDirectory().filePath("../../scenes/test.conf") ;
 
 	Config c ;
 	ASSERT_TRUE( c.from_file( test_scene ) ) ;
 
+#if D6_DIM==3
 	ASSERT_EQ( c.res, Vec3i(1, 5, 10) ) ;
 	ASSERT_TRUE( c.gravity.isApprox( Vec(40,0,0) ) ) ;
 	ASSERT_TRUE( c.box.isApprox( Vec(10,20,30) ) ) ;
+#endif
+
 	ASSERT_DOUBLE_EQ( c.fps * c.substeps, 1.e2 ) ;
 
 	const Scalar Re = ( c.box.minCoeff() * std::sqrt( c.box.minCoeff() * c.gravity.norm()) * c.volMass ) / c.viscosity ;
@@ -62,8 +65,10 @@ TEST( utils, config )
 
 	c.internalize();
 
+#if D6_DIM==3
 	ASSERT_TRUE( c.box.isApprox( Vec(10,20,30) ) ) ;
 	ASSERT_TRUE( c.gravity.isApprox( Vec(1,0,0) ) ) ;
+#endif
 //	ASSERT_DOUBLE_EQ( 20. , c.units().U ) ;
 //	ASSERT_DOUBLE_EQ( .5  , c.units().T ) ;
 //	ASSERT_DOUBLE_EQ( 4.e5, c.units().P ) ;

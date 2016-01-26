@@ -53,7 +53,7 @@ void Particles::generate(const ScalarExpr &expr, const unsigned nSamples,
 
 	m_velocities.leftCols( count() ).setZero() ;
 
-	Vec6 oriCoeffs ;
+	VecS oriCoeffs ;
 	{
 		Mat oriTensor = Mat::Zero() ;
 		oriTensor.diagonal() = initialOri ;

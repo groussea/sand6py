@@ -155,7 +155,7 @@ void RigidBodyData::assemble_matrices(const Active &phaseNodes, Index totNodes)
 			if( fraction( loc_idx ) < 0. ) {
 				fraction( loc_idx ) = phi( pos ) ;
 				const Vec dx = pos - rb.levelSet().origin() ;
-				make_cross_mat( dx, P.block<RD,RD>(0,WD) ) ;
+				make_cross_mat( dx, P.block<WD,RD>(0,WD) ) ;
 				proj.insert( phaseNodes.indices[ glb_idx ], 0  ) = P ;
 			}
 		}

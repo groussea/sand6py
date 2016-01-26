@@ -14,10 +14,11 @@
 #include "geo/LevelSet.io.hh"
 #include "geo/Particles.io.hh"
 
+#include "utils/serialization.hh"
+
 #include <boost/archive/binary_oarchive.hpp>
 
 #include <bogus/Core/Utils/Timer.hpp>
-#include <bogus/Core/Eigen/EigenSerialization.hpp>
 
 namespace d6 {
 

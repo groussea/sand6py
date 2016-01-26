@@ -43,6 +43,11 @@ public:
 		return Base::operator=( func );
 	}
 
+#if (D6_DIM==2)
+	void get_spi_tensor( const Vec& x, Mat& tensor ) const ;
+	void add_spi_tensor( const Vec& x, Mat& tensor ) const ;
+#endif
+
 protected:
 	using Base::m_mesh ;
 };

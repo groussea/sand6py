@@ -21,21 +21,22 @@ void rescale( Eigen::Matrix<Scalar, D, 1> &src, Scalar s ) { src *= s ; }
 
 Config::Config() :
 	fps(240), substeps(1), nFrames( 1 ),
-	box(1,1,1), res(10,10,10),
+	box( Vec::Ones() ), res( VecWi::Constant(10) ),
 	nSamples(2), randomize( 0 ),
 	volMass( 1.5e3 ),
 	viscosity( 1.e-3 ),
-	gravity( 0, 0, -9.81 ),
+	gravity( Vec::Zero() ),
 	phiMax(1), mu(0),
 	delta_mu( 0 ), I0( 0.4 ), grainDiameter( 1.e-3 ),
 	muRigid( 0.5 ),
 	cohesion(0), cohesion_decay(0),
 	anisotropy( 0 ), elongation( 1 ), brownian( 0 ),
-	initialOri( 1./3, 1./3, 1./3 ),
+	initialOri( Vec::Constant(1./3) ),
 	enforceMaxFrac( false ), weakStressBC( false ),
 	boundary("cuve"),
 	output( true ), dumpPrimalData( 0 )
 {
+	gravity[WD-1] = -9.81 ;
 }
 
 void Config::internalize()

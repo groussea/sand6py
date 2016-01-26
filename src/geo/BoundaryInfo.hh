@@ -41,8 +41,8 @@ struct BoundaryInfo {
 	void combine( const Bc bc_, const Vec n ) ;
 	static BoundaryInfo combine(const BoundaryInfo &b1, const BoundaryInfo &b2 ) ;
 
-	void    velProj( Mat &proj ) const ;
-	void   spinProj( Mat &proj ) const ;
+	void    velProj( Mat  &proj ) const ;
+	void   spinProj( MatR &proj ) const ;
 	void stressProj( MatS &proj ) const ;
 
 };

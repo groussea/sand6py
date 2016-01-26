@@ -5,7 +5,9 @@
 #include "Tensor.hh"
 
 #include "Grid.hh"
+#if HAS_TET
 #include "TetGrid.hh"
+#endif
 
 namespace d6
 {
@@ -24,8 +26,9 @@ void AbstractTensorField< MeshT >::add_sym_tensor(const Vec &x, Mat &tensor) con
 
 template class FieldBase< AbstractTensorField< Grid > > ;
 template class AbstractTensorField< Grid > ;
+#if HAS_TET
 template class FieldBase< AbstractTensorField< TetGrid > > ;
 template class AbstractTensorField< TetGrid > ;
-
+#endif
 }
 

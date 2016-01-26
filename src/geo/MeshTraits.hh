@@ -1,8 +1,12 @@
 #ifndef D6_MESH_TRAITS_HH
 #define D6_MESH_TRAITS_HH
 
-#include "Voxel.hh"
-#include "Tet.hh"
+#define HAS_TET (D6_DIM == 3)
+
+#include "geo/Voxel.hh"
+#if HAS_TET
+#include "geo/Tet.hh"
+#endif
 
 #include <vector>
 
@@ -21,7 +25,7 @@ template < >
 struct MeshTraits< Grid > {
 	typedef GridIterator CellIterator ;
 
-	typedef VecWi Cell    ;
+	typedef ArrWi Cell    ;
 	typedef Voxel CellGeo ;
 	static constexpr Index NV = CellGeo::NV ;
 	static constexpr Index NC = CellGeo::NC ;
@@ -30,6 +34,7 @@ struct MeshTraits< Grid > {
 	typedef std::vector<Cell> Cells ;
 };
 
+#if HAS_TET
 // TetGrid
 
 class  TetGrid ;
@@ -47,7 +52,7 @@ struct MeshTraits< TetGrid > {
 
 	typedef std::vector<Cell> Cells ;
 };
-
+#endif
 
 } //d6
 

@@ -2,14 +2,32 @@
 #include "ScalarField.hh"
 #include "FieldBase.impl.hh"
 
+#include "Tensor.hh"
+
 #include "Grid.hh"
+#if HAS_TET
 #include "TetGrid.hh"
+#endif
 
 namespace d6
 {
 
+#if (D6_DIM==2)
+template <typename MeshT>
+void AbstractScalarField< MeshT >::get_spi_tensor(const Vec &x, Mat &tensor) const
+{
+	tensor_view( VecR(Base::eval_at(x)) ).get( tensor ) ;
+}
+
+template <typename MeshT>
+void AbstractScalarField< MeshT >::add_spi_tensor(const Vec &x, Mat &tensor) const
+{
+	tensor_view( VecR(Base::eval_at(x)) ).add( tensor ) ;
+}
+#endif
+
 template <typename MeshT >
-Vec AbstractScalarField< MeshT >::grad_at( const Vec& x ) const 
+Vec AbstractScalarField< MeshT >::grad_at( const Vec& x ) const
 {
 	typename MeshType::Location loc ;
 	typename MeshType::NodeList nodes ;
@@ -25,13 +43,14 @@ Vec AbstractScalarField< MeshT >::grad_at( const Vec& x ) const
 	for( Index k = 0 ; k < nodes.rows() ; ++k ) {
 		grad += dc_dx.row(k) * Base::segment( nodes[k] ) ;
 	}
-	
+
 	return grad ;
 }
 
 template class FieldBase< AbstractScalarField< Grid > > ;
 template class AbstractScalarField< Grid > ;
+#if HAS_TET
 template class FieldBase< AbstractScalarField< TetGrid > > ;
 template class AbstractScalarField< TetGrid > ;
-
+#endif
 }

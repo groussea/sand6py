@@ -5,7 +5,9 @@
 #include "Tensor.hh"
 
 #include "Grid.hh"
+#if HAS_TET
 #include "TetGrid.hh"
+#endif
 
 namespace d6
 {
@@ -26,8 +28,10 @@ void AbstractVectorField< MeshT >::add_spi_tensor(const Vec &x, Mat &tensor) con
 
 template class FieldBase< AbstractVectorField< Grid > > ;
 template class AbstractVectorField< Grid > ;
+#if HAS_TET
 template class FieldBase< AbstractVectorField< TetGrid > > ;
 template class AbstractVectorField< TetGrid > ;
+#endif
 
 }
 

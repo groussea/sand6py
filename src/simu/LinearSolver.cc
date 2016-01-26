@@ -53,8 +53,8 @@ Scalar solveSDP( const bogus::SparseBlockMatrixBase< Derived >& M,
 #endif
 }
 
-template Scalar solveSDP( const bogus::SparseBlockMatrixBase< typename FormMat<3,3>::Type >& ,
-const bogus::SparseBlockMatrixBase< typename FormMat<3,3>::SymType >&,
+template Scalar solveSDP( const bogus::SparseBlockMatrixBase< typename FormMat<WD,WD>::Type >& ,
+const bogus::SparseBlockMatrixBase< typename FormMat<WD,WD>::SymType >&,
 const DynVec &,
 DynVec &) ;
 

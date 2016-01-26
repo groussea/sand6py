@@ -4,8 +4,14 @@ if( TESTS_NAMES )
     SET( SRC_LIST ${TESTS_NAMES} )
     MESSAGE( STATUS "Building tests: " ${SRC_LIST} )
 else()
+    execute_process( COMMAND
+        ${CMAKE_COMMAND}
+        -DD6_LIB=gtest
+        -DD6_SRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+        -DD6_DIM_STR=${DIM_STR}
+        -P ${CMAKE_SOURCE_DIR}/cmake/UpdateSources.cmake )
     execute_process( COMMAND ../updateCMakeSources.rb WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} )
-    file(STRINGS CMakeSources.txt SRC_LIST)
+    file(STRINGS gtest/CMakeSources_${DIM_STR}.txt SRC_LIST)
     MESSAGE( STATUS "Building all tests" )
 endif()
 

@@ -51,8 +51,8 @@ void DynParticles::generate(const Config &c, const MeshType &mesh, const Scenari
 #pragma omp for
 			for( size_t i = 0 ; i < count() ; ++i ) {
 				const Scalar size = std::sqrt( m_geo.frames().col(i)[0] ) ;
-				Vec rd_depl( dist(e), dist(e), dist(e) ) ;
-				m_geo.m_centers.col(i) += size * rd_depl ;
+				Vec3 rd_depl( dist(e), dist(e), dist(e) ) ;
+				m_geo.m_centers.col(i) += size * rd_depl.head<WD>() ;
 				clamp_particle( i, mesh );
 			}
 

@@ -65,12 +65,12 @@ public:
 
 	static void addVDp      ( FormMat<WD, 1>::Type& A, Scalar w, Index rowIndex, Itp itp, Dcdx dc_dx, Indices colIndices ) ;
 	static void addTauDu    ( FormMat<SD,WD>::Type& A, Scalar w, Index rowIndex, Itp itp, Dcdx dc_dx, Indices colIndices ) ;
-	static void addTauWu    ( FormMat<WD,WD>::Type& A, Scalar w, Index rowIndex, Itp itp, Dcdx dc_dx, Indices colIndices ) ;
+	static void addTauWu    ( FormMat<RD,WD>::Type& A, Scalar w, Index rowIndex, Itp itp, Dcdx dc_dx, Indices colIndices ) ;
 
 	static void addDuDv     ( FormMat<WD,WD>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
 	static void addVDp      ( FormMat<WD, 1>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
 	static void addTauDu    ( FormMat<SD,WD>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
-	static void addTauWu    ( FormMat<RD,RD>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
+	static void addTauWu    ( FormMat<RD,WD>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
 
 	static void addUTaunGphi( FormMat<SD,WD>::Type& A, Scalar w, Itp itp, const Vec& dphi_dx, Indices rowIndices, Indices colIndices ) ;
 	static void addUTauGphi ( FormMat<SD,WD>::Type& A, Scalar w, Itp itp, const Vec& dphi_dx, Indices rowIndices, Indices colIndices ) ;

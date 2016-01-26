@@ -8,7 +8,7 @@
 
 namespace d6 {
 
-#ifdef DIM2
+#if D6_DIM==2
 static constexpr Index WD = 2 ;
 static constexpr Index SD = 3 ;
 static constexpr Index RD = 1 ;
@@ -29,6 +29,9 @@ typedef Eigen::Array < Scalar, WD,  1 > Arr ;
 typedef Eigen::Matrix< Scalar, SD, SD > MatS ;
 typedef Eigen::Matrix< Scalar, SD,  1 > VecS ;
 typedef Eigen::Array < Scalar, SD,  1 > ArrS ;
+
+typedef Eigen::Matrix< Scalar, RD, RD > MatR ;
+typedef Eigen::Matrix< Scalar, RD,  1 > VecR ;
 
 typedef Eigen::Matrix< Index, WD, 1 > VecWi ;
 typedef Eigen::Array < Index, WD, 1 > ArrWi ;

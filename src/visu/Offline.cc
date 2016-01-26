@@ -10,9 +10,9 @@
 #include "geo/Particles.io.hh"
 #include "geo/LevelSet.io.hh"
 
-#include <boost/archive/binary_iarchive.hpp>
+#include "utils/serialization.hh"
 
-#include <bogus/Core/Eigen/EigenSerialization.hpp>
+#include <boost/archive/binary_iarchive.hpp>
 
 namespace d6 {
 

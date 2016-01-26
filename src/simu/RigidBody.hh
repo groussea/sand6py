@@ -14,10 +14,12 @@ public:
 
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-	typedef Eigen::Matrix< Scalar, 6, 1, Eigen::DontAlign > Vel ;
+	typedef Eigen::Matrix< Scalar, SD, 1, Eigen::DontAlign > Vel ;
 
-	typedef typename Vel::     FixedSegmentReturnType< 3 >::Type      VelComp ;
-	typedef typename Vel::ConstFixedSegmentReturnType< 3 >::Type ConstVelComp ;
+	typedef typename Vel::     FixedSegmentReturnType< WD >::Type         VelComp ;
+	typedef typename Vel::ConstFixedSegmentReturnType< WD >::Type    ConstVelComp ;
+	typedef typename Vel::     FixedSegmentReturnType< RD >::Type      AngVelComp ;
+	typedef typename Vel::ConstFixedSegmentReturnType< RD >::Type ConstAngVelComp ;
 
 	RigidBody( std::unique_ptr< LevelSet > &ls, Scalar volMass ) ;
 
@@ -29,11 +31,11 @@ public:
 		return m_velocity ;
 	}
 
-	VelComp velocity() { return m_velocity.head<3>() ; }
-	VelComp angularVelocity() { return m_velocity.tail<3>() ; }
+	VelComp velocity() { return m_velocity.head<WD>() ; }
+	AngVelComp angularVelocity() { return m_velocity.tail<RD>() ; }
 
-	ConstVelComp velocity() const { return m_velocity.head<3>() ; }
-	ConstVelComp angularVelocity() const { return m_velocity.tail<3>() ; }
+	ConstVelComp velocity() const { return m_velocity.head<WD>() ; }
+	ConstAngVelComp angularVelocity() const { return m_velocity.tail<RD>() ; }
 
 	const LevelSet& levelSet() const
 	{ return *m_levelSet ; }
@@ -45,18 +47,18 @@ public:
 		return m_volumicMass ;
 	}
 
-	void inv_inertia( Mat66& Mi ) const ;
+	void inv_inertia( MatS& Mi ) const ;
 
 	// Modifiers
 
-	void set_velocity( const Vec& vel, const Vec& angularVel )
+	void set_velocity( const Vec& vel, const VecR& angularVel )
 	{
 		velocity() = vel ;
 		angularVelocity() = angularVel ;
 	}
 
 	void integrate_gravity( const Scalar dt, const Vec& gravity ) ;
-	void integrate_forces( const Scalar dt, const Vec6& forces ) ;
+	void integrate_forces( const Scalar dt, const VecS& forces ) ;
 
 	void move( const Scalar dt ) const ;
 

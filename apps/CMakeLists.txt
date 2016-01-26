@@ -20,29 +20,32 @@ add_executable ( d6 d6.cc ${D6_VERSION_FILE} )
 add_dependencies( d6 d6_version )
 target_link_libraries ( d6 d6_simu )
 
-add_executable ( d62vtk d62vtk.cc )
-target_link_libraries ( d62vtk d6_visu )
+if(NOT DIM2)
 
-add_executable ( d6_analyze d6_analyze.cc )
-target_link_libraries ( d6_analyze d6_visu )
+    add_executable ( d62vtk d62vtk.cc )
+    target_link_libraries ( d62vtk d6_visu )
 
-add_executable ( d6_solvePrimal d6_solvePrimal.cc )
-target_link_libraries ( d6_solvePrimal d6_utils d6_solve )
+    add_executable ( d6_analyze d6_analyze.cc )
+    target_link_libraries ( d6_analyze d6_visu )
 
-if( OPENGL_FOUND )
-    ## GL Viewer
-    find_package( QGLVIEWER )
-    if( QGLVIEWER_FOUND )
-        find_package(Qt4 REQUIRED QtGui QtXml QtOpenGL )
+    add_executable ( d6_solvePrimal d6_solvePrimal.cc )
+    target_link_libraries ( d6_solvePrimal d6_utils d6_solve )
 
-        include_directories( ${QGLVIEWER_INCLUDE_DIR} ${OPENGL_INCLUDE_DIR} )
-        include_directories( ${QT_QTGUI_INCLUDE_DIR} ${QT_QTXML_INCLUDE_DIR}  ${QT_QTOPENGL_INCLUDE_DIR} )
-        SET( GL_LIBRARIES ${QGLVIEWER_LIBRARIES} ${OPENGL_LIBRARIES} Qt4::QtGui Qt4::QtXml Qt4::QtOpenGL )
+    if( OPENGL_FOUND )
+        ## GL Viewer
+        find_package( QGLVIEWER )
+        if( QGLVIEWER_FOUND )
+            find_package(Qt4 REQUIRED QtGui QtXml QtOpenGL )
 
-        add_executable ( d6gl d6gl.cc GLViewer.cc GLViewer.hh )
-        target_link_libraries ( d6gl d6_visu d6_gl ${GL_LIBRARIES}  )
-    else()
-    message( STATUS "QGLViewer not found, not builder viewer" )
+            include_directories( ${QGLVIEWER_INCLUDE_DIR} ${OPENGL_INCLUDE_DIR} )
+            include_directories( ${QT_QTGUI_INCLUDE_DIR} ${QT_QTXML_INCLUDE_DIR}  ${QT_QTOPENGL_INCLUDE_DIR} )
+            SET( GL_LIBRARIES ${QGLVIEWER_LIBRARIES} ${OPENGL_LIBRARIES} Qt4::QtGui Qt4::QtXml Qt4::QtOpenGL )
+
+            add_executable ( d6gl d6gl.cc GLViewer.cc GLViewer.hh )
+            target_link_libraries ( d6gl d6_visu d6_gl ${GL_LIBRARIES}  )
+        else()
+        message( STATUS "QGLViewer not found, not builder viewer" )
+        endif()
     endif()
-endif()
 
+endif()

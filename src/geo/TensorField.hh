@@ -10,7 +10,7 @@ template < typename MeshT >
 struct FieldTraits< AbstractTensorField< MeshT > >  {
 
 	typedef MeshT  MeshType ;
-	typedef Vec6 ValueType ;
+	typedef VecS ValueType ;
 	static constexpr Index Dimension = SD ;
 };
 

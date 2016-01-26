@@ -29,22 +29,22 @@ struct PhaseStepData {
 		// Bilinear Form marices
 
 		//! Lumped mass matrix, its inverse and a factorization
-		typename FormMat<3,3>::SymType M_lumped ;
-		typename FormMat<3,3>::SymType M_lumped_inv ;
-		typename FormMat<3,3>::SymType M_lumped_inv_sqrt ;
+		typename FormMat<WD,WD>::SymType M_lumped ;
+		typename FormMat<WD,WD>::SymType M_lumped_inv ;
+		typename FormMat<WD,WD>::SymType M_lumped_inv_sqrt ;
 
-		typename FormMat<3,3>::Type A ; //!< Mass + Visco ; Could be Symmetric when FormBuilder has sym index
+		typename FormMat<WD,WD>::Type A ; //!< Mass + Visco ; Could be Symmetric when FormBuilder has sym index
 
-		typename FormMat<6,3>::Type B ; //!< \phi Tau:D(u)
-		typename FormMat<3,3>::Type J ; //!< \phi Tau:W(u)
+		typename FormMat<SD,WD>::Type B ; //!< \phi Tau:D(u)
+		typename FormMat<RD,WD>::Type J ; //!< \phi Tau:W(u)
 
-		typename FormMat<3,1>::Type C ; //!< \phi v.grad(p)
+		typename FormMat<WD,1>::Type C ; //!< \phi v.grad(p)
 	} forms ;
 
 	//! Projectors enforcing boundary conditions
 	struct Projectors {
-		typename FormMat<3,3>::SymType vel ;
-		typename FormMat<6,6>::SymType stress ;
+		typename FormMat<WD,WD>::SymType vel ;
+		typename FormMat<SD,SD>::SymType stress ;
 	} proj ;
 
 
@@ -52,7 +52,7 @@ struct PhaseStepData {
 	DynVec cohesion ;   //!< interpolated cohesivity
 	DynVec inertia  ;   //!< interpolated inertial number
 
-	typename FormMat<6,6>::SymType Aniso ; //!< Anisotropy linear operator (N^{-1})
+	typename FormMat<SD,SD>::SymType Aniso ; //!< Anisotropy linear operator (N^{-1})
 
 	PhaseStepData()
 		: m_totRbNodes( 0 )
@@ -86,7 +86,7 @@ private:
 							Projectors& mats ) const ;
 
 	void computeAnisotropy(const DynVec& orientation,  const Config &config,
-						   typename FormMat<6,6>::SymType &Aniso ) const ;
+						   typename FormMat<SD,SD>::SymType &Aniso ) const ;
 
 	void computeGradPhi( const ScalarField& fraction, const ScalarField& volumes, VectorField &grad_phi ) const ;
 

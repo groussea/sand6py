@@ -48,23 +48,21 @@ public:
 
 	typedef typename Base::Cell Cell ;
 	typedef typename Base::CellGeo CellGeo ;
-	typedef Vec3i 				Vertex ;
+	typedef VecWi 				Vertex ;
 
-	Grid( const Vec& box, const Vec3i &res ) ;
+	Grid( const Vec& box, const VecWi &res ) ;
 
 	void set_box( const Vec& box ) ;
 
 	Index nNodes() const
-	{ return (m_dim[0]+1) * (m_dim[1]+1) * (m_dim[2] + 1) ; }
+	{ return (m_dim[0]+1) * (m_dim[1]+1) ; }
 
 	Index nCells() const
-	{ return (m_dim[0]) * (m_dim[1]) * (m_dim[2]) ; }
+	{ return (m_dim[0]) * (m_dim[1]); }
 
 	Index cellIndex( const Cell& cell ) const
 	{
-		return (m_dim[2]) * (m_dim[1]) * cell[0]
-			+  (m_dim[2]) * cell[1]
-			+  cell[2] ;
+		return (m_dim[1]) * cell[0]	+ cell[1] ;
 	}
 
 	Vec box() const
@@ -78,10 +76,10 @@ public:
 	void get_derivatives( const Location& loc, Derivatives& dc_dx ) const ;
 
 	CellIterator cellBegin() const {
-		return GridIterator( *this, Vec3i::Zero() ) ;
+		return GridIterator( *this, VecWi::Zero() ) ;
 	}
 	CellIterator cellEnd() const {
-		return GridIterator( *this, Vec3i(m_dim[0],0,0) ) ;
+		return GridIterator( *this, VecWi(m_dim[0],0) ) ;
 	}
 
 	void get_geo( const Cell &cell, CellGeo& geo ) const {
@@ -116,9 +114,7 @@ public:
 
 	Index nodeIndex( const Vertex& node ) const
 	{
-		return (m_dim[2]+1) * (m_dim[1]+1) * node[0]
-			+  (m_dim[2]+1) * node[1]
-			+  node[2] ;
+		return (m_dim[1]+1) * node[0] + node[1] ;
 	}
 
 	const ArrWi& dim() const { return m_dim ; }

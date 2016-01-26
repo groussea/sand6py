@@ -63,6 +63,11 @@ struct ScenarioFactory {
 	ScenarioFactory& operator= ( const ScenarioFactory& ) = delete ;
 };
 
+struct DefaultScenarioFactory : public ScenarioFactory
+{
+	std::unique_ptr< Scenario > make( const std::string & str ) const override ;
+};
+
 
 } //d6
 
