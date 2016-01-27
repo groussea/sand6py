@@ -132,8 +132,6 @@ private:
 	Shader	m_vectorShader ;
 	Shader	m_tensorShader ;
 
-	gl::VertexBuffer2f m_squareVertices ;
-
 	//Grid
 	gl::VertexBuffer2f m_gridVertices ;
 	gl::IndexBuffer m_gridQuadIndices ;
@@ -143,7 +141,6 @@ private:
 
 	//Vectors
 	gl::VertexBuffer2f m_arrows ;
-	gl::VertexBuffer3f m_arrowColors ;
 
 	//Streamlines
 	GLuint m_texId ;
@@ -152,7 +149,6 @@ private:
 
 	//Tensor
 	gl::VertexBuffer3f m_tensors ;
-	gl::VertexBuffer3f m_tensorColors ;
 
 	//particles
 	gl::VertexBuffer2d m_particles ;

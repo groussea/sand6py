@@ -148,6 +148,18 @@ void GLViewer::init( )
 	m_particleShader.add_attribute("value");
 	m_particleShader.add_attribute("frame");
 	m_particleShader.load("2d/particle_vertex","2d/particle_fragment") ;
+
+	m_vectorShader.add_uniform("model_view");
+	m_vectorShader.add_uniform("projection");
+	m_vectorShader.add_attribute("vertex");
+	m_vectorShader.add_attribute("value");
+	m_vectorShader.load("2d/vector_vertex","2d/vector_fragment") ;
+
+	m_tensorShader.add_uniform("model_view");
+	m_tensorShader.add_uniform("projection");
+	m_tensorShader.add_attribute("vertex");
+	m_tensorShader.add_attribute("value");
+	m_tensorShader.load("2d/tensor_vertex","2d/tensor_fragment") ;
 }
 
 void GLViewer::update_buffers()
@@ -181,12 +193,6 @@ void GLViewer::update_buffers()
 		m_gridVertices.reset( vertices.cols(), vertices.data() ) ;
 		m_gridQuadIndices.reset( nodeIndices.size(), &nodeIndices[0] ) ;
 	}
-
-	// Square vertices
-	Eigen::Matrix<float, 2, 4> vtx ;
-	vtx  <<  -1, -1, 1,  1,
-		 -1,  1, 1, -1 ;
-	m_squareVertices.reset( 4, vtx.data() );
 
 
 	if( m_shouldRender[ eParticles ])
@@ -286,10 +292,8 @@ void GLViewer::update_vector_buffers()
 	const MeshType& g = m_offline.mesh() ;
 
 	Eigen::Matrix<float, 2, Eigen::Dynamic > vectors( 2, g.nNodes() ) ;
-	Eigen::Matrix<float, 3, Eigen::Dynamic >  colors( 3, g.nNodes() ) ;
 
 	vectors.setZero() ;
-	colors.setZero() ;
 
 	const auto & field = getVectorEntity() ;
 	ScalarField norm = field.norm() ;
@@ -298,24 +302,19 @@ void GLViewer::update_vector_buffers()
 	if( max_val > 1.e-12 )
 	{
 		Eigen::VectorXf::Map( vectors.data(), vectors.size() ) = ( field.flatten().array() / max_val ).cast<float>() ;
-		colors.row(2) =  ( norm.flatten().array() / max_val ).cast<float>() ;
 	}
-	colors.row(1).setOnes() ;
 
 	m_arrows.reset( vectors.cols(), vectors.data() ) ;
-	m_arrowColors.reset( colors.cols(), colors.data() ) ;
 }
 
-// Arrows
+// Tensors
 void GLViewer::update_tensor_buffers()
 {
 	const MeshType& g = m_offline.mesh() ;
 
 	Eigen::Matrix<float, 3, Eigen::Dynamic > tensors( 3, g.nNodes() ) ;
-	Eigen::Matrix<float, 3, Eigen::Dynamic >  colors( 3, g.nNodes() ) ;
 
 	tensors.setZero() ;
-	colors.setZero() ;
 
 	const auto & field = getTensorEntity() ;
 	ScalarField norm = field.norm() ;
@@ -324,13 +323,9 @@ void GLViewer::update_tensor_buffers()
 	if( max_val > 1.e-12 )
 	{
 		Eigen::VectorXf::Map( tensors.data(), tensors.size() ) = ( field.flatten().array() / max_val ).cast<float>() ;
-		colors.row(2) =  ( norm.flatten().array() / max_val ).cast<float>() ;
 	}
-	colors.row(1).setOnes() ;
-	colors.row(0).array() = 1 -  colors.row(2).array();
 
 	m_tensors.reset( tensors.cols(), tensors.data() ) ;
-	m_tensorColors.reset( colors.cols(), colors.data() ) ;
 }
 
 void GLViewer::update_texture()
@@ -409,6 +404,8 @@ void GLViewer::draw( )
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	glLineWidth( 1.f );
 
+	glEnable(GL_BLEND);
+
 	// Grid
 
 	if( m_shouldRender[ eColors ])
@@ -441,7 +438,6 @@ void GLViewer::draw( )
 	//Particles
 	if(m_shouldRender[eParticles])
 	{
-		glColor3f( 1., 0., 0. );
 
 		if( m_particleShader.ok() ) {
 
@@ -453,15 +449,44 @@ void GLViewer::draw( )
 			gl::VertexAttribPointer   cap( m_particleColors, m_particleShader.attribute("value"), false, 1) ;
 			gl::VertexAttribPointer   aap( m_particleFrames, m_particleShader.attribute("frame"), false, 1) ;
 
-			gl::VertexPointer vp( m_squareVertices ) ;
-			glDrawArraysInstanced( GL_QUADS, 0, m_squareVertices.size(), m_particles.size() );
-//			glDrawArrays( GL_QUADS, 0, m_squareVertices.size() );
+			glDrawArraysInstanced( GL_QUADS, 0, 4, m_particles.size() );
 
 		} else {
+			glColor3f( 1., 0., 0. );
 			glPointSize( 2.f ) ;
 
 			gl::VertexPointer vp( m_particles ) ;
 			glDrawArrays( GL_POINTS, 0, m_particles.size() );
+		}
+	}
+
+	//Arrows
+	if(m_shouldRender[eVectors])
+	{
+		if( m_vectorShader.ok() ) {
+
+			UsingShader sh( m_vectorShader ) ;
+			sh.bindMVP();
+
+			gl::VertexAttribPointer   vap( m_gridVertices, m_vectorShader.attribute("vertex"), false, 1) ;
+			gl::VertexAttribPointer   aap( m_arrows, m_vectorShader.attribute("value"), false, 1) ;
+
+			glDrawArraysInstanced( GL_TRIANGLES, 0, 3, m_gridVertices.size() );
+		}
+	}
+
+	//Arrows
+	if(m_shouldRender[eTensors])
+	{
+		if( m_tensorShader.ok() ) {
+
+			UsingShader sh( m_tensorShader ) ;
+			sh.bindMVP();
+
+			gl::VertexAttribPointer  vap( m_gridVertices, m_tensorShader.attribute("vertex"), false, 1) ;
+			gl::VertexAttribPointer  aap( m_tensors, m_tensorShader.attribute("value"), false, 1) ;
+
+			glDrawArraysInstanced( GL_QUADS, 0, 4, m_gridVertices.size() );
 		}
 	}
 

@@ -248,6 +248,9 @@ private:
 			m_viewer.toggleRendering( GLViewer::eVectors );
 			m_viewer.update_vector_buffers();
 			break;
+		case GLFW_KEY_HOME:
+			set_frame(0);
+			break;
 #ifdef GLFW3
 		case GLFW_KEY_PERIOD:
 #else
