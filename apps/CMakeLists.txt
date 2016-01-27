@@ -26,9 +26,34 @@ target_link_libraries ( d62vtk d6_visu )
 add_executable ( d6_solvePrimal d6_solvePrimal.cc )
 target_link_libraries ( d6_solvePrimal d6_utils d6_solve )
 
-if(NOT DIM2)
+if(DIM2)
 
-    add_executable ( d6_analyze d6_analyze.cc )
+    if( OPENGL_FOUND )
+        ## GL Viewer
+
+        ## GLFW
+        find_package(PkgConfig)
+        if( PkgConfig_FOUND )
+            pkg_search_module(GLFW glfw3)
+        endif()
+        if( GLFW_FOUND )
+          add_definitions(-DGLFW3)
+        else()
+          find_package(GLFW)
+        endif()
+
+        if( GLFW_FOUND )
+            MESSAGE( STATUS "Found glfw" )
+            include_directories(${GLFW_INCLUDE_DIRS})
+            SET( D6_GL_LIBRARIES ${GLFW_LIBRARIES} ${OPENGL_LIBRARIES} )
+        else()
+            message( STATUS "GLFW not found, not building viewer" )
+        endif()
+
+    endif()
+
+else( DIM2 )
+    add_executable ( d6_analyze 3d/d6_analyze.cc )
     target_link_libraries ( d6_analyze d6_visu )
 
     if( OPENGL_FOUND )
@@ -39,13 +64,17 @@ if(NOT DIM2)
 
             include_directories( ${QGLVIEWER_INCLUDE_DIR} ${OPENGL_INCLUDE_DIR} )
             include_directories( ${QT_QTGUI_INCLUDE_DIR} ${QT_QTXML_INCLUDE_DIR}  ${QT_QTOPENGL_INCLUDE_DIR} )
-            SET( GL_LIBRARIES ${QGLVIEWER_LIBRARIES} ${OPENGL_LIBRARIES} Qt4::QtGui Qt4::QtXml Qt4::QtOpenGL )
+            SET( D6_GL_LIBRARIES ${QGLVIEWER_LIBRARIES} ${OPENGL_LIBRARIES} Qt4::QtGui Qt4::QtXml Qt4::QtOpenGL )
 
-            add_executable ( d6gl d6gl.cc GLViewer.cc GLViewer.hh )
-            target_link_libraries ( d6gl d6_visu d6_gl ${GL_LIBRARIES}  )
         else()
-        message( STATUS "QGLViewer not found, not builder viewer" )
+            message( STATUS "QGLViewer not found, not building viewer" )
         endif()
     endif()
 
+endif( DIM2 )
+
+if( D6_GL_LIBRARIES )
+    add_executable ( d6gl ${DIM_STR}/d6gl.cc ${DIM_STR}/GLViewer.cc ${DIM_STR}/GLViewer.hh )
+    target_link_libraries ( d6gl d6_visu d6_gl ${D6_GL_LIBRARIES}  )
 endif()
+
