@@ -78,6 +78,11 @@ public:
 		m_shouldRender[ elt ] = !m_shouldRender[ elt ] ;
 	}
 
+	void toggleParticleRepr()
+	{
+		m_drawOrientations = !m_drawOrientations ;
+	}
+
 	void toggleScalarEntity()
 	{
 		m_scalarEntity = (ScalarEntity)( (((unsigned)m_scalarEntity) + 1 ) % nSE ) ;
@@ -127,6 +132,8 @@ private:
 	Shader	m_vectorShader ;
 	Shader	m_tensorShader ;
 
+	gl::VertexBuffer2f m_squareVertices ;
+
 	//Grid
 	gl::VertexBuffer2f m_gridVertices ;
 	gl::IndexBuffer m_gridQuadIndices ;
@@ -144,7 +151,7 @@ private:
 	std::vector< float > m_rndData ;
 
 	//Tensor
-	gl::VertexBuffer4f m_tensors ;
+	gl::VertexBuffer3f m_tensors ;
 	gl::VertexBuffer3f m_tensorColors ;
 
 	//particles

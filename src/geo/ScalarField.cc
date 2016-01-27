@@ -16,13 +16,15 @@ namespace d6
 template <typename MeshT>
 void AbstractScalarField< MeshT >::get_spi_tensor(const Vec &x, Mat &tensor) const
 {
-	tensor_view( VecR(Base::eval_at(x)) ).get( tensor ) ;
+	VecR spi ; spi[0] = Base::eval_at(x) ;
+	tensor_view( spi ).get( tensor ) ;
 }
 
 template <typename MeshT>
 void AbstractScalarField< MeshT >::add_spi_tensor(const Vec &x, Mat &tensor) const
 {
-	tensor_view( VecR(Base::eval_at(x)) ).add( tensor ) ;
+	VecR spi ; spi[0] = Base::eval_at(x) ;
+	tensor_view( spi ).add( tensor ) ;
 }
 #endif
 

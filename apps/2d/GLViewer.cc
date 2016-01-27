@@ -45,37 +45,6 @@ void GLViewer::updateViewport()
 }
 
 
-void GLViewer::init( )
-{
-	updateViewport();
-
-
-	// Texture
-	{
-		m_rndData.resize( TEX_S * TEX_S  );
-		m_texData.resize( TEX_S * TEX_S * 3 );
-		Eigen::Matrix< float, Eigen::Dynamic, 1 >
-				::Map( &m_rndData[0], TEX_S * TEX_S )
-				= ( Eigen::VectorXf::Random( TEX_S * TEX_S ).array().abs().matrix() )  ;
-
-		glGenTextures(1, &m_texId);
-		glBindTexture( GL_TEXTURE_2D, m_texId );
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	}
-
-	//
-
-	m_shouldRender[ eGrid ] = true ;
-	m_shouldRender[ eColors ] = true ;
-	m_shouldRender[ eVectors ] = true ;
-	m_shouldRender[ eTensors ] = false ;
-	m_shouldRender[ eStream ] = false ;
-	m_shouldRender[ eParticles ] = true ;
-
-}
-
 template < typename Scalar >
 static Scalar clamp( const Scalar v, const Scalar min=0, const Scalar max=1) {
 	return std::min( max, std::max( min, v )) ;
@@ -143,6 +112,44 @@ void GLViewer::snap()
 }
 
 
+void GLViewer::init( )
+{
+	updateViewport();
+
+
+	// Texture
+	{
+		m_rndData.resize( TEX_S * TEX_S  );
+		m_texData.resize( TEX_S * TEX_S * 3 );
+		Eigen::Matrix< float, Eigen::Dynamic, 1 >
+				::Map( &m_rndData[0], TEX_S * TEX_S )
+				= ( Eigen::VectorXf::Random( TEX_S * TEX_S ).array().abs().matrix() )  ;
+
+		glGenTextures(1, &m_texId);
+		glBindTexture( GL_TEXTURE_2D, m_texId );
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	}
+
+	//
+
+	m_shouldRender[ eGrid ] = true ;
+	m_shouldRender[ eColors ] = true ;
+	m_shouldRender[ eVectors ] = true ;
+	m_shouldRender[ eTensors ] = false ;
+	m_shouldRender[ eStream ] = false ;
+	m_shouldRender[ eParticles ] = true ;
+
+	m_particleShader.add_uniform("model_view");
+	m_particleShader.add_uniform("projection");
+	m_particleShader.add_attribute("vertex");
+	m_particleShader.add_attribute("density");
+	m_particleShader.add_attribute("value");
+	m_particleShader.add_attribute("frame");
+	m_particleShader.load("2d/particle_vertex","2d/particle_fragment") ;
+}
+
 void GLViewer::update_buffers()
 {
 	const MeshType& g = m_offline.mesh() ;
@@ -174,6 +181,12 @@ void GLViewer::update_buffers()
 		m_gridVertices.reset( vertices.cols(), vertices.data() ) ;
 		m_gridQuadIndices.reset( nodeIndices.size(), &nodeIndices[0] ) ;
 	}
+
+	// Square vertices
+	Eigen::Matrix<float, 2, 4> vtx ;
+	vtx  <<  -1, -1, 1,  1,
+		 -1,  1, 1, -1 ;
+	m_squareVertices.reset( 4, vtx.data() );
 
 
 	if( m_shouldRender[ eParticles ])
@@ -208,7 +221,7 @@ void GLViewer::update_particle_buffers()
 	Mat tensor ;
 	Eigen::Matrix2f mat ;
 
-#pragma omp parallel for private(tensor)
+#pragma omp parallel for private(tensor, mat)
 	for( size_t i = 0 ; i < p.count() ; ++i ) {
 
 		if( m_drawOrientations) {
@@ -218,7 +231,7 @@ void GLViewer::update_particle_buffers()
 			const Vec ev = es.eigenvalues().array().max(0).sqrt() ;
 
 			mat = ( es.eigenvectors() * ev.asDiagonal() ).cast< GLfloat >()
-					* .5 * std::pow( p.volumes()[i], 1./3 )  ;
+					* .5 * std::pow( p.volumes()[i], 1./2 )  ;
 
 			densities[i] = p.volumes()[i]  ;
 
@@ -227,19 +240,20 @@ void GLViewer::update_particle_buffers()
 			Eigen::SelfAdjointEigenSolver<Mat> es( tensor );
 
 			const Vec ev = es.eigenvalues().array().max(0).sqrt() ;
-			const Scalar vol = 8 * ev.prod() ;
+			const Scalar vol = 4 * ev.prod() ;
 
 			mat = ( es.eigenvectors() * ev.asDiagonal() ).cast< GLfloat >()  ;
 
 			densities[i] = p.volumes()[i] / vol ;
 		}
 
-		velocities[i] = p.centers().col(i).norm()  ;
+		velocities[i] = p.velocities().col(i).norm() ;
 
 
-		frames.col(i) = Eigen::Matrix< GLfloat, 4, 1 >::Map( mat.data(), mat.size() ) ;
+		frames.col(i) = Eigen::Matrix< GLfloat, 4, 1 >::Map( mat.data() ) ;
 
 	}
+
 	m_particleFrames.reset( p.count(), frames.data(), GL_STATIC_DRAW )  ;
 	m_particleAlpha.reset ( p.count(), densities.data(), GL_STATIC_DRAW )  ;
 	m_particleColors.reset ( p.count(), velocities.data(), GL_STATIC_DRAW )  ;
@@ -297,7 +311,7 @@ void GLViewer::update_tensor_buffers()
 {
 	const MeshType& g = m_offline.mesh() ;
 
-	Eigen::Matrix<float, 4, Eigen::Dynamic > tensors( 2, g.nNodes() ) ;
+	Eigen::Matrix<float, 3, Eigen::Dynamic > tensors( 3, g.nNodes() ) ;
 	Eigen::Matrix<float, 3, Eigen::Dynamic >  colors( 3, g.nNodes() ) ;
 
 	tensors.setZero() ;
@@ -427,12 +441,28 @@ void GLViewer::draw( )
 	//Particles
 	if(m_shouldRender[eParticles])
 	{
-
 		glColor3f( 1., 0., 0. );
-		glPointSize( 2.f ) ;
 
-		gl::VertexPointer vp( m_particles ) ;
-		glDrawArrays( GL_POINTS, 0, m_particles.size() );
+		if( m_particleShader.ok() ) {
+
+			UsingShader sh( m_particleShader ) ;
+			sh.bindMVP();
+
+			gl::VertexAttribPointer   vap( m_particles, m_particleShader.attribute("vertex"), false, 1) ;
+			gl::VertexAttribPointer   dap( m_particleAlpha, m_particleShader.attribute("density"), false, 1) ;
+			gl::VertexAttribPointer   cap( m_particleColors, m_particleShader.attribute("value"), false, 1) ;
+			gl::VertexAttribPointer   aap( m_particleFrames, m_particleShader.attribute("frame"), false, 1) ;
+
+			gl::VertexPointer vp( m_squareVertices ) ;
+			glDrawArraysInstanced( GL_QUADS, 0, m_squareVertices.size(), m_particles.size() );
+//			glDrawArrays( GL_QUADS, 0, m_squareVertices.size() );
+
+		} else {
+			glPointSize( 2.f ) ;
+
+			gl::VertexPointer vp( m_particles ) ;
+			glDrawArrays( GL_POINTS, 0, m_particles.size() );
+		}
 	}
 
 	// Texture

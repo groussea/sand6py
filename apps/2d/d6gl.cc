@@ -103,7 +103,7 @@ public:
 	}
 
 #ifdef GLFW3
-	static void key_callback(GLFWwindow *, int key, int scancode, int action, int mods )
+	static void key_callback(GLFWwindow *, int key, int /*scancode*/, int action, int /*mods*/ )
 #else
 	static void key_callback( int key, int action )
 #endif
@@ -112,7 +112,7 @@ public:
 	}
 
 #ifdef GLFW3
-	static void mouse_click_callback(GLFWwindow *, int button, int action, int mods )
+	static void mouse_click_callback(GLFWwindow *, int button, int action, int /*mods*/ )
 #else
 	static void mouse_click_callback(int button, int action )
 #endif
@@ -209,8 +209,8 @@ private:
 			m_viewer.update_color_buffers();
 			break;
 		case 'D':
-			m_viewer.toggleRendering( GLViewer::eParticles );
-			m_viewer.update_particle_buffers();
+			m_viewer.toggleTensorEntity();
+			m_viewer.update_tensor_buffers();
 			break;
 		case 'F':
 			m_viewer.toggleVectorEntity();
@@ -222,9 +222,13 @@ private:
 		case 'I':
 			if( ! m_running) next_frame();
 			break ;
+		case 'M':
+			m_viewer.toggleRendering( GLViewer::eParticles );
+			m_viewer.update_particle_buffers();
+			break;
 		case 'O':
-			m_viewer.toggleTensorEntity();
-			m_viewer.update_tensor_buffers();
+			m_viewer.toggleParticleRepr();
+			m_viewer.update_particle_buffers();
 			break;
 		case 'P':
 			if( ! m_running) prev_frame();
