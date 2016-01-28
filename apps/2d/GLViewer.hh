@@ -71,7 +71,7 @@ public:
 	void update_tensor_buffers( ) ;
 	void update_texture( ) ;
 
-	void draw( ) ;
+	void draw( ) const ;
 
 	void toggleRendering( Element elt )
 	{

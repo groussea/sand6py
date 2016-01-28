@@ -5,6 +5,8 @@
 #include "simu/Phase.hh"
 #include "visu/Offline.hh"
 
+#include "utils/Log.hh"
+
 #include <Eigen/Eigenvalues>
 
 #include <iostream>
@@ -190,8 +192,8 @@ void GLViewer::update_buffers()
 			}
 		}
 
-		m_gridVertices.reset( vertices.cols(), vertices.data() ) ;
-		m_gridQuadIndices.reset( nodeIndices.size(), &nodeIndices[0] ) ;
+		m_gridVertices.reset( vertices.cols(), vertices.data(), GL_STATIC_DRAW  ) ;
+		m_gridQuadIndices.reset( nodeIndices.size(), &nodeIndices[0], GL_STATIC_DRAW  ) ;
 	}
 
 
@@ -219,8 +221,8 @@ void GLViewer::update_particle_buffers()
 	m_particles.reset( p.count(), p.centers().data(), GL_STATIC_DRAW )  ;
 
 	//		m_matrices.resize( 9, p.count() );
-	std::vector< float > densities ( p.count() );
-	std::vector< float > velocities ( p.count() );
+	Eigen::VectorXf densities ( p.count() );
+	Eigen::VectorXf velocities ( p.count() );
 	Eigen::Matrix< float, 4, Eigen::Dynamic > frames (4, p.count()) ;
 
 	// Compute movel-view matrix from tensor
@@ -263,6 +265,8 @@ void GLViewer::update_particle_buffers()
 	m_particleFrames.reset( p.count(), frames.data(), GL_STATIC_DRAW )  ;
 	m_particleAlpha.reset ( p.count(), densities.data(), GL_STATIC_DRAW )  ;
 	m_particleColors.reset ( p.count(), velocities.data(), GL_STATIC_DRAW )  ;
+
+	Log::Verbose() << "Particle max vel \t" << velocities.maxCoeff() << std::endl ;
 }
 
 // Grid colors
@@ -283,6 +287,9 @@ void GLViewer::update_color_buffers()
 	}
 
 	m_gridColors.reset( colors.cols(), colors.data() ) ;
+
+
+	Log::Verbose() << "Scalar range\t" << min_val << " ;\t" << max_val << std::endl ;
 }
 
 
@@ -305,6 +312,8 @@ void GLViewer::update_vector_buffers()
 	}
 
 	m_arrows.reset( vectors.cols(), vectors.data() ) ;
+
+	Log::Verbose() << "Vector max norm\t" <<  max_val << std::endl ;
 }
 
 // Tensors
@@ -326,6 +335,8 @@ void GLViewer::update_tensor_buffers()
 	}
 
 	m_tensors.reset( tensors.cols(), tensors.data() ) ;
+
+	Log::Verbose() << "Tensor max norm\t" <<  max_val << std::endl ;
 }
 
 void GLViewer::update_texture()
@@ -397,14 +408,12 @@ void GLViewer::update_texture()
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, TEX_S, TEX_S, 0, GL_RGB, GL_FLOAT, &m_texData[0]);
 }
 
-void GLViewer::draw( )
+void GLViewer::draw( ) const
 {
 	const Config& c = m_offline.config() ;
 
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_ACCUM_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 	glLineWidth( 1.f );
-
-	glEnable(GL_BLEND);
 
 	// Grid
 
@@ -473,9 +482,10 @@ void GLViewer::draw( )
 
 			glDrawArraysInstanced( GL_TRIANGLES, 0, 3, m_gridVertices.size() );
 		}
+		glEnableVertexAttribArray( 0 ); // ???
 	}
 
-	//Arrows
+	//Tensors
 	if(m_shouldRender[eTensors])
 	{
 		if( m_tensorShader.ok() ) {
@@ -488,6 +498,7 @@ void GLViewer::draw( )
 
 			glDrawArraysInstanced( GL_QUADS, 0, 4, m_gridVertices.size() );
 		}
+		glEnableVertexAttribArray( 0 ); // ???
 	}
 
 	// Texture

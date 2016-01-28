@@ -3,8 +3,10 @@
 
 #include "utils/string.hh"
 #include "utils/Config.hh"
+#include "utils/Log.hh"
 
 #include "visu/Offline.hh"
+#include "simu/Phase.hh"
 
 #ifdef GLFW3
 #include <GLFW/glfw3.h>
@@ -68,8 +70,8 @@ public:
 	{
 
 		do {
-			if( m_running ) {
-				next_frame() ;
+			if( m_running && !next_frame() ) {
+				m_running = false ;
 			}
 
 			m_viewer.draw( ) ;
