@@ -1,3 +1,5 @@
+2d/gl/ShapeRenderer.cc
+2d/gl/ShapeRenderer.hh
 gl/Shader.cc
 gl/Shader.hh
 gl/Texture.cc

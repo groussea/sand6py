@@ -5,6 +5,7 @@
 
 #include "gl/VertexBuffer.hh"
 #include "gl/Shader.hh"
+#include "gl/ShapeRenderer.hh"
 
 #include <vector>
 
@@ -127,6 +128,8 @@ private:
 	ScalarEntity m_scalarEntity ;
 	VectorEntity m_vectorEntity ;
 	TensorEntity m_tensorEntity ;
+
+	ShapeRenderer m_shapeRenderer ;
 
 	Shader	m_particleShader ;
 	Shader	m_vectorShader ;

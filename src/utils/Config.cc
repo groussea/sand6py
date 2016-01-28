@@ -41,7 +41,7 @@ Config::Config() :
 
 void Config::internalize()
 {
-	m_units.setTypical( box.minCoeff()/res.maxCoeff(), gravity.norm(), volMass );
+	m_units.setTypical( (box.array()/res.array().cast<Scalar>()).minCoeff(), gravity.norm(), volMass );
 
 	#define CONFIG_FIELD( name, type, u ) rescale( name, m_units.fromSI( u ) ) ;
 	EXPAND_CONFIG

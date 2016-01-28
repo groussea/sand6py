@@ -13,11 +13,11 @@ void main()
     vec3 bary = vec3(0,0,0) ;
     bary[gl_VertexID] = 1. ;
 
-    vec2 n = vec2( -value.y, value.x ) ;
+    vec2 n = .25*vec2( -value.y, value.x ) ;
 
-    vec2 P1 = 3*value ;
-    vec2 P2 = -n ;
-    vec2 P3 = n ;
+    vec2 P1 = .66*value ;
+    vec2 P2 = -n -.33*value ;
+    vec2 P3 =  n -.33*value ;
 
     vec2 vertex_world = vertex + bary.x*P1 + bary.y*P2 + bary.z*P3 ;
 

@@ -1,6 +1,7 @@
 #include "GLViewer.hh"
 
 #include "geo/MeshImpl.hh"
+#include "geo/LevelSet.hh"
 
 #include "simu/Phase.hh"
 #include "visu/Offline.hh"
@@ -519,12 +520,10 @@ void GLViewer::draw( ) const
 	}
 
 
-//	//LS
-//	for( unsigned i = 0 ; i < m_simu.nLevelSets() ; ++i ) {
-//		glColor3f( 0., 0., 1. );
-//		glLineWidth( 2.f ) ;
-//		m_simu.levelSet(i).draw();
-//	}
+	//LS
+	for( const LevelSet::Ptr& ls: m_offline.levelSets() ) {
+		m_shapeRenderer.draw( *ls, m_offline.mesh().box());
+	}
 }
 
 const VectorField& GLViewer::getVectorEntity() const

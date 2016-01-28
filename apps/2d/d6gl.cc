@@ -3,10 +3,8 @@
 
 #include "utils/string.hh"
 #include "utils/Config.hh"
-#include "utils/Log.hh"
 
 #include "visu/Offline.hh"
-#include "simu/Phase.hh"
 
 #ifdef GLFW3
 #include <GLFW/glfw3.h>
@@ -357,7 +355,7 @@ int main( int argc, const char * argv[] )
 	const char * base_dir = "out" ;
 	unsigned frame = 0 ;
 
-	unsigned width  = 1280 ;
+	unsigned width  = 0 ;
 	unsigned height = 0 ;
 
 	for( int i = 1 ; i < argc ; ++i )
@@ -387,8 +385,10 @@ int main( int argc, const char * argv[] )
 
 	d6::Offline offline( base_dir ) ;
 
-	if( height == 0 ) {
-		height = width * (offline.config().box[1]/offline.config().box[0]) ;
+	if( width == 0 || height == 0 ) {
+		const float a = offline.config().box[0]/offline.config().box[1] ;
+		height = std::sqrt( 5.e5 / a ) ;
+		width = height * a ;
 	}
 
 	return d6::Appli( offline, frame, width, height ).run( ) ;

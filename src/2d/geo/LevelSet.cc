@@ -55,7 +55,8 @@ void LevelSet::inv_inertia(MatS &Mi) const
 	Mi *= std::pow( m_scale, -WD ) ;
 }
 
-LevelSet::Ptr LevelSet::make_sphere() { return Ptr( new SphereLevelSet() ) ; }
-LevelSet::Ptr LevelSet::make_plane() { return Ptr( new PlaneLevelSet() ) ; }
+LevelSet::Ptr LevelSet::make_sphere()   { return Ptr( new SphereLevelSet() ) ; }
+LevelSet::Ptr LevelSet::make_plane()    { return Ptr( new PlaneLevelSet() ) ; }
+LevelSet::Ptr LevelSet::make_cylinder(const Scalar len) { return Ptr( new SegLevelSet(len) ) ; }
 
 } //d6
