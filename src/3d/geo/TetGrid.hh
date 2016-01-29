@@ -69,12 +69,8 @@ public:
 	Vec box() const
 	{ return firstCorner( m_dim ) ; }
 
+	using Base::locate ;
 	void locate( const Vec &x, Location& loc ) const ;
-
-	using Base::interpolate ;
-	void interpolate( const Location &loc , Interpolation& itp ) const ;
-
-	void get_derivatives( const Location& loc, Derivatives& dc_dx ) const ;
 
 	CellIterator cellBegin() const {
 		return TetGridIterator( *this, Cell::Zero() ) ;
@@ -92,15 +88,8 @@ public:
 		ar & m_idx ;
 	}
 
-	void list_nodes( const Cell& cell, NodeList& list ) const {
-		Location loc { cell, Coords::Zero() } ;
-		Interpolation itp ;
-		interpolate( loc, itp );
-		list = itp.nodes ;
-	}
-
 	void make_bc( const BoundaryMapper& mapper, BoundaryConditions &bc ) const ;
-	
+
 	Index nAdjacent( Index idx ) const {
 		Vec3i node ;
 		node[0] = idx / ( (m_dim[2]+1) * (m_dim[1]+1) ) ;
@@ -114,13 +103,9 @@ public:
 
 	}
 
-private:
-
 	const Vec3i& dim() const { return m_dim ; }
 	const Vec&    dx() const { return  m_dx ; }
 	const Vec&   idx() const { return m_idx ; }
-
-
 
 	Index nodeIndex( const Vertex& node ) const
 	{
@@ -128,6 +113,9 @@ private:
 			+  (m_dim[2]+1) * node[1]
 			+  node[2] ;
 	}
+
+private:
+
 
 	void get_corner( const Vec3i &cell, Vec& corner ) const {
 		corner = (cell.array().cast< Scalar >() * m_dx.array()).matrix() ;

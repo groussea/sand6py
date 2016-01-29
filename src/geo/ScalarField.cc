@@ -30,10 +30,30 @@ void AbstractScalarField< ShapeFuncT >::add_spi_tensor(const Location &x, Mat &t
 }
 #endif
 
+template<typename ShapeFuncT >
+Vec AbstractScalarField< ShapeFuncT >::grad_at( const typename ShapeFuncType::Location& loc ) const
+{
+	typename ShapeFuncType::NodeList nodes ;
+	typename ShapeFuncType::Derivatives dc_dx ;
+
+	Base::shape().list_nodes( loc, nodes );
+	Base::shape().get_derivatives( loc, dc_dx ) ;
+
+	// v(x) = sum c_k(x) v_k
+
+	Vec grad = Vec::Zero() ;
+	for( Index k = 0 ; k < nodes.rows() ; ++k ) {
+		grad += dc_dx.row(k) * Base::segment( nodes[k] ) ;
+	}
+
+	return grad ;
+}
+
+
 template class FieldBase< AbstractScalarField< Linear<Grid> > > ;
 template class AbstractScalarField< Linear<Grid> > ;
 #if HAS_TET
-template class FieldBase< AbstractScalarField< TetGrid > > ;
-template class AbstractScalarField< TetGrid > ;
+template class FieldBase< AbstractScalarField< Linear<TetGrid> > > ;
+template class AbstractScalarField< Linear<TetGrid> > ;
 #endif
 }

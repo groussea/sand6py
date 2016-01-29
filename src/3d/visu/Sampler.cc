@@ -49,15 +49,16 @@ void Sampler::move( )
 #pragma omp parallel for
 	for(Index i = 0 ; i < n ; ++i) {
 
-		const Vec p0 = m_positions.col(i).cast< Scalar >()  ;
-		const Vec p1 = p0 + dt * grains.velocity( p0 ) ;
+		const Vec p0 = m_positions.col(i).cast< Scalar >() ;
+		auto p0loc = m_offline.mesh().locate( p0 ) ;
+		const Vec p1 = p0 + dt * grains.velocity( p0loc ) ;
 		m_positions.col(i) = p1.cast< float >() ;
 
 		// Orientation
 		if( m_mode == Discs ) {
 			Mat Wu, Du ;
-			tensor_view( grains.sym_grad(p0) ).get( Du ) ;
-			tensor_view( grains.spi_grad(p0) ).get( Wu ) ;
+			tensor_view( grains.sym_grad(p0loc) ).get( Du ) ;
+			tensor_view( grains.spi_grad(p0loc) ).get( Wu ) ;
 
 			Vec t0 ;
 			if ( std::fabs(m_normals(i,0)) > 1.e-6 ) {
@@ -81,7 +82,7 @@ void Sampler::move( )
 	const Index np = m_particlesCount ;
 #pragma omp parallel for
 	for(Index i = 0 ; i < np ; ++i) {
-		m_predPos.col(i) += dt*grains.velocity(	m_predPos.col(i) )   ;
+		m_predPos.col(i) += dt*grains.velocity( m_offline.mesh().locate( m_predPos.col(i) ) )   ;
 	}
 
 }
@@ -119,7 +120,8 @@ void Sampler::compute_absolute()
 
 		m_positions.col(i) = pos.cast< float >() ;
 
-		Eigen::Vector3f grad_phi = grains.grad_phi( pos ).cast<float>() ;
+		const auto& pos_loc = m_offline.mesh().locate( pos ) ;
+		Eigen::Vector3f grad_phi = grains.grad_phi( pos_loc ).cast<float>() ;
 		const float gn = grad_phi.norm() ;
 
 		if( m_mode == Normal ) {
@@ -141,7 +143,7 @@ void Sampler::compute_absolute()
 			if ( m_mode == VelocityCut ) {
 				m_visibility(i) = particles.velocities().col(pid).norm();
 			} else {
-				m_visibility(i) = std::max( 0., std::min( 1., 1. - grains.fraction(pos) ) ) ;
+				m_visibility(i) = std::max( 0., std::min( 1., 1. - grains.fraction(pos_loc) ) ) ;
 			}
 		}
 	}

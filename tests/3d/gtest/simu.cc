@@ -16,6 +16,7 @@ TEST( simu, quad ) {
 	Vec3i dim( 1, 1, 1 ) ;
 	Vec   box( 2, 6, .3 ) ;
 	MeshImpl g( box, dim ) ;
+	Linear<MeshImpl> shape(g) ;
 
 	MeshType::Cells cells ;
 	for( MeshType::CellIterator it = g.cellBegin() ; it != g.cellEnd() ; ++it )
@@ -28,8 +29,8 @@ TEST( simu, quad ) {
 //	for( unsigned i = 0 ; i < indices.size() ; ++i ) std::cout << indices[i] << " " ;
 
 	typedef const typename MeshType::Location& Loc ;
-	typedef const typename MeshType::Interpolation& Itp ;
-	typedef const typename MeshType::Derivatives& Dcdx ;
+	typedef const typename Linear<MeshImpl>::Interpolation& Itp ;
+	typedef const typename Linear<MeshImpl>::Derivatives& Dcdx ;
 
 	Scalar f_cst   = 0. ;
 	Scalar f_lin   = 0. ;
@@ -44,14 +45,14 @@ TEST( simu, quad ) {
 		f_lin += w * geo.pos( loc.coords ).prod() ;
 		f_quad  += w * geo.pos( loc.coords ).prod()  * geo.pos( loc.coords ).prod() ;
 		f_quad2 += w * geo.pos( loc.coords ).dot( geo.pos( loc.coords ) ) ;
-		
+
 	} ) ;
 
 	ASSERT_FLOAT_EQ( g.box().prod() , f_cst  ) ;
 	ASSERT_FLOAT_EQ( g.box().prod() * g.box().prod() / 8 , f_lin  ) ;
 	EXPECT_FLOAT_EQ( g.box().prod() * g.box().prod() * g.box().prod() / 27,  f_quad ) ;
 	EXPECT_FLOAT_EQ( (std::pow(g.box()[0],3)*g.box()[2]*g.box()[1]
-		+ std::pow(g.box()[1],3)*g.box()[2]*g.box()[0] 
+		+ std::pow(g.box()[1],3)*g.box()[2]*g.box()[0]
 		+ std::pow(g.box()[2],3)*g.box()[0]*g.box()[1]) / 3,  f_quad2 ) ;
 }
 
@@ -68,10 +69,12 @@ TEST( simu, DuDv ) {
 	std::vector< Index > indices( 8, 1 ) ;
 
 	typename MeshType::Location loc ;
-	typename MeshType::Interpolation itp ;
-	typename MeshType::Derivatives dc_dx ;
+	typename Linear<MeshImpl>::Interpolation itp ;
+	typename Linear<MeshImpl>::Derivatives dc_dx ;
 
 	MeshImpl g( Vec(1,1,1), Vec3i(1,1,1) ) ;
+	Linear<MeshImpl> shape(g) ;
+
 	MeshType::CellGeo vx ;
 	g.get_geo( *g.cellBegin(), vx );
 	loc.cell = *g.cellBegin() ;
@@ -84,8 +87,8 @@ TEST( simu, DuDv ) {
 	for( int q = 0 ; q < MeshType::CellGeo::NQ ; ++q ) {
 		loc.coords = qp.col(q) ;
 
-		g.interpolate( loc, itp );
-		g.get_derivatives( loc, dc_dx );
+		shape.interpolate( loc, itp );
+		shape.get_derivatives( loc, dc_dx );
 
 		indices[ itp.nodes[q] ] = 0 ;
 		FormBuilder::addDuDv( A, qp_w[q], itp, dc_dx, indices, indices ) ;

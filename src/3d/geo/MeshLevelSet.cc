@@ -10,7 +10,7 @@ MeshLevelSet::MeshLevelSet( const char* objFile )
 	: m_objFile( objFile ),
 	  m_radius( 1.e-1 ),
 	  m_grid( Vec::Ones(), Vec3i::Constant( 50 ) ),
-	  m_values( m_grid )
+	  m_values( Linear<Grid>(m_grid) )
 {}
 
 Scalar MeshLevelSet::eval_local(const Vec &x) const {
@@ -18,7 +18,7 @@ Scalar MeshLevelSet::eval_local(const Vec &x) const {
 	if(! x_loc.isApprox( m_grid.clamp_point( x_loc ) ) ) {
 		return - m_emptyVal ;
 	}
-	return - m_values( x_loc ) ;
+	return - m_values( m_grid.locate(x_loc) ) ;
 }
 
 Vec MeshLevelSet::grad_local(const Vec &x) const {
@@ -26,7 +26,7 @@ Vec MeshLevelSet::grad_local(const Vec &x) const {
 	if(! x_loc.isApprox( m_grid.clamp_point( x_loc ) ) ) {
 		return Vec::Zero() ;
 	}
-	return - m_values.grad_at( x_loc );
+	return - m_values.grad_at( m_grid.locate(x_loc) );
 }
 
 static Vec     closestPointOnTriangle( const Vec& p, const Mat& T ) ;

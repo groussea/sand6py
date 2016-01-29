@@ -23,6 +23,7 @@ class AbstractVectorField : public FieldBase< AbstractVectorField< ShapeFuncT > 
 	typedef ShapeFuncBase< typename Traits::ShapeFuncType > ShapeFuncType ;
 
 	typedef FieldBase< AbstractVectorField > Base ;
+	typedef typename ShapeFuncType::Location Location ;
 
 public:
 	explicit AbstractVectorField( const ShapeFuncType& shape )
@@ -47,8 +48,8 @@ public:
 	}
 
 #if (D6_DIM==3)
-	void get_spi_tensor( const Vec& x, Mat& tensor ) const ;
-	void add_spi_tensor( const Vec& x, Mat& tensor ) const ;
+	void get_spi_tensor( const Location& x, Mat& tensor ) const ;
+	void add_spi_tensor( const Location& x, Mat& tensor ) const ;
 #endif
 
 };

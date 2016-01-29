@@ -66,28 +66,6 @@ void TetGrid::get_geo( const Cell &cell, CellGeo& geo ) const {
 
 }
 
-void TetGrid::interpolate(const Location &loc, Interpolation &itp) const
-{
-	itp.coeffs = loc.coords ;
-
-	Tet geo ;
-	get_geo(  loc.cell, geo ) ;
-
-	for( Index k = 0 ; k < NV ; ++k ) {
-		const Vec3i v = ( geo.vertex(k).array() * m_idx.array()  + .5 ).cast<Index>() ;
-		itp.nodes[k] = nodeIndex( v ) ;
-	}
-}
-
-void TetGrid::get_derivatives( const Location& loc, Derivatives& dc_dx ) const
-{
-	Tet geo ;
-	get_geo(  loc.cell, geo ) ;
-
-	geo.compute_derivatives( loc.coords, dc_dx ) ;
-}
-
-
 void TetGrid::make_bc( const BoundaryMapper& mapper, BoundaryConditions &bc ) const
 {
 	for( Index i = 0 ; i <= m_dim[1] ; ++i ) {

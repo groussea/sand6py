@@ -4,6 +4,7 @@
 #include "LevelSet.hh"
 
 #include "Grid.hh"
+#include "MeshShapeFunction.hh"
 #include "ScalarField.hh"
 
 #include <limits>
@@ -323,7 +324,7 @@ private:
 	Grid m_grid ;
 	Vec  m_offset ;
 	Scalar m_emptyVal ;
-	AbstractScalarField< Grid > m_values ;
+	AbstractScalarField< Linear<Grid> > m_values ;
 };
 
 } //ns d6

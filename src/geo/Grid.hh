@@ -79,6 +79,7 @@ public:
 	Vec box() const
 	{ return firstCorner( m_dim ) ; }
 
+	using Base::locate ;
 	void locate( const Vec &x, Location& loc ) const
 	{
 		loc.coords = x.array()/m_dx.array() ;

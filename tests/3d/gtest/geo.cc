@@ -13,6 +13,8 @@
 #include "geo/TetGrid.hh"
 #include "geo/Tet.hh"
 
+#include "geo/MeshShapeFunction.hh"
+
 #include "geo/BoundaryInfo.hh"
 
 #include <Eigen/Geometry>
@@ -24,20 +26,21 @@ TEST( geo, grid )
 	Vec3i dim( 10, 5, 4 ) ;
 	Vec   box( 1, 1, 1 ) ;
 	Grid g( box, dim ) ;
+	Linear<Grid> shape(g) ;
 
 	ASSERT_EQ( 200, g.nCells() ) ;
 	ASSERT_EQ( 11*6*5, g.nNodes() ) ;
 	ASSERT_TRUE( box.isApprox( g.box() ) ) ;
 
-	Grid::Interpolation itp ;
-	g.interpolate( Vec(0,0,0), itp );
+	Linear<Grid>::Interpolation itp ;
+	shape.interpolate( g.locate(Vec(0,0,0)), itp );
 
 	ASSERT_EQ( 0, itp.nodes[0] ) ;
 	ASSERT_EQ( dim[2]+1, itp.nodes[2] ) ;
 	ASSERT_EQ( (dim[1]+1)*(dim[2]+1)+(dim[2]+1)+1, itp.nodes[7] ) ;
 	ASSERT_DOUBLE_EQ( 1, itp.coeffs[0] ) ;
 
-	g.interpolate( Vec(1,1,1), itp );
+	shape.interpolate( g.locate(Vec(1,1,1)), itp );
 
 	ASSERT_EQ( g.nNodes()-1, itp.nodes[7] ) ;
 	ASSERT_DOUBLE_EQ( 1, itp.coeffs[7] ) ;
@@ -53,21 +56,21 @@ TEST( geo, grid )
 	g.get_geo( Vec3i(1,2,3), vx );
 	const Vec x1 = vx.center() + 1.e-2 * Vec(1,-2,3) ;
 
-	Grid::Derivatives dc_dx ;
+	Linear<Grid>::Derivatives dc_dx ;
 	Grid::Location loc ;
 	g.locate( x1, loc );
-	g.interpolate( loc, itp ) ;
-	g.get_derivatives( loc, dc_dx );
+	shape.interpolate( loc, itp ) ;
+	shape.get_derivatives( loc, dc_dx );
 
 	for( unsigned i = 0 ; i < 3 ; ++i ) {
 		Vec dx ( Vec::Zero() ) ;
 		dx[i] = 1.e-2 ;
 
-		Grid::CoefList coeffs_pred = itp.coeffs + ( dc_dx * dx ) ;
+		Linear<Grid>::CoefList coeffs_pred = itp.coeffs + ( dc_dx * dx ) ;
 
 		const Vec x2 = x1 + dx ;
-		Grid::Interpolation itp2 ;
-		g.interpolate( x2, itp2 ) ;
+		Linear<Grid>::Interpolation itp2 ;
+		shape.interpolate( g.locate(x2), itp2 ) ;
 
 		ASSERT_TRUE( coeffs_pred.isApprox( itp2.coeffs ) ) ;
 	}
@@ -83,26 +86,27 @@ TEST( geo, field )
 	Vec   box( 1, 1, 1 ) ;
 	Grid g( box, dim ) ;
 
-	AbstractScalarField< Grid > phi( g ) ;
+	Linear<Grid> shape(g) ;
+	AbstractScalarField< Linear<Grid> > phi( shape ) ;
 	ASSERT_EQ( g.nNodes(), phi.flatten().rows() ) ;
 
 	phi.set_constant( 3 );
-	ASSERT_DOUBLE_EQ( 3., phi( Vec( 0.2, 0.7, 0.5 ) ) ) ;
+	ASSERT_DOUBLE_EQ( 3., phi( g.locate(Vec( 0.2, 0.7, 0.5 ) ) )) ;
 
 	phi.set_zero();
-	ASSERT_DOUBLE_EQ( 0., phi( Vec( 0.3, 0.4, 0.1 ) ) ) ;
-	phi.add_at( Vec( 0.3, 0.4, 0.1 ), 1 );
-	ASSERT_FLOAT_EQ( 1,  phi( Vec( 0.3, 0.4, 0.1 ) ) ) ;
-	ASSERT_FLOAT_EQ( 0.3,  phi( Vec( 0.37, 0.4, 0.1 ) ) ) ;
-	ASSERT_FLOAT_EQ( 0.7,  phi( Vec( 0.3, 0.37, 0.1 ) ) ) ;
-	ASSERT_FLOAT_EQ( 0.5,  phi( Vec( 0.3, 0.4, 0.15 ) ) ) ;
+	ASSERT_DOUBLE_EQ( 0., phi( g.locate(Vec( 0.3, 0.4, 0.1 ) ) )) ;
+	phi.add_at( g.locate(Vec( 0.3, 0.4, 0.1 )), 1 );
+	ASSERT_FLOAT_EQ( 1,  phi( g.locate(Vec( 0.3, 0.4, 0.1 ) ) )) ;
+	ASSERT_FLOAT_EQ( 0.3,  phi( g.locate(Vec( 0.37, 0.4, 0.1 ) ) )) ;
+	ASSERT_FLOAT_EQ( 0.7,  phi( g.locate(Vec( 0.3, 0.37, 0.1 ) ) )) ;
+	ASSERT_FLOAT_EQ( 0.5,  phi( g.locate(Vec( 0.3, 0.4, 0.15 ) ) )) ;
 
-	AbstractVectorField< Grid > u( g ) ;
+	AbstractVectorField< Linear<Grid> > u( shape ) ;
 	u.set_constant( Vec(0,1,0) ) ;
-	ASSERT_TRUE( Vec(0,1,0).isApprox( u( Vec( 0.2, 0.7, 0.5 ) ) ) ) ;
+	ASSERT_TRUE( Vec(0,1,0).isApprox( u( g.locate(Vec( 0.2, 0.7, 0.5 ) ) ) )) ;
 
-	u.add_at( Vec( 0.35, 0.45, 0.15 ), Vec(1,0,0) );
-	ASSERT_TRUE( Vec(0.125,1,0).isApprox( u( Vec( 0.3, 0.4, 0.2 ) ) ) ) ;
+	u.add_at( g.locate(Vec( 0.35, 0.45, 0.15 )), Vec(1,0,0) );
+	ASSERT_TRUE( Vec(0.125,1,0).isApprox( u( g.locate(Vec( 0.3, 0.4, 0.2 ) ) )) ) ;
 }
 
 TEST( geo, tensor )
@@ -184,7 +188,8 @@ TEST( geo, field_func )
 	Vec   box( 1, 1, 1 ) ;
 	MeshImpl g( box, dim ) ;
 
-	TensorField tf( g ) ;
+	Linear<MeshImpl> shape(g) ;
+	TensorField tf( shape ) ;
 
 	Vec6 sym ( Vec6::Zero() ) ;
 	sym[0] = 3. ;
@@ -294,13 +299,14 @@ TEST( geo, tetGrid )
 		}
 	}
 
-	AbstractScalarField< TetGrid > field( g ) ;
+	Linear<TetGrid> shape (g)  ;
+	AbstractScalarField< Linear<TetGrid> > field( shape ) ;
 	field.set_zero() ;
 	field[7] = 1. ;
 
-	ASSERT_DOUBLE_EQ( 1, field( box ) ) ;
-	ASSERT_DOUBLE_EQ( 0, field( Vec(box[0],0,box[2]) ) ) ;
-	ASSERT_DOUBLE_EQ( 0.5, field( Vec(box[0],0.5*box[1],box[2]) ) ) ;
+	ASSERT_DOUBLE_EQ( 1, field( g.locate(box) ) ) ;
+	ASSERT_DOUBLE_EQ( 0, field( g.locate(Vec(box[0],0,box[2]) )) ) ;
+	ASSERT_DOUBLE_EQ( 0.5, field( g.locate(Vec(box[0],0.5*box[1],box[2]) )) ) ;
 
 
 	for( unsigned k = 0 ; k < 6 ; ++k ) {
@@ -310,24 +316,24 @@ TEST( geo, tetGrid )
 		g.get_geo( cell, tet );
 		const Vec x1 = tet.center() + 1.e-2 * Vec(1,-2,3) ;
 
-		TetGrid::Derivatives dc_dx ;
-		TetGrid::Interpolation itp ;
+		Linear<TetGrid>::Derivatives dc_dx ;
+		Linear<TetGrid>::Interpolation itp ;
 		g.locate( x1, loc );
-		g.interpolate( loc, itp ) ;
-		g.get_derivatives( loc, dc_dx );
+		shape.interpolate( loc, itp ) ;
+		shape.get_derivatives( loc, dc_dx );
 
 		for( unsigned i = 0 ; i < 3 ; ++i ) {
 			Vec dx ( Vec::Zero() ) ;
 			dx[i] = 1.e-2 ;
 
-			TetGrid::CoefList coeffs_pred = itp.coeffs + ( dc_dx * dx ) ;
+			Linear<TetGrid>::CoefList coeffs_pred = itp.coeffs + ( dc_dx * dx ) ;
 
 			TetGrid::Location loc2 ;
-			TetGrid::Interpolation itp2 ;
+			Linear<TetGrid>::Interpolation itp2 ;
 
 			const Vec x2 = x1 + dx ;
 			g.locate( x2, loc2 );
-			g.interpolate( loc2, itp2 ) ;
+			shape.interpolate( loc2, itp2 ) ;
 
 			ASSERT_TRUE( coeffs_pred.isApprox( itp2.coeffs ) ) ;
 
@@ -342,14 +348,17 @@ TEST( geo, adjacency )
 	Vec   box( 1, 1, 1 ) ;
 
 	MeshImpl g( box, dim ) ;
+	Linear<MeshImpl> shape(g) ;
 	Eigen::VectorXi nAdj ( g.nNodes() ) ;
 	nAdj.setZero() ;
 
 	for( typename MeshType::CellIterator it = g.cellBegin() ; it != g.cellEnd() ; ++it ) {
-		typename MeshType::NodeList nodes ;
-		g.list_nodes( *it, nodes );
 
-		for( Index k = 0 ; k < MeshType::NV ; ++k ) {
+		typename Linear<MeshImpl>::NodeList nodes ;
+		typename MeshImpl::Location loc ; loc.cell = *it ;
+		shape.list_nodes( loc, nodes );
+
+		for( Index k = 0 ; k < Linear<MeshImpl>::NI ; ++k ) {
 			nAdj[nodes[k]]++ ;
 		}
 	}
