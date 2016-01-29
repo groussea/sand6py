@@ -29,10 +29,10 @@ struct Phase
 	VectorField fcontact ;
 
 	Phase( const MeshType& mesh )
-		: fraction(mesh), velocity(mesh),
-		  stresses(mesh), sym_grad(mesh),
-		  spi_grad(mesh), grad_phi(mesh),
-		  geo_proj(mesh), fcontact(mesh)
+		: fraction(Linear<MeshImpl>(mesh)), velocity(Linear<MeshImpl>(mesh)),
+		  stresses(Linear<MeshImpl>(mesh)), sym_grad(Linear<MeshImpl>(mesh)),
+		  spi_grad(Linear<MeshImpl>(mesh)), grad_phi(Linear<MeshImpl>(mesh)),
+		  geo_proj(Linear<MeshImpl>(mesh)), fcontact(Linear<MeshImpl>(mesh))
 	{}
 
 	template < typename Archive >

@@ -9,26 +9,28 @@
 #include "TetGrid.hh"
 #endif
 
+#include "MeshShapeFunction.hh"
+
 namespace d6
 {
 
-template <typename MeshT>
-void AbstractTensorField< MeshT >::get_sym_tensor(const Vec &x, Mat &tensor) const
+template <typename ShapeFuncT>
+void AbstractTensorField< ShapeFuncT >::get_sym_tensor(const Location &x, Mat &tensor) const
 {
 	tensor_view( Base::eval_at(x) ).get( tensor ) ;
 }
 
-template <typename MeshT>
-void AbstractTensorField< MeshT >::add_sym_tensor(const Vec &x, Mat &tensor) const
+template <typename ShapeFuncT>
+void AbstractTensorField< ShapeFuncT >::add_sym_tensor(const Location &x, Mat &tensor) const
 {
 	tensor_view( Base::eval_at(x) ).add( tensor ) ;
 }
 
-template class FieldBase< AbstractTensorField< Grid > > ;
-template class AbstractTensorField< Grid > ;
+template class FieldBase< AbstractTensorField< Linear<Grid> > > ;
+template class AbstractTensorField< Linear<Grid> > ;
 #if HAS_TET
-template class FieldBase< AbstractTensorField< TetGrid > > ;
-template class AbstractTensorField< TetGrid > ;
+template class FieldBase< AbstractTensorField< Linear<TetGrid> > > ;
+template class AbstractTensorField< Linear<TetGrid> > ;
 #endif
 }
 

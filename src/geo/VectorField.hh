@@ -8,42 +8,42 @@
 
 namespace d6 {
 
-template < typename MeshT >
-struct FieldTraits< AbstractVectorField< MeshT > >  {
+template < typename ShapeFuncT >
+struct FieldTraits< AbstractVectorField< ShapeFuncT > >  {
 
-	typedef MeshT  MeshType ;
+	typedef ShapeFuncT  ShapeFuncType ;
 	typedef Vec	   ValueType ;
 	static constexpr Index Dimension = WD ;
 };
 
-template < typename MeshT >
-class AbstractVectorField : public FieldBase< AbstractVectorField< MeshT > >
+template < typename ShapeFuncT >
+class AbstractVectorField : public FieldBase< AbstractVectorField< ShapeFuncT > >
 {
 	typedef FieldTraits< AbstractVectorField > Traits ;
-	typedef MeshBase< typename Traits::MeshType > MeshType ;
+	typedef ShapeFuncBase< typename Traits::ShapeFuncType > ShapeFuncType ;
 
 	typedef FieldBase< AbstractVectorField > Base ;
 
 public:
-	explicit AbstractVectorField( const MeshType& mesh )
-		: Base( mesh )
+	explicit AbstractVectorField( const ShapeFuncType& shape )
+		: Base( shape )
 	{
 
 	}
 	template <typename Func>
-	AbstractVectorField( const FieldFuncBase< Func, Base::D, MeshT > & func )
-		: Base( func.mesh() )
+	AbstractVectorField( const FieldFuncBase< Func, Base::D, ShapeFuncT > & func )
+		: Base( func.shape() )
 	{
 		Base::operator=( func );
 	}
 	template <typename Func>
-	AbstractVectorField& operator=( const FieldFuncBase< Func, Base::D, MeshT > & func )
+	AbstractVectorField& operator=( const FieldFuncBase< Func, Base::D, ShapeFuncT > & func )
 	{
 		return Base::operator=( func );
 	}
 
-	FieldNorm< d6::AbstractVectorField, MeshT > norm() const {
-		return FieldNorm< d6::AbstractVectorField, MeshT >( *this ) ;
+	FieldNorm< d6::AbstractVectorField, ShapeFuncT > norm() const {
+		return FieldNorm< d6::AbstractVectorField, ShapeFuncT >( *this ) ;
 	}
 
 #if (D6_DIM==3)

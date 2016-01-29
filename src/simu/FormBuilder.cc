@@ -13,11 +13,13 @@ void FormBuilder::addToIndex(
 		const std::vector< Index > &colIndices
 		) {
 
-	typename MeshType::NodeList nodes ;
+	typename Linear<MeshImpl>::NodeList nodes ;
 	for( const typename MeshType::Cell& cell : cells ) {
-		m_mesh.list_nodes( cell, nodes );
-		for( int k = 0 ; k < MeshType::NV ; ++ k ) {
-			for( int j = 0 ; j < MeshType::NV ; ++ j ) {
+		typename Linear<MeshImpl>::Location loc ;
+		loc.cell = cell ;
+		m_mesh.shaped<Linear>().list_nodes( loc, nodes );
+		for( int k = 0 ; k < Linear<MeshImpl>::NI ; ++ k ) {
+			for( int j = 0 ; j < Linear<MeshImpl>::NI ; ++ j ) {
 				m_data[ rowIndices[ nodes[k] ] ].push_back( colIndices[ nodes[j] ] ) ;
 			}
 		}
@@ -77,28 +79,28 @@ void FormBuilder::addRows( Index rows )
 
 void FormBuilder::addDuDv( FormMat<WD,WD>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices )
 {
-	for( int k = 0 ; k < MeshType::NV ; ++k ) {
+	for( int k = 0 ; k < Linear<MeshImpl>::NI ; ++k ) {
 		addDuDv( A, w, rowIndices[itp.nodes[k]], dc_dx.row(k), itp, dc_dx, colIndices );
 	}
 }
 
 void FormBuilder::addTauDu( FormMat<SD,WD>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices )
 {
-	for( int k = 0 ; k < MeshType::NV ; ++k ) {
+	for( int k = 0 ; k < Linear<MeshImpl>::NI ; ++k ) {
 		addTauDu( A, w * itp.coeffs[k], rowIndices[itp.nodes[k]], itp, dc_dx, colIndices );
 	}
 }
 
 void FormBuilder::addVDp( FormMat<WD,1>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices )
 {
-	for( int k = 0 ; k < MeshType::NV ; ++k ) {
+	for( int k = 0 ; k < Linear<MeshImpl>::NI ; ++k ) {
 		addVDp( A, w * itp.coeffs[k], rowIndices[itp.nodes[k]], itp, dc_dx, colIndices );
 	}
 }
 
 void FormBuilder::addTauWu( FormMat<RD,WD>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices )
 {
-	for( int k = 0 ; k < MeshType::NV ; ++k ) {
+	for( int k = 0 ; k < Linear<MeshImpl>::NI ; ++k ) {
 		addTauWu( A, w * itp.coeffs[k], rowIndices[itp.nodes[k]], itp, dc_dx, colIndices );
 	}
 }

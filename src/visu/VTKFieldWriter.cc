@@ -18,12 +18,14 @@ VTKFieldWriter::VTKFieldWriter( const char* base_dir, const MeshType& mesh )
 
 void VTKFieldWriter::writeMesh( File &vtk ) const
 {
+	const typename FieldTraits<VectorField>::ShapeFuncType shape( m_mesh ) ;
+	constexpr Index NV = VectorField::ShapeFunc::NI ;
 
-	Eigen::Matrix<float, WD, Eigen::Dynamic> vertices( WD, m_mesh.nNodes() ) ;
+	Eigen::Matrix<float, WD, Eigen::Dynamic> vertices( WD, shape.nDoF() ) ;
 	vertices.setZero() ;
 
-	Eigen::Matrix<int, MeshType::NV+1, Eigen::Dynamic > nodeIndices( MeshType::NV+1, m_mesh.nCells() ) ;
-	nodeIndices.row(0).setConstant( MeshType::NV ) ;
+	Eigen::Matrix<int, NV+1, Eigen::Dynamic > nodeIndices( NV+1, m_mesh.nCells() ) ;
+	nodeIndices.row(0).setConstant( NV ) ;
 
 	const Index elemType =
 		#if D6_DIM == 3
@@ -36,17 +38,20 @@ void VTKFieldWriter::writeMesh( File &vtk ) const
 	const Eigen::VectorXi cellTypes =
 		Eigen::VectorXi::Constant( m_mesh.nCells(), elemType ) ;
 
+
 	typename MeshType::CellGeo cellGeo ;
-	typename MeshType::NodeList cellNodes ;
+	typename  VectorField::ShapeFunc::NodeList cellNodes ;
+	typename  VectorField::ShapeFunc::Location loc ;
 
 	for( typename MeshType::CellIterator it = m_mesh.cellBegin() ; it != m_mesh.cellEnd() ; ++it )
 	{
 		m_mesh.get_geo( *it, cellGeo ) ;
-		m_mesh.list_nodes( *it, cellNodes );
+		loc.cell = *it ;
+		shape.list_nodes( loc, cellNodes );
 
-		nodeIndices.block< MeshType::NV, 1 >( 1, it.index() ) = cellNodes ;
+		nodeIndices.block< NV, 1 >( 1, it.index() ) = cellNodes ;
 
-		for( int k = 0 ; k < MeshType::NV ; ++k ) {
+		for( int k = 0 ; k < NV ; ++k ) {
 			vertices.col( cellNodes[k] ).head<WD>() = cellGeo.vertex( k ).cast< float >() ;
 		}
 	}

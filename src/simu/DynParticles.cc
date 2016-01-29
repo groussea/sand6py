@@ -81,7 +81,8 @@ void DynParticles::update(const Config &config, const Scalar dt, const Phase &ph
 
 	const std::size_t n = count() ;
 
-	const MeshType& mesh = phase.velocity.mesh() ;
+	const typename VectorField::ShapeFunc& shape = phase.velocity.shape() ;
+	const MeshType& mesh = shape.derived().mesh() ;
 
 	// Split and merge particles before setting their velocities / moving them
 	splitMerge( mesh );
@@ -91,11 +92,14 @@ void DynParticles::update(const Config &config, const Scalar dt, const Phase &ph
 
 		const Vec &p0 =  m_geo.m_centers.col(i) ;
 
+		typename MeshType::Location p0loc ;
+		mesh.locate( p0, p0loc );
+
 		// Grid velocity at current position
-		const Vec  vi ( phase.velocity(p0) ) ;
+		const Vec  vi ( phase.velocity(p0loc) ) ;
 
 		m_geo.m_velocities.col(i) = vi ; //PIC
-		m_geo.m_centers.col(i) += phase.geo_proj(p0) + dt * ( m_geo.m_velocities.col(i) ) ;
+		m_geo.m_centers.col(i) += phase.geo_proj(p0loc) + dt * ( m_geo.m_velocities.col(i) ) ;
 
 		clamp_particle( i, mesh );
 
@@ -103,18 +107,15 @@ void DynParticles::update(const Config &config, const Scalar dt, const Phase &ph
 		{
 			// Recompute gradient from velocities to avoid smoothing
 
-			typename MeshType::Location loc ;
-			typename MeshType::Interpolation itp ;
-			typename MeshType::Derivatives derivatives ;
+			typename VectorField::ShapeFunc::Interpolation itp ;
+			typename VectorField::ShapeFunc::Derivatives derivatives ;
 
-			mesh.locate( p0, loc );
-
-			mesh.interpolate( loc, itp );
-			mesh.get_derivatives( loc, derivatives ) ;
+			shape.interpolate( p0loc, itp );
+			shape.get_derivatives( p0loc, derivatives ) ;
 
 			Mat Bp = Mat::Zero() ;
 
-			for( Index k = 0 ; k < MeshType::NV ; ++k ) {
+			for( Index k = 0 ; k < Linear<MeshImpl>::NI ; ++k ) {
 				Bp += phase.velocity[ itp.nodes[k] ] * derivatives.row(k) ;
 			}
 
@@ -127,13 +128,13 @@ void DynParticles::update(const Config &config, const Scalar dt, const Phase &ph
 
 		// Frames and orientation
 		Mat Du, Wu ;
-		phase.sym_grad.get_sym_tensor( p0, Du );
-		phase.spi_grad.get_spi_tensor( p0, Wu );
+		phase.sym_grad.get_sym_tensor( p0loc, Du );
+		phase.spi_grad.get_spi_tensor( p0loc, Wu );
 
 		// Inertia
 		{
 			const Scalar DuT = ( Du - 1./WD * Du.trace() * Mat::Identity() ).norm()  ;
-			m_inertia(i) = DuT / std::sqrt( std::max( 1.e-16, phase.stresses(p0)[0] ) ) ;
+			m_inertia(i) = DuT / std::sqrt( std::max( 1.e-16, phase.stresses(p0loc)[0] ) ) ;
 		}
 
 		// Frame
@@ -194,7 +195,9 @@ void DynParticles::read(std::vector<bool> &activeCells,
 						ScalarField &phiCohesion
 						) const
 {
-	const MeshType& mesh = phi.mesh() ;
+	const typename ScalarField::ShapeFunc& shape = phi.shape() ;
+	const MeshType& mesh = shape.derived().mesh() ;
+
 	activeCells.assign( mesh.nCells(), false );
 
 	phi.set_zero();
@@ -209,9 +212,11 @@ void DynParticles::read(std::vector<bool> &activeCells,
 		const Vec p0 = m_geo.centers().col(i) ;
 
 		typename MeshType::Location loc ;
-		typename MeshType::Interpolation itp ;
 		mesh.locate( p0, loc );
-		mesh.interpolate( loc, itp );
+
+
+		typename ScalarField::ShapeFunc::Interpolation itp ;
+		shape.interpolate( loc, itp );
 
 		activeCells[ mesh.cellIndex( loc.cell ) ] = true ;
 

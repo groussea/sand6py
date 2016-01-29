@@ -168,27 +168,31 @@ void GLViewer::init( )
 void GLViewer::update_buffers()
 {
 	const MeshType& g = m_offline.mesh() ;
+	const typename FieldTraits<VectorField>::ShapeFuncType shape( g ) ;
+	constexpr Index NV = VectorField::ShapeFunc::NI ;
 
 	// Grid nodes
 	// Grid quad indices
 	{
 		Eigen::Matrix<float, 2, Eigen::Dynamic > vertices( 2, g.nNodes() ) ;
-		std::vector<unsigned> nodeIndices( MeshType::NV * g.nCells() ) ;
+		std::vector<unsigned> nodeIndices( NV * g.nCells() ) ;
 
 		typename MeshType::CellGeo cellGeo ;
-		typename MeshType::NodeList cellNodes ;
+		typename VectorField::ShapeFunc::NodeList cellNodes ;
+		typename VectorField::ShapeFunc::Location loc ;
 
 		for( typename MeshType::CellIterator it = g.cellBegin() ; it != g.cellEnd() ; ++it )
 		{
 			g.get_geo( *it, cellGeo ) ;
-			g.list_nodes( *it, cellNodes );
+			loc.cell = *it ;
+			shape.list_nodes( loc, cellNodes );
 
 			nodeIndices[ 4*it.index() + 0 ] = cellNodes[0] ;
 			nodeIndices[ 4*it.index() + 1 ] = cellNodes[1] ;
 			nodeIndices[ 4*it.index() + 2 ] = cellNodes[3] ;
 			nodeIndices[ 4*it.index() + 3 ] = cellNodes[2] ;
 
-			for( int k = 0 ; k < MeshType::NV ; ++k ) {
+			for( int k = 0 ; k < NV ; ++k ) {
 				vertices.col( cellNodes[k] ) = cellGeo.vertex( k ).cast< float >() ;
 			}
 		}
@@ -273,12 +277,10 @@ void GLViewer::update_particle_buffers()
 // Grid colors
 void GLViewer::update_color_buffers()
 {
-	const MeshType& g = m_offline.mesh() ;
-
-	Eigen::Matrix<float, 3, Eigen::Dynamic > colors( 3, g.nNodes() ) ;
-	colors.setZero() ;
-
 	const auto & field = getScalarEntity() ;
+
+	Eigen::Matrix<float, 3, Eigen::Dynamic > colors( 3, field.size() ) ;
+	colors.setZero() ;
 
 	const double max_val = field.flatten().maxCoeff() ;
 	const double min_val = field.flatten().minCoeff() ;
@@ -297,13 +299,12 @@ void GLViewer::update_color_buffers()
 // Arrows
 void GLViewer::update_vector_buffers()
 {
-	const MeshType& g = m_offline.mesh() ;
+	const auto & field = getVectorEntity() ;
 
-	Eigen::Matrix<float, 2, Eigen::Dynamic > vectors( 2, g.nNodes() ) ;
+	Eigen::Matrix<float, 2, Eigen::Dynamic > vectors( 2, field.size() ) ;
 
 	vectors.setZero() ;
 
-	const auto & field = getVectorEntity() ;
 	ScalarField norm = field.norm() ;
 
 	const double max_val = norm.max_abs() ;
@@ -320,13 +321,12 @@ void GLViewer::update_vector_buffers()
 // Tensors
 void GLViewer::update_tensor_buffers()
 {
-	const MeshType& g = m_offline.mesh() ;
+	const auto & field = getTensorEntity() ;
 
-	Eigen::Matrix<float, 3, Eigen::Dynamic > tensors( 3, g.nNodes() ) ;
+	Eigen::Matrix<float, 3, Eigen::Dynamic > tensors( 3, field.size()) ;
 
 	tensors.setZero() ;
 
-	const auto & field = getTensorEntity() ;
 	ScalarField norm = field.norm() ;
 
 	const double max_val = norm.max_abs() ;
@@ -343,6 +343,7 @@ void GLViewer::update_tensor_buffers()
 void GLViewer::update_texture()
 {
 	const Config& c = m_offline.config() ;
+	const MeshType& g = m_offline.mesh() ;
 
 	// Texture
 
@@ -366,7 +367,7 @@ void GLViewer::update_texture()
 
 			unsigned kmax = 5 ;
 
-			Vec u = field(Vec(x*sx,y*sy)) ;
+			Vec u = field(g.locate(Vec(x*sx,y*sy))) ;
 			float un = u.norm() ;
 
 			float ax =  u[0] / max_val ;
@@ -382,12 +383,12 @@ void GLViewer::update_texture()
 				y -= u[1] / un ;
 
 				v +=  rnd( &m_rndData[0], x, y ) ;
-				u = field(Vec(x*sx,y*sy)) ;
+				u = field(g.locate(Vec(x*sx,y*sy))) ;
 			}
 			x = c ; y = r ;
 			for( unsigned k = 0 ; k < kmax ; ++k )
 			{
-				u = field(Vec(x*sx,y*sy)) ;
+				u = field(g.locate(Vec(x*sx,y*sy))) ;
 				un = u.norm() ;
 				if( un < 1.e-6 ) break ;
 

@@ -18,11 +18,11 @@ template < typename CellIterator, typename Func >
 void FormBuilder::integrate_qp( const CellIterator& cellBegin, const CellIterator& cellEnd, Func func ) const
 {
 	typename MeshType::Location loc ;
-	typename MeshType::Interpolation itp ;
-	typename MeshType::Derivatives dc_dx ;
+	typename Linear<MeshImpl>::Interpolation itp ;
+	typename Linear<MeshImpl>::Derivatives dc_dx ;
 
-	Eigen::Matrix< Scalar, MeshType::NC, MeshType::NQ > qp ;
-	Eigen::Matrix< Scalar,            1, MeshType::NQ > qp_weights ;
+	Eigen::Matrix< Scalar, MeshType::NC, Linear<MeshImpl>::NQ > qp ;
+	Eigen::Matrix< Scalar,            1, Linear<MeshImpl>::NQ > qp_weights ;
 
 	typename MeshType::CellGeo cellGeo ;
 
@@ -34,11 +34,11 @@ void FormBuilder::integrate_qp( const CellIterator& cellBegin, const CellIterato
 
 		cellGeo.get_qp( qp, qp_weights ) ;
 
-		for ( int q = 0 ; q < MeshType::NQ ; ++q ) {
+		for ( int q = 0 ; q < Linear<MeshImpl>::NQ ; ++q ) {
 			loc.coords = qp.col(q) ;
 
-			m_mesh.interpolate( loc, itp );
-			m_mesh.get_derivatives( loc, dc_dx );
+			m_mesh.template shaped<Linear>().interpolate( loc, itp );
+			m_mesh.template shaped<Linear>().get_derivatives( loc, dc_dx );
 
 			func( qp_weights[q], loc, itp, dc_dx ) ;
 		}
@@ -55,7 +55,7 @@ template < typename CellIterator, typename Func >
 void FormBuilder::integrate_node( const CellIterator& cellBegin, const CellIterator& cellEnd, Func func ) const
 {
 	typename MeshType::Location loc ;
-	typename MeshType::Interpolation itp ;
+	typename Linear<MeshImpl>::Interpolation itp ;
 
 	typename MeshType::CellGeo cellGeo ;
 
@@ -66,7 +66,7 @@ void FormBuilder::integrate_node( const CellIterator& cellBegin, const CellItera
 		const typename MeshType::Cell& cell = *it ;
 		loc.cell = cell ;
 		m_mesh.get_geo( cell, cellGeo );
-		m_mesh.list_nodes( cell, itp.nodes );
+		m_mesh.template shaped<Linear>().list_nodes( loc, itp.nodes );
 
 		const Scalar w = cellGeo.volume() / MeshType::NV ;
 
@@ -88,13 +88,13 @@ void FormBuilder::integrate_particle( const Particles& particles, Func func ) co
 	const size_t n = particles.count() ;
 
 	typename MeshType::Location loc ;
-	typename MeshType::Interpolation itp ;
-	typename MeshType::Derivatives dc_dx ;
+	typename Linear<MeshImpl>::Interpolation itp ;
+	typename Linear<MeshImpl>::Derivatives dc_dx ;
 
 	for ( size_t i = 0 ; i < n ; ++i ) {
 		m_mesh.locate( particles.centers().col(i), loc );
-		m_mesh.interpolate( loc, itp );
-		m_mesh.get_derivatives( loc, dc_dx );
+		m_mesh.template shaped<Linear>().interpolate( loc, itp );
+		m_mesh.template shaped<Linear>().get_derivatives( loc, dc_dx );
 
 		func( i, particles.volumes()[i], loc, itp, dc_dx ) ;
 	}

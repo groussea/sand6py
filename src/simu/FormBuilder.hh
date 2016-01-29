@@ -6,6 +6,9 @@
 
 #include "utils/block_mat.hh"
 
+// FIXME includes
+#include "geo/MeshImpl.hh"
+
 namespace d6 {
 
 class Particles ;
@@ -17,8 +20,9 @@ class FormBuilder {
 	typedef typename CompressedIndexType::Index BgIndex ;
 
 	typedef const std::vector< Index > &Indices ;
-	typedef const typename MeshType::Interpolation& Itp ;
-	typedef const typename MeshType::Derivatives& Dcdx ;
+	typedef const typename Linear<MeshImpl>::Interpolation& Itp ;
+	typedef const typename Linear<MeshImpl>::Derivatives& Dcdx ;
+	typedef const typename Linear<MeshImpl>::Derivatives::ConstRowXpr DcdxRow ;
 
 
 public:
@@ -60,7 +64,7 @@ public:
 	// Building blocks
 
 	static void addDuDv     ( FormMat<WD,WD>::Type& A, Scalar w,
-							  Index rowIndex, const typename MeshType::Derivatives::ConstRowXpr& row_dx,
+							  Index rowIndex, const DcdxRow& row_dx,
 							   Itp itp, Dcdx dc_dx, Indices colIndices ) ;
 
 	static void addVDp      ( FormMat<WD, 1>::Type& A, Scalar w, Index rowIndex, Itp itp, Dcdx dc_dx, Indices colIndices ) ;

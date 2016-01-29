@@ -20,12 +20,12 @@ namespace d6 {
  */
 
 void FormBuilder::addDuDv( FormMat<2,2>::Type& A, Scalar w,
-						   Index rowIndex, const typename MeshType::Derivatives::ConstRowXpr& row_dx,
+						   Index rowIndex, const typename Linear<MeshImpl>::Derivatives::ConstRowXpr& row_dx,
 						   Itp itp, Dcdx dc_dx, Indices colIndices )
 {
 	typedef FormMat<2,2>::Type::BlockType Block ;
 
-	for( int j = 0 ; j < MeshType::NV ; ++j ) {
+	for( int j = 0 ; j < Linear<MeshImpl>::NI ; ++j ) {
 			Block &b = A.block( rowIndex, colIndices[itp.nodes[j]] ) ;
 
 			// dux_dx, duy_dy, duz_dz
@@ -44,7 +44,7 @@ void FormBuilder::addTauDu( FormMat<3,2>::Type& A, Scalar m, Index rowIndex, Itp
 {
 	typedef FormMat<3,2>::Type::BlockType Block ;
 
-	for( int j = 0 ; j < MeshType::NV ; ++j ) {
+	for( int j = 0 ; j < Linear<MeshImpl>::NI ; ++j ) {
 		Block &b = A.block( rowIndex, colIndices[itp.nodes[j]] ) ;
 
 		// a * (dux_dx + duy_dy )
@@ -65,7 +65,7 @@ void FormBuilder::addVDp ( FormMat<2,1>::Type& A, Scalar m, Index rowIndex, Itp 
 {
 	typedef FormMat<2,1>::Type::BlockType Block ;
 
-	for( int j = 0 ; j < MeshType::NV ; ++j ) {
+	for( int j = 0 ; j < Linear<MeshImpl>::NI ; ++j ) {
 		Block &b = A.block( rowIndex, colIndices[itp.nodes[j]] ) ;
 
 		// ( vx da_dx + vy da_dy + vz da_dz)
@@ -77,7 +77,7 @@ void FormBuilder::addTauWu( FormMat<1,2>::Type& A, Scalar m, Index rowIndex, Itp
 {
 	typedef FormMat<1,2>::Type::BlockType Block ;
 
-	for( int j = 0 ; j < MeshType::NV ; ++j ) {
+	for( int j = 0 ; j < Linear<MeshImpl>::NI ; ++j ) {
 		Block &b = A.block( rowIndex, colIndices[itp.nodes[j]] ) ;
 
 		// d * ( dux_dy - duy_dx )
@@ -91,8 +91,8 @@ void FormBuilder::addUTauGphi( FormMat<3,2>::Type& A, Scalar w, Itp itp, const V
 	typedef FormMat<3,2>::Type::BlockType Block ;
 
 //#pragma omp parallel for
-	for( int k = 0 ; k < MeshType::NV ; ++k ) {
-		for( int j = 0 ; j < MeshType::NV ; ++j ) {
+	for( int k = 0 ; k < Linear<MeshImpl>::NI ; ++k ) {
+		for( int j = 0 ; j < Linear<MeshImpl>::NI ; ++j ) {
 			Block &b = A.block( rowIndices[itp.nodes[k]], colIndices[itp.nodes[j]] ) ;
 			const Scalar m = w * itp.coeffs[k] * itp.coeffs[j] ;
 
@@ -117,8 +117,8 @@ void FormBuilder::addUTaunGphi( FormMat<3,2>::Type& A, Scalar w, Itp itp, const 
 	typedef FormMat<3,2>::Type::BlockType Block ;
 
 //#pragma omp parallel for
-	for( int k = 0 ; k < MeshType::NV ; ++k ) {
-		for( int j = 0 ; j < MeshType::NV ; ++j ) {
+	for( int k = 0 ; k < Linear<MeshImpl>::NI ; ++k ) {
+		for( int j = 0 ; j < Linear<MeshImpl>::NI ; ++j ) {
 			Block &b = A.block( rowIndices[itp.nodes[k]], colIndices[itp.nodes[j]] ) ;
 			const Scalar m = w * itp.coeffs[k] * itp.coeffs[j] ;
 

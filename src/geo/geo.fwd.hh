@@ -11,14 +11,16 @@
 namespace d6 {
 
 template < typename M > class MeshBase ;
+template < typename S > class ShapeFuncBase ;
+
 
 template< typename ValueType > struct Expr ;
 
 template< typename Derived > class FieldBase ;
 template< typename Derived > struct FieldTraits ;
-template < typename MeshT > class AbstractScalarField ;
-template < typename MeshT > class AbstractVectorField ;
-template < typename MeshT > class AbstractTensorField ;
+template < typename ShapeFunc > class AbstractScalarField ;
+template < typename ShapeFunc > class AbstractVectorField ;
+template < typename ShapeFunc > class AbstractTensorField ;
 
 
 class Grid ;
@@ -29,14 +31,15 @@ typedef TetGrid MeshImpl ;
 typedef Grid    MeshImpl ;
 #endif
 
+template < typename MeshT > struct Linear ;
+template < typename MeshT > struct DGLinear ;
+
+typedef AbstractScalarField< Linear<MeshImpl> >  ScalarField ;
+typedef AbstractVectorField< Linear<MeshImpl> >  VectorField ;
+typedef AbstractTensorField< Linear<MeshImpl> >  TensorField ;
 
 
 typedef MeshBase< MeshImpl > MeshType ;
-
-typedef AbstractScalarField< MeshImpl >  ScalarField ;
-typedef AbstractVectorField< MeshImpl >  VectorField ;
-typedef AbstractTensorField< MeshImpl >  TensorField ;
-
 
 }
 

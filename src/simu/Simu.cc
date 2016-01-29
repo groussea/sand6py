@@ -38,7 +38,7 @@ Simu::Simu(const Config &config, const char *base_dir)
 	m_scenario->add_rigid_bodies( m_rigidBodies ) ;
 
 	for( unsigned i = 0 ; i < m_rigidBodies.size() ; ++i ) {
-		m_rbStresses.emplace_back( mesh() );
+		m_rbStresses.emplace_back( Linear<MeshImpl>(mesh()) );
 		m_rbStresses.back().set_zero() ;
 	}
 }

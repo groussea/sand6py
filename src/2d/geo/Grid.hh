@@ -44,6 +44,7 @@ struct GridIterator
 class Grid : public MeshBase< Grid >
 {
 public:
+
 	typedef MeshBase< Grid > Base ;
 
 	typedef typename Base::Cell Cell ;
@@ -55,31 +56,45 @@ public:
 	void set_box( const Vec& box ) ;
 
 	Index nNodes() const
-	{ return (m_dim[0]+1) * (m_dim[1]+1) ; }
+	{ return (m_dim+1).prod() ; }
 
 	Index nCells() const
-	{ return (m_dim[0]) * (m_dim[1]); }
+	{ return m_dim.prod(); }
 
 	Index cellIndex( const Cell& cell ) const
 	{
-		return (m_dim[1]) * cell[0]	+ cell[1] ;
+		Index idx =  (m_dim[1]) * cell[0]	+ cell[1] ;
+		if( Cell::RowsAtCompileTime == 2 )
+			return idx ;
+		return idx*m_dim[2] + cell[2] ;
+	}
+	Index nodeIndex( const Vertex& node ) const
+	{
+		Index idx = (m_dim[1]+1) * node[0] + node[1] ;
+		if( Cell::RowsAtCompileTime == 2 )
+			return idx ;
+		return idx*(m_dim[2]+1) + node[2] ;
 	}
 
 	Vec box() const
 	{ return firstCorner( m_dim ) ; }
 
-	void locate( const Vec &x, Location& loc ) const ;
+	void locate( const Vec &x, Location& loc ) const
+	{
+		loc.coords = x.array()/m_dx.array() ;
+		loc.cell = loc.coords.cast< Index >();
+		clamp_cell( loc.cell) ;
 
-	using Base::interpolate ;
-	void interpolate( const Location &loc , Interpolation& itp ) const ;
-
-	void get_derivatives( const Location& loc, Derivatives& dc_dx ) const ;
+		loc.coords -= loc.cell.cast< Scalar >().matrix() ;
+	}
 
 	CellIterator cellBegin() const {
 		return GridIterator( *this, VecWi::Zero() ) ;
 	}
 	CellIterator cellEnd() const {
-		return GridIterator( *this, VecWi(m_dim[0],0) ) ;
+		VecWi cell = m_dim ;
+		cell.tail<WD-1>().setZero() ;
+		return GridIterator( *this, cell ) ;
 	}
 
 	void get_geo( const Cell &cell, CellGeo& geo ) const {
@@ -91,14 +106,6 @@ public:
 	void serialize( Archive &ar, unsigned int ) {
 		ar & m_dim ;
 		ar &  m_dx ;
-		ar & m_idx ;
-	}
-
-	void list_nodes( const Cell& cell, NodeList& list ) const {
-		Location loc { cell, Coords::Zero() } ;
-		Interpolation itp ;
-		interpolate( loc, itp );
-		list = itp.nodes ;
 	}
 
 	void make_bc( const BoundaryMapper& mapper, BoundaryConditions &bc ) const ;
@@ -112,30 +119,24 @@ public:
 		return firstCorner( node ) ;
 	}
 
-	Index nodeIndex( const Vertex& node ) const
-	{
-		return (m_dim[1]+1) * node[0] + node[1] ;
-	}
-
 	const ArrWi& dim() const { return m_dim ; }
+	const Arr&    dx() const { return  m_dx ; }
 
 private:
-
-	const Arr&    dx() const { return  m_dx ; }
-	const Arr&   idx() const { return m_idx ; }
 
 	void get_corner( const Cell &cell, Vec& corner ) const {
 		corner = (cell.array().cast< Scalar >() * m_dx.array()).matrix() ;
 	}
 
-	void clamp_cell( Cell& cell ) const ;
+	void clamp_cell( Cell& cell ) const {
+		cell = Cell::Zero().max(cell).min(m_dim.array()-Cell::Ones()) ;
+	}
 
 	Vec firstCorner( const Cell &cell ) const
 	{ Vec corner ; get_corner( cell, corner ) ; return corner ; }
 
 	ArrWi m_dim ;
 	Arr   m_dx  ;
-	Arr   m_idx  ;
 
 	friend struct GridIterator ;
 } ;

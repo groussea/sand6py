@@ -36,9 +36,10 @@ void RigidBodyData::grad_phi(const Vec &x, Vec &grad) const
 
 void RigidBodyData::compute_active( const Active& phaseNodes, BoundaryConditions& bc )
 {
-	const MeshType &mesh = stresses.mesh() ;
+	const TensorField::ShapeFunc &shape = stresses.shape() ;
+	const MeshType &mesh = shape.derived().mesh() ;
 
-	typename MeshType::NodeList nodelist ;
+	typename Linear<MeshImpl>::NodeList nodelist ;
 	typename MeshType::CellGeo geo ;
 
 	nodes.reset( mesh.nNodes() );
@@ -71,9 +72,10 @@ void RigidBodyData::compute_active( const Active& phaseNodes, BoundaryConditions
 		if( boundary && !interior )
 		{
 			nodes.cells.push_back( cell ) ;
-			mesh.list_nodes( cell, nodelist );
+			typename TensorField::ShapeFunc::Location loc ; loc.cell = cell ;
+			shape.list_nodes( loc, nodelist );
 
-			for( Index k = 0 ; k < MeshType::NV ; ++k  ) {
+			for( Index k = 0 ; k < Linear<MeshImpl>::NI ; ++k  ) {
 				if( nodes.indices[ nodelist[k] ] == Active::s_Inactive ) {
 					nodes.indices[ nodelist[k] ] = nodes.nNodes++ ;
 					bc[ nodelist[k] ].bc = BoundaryInfo::Interior ;
@@ -85,13 +87,15 @@ void RigidBodyData::compute_active( const Active& phaseNodes, BoundaryConditions
 
 void RigidBodyData::integrate(const Active &phaseNodes, Index totNodes)
 {
-	typedef const typename MeshType::Location& Loc ;
-	typedef const typename MeshType::Interpolation& Itp ;
-	typedef const typename MeshType::Derivatives& Dcdx ;
+	typedef const typename Linear<MeshImpl>::Location& Loc ;
+	typedef const typename Linear<MeshImpl>::Interpolation& Itp ;
+	typedef const typename Linear<MeshImpl>::Derivatives& Dcdx ;
 
 	const Index m = phaseNodes.count() ;
 
-	const MeshType &mesh = stresses.mesh() ;
+	const TensorField::ShapeFunc &shape = stresses.shape() ;
+	const MeshType &mesh = shape.derived().mesh() ;
+
 	FormBuilder builder( mesh ) ;
 	builder.reset( totNodes );
 	builder.addToIndex( occupiedCells, phaseNodes.indices, phaseNodes.indices );
@@ -126,9 +130,10 @@ void RigidBodyData::integrate(const Active &phaseNodes, Index totNodes)
 void RigidBodyData::assemble_matrices(const Active &phaseNodes, Index totNodes)
 
 {
-	const MeshType &mesh = stresses.mesh() ;
+	const TensorField::ShapeFunc &shape = stresses.shape() ;
+	const MeshType &mesh = shape.derived().mesh() ;
 
-	typename MeshType::NodeList nodelist ;
+	typename Linear<MeshImpl>::NodeList nodelist ;
 	typename MeshType::CellGeo geo ;
 
 	fraction.resize( nodes.count() );
@@ -145,9 +150,10 @@ void RigidBodyData::assemble_matrices(const Active &phaseNodes, Index totNodes)
 	for( const typename MeshType::Cell& cell : nodes.cells )
 	{
 		mesh.get_geo( cell, geo );
-		mesh.list_nodes( cell, nodelist );
+		typename TensorField::ShapeFunc::Location loc ; loc.cell = cell ;
+		shape.list_nodes( loc, nodelist );
 
-		for( Index k = 0 ; k < MeshType::NV ; ++k  ) {
+		for( Index k = 0 ; k < Linear<MeshImpl>::NI ; ++k  ) {
 			const Index glb_idx = nodelist[k] ;
 			const Index loc_idx = nodes.indices[glb_idx] - nodes.offset ;
 			const Vec pos = geo.vertex(k) ;

@@ -9,4 +9,6 @@
 #include "Grid.hh"
 #endif
 
+#include "geo/MeshShapeFunction.hh"
+
 #endif

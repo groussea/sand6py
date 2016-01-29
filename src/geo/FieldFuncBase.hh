@@ -6,15 +6,15 @@
 
 namespace d6 {
 
-template < typename Derived, Index D, typename MeshT >
+template < typename Derived, Index D, typename ShapeFuncT >
 struct FieldFuncBase
 {
-	typedef MeshBase< MeshT > MeshType ;
+	typedef ShapeFuncBase< ShapeFuncT > ShapeFuncType ;
 
 	typedef typename Segmenter< D >::ValueType ValueType ;
 	typedef typename Segmenter< D >::Seg Seg  ;
 
-	explicit FieldFuncBase( const MeshType& mesh ) : m_mesh(mesh) {}
+	explicit FieldFuncBase( const ShapeFuncType& shape ) : m_shape(shape) {}
 
 
 	ValueType operator[]( Index i ) const
@@ -32,10 +32,10 @@ struct FieldFuncBase
 		return static_cast< const Derived& >(*this).size() ;
 	}
 
-	const MeshType& mesh() const { return m_mesh ; }
+	const ShapeFuncType& shape() const { return m_shape ; }
 
 protected:
-	const MeshType& m_mesh ;
+	const ShapeFuncType& m_shape ;
 };
 
 

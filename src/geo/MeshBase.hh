@@ -26,23 +26,15 @@ public:
 
 	enum {
 		NV = Traits::NV ,
-		NC = Traits::NC ,
-		NQ = Traits::NQ
+		NC = Traits::NC
 	} ;
 
 	typedef Eigen::Matrix< Scalar, NC, 1  > Coords ;
-	typedef Eigen::Matrix<  Index, NV, 1  > NodeList ;
-	typedef Eigen::Matrix< Scalar, NV, 1  > CoefList ;
-	typedef Eigen::Matrix< Scalar, NV, WD > Derivatives ;
 
 
 	struct Location {
 		Cell      cell  ; // Cell
 		Coords   coords ; // Coordinates in cell
-	};
-	struct Interpolation {
-		NodeList nodes  ; // Adjacent node indices
-		CoefList coeffs ; // Interpolation coeff for nodes
 	};
 
 	Derived& derived()
@@ -64,20 +56,10 @@ public:
 	void locate( const Vec &x, Location& loc ) const {
 		derived().locate( x, loc ) ;
 	}
-	void interpolate( const Location& loc, Interpolation& itp ) const {
-		derived().interpolate( loc, itp ) ;
-	}
-	void get_derivatives( const Location& loc, Derivatives& dc_dx ) const {
-		derived().get_derivatives( loc, dc_dx ) ;
-	}
-
-	void interpolate( const Vec &x, Interpolation& itp ) const {
+	Location locate( const Vec &x ) const {
 		Location loc ;
 		derived().locate( x, loc ) ;
-		derived().interpolate( loc, itp ) ;
-	}
-	void list_nodes( const Cell& cell, NodeList& list ) const {
-		derived().list_nodes( cell, list ) ;
+		return loc ;
 	}
 
 	CellIterator cellBegin() const { return derived().cellBegin() ; }
@@ -91,11 +73,11 @@ public:
 		derived().make_bc( mapper, bc ) ;
 	}
 
-	Index nAdjacent( Index node ) const {
-		return derived().nAdjacent( node ) ;
-	}
-
 	Vec pos( const Location& loc ) const ;
+
+	template< template <typename> class ShapeFunc > ShapeFunc<Derived> shaped() const {
+		return ShapeFunc<Derived>( derived() ) ;
+	}
 } ;
 
 } //d6

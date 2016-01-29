@@ -6,52 +6,53 @@
 
 namespace d6 {
 
-template < typename MeshT >
-struct FieldTraits< AbstractTensorField< MeshT > >  {
+template < typename ShapeFuncT >
+struct FieldTraits< AbstractTensorField< ShapeFuncT > >  {
 
-	typedef MeshT  MeshType ;
+	typedef ShapeFuncT  ShapeFuncType ;
 	typedef VecS ValueType ;
 	static constexpr Index Dimension = SD ;
 };
 
-template < typename MeshT >
-class AbstractTensorField : public FieldBase< AbstractTensorField< MeshT > >
+template < typename ShapeFuncT >
+class AbstractTensorField : public FieldBase< AbstractTensorField< ShapeFuncT > >
 {
 	typedef FieldTraits< AbstractTensorField > Traits ;
-	typedef MeshBase< typename Traits::MeshType > MeshType ;
+	typedef ShapeFuncBase< typename Traits::ShapeFuncType > ShapeFuncType ;
 
 	typedef FieldBase< AbstractTensorField > Base ;
+	typedef typename ShapeFuncType::Location Location ;
 
 public:
-	explicit AbstractTensorField( const MeshType& mesh )
-		: Base( mesh )
+	explicit AbstractTensorField( const ShapeFuncType& shape )
+		: Base( shape )
 	{
 	}
 
 	template <typename Func>
-	AbstractTensorField( const FieldFuncBase< Func, Base::D, MeshT > & func )
-		: Base( func.mesh() )
+	AbstractTensorField( const FieldFuncBase< Func, Base::D, ShapeFuncT > & func )
+		: Base( func.shape() )
 	{
 		Base::operator=( func );
 	}
 	template <typename Func>
-	AbstractTensorField& operator=( const FieldFuncBase< Func, Base::D, MeshT > & func )
+	AbstractTensorField& operator=( const FieldFuncBase< Func, Base::D, ShapeFuncT > & func )
 	{
 		return Base::operator=( func );
 	}
 
-	DeviatoricPart< MeshT > deviatoricPart() const {
-		return DeviatoricPart< MeshT >( *this ) ;
+	DeviatoricPart< ShapeFuncT > deviatoricPart() const {
+		return DeviatoricPart< ShapeFuncT >( *this ) ;
 	}
-	FieldTrace< MeshT > trace() const {
-		return FieldTrace< MeshT >( *this ) ;
+	FieldTrace< ShapeFuncT > trace() const {
+		return FieldTrace< ShapeFuncT >( *this ) ;
 	}
-	FieldNorm< d6::AbstractTensorField, MeshT > norm() const {
-		return FieldNorm< d6::AbstractTensorField, MeshT >( *this ) ;
+	FieldNorm< d6::AbstractTensorField, ShapeFuncT > norm() const {
+		return FieldNorm< d6::AbstractTensorField, ShapeFuncT >( *this ) ;
 	}
 
-	void add_sym_tensor( const Vec& x, Mat& tensor ) const ;
-	void get_sym_tensor( const Vec& x, Mat& tensor ) const ;
+	void add_sym_tensor( const Location& x, Mat& tensor ) const ;
+	void get_sym_tensor( const Location& x, Mat& tensor ) const ;
 
 };
 

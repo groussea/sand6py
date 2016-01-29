@@ -1,7 +1,6 @@
 #ifndef D6_FIELD_BASE_HH
 #define D6_FIELD_BASE_HH
 
-#include "Expr.hh"
 #include "FieldFuncBase.hh"
 
 namespace d6 {
@@ -14,13 +13,14 @@ struct FieldTraits
 
 
 template< typename Derived >
-class FieldBase : public Expr< typename FieldTraits< Derived >::ValueType >
+class FieldBase
 {
 
 public:
 
 	typedef FieldTraits< Derived > Traits ;
-	typedef MeshBase< typename Traits::MeshType > MeshType ;
+	typedef ShapeFuncBase< typename Traits::ShapeFuncType > ShapeFunc ;
+	typedef typename ShapeFunc::Location Location ;
 
 	static constexpr Index D = Traits::Dimension ;
 	typedef typename Traits::ValueType ValueType ;
@@ -28,21 +28,23 @@ public:
 	typedef typename Segmenter< D >::Seg Seg  ;
 	typedef typename Segmenter< D >::ConstSeg ConstSeg  ;
 
-	explicit FieldBase( const MeshType& mesh )
-		: m_mesh( mesh )
+	typedef AbstractScalarField<  typename Traits::ShapeFuncType > ScalarField ;
+
+	explicit FieldBase( const ShapeFunc& shape )
+		: m_shape( shape.derived() )
 	{
-		fit_mesh() ;
+		fit_shape() ;
 	}
 
-	void fit_mesh() {
-		m_size = m_mesh.nNodes() ;
+	void fit_shape() {
+		m_size = m_shape.nDoF() ;
 		m_data.resize( D * m_size );
 	}
 
 	const DynVec& flatten() const { return m_data ; }
 	DynVec& flatten() { return m_data ; }
 
-	const MeshType& mesh() const { return m_mesh ; }
+	const ShapeFunc& shape() const { return m_shape ; }
 
 	//Global setters
 
@@ -50,7 +52,7 @@ public:
 	Derived& set_constant( const ValueType& val ) ;
 
 	template < typename Func >
-	Derived& operator= ( const FieldFuncBase< Func, D, typename Traits::MeshType > & f )
+	Derived& operator= ( const FieldFuncBase< Func, D, typename Traits::ShapeFuncType > & f )
 	{
 		assert( f.size() == size() ) ;
 		#pragma omp parallel for
@@ -62,12 +64,12 @@ public:
 
 	// Interpolation
 
-	void  add_at( const Vec& x, const ValueType& val ) ;
-	void  add_at( const typename MeshType::Interpolation &itp, const ValueType& val ) ;
-	void eval_at( const Vec& x, ValueType& res ) const ;
+	void  add_at( const Location& loc, const ValueType& val ) ;
+	void  add_at( const typename ShapeFunc::Interpolation &itp, const ValueType& val ) ;
+	void eval_at( const Location& loc, ValueType& res ) const ;
 
-	ValueType eval_at( const Vec& x ) const {
-		ValueType seg ; eval_at( x, seg );
+	ValueType eval_at( const Location& loc ) const {
+		ValueType seg ; eval_at( loc, seg );
 		return seg ;
 	}
 
@@ -78,7 +80,7 @@ public:
 	Index size() const { return m_size ; }
 
 	// Operators
-	ValueType operator() ( const Vec&  x ) const { return eval_at(x) ; }
+	ValueType operator() ( const Location& loc ) const { return eval_at(loc) ; }
 	ConstSeg  operator[] ( const Index i ) const { return segment(i) ; }
 	Seg       operator[] ( const Index i )       { return segment(i) ; }
 
@@ -105,7 +107,7 @@ public:
 	{ return static_cast< const Derived& >( *this ) ; }
 
 protected:
-	const MeshType & m_mesh ;
+	typename Traits::ShapeFuncType m_shape ;
 	Index m_size ;
 	DynVec   m_data ;
 

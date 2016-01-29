@@ -10,15 +10,15 @@ struct FuncTraits {
 };
 
 template < typename Derived, Index D,
-		   typename MeshT = typename FieldTraits< typename FuncTraits<Derived>::FieldType >::MeshType >
-struct UnaryFieldFunc : public FieldFuncBase< Derived, D, MeshT >
+		   typename ShapeFuncT = typename FieldTraits< typename FuncTraits<Derived>::FieldType >::ShapeFuncType >
+struct UnaryFieldFunc : public FieldFuncBase< Derived, D, ShapeFuncT >
 {
-	typedef FieldFuncBase< Derived, D, MeshT > Base ;
+	typedef FieldFuncBase< Derived, D, ShapeFuncT > Base ;
 	typedef FuncTraits< Derived > Traits;
 	typedef typename Traits::FieldType FieldType;
 
 	explicit UnaryFieldFunc( const FieldType & field )
-		: Base( field.mesh() ), m_field(field)
+		: Base( field.shape() ), m_field(field)
 	{}
 
 	Index size( ) const {
@@ -31,17 +31,17 @@ protected:
 
 // Trace
 
-template <typename MeshT> struct FieldTrace ;
+template <typename ShapeFuncT> struct FieldTrace ;
 
-template< typename MeshT >
-struct FuncTraits< FieldTrace< MeshT > > {
-	typedef AbstractTensorField< MeshT > FieldType ;
+template< typename ShapeFuncT >
+struct FuncTraits< FieldTrace< ShapeFuncT > > {
+	typedef AbstractTensorField< ShapeFuncT > FieldType ;
 };
 
-template <typename MeshT>
-struct FieldTrace : public UnaryFieldFunc<FieldTrace<MeshT>, 1>
+template <typename ShapeFuncT>
+struct FieldTrace : public UnaryFieldFunc<FieldTrace<ShapeFuncT>, 1>
 {
-	typedef UnaryFieldFunc<FieldTrace<MeshT>, 1> Base ;
+	typedef UnaryFieldFunc<FieldTrace<ShapeFuncT>, 1> Base ;
 	typedef typename Base::FieldType FieldType ;
 
 	using Base::m_field ;
@@ -56,17 +56,17 @@ struct FieldTrace : public UnaryFieldFunc<FieldTrace<MeshT>, 1>
 
 // Deviatoric part
 
-template <typename MeshT> struct DeviatoricPart ;
+template <typename ShapeFuncT> struct DeviatoricPart ;
 
-template< typename MeshT >
-struct FuncTraits< DeviatoricPart< MeshT > > {
-	typedef AbstractTensorField< MeshT > FieldType ;
+template< typename ShapeFuncT >
+struct FuncTraits< DeviatoricPart< ShapeFuncT > > {
+	typedef AbstractTensorField< ShapeFuncT > FieldType ;
 };
 
-template <typename MeshT>
-struct DeviatoricPart : public UnaryFieldFunc<DeviatoricPart<MeshT>, SD>
+template <typename ShapeFuncT>
+struct DeviatoricPart : public UnaryFieldFunc<DeviatoricPart<ShapeFuncT>, SD>
 {
-	typedef UnaryFieldFunc<DeviatoricPart<MeshT>, SD> Base ;
+	typedef UnaryFieldFunc<DeviatoricPart<ShapeFuncT>, SD> Base ;
 	typedef typename Base::FieldType FieldType ;
 
 	using Base::m_field ;
@@ -82,18 +82,18 @@ struct DeviatoricPart : public UnaryFieldFunc<DeviatoricPart<MeshT>, SD>
 
 // Norm
 
-template <template <typename> class Field, typename MeshT >
+template <template <typename> class Field, typename ShapeFuncT >
 struct FieldNorm ;
 
-template <template <typename> class Field, typename MeshT >
-struct FuncTraits< FieldNorm< Field, MeshT > > {
-	typedef Field< MeshT > FieldType ;
+template <template <typename> class Field, typename ShapeFuncT >
+struct FuncTraits< FieldNorm< Field, ShapeFuncT > > {
+	typedef Field< ShapeFuncT > FieldType ;
 };
 
-template <template <typename> class Field, typename MeshT >
-struct FieldNorm : public UnaryFieldFunc< FieldNorm<Field, MeshT>, 1>
+template <template <typename> class Field, typename ShapeFuncT >
+struct FieldNorm : public UnaryFieldFunc< FieldNorm<Field, ShapeFuncT>, 1>
 {
-	typedef UnaryFieldFunc<FieldNorm<Field, MeshT>, 1> Base ;
+	typedef UnaryFieldFunc<FieldNorm<Field, ShapeFuncT>, 1> Base ;
 	typedef typename Base::FieldType FieldType ;
 
 	using Base::m_field ;
