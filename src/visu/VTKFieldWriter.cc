@@ -18,8 +18,8 @@ VTKFieldWriter::VTKFieldWriter( const char* base_dir, const MeshType& mesh )
 
 void VTKFieldWriter::writeMesh( File &vtk ) const
 {
-	const typename FieldTraits<VectorField>::ShapeFuncType shape( m_mesh ) ;
-	constexpr Index NV = VectorField::ShapeFunc::NI ;
+	const typename VectorField::ShapeFuncImpl shape( m_mesh ) ;
+	constexpr Index NV = VectorField::ShapeFuncType::NI ;
 
 	Eigen::Matrix<float, WD, Eigen::Dynamic> vertices( WD, shape.nDoF() ) ;
 	vertices.setZero() ;
@@ -40,8 +40,8 @@ void VTKFieldWriter::writeMesh( File &vtk ) const
 
 
 	typename MeshType::CellGeo cellGeo ;
-	typename  VectorField::ShapeFunc::NodeList cellNodes ;
-	typename  VectorField::ShapeFunc::Location loc ;
+	typename  VectorField::ShapeFuncType::NodeList cellNodes ;
+	typename  VectorField::ShapeFuncType::Location loc ;
 
 	for( typename MeshType::CellIterator it = m_mesh.cellBegin() ; it != m_mesh.cellEnd() ; ++it )
 	{

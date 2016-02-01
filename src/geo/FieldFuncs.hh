@@ -10,7 +10,7 @@ struct FuncTraits {
 };
 
 template < typename Derived, Index D,
-		   typename ShapeFuncT = typename FieldTraits< typename FuncTraits<Derived>::FieldType >::ShapeFuncType >
+		   typename ShapeFuncT = typename FieldTraits< typename FuncTraits<Derived>::FieldType >::ShapeFuncImpl >
 struct UnaryFieldFunc : public FieldFuncBase< Derived, D, ShapeFuncT >
 {
 	typedef FieldFuncBase< Derived, D, ShapeFuncT > Base ;

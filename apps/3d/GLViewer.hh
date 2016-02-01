@@ -90,7 +90,7 @@ private:
 	gl::VertexBuffer3d m_centers ;
 	gl::VertexBuffer4f m_colors  ;
 
-	Eigen::Matrix< float, 16, Eigen::Dynamic> m_matrices ; // FIXME
+	Eigen::Matrix< float, 16, Eigen::Dynamic> m_matrices ;
 	gl::VertexBuffer16f m_frames  ;
 
 	Eigen::VectorXf m_densities ;

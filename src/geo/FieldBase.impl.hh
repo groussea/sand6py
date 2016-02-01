@@ -11,7 +11,7 @@ namespace d6 {
 template< typename Derived >
 void FieldBase< Derived >::eval_at( const Location& x, ValueType& res ) const
 {
-	typename ShapeFunc::Interpolation itp ;
+	typename ShapeFuncType::Interpolation itp ;
 	m_shape.interpolate( x, itp );
 
 	d6::set_zero( res ) ;
@@ -24,13 +24,13 @@ void FieldBase< Derived >::eval_at( const Location& x, ValueType& res ) const
 template< typename Derived >
 void FieldBase< Derived >::add_at( const Location& x, const ValueType& val )
 {
-	typename ShapeFunc::Interpolation itp ;
+	typename ShapeFuncType::Interpolation itp ;
 	m_shape.interpolate( x, itp );
 	add_at( itp, val ) ;
 }
 
 template< typename Derived >
-void FieldBase< Derived >::add_at( const typename ShapeFunc::Interpolation &itp, const ValueType& val )
+void FieldBase< Derived >::add_at( const typename ShapeFuncType::Interpolation &itp, const ValueType& val )
 {
 	for( Index k = 0 ; k < itp.nodes.rows() ; ++k ) {
 		segment( itp.nodes[k] ) += itp.coeffs[k] * val ;

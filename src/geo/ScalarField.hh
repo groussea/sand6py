@@ -8,7 +8,7 @@ namespace d6 {
 template < typename ShapeFuncT >
 struct FieldTraits< AbstractScalarField< ShapeFuncT > >  {
 
-	typedef ShapeFuncT ShapeFuncType ;
+	typedef ShapeFuncT ShapeFuncImpl ;
 	typedef Scalar ValueType ;
 	static constexpr Index Dimension = 1 ;
 };
@@ -16,18 +16,20 @@ struct FieldTraits< AbstractScalarField< ShapeFuncT > >  {
 template < typename ShapeFuncT >
 class AbstractScalarField : public FieldBase< AbstractScalarField< ShapeFuncT > >
 {
-	typedef FieldTraits< AbstractScalarField > Traits ;
-	typedef ShapeFuncBase< typename Traits::ShapeFuncType > ShapeFuncType ;
-
 	typedef FieldBase< AbstractScalarField > Base ;
-	typedef typename ShapeFuncType::Location Location ;
 
 public:
+	typedef ShapeFuncBase< ShapeFuncT > ShapeFuncType ;
+	typedef typename ShapeFuncType::Location Location ;
+
 	explicit AbstractScalarField( const ShapeFuncType& shape )
 		: Base( shape )
 	{
 
 	}
+	explicit AbstractScalarField( const typename ShapeFuncType::DOFDefinition& mesh )
+		: Base( ShapeFuncT( mesh ) )
+	{}
 
 	template <typename Func>
 	AbstractScalarField( const FieldFuncBase< Func, Base::D, ShapeFuncT > & func )

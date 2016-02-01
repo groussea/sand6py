@@ -1,6 +1,6 @@
 2d/geo/BoundaryInfo.cc
 2d/geo/Grid.cc
-2d/geo/Grid.hh
+2d/geo/GridShapeFunctions.cc
 2d/geo/LevelSet.cc
 2d/geo/LevelSet.impl.hh
 2d/geo/LevelSet.io.hh
@@ -14,7 +14,7 @@ geo/FieldBase.hh
 geo/FieldBase.impl.hh
 geo/FieldFuncBase.hh
 geo/FieldFuncs.hh
-geo/GridShapeFunctions.cc
+geo/Grid.hh
 geo/LevelSet.hh
 geo/MeshBase.cc
 geo/MeshBase.hh

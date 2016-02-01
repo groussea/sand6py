@@ -55,7 +55,7 @@ TEST( utils, config )
 #if D6_DIM==3
 	ASSERT_EQ( c.res, Vec3i(1, 5, 10) ) ;
 	ASSERT_TRUE( c.gravity.isApprox( Vec(40,0,0) ) ) ;
-	ASSERT_TRUE( c.box.isApprox( Vec(10,20,30) ) ) ;
+	ASSERT_TRUE( c.box.isApprox( Vec(30,20,10) ) ) ;
 #endif
 
 	ASSERT_DOUBLE_EQ( c.fps * c.substeps, 1.e2 ) ;
@@ -66,7 +66,7 @@ TEST( utils, config )
 	c.internalize();
 
 #if D6_DIM==3
-	ASSERT_TRUE( c.box.isApprox( Vec(10,20,30) ) ) ;
+	ASSERT_TRUE( c.box.isApprox( Vec(30,20,10) ) ) ;
 	ASSERT_TRUE( c.gravity.isApprox( Vec(1,0,0) ) ) ;
 #endif
 //	ASSERT_DOUBLE_EQ( 20. , c.units().U ) ;

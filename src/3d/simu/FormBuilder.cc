@@ -8,6 +8,8 @@
 namespace d6 {
 
 
+// FIXME differente approx for
+
 /*
  *
  * D( u )

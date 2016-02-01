@@ -14,6 +14,7 @@
 #include "geo/Tet.hh"
 
 #include "geo/MeshShapeFunction.hh"
+#include "geo/UnstructuredShapeFunction.hh"
 
 #include "geo/BoundaryInfo.hh"
 
@@ -91,22 +92,22 @@ TEST( geo, field )
 	ASSERT_EQ( g.nNodes(), phi.flatten().rows() ) ;
 
 	phi.set_constant( 3 );
-	ASSERT_DOUBLE_EQ( 3., phi( g.locate(Vec( 0.2, 0.7, 0.5 ) ) )) ;
+	ASSERT_DOUBLE_EQ( 3., phi( (Vec( 0.2, 0.7, 0.5 ) ) )) ;
 
 	phi.set_zero();
-	ASSERT_DOUBLE_EQ( 0., phi( g.locate(Vec( 0.3, 0.4, 0.1 ) ) )) ;
+	ASSERT_DOUBLE_EQ( 0., phi( (Vec( 0.3, 0.4, 0.1 ) ) )) ;
 	phi.add_at( g.locate(Vec( 0.3, 0.4, 0.1 )), 1 );
-	ASSERT_FLOAT_EQ( 1,  phi( g.locate(Vec( 0.3, 0.4, 0.1 ) ) )) ;
-	ASSERT_FLOAT_EQ( 0.3,  phi( g.locate(Vec( 0.37, 0.4, 0.1 ) ) )) ;
-	ASSERT_FLOAT_EQ( 0.7,  phi( g.locate(Vec( 0.3, 0.37, 0.1 ) ) )) ;
-	ASSERT_FLOAT_EQ( 0.5,  phi( g.locate(Vec( 0.3, 0.4, 0.15 ) ) )) ;
+	ASSERT_FLOAT_EQ( 1,    phi( (Vec( 0.3, 0.4, 0.1 ) ) )) ;
+	ASSERT_FLOAT_EQ( 0.3,  phi( (Vec( 0.37, 0.4, 0.1 ) ) )) ;
+	ASSERT_FLOAT_EQ( 0.7,  phi( (Vec( 0.3, 0.37, 0.1 ) ) )) ;
+	ASSERT_FLOAT_EQ( 0.5,  phi( (Vec( 0.3, 0.4, 0.15 ) ) )) ;
 
 	AbstractVectorField< Linear<Grid> > u( shape ) ;
 	u.set_constant( Vec(0,1,0) ) ;
-	ASSERT_TRUE( Vec(0,1,0).isApprox( u( g.locate(Vec( 0.2, 0.7, 0.5 ) ) ) )) ;
+	ASSERT_TRUE( Vec(0,1,0).isApprox( u( (Vec( 0.2, 0.7, 0.5 ) ) ) )) ;
 
 	u.add_at( g.locate(Vec( 0.35, 0.45, 0.15 )), Vec(1,0,0) );
-	ASSERT_TRUE( Vec(0.125,1,0).isApprox( u( g.locate(Vec( 0.3, 0.4, 0.2 ) ) )) ) ;
+	ASSERT_TRUE( Vec(0.125,1,0).isApprox( u( (Vec( 0.3, 0.4, 0.2 ) ) )) ) ;
 }
 
 TEST( geo, tensor )
@@ -304,9 +305,9 @@ TEST( geo, tetGrid )
 	field.set_zero() ;
 	field[7] = 1. ;
 
-	ASSERT_DOUBLE_EQ( 1, field( g.locate(box) ) ) ;
-	ASSERT_DOUBLE_EQ( 0, field( g.locate(Vec(box[0],0,box[2]) )) ) ;
-	ASSERT_DOUBLE_EQ( 0.5, field( g.locate(Vec(box[0],0.5*box[1],box[2]) )) ) ;
+	ASSERT_DOUBLE_EQ( 1,   field( (box) ) ) ;
+	ASSERT_DOUBLE_EQ( 0,   field( (Vec(box[0],0,box[2]) )) ) ;
+	ASSERT_DOUBLE_EQ( 0.5, field( (Vec(box[0],0.5*box[1],box[2]) )) ) ;
 
 
 	for( unsigned k = 0 ; k < 6 ; ++k ) {
@@ -406,4 +407,13 @@ TEST( geo, aniso_matrix )
 
 	ASSERT_DOUBLE_EQ( Abartau[0], taubar[0] ) ;
 	ASSERT_TRUE( tauref.isApprox( Abartau )) ;
+}
+
+TEST(geo, shape_functions)
+{
+	DynMatW vertices ;
+	UnstructuredShapeFunc shape( vertices ) ;
+	AbstractScalarField< UnstructuredShapeFunc > prtScalarField( shape ) ;
+
+
 }

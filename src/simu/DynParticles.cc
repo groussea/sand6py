@@ -81,7 +81,7 @@ void DynParticles::update(const Config &config, const Scalar dt, const Phase &ph
 
 	const std::size_t n = count() ;
 
-	const typename VectorField::ShapeFunc& shape = phase.velocity.shape() ;
+	const typename VectorField::ShapeFuncImpl& shape = phase.velocity.shape() ;
 	const MeshType& mesh = shape.derived().mesh() ;
 
 	// Split and merge particles before setting their velocities / moving them
@@ -107,15 +107,15 @@ void DynParticles::update(const Config &config, const Scalar dt, const Phase &ph
 		{
 			// Recompute gradient from velocities to avoid smoothing
 
-			typename VectorField::ShapeFunc::Interpolation itp ;
-			typename VectorField::ShapeFunc::Derivatives derivatives ;
+			typename VectorField::ShapeFuncType::Interpolation itp ;
+			typename VectorField::ShapeFuncType::Derivatives derivatives ;
 
 			shape.interpolate( p0loc, itp );
 			shape.get_derivatives( p0loc, derivatives ) ;
 
 			Mat Bp = Mat::Zero() ;
 
-			for( Index k = 0 ; k < Linear<MeshImpl>::NI ; ++k ) {
+			for( Index k = 0 ; k < itp.nodes.rows() ; ++k ) {
 				Bp += phase.velocity[ itp.nodes[k] ] * derivatives.row(k) ;
 			}
 
@@ -195,7 +195,7 @@ void DynParticles::read(std::vector<bool> &activeCells,
 						ScalarField &phiCohesion
 						) const
 {
-	const typename ScalarField::ShapeFunc& shape = phi.shape() ;
+	const typename ScalarField::ShapeFuncImpl& shape = phi.shape() ;
 	const MeshType& mesh = shape.derived().mesh() ;
 
 	activeCells.assign( mesh.nCells(), false );
@@ -215,7 +215,7 @@ void DynParticles::read(std::vector<bool> &activeCells,
 		mesh.locate( p0, loc );
 
 
-		typename ScalarField::ShapeFunc::Interpolation itp ;
+		typename ScalarField::ShapeFuncType::Interpolation itp ;
 		shape.interpolate( loc, itp );
 
 		activeCells[ mesh.cellIndex( loc.cell ) ] = true ;

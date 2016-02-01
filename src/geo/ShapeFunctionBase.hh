@@ -8,7 +8,9 @@ namespace d6 {
 
 template <typename ShapeFunc>
 struct ShapeFuncTraits
-{} ;
+{
+	static bool constexpr is_mesh_based = false ;
+} ;
 
 
 template< typename Derived >
@@ -21,6 +23,8 @@ struct ShapeFuncBase
 		NI = Traits::NI,
 		NQ = Traits::NQ
 	} ;
+	static bool constexpr is_mesh_based = Traits::is_mesh_based ;
+	typedef typename Traits::DOFDefinition DOFDefinition ;
 
 	typedef Eigen::Matrix<  Index, Traits::NI, 1  > NodeList ;
 	typedef Eigen::Matrix< Scalar, Traits::NI, 1  > CoefList ;
@@ -51,6 +55,9 @@ struct ShapeFuncBase
 		derived().compute_volumes( volumes ) ;
 	}
 
+	void all_dof_positions( DynMatW& vertices  ) const {
+		derived().all_dof_positions( vertices ) ;
+	}
 };
 
 

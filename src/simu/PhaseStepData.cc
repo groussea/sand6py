@@ -68,6 +68,8 @@ void PhaseStepData::assembleMatrices(
 		std::vector< RigidBodyData >&rbData
 		)
 {
+	// FXIME other approxes
+
 	typedef typename MeshType::Location Loc ;
 	typedef typename Linear<MeshImpl>::Interpolation Itp ;
 	typedef typename Linear<MeshImpl>::Derivatives Dcdx ;
@@ -295,12 +297,8 @@ void PhaseStepData::compute(const DynParticles& particles,
 		std::vector< RigidBody   >& rigidBodies,
 		std::vector<TensorField > &rbStresses , std::vector<RigidBodyData> & rbData)
 {
-	const ScalarField::ShapeFunc& shape = phase.fraction.shape() ;
+	const ScalarField::ShapeFuncType& shape = phase.fraction.shape() ;
 	const MeshType& mesh = shape.derived().mesh() ;
-
-	std::cerr << phase.fraction.size() << std::endl ;
-	std::cerr << shape.nDoF() << std::endl ;
-	std::cerr << mesh.derived().dim().transpose() << std::endl ;
 
 	m_surfaceNodes.clear();
 	m_surfaceNodes.resize( mesh.nNodes() );
@@ -310,7 +308,7 @@ void PhaseStepData::compute(const DynParticles& particles,
 	for( typename MeshType::CellIterator it = mesh.cellBegin() ; it != mesh.cellEnd() ; ++it ) {
 		typename MeshType::CellGeo geo ;
 		typename MeshType::Location loc ; loc.cell = *it ;
-		typename ScalarField::ShapeFunc::NodeList nodes ;
+		typename ScalarField::ShapeFuncType::NodeList nodes ;
 
 		mesh.get_geo( *it, geo );
 		const Scalar vol = geo.volume() / MeshType::NV ;
@@ -383,7 +381,7 @@ void PhaseStepData::compute(const DynParticles& particles,
 
 void PhaseStepData::computeGradPhi( const ScalarField& fraction, const ScalarField& volumes, VectorField &grad_phi ) const
 {
-	const ScalarField::ShapeFunc& shape = fraction.shape() ;
+	const ScalarField::ShapeFuncType& shape = fraction.shape() ;
 	const MeshType& mesh = shape.derived().mesh() ;
 
 	grad_phi.set_zero() ;
@@ -409,7 +407,7 @@ void PhaseStepData::computeGradPhi( const ScalarField& fraction, const ScalarFie
 void PhaseStepData::computeActiveNodes(const std::vector<bool> &activeCells ,
 									 const VectorField &grad_phi )
 {
-	const VectorField::ShapeFunc& shape = grad_phi.shape() ;
+	const VectorField::ShapeFuncImpl& shape = grad_phi.shape() ;
 	const MeshType& mesh = shape.derived().mesh() ;
 
 	nodes.reset( mesh.nNodes() );
@@ -425,9 +423,8 @@ void PhaseStepData::computeActiveNodes(const std::vector<bool> &activeCells ,
 
 		nodes.cells.push_back( *it );
 
-		typename MeshImpl::Location loc ; loc.cell = *it ;
-		typename VectorField::ShapeFunc::NodeList nodes ;
-		shape.list_nodes( loc, nodes );
+		typename VectorField::ShapeFuncType::NodeList nodes ;
+		shape.list_nodes( *it, nodes );
 
 		for( int k = 0 ; k < Linear<MeshImpl>::NI ; ++ k ) {
 			++activeNodes[ nodes[k] ] ;

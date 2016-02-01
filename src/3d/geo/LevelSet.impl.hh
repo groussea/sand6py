@@ -300,11 +300,11 @@ struct MeshLevelSet : public LevelSet
 	Scalar eval_local(const Vec &x) const override ;
 	Vec grad_local(const Vec &x) const override ;
 
-	// TODO -- cannot be used as static obstacle for now
+	// TODO -- can only be used as static obstacle for now
 	void local_inv_inertia( Mat& I ) const override {
 		I.setZero() ;
 	}
-	// TODO -- cannot be used as static obstacle for now
+	// TODO -- can only be used as static obstacle for now
 	Scalar local_volume() const override {
 		return 1 ;
 	}

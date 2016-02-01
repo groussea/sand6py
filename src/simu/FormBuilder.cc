@@ -13,11 +13,11 @@ void FormBuilder::addToIndex(
 		const std::vector< Index > &colIndices
 		) {
 
+	// FIXME other approxes
+
 	typename Linear<MeshImpl>::NodeList nodes ;
 	for( const typename MeshType::Cell& cell : cells ) {
-		typename Linear<MeshImpl>::Location loc ;
-		loc.cell = cell ;
-		m_mesh.shaped<Linear>().list_nodes( loc, nodes );
+		m_mesh.shaped<Linear>().list_nodes( cell, nodes );
 		for( int k = 0 ; k < Linear<MeshImpl>::NI ; ++ k ) {
 			for( int j = 0 ; j < Linear<MeshImpl>::NI ; ++ j ) {
 				m_data[ rowIndices[ nodes[k] ] ].push_back( colIndices[ nodes[j] ] ) ;

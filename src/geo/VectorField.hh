@@ -11,7 +11,7 @@ namespace d6 {
 template < typename ShapeFuncT >
 struct FieldTraits< AbstractVectorField< ShapeFuncT > >  {
 
-	typedef ShapeFuncT  ShapeFuncType ;
+	typedef ShapeFuncT  ShapeFuncImpl ;
 	typedef Vec	   ValueType ;
 	static constexpr Index Dimension = WD ;
 };
@@ -19,18 +19,19 @@ struct FieldTraits< AbstractVectorField< ShapeFuncT > >  {
 template < typename ShapeFuncT >
 class AbstractVectorField : public FieldBase< AbstractVectorField< ShapeFuncT > >
 {
-	typedef FieldTraits< AbstractVectorField > Traits ;
-	typedef ShapeFuncBase< typename Traits::ShapeFuncType > ShapeFuncType ;
-
 	typedef FieldBase< AbstractVectorField > Base ;
-	typedef typename ShapeFuncType::Location Location ;
 
 public:
+	typedef ShapeFuncBase< ShapeFuncT > ShapeFuncType ;
+	typedef typename ShapeFuncType::Location Location ;
+
 	explicit AbstractVectorField( const ShapeFuncType& shape )
 		: Base( shape )
-	{
+	{}
+	explicit AbstractVectorField( const typename ShapeFuncType::DOFDefinition& mesh )
+		: Base( ShapeFuncT( mesh ) )
+	{}
 
-	}
 	template <typename Func>
 	AbstractVectorField( const FieldFuncBase< Func, Base::D, ShapeFuncT > & func )
 		: Base( func.shape() )
