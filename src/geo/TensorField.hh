@@ -6,6 +6,8 @@
 
 namespace d6 {
 
+// Symmetric tensor
+
 template < typename ShapeFuncT >
 struct FieldTraits< AbstractTensorField< ShapeFuncT > >  {
 
@@ -55,6 +57,50 @@ public:
 
 	void add_sym_tensor( const Location& x, Mat& tensor ) const ;
 	void get_sym_tensor( const Location& x, Mat& tensor ) const ;
+
+};
+
+// Skew symmetric tensor
+
+template < typename ShapeFuncT >
+struct FieldTraits< AbstractSkewTsField< ShapeFuncT > >  {
+
+	typedef ShapeFuncT  ShapeFuncImpl ;
+	typedef VecR ValueType ;
+	static constexpr Index Dimension = RD ;
+};
+
+template < typename ShapeFuncT >
+class AbstractSkewTsField : public FieldBase< AbstractSkewTsField< ShapeFuncT > >
+{
+	typedef FieldBase< AbstractSkewTsField > Base ;
+
+public:
+	typedef ShapeFuncBase< ShapeFuncT > ShapeFuncType ;
+	typedef typename ShapeFuncType::Location Location ;
+
+	explicit AbstractSkewTsField( const ShapeFuncType& shape )
+		: Base( shape )
+	{
+	}
+	explicit AbstractSkewTsField( const typename ShapeFuncType::DOFDefinition& mesh )
+		: Base( ShapeFuncT( mesh ) )
+	{}
+
+	template <typename Func>
+	AbstractSkewTsField( const FieldFuncBase< Func, Base::D, ShapeFuncT > & func )
+		: Base( func.shape() )
+	{
+		Base::operator=( func );
+	}
+	template <typename Func>
+	AbstractSkewTsField& operator=( const FieldFuncBase< Func, Base::D, ShapeFuncT > & func )
+	{
+		return Base::operator=( func );
+	}
+
+	void get_spi_tensor( const Location& x, Mat& tensor ) const ;
+	void add_spi_tensor( const Location& x, Mat& tensor ) const ;
 
 };
 

@@ -21,6 +21,7 @@ template< typename Derived > struct FieldTraits ;
 template < typename ShapeFunc > class AbstractScalarField ;
 template < typename ShapeFunc > class AbstractVectorField ;
 template < typename ShapeFunc > class AbstractTensorField ;
+template < typename ShapeFunc > class AbstractSkewTsField ;
 
 
 class Grid ;
@@ -37,6 +38,7 @@ template < typename MeshT > struct DGLinear ;
 typedef AbstractScalarField< Linear<MeshImpl> >  ScalarField ;
 typedef AbstractVectorField< Linear<MeshImpl> >  VectorField ;
 typedef AbstractTensorField< Linear<MeshImpl> >  TensorField ;
+typedef AbstractSkewTsField< Linear<MeshImpl> >  SkewTsField ;
 
 
 typedef MeshBase< MeshImpl > MeshType ;

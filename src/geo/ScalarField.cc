@@ -14,21 +14,6 @@
 namespace d6
 {
 
-#if (D6_DIM==2)
-template <typename ShapeFuncT>
-void AbstractScalarField< ShapeFuncT >::get_spi_tensor(const Location &x, Mat &tensor) const
-{
-	VecR spi ; spi[0] = Base::eval_at(x) ;
-	tensor_view( spi ).get( tensor ) ;
-}
-
-template <typename ShapeFuncT>
-void AbstractScalarField< ShapeFuncT >::add_spi_tensor(const Location &x, Mat &tensor) const
-{
-	VecR spi ; spi[0] = Base::eval_at(x) ;
-	tensor_view( spi ).add( tensor ) ;
-}
-#endif
 
 template<typename ShapeFuncT >
 Vec AbstractScalarField< ShapeFuncT >::grad_at( const typename ShapeFuncType::Location& loc ) const

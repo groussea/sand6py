@@ -18,11 +18,7 @@ struct Phase
 
 	TensorField stresses ;
 	TensorField sym_grad ;
-#if D6_DIM == 3
-	VectorField spi_grad ;
-#else
-	ScalarField spi_grad ;
-#endif
+	SkewTsField spi_grad ;
 
 	VectorField grad_phi ;
 	VectorField geo_proj ;

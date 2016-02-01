@@ -45,11 +45,6 @@ public:
 
 	Vec grad_at( const typename ShapeFuncType::Location& loc ) const ;
 
-#if (D6_DIM==2)
-	void get_spi_tensor( const Location& x, Mat& tensor ) const ;
-	void add_spi_tensor( const Location& x, Mat& tensor ) const ;
-#endif
-
 };
 
 

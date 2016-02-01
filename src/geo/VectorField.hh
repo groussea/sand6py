@@ -48,11 +48,6 @@ public:
 		return FieldNorm< d6::AbstractVectorField, ShapeFuncT >( *this ) ;
 	}
 
-#if (D6_DIM==3)
-	void get_spi_tensor( const Location& x, Mat& tensor ) const ;
-	void add_spi_tensor( const Location& x, Mat& tensor ) const ;
-#endif
-
 };
 
 
