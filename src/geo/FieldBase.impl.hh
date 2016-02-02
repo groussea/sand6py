@@ -8,18 +8,6 @@
 
 namespace d6 {
 
-template< typename Derived >
-void FieldBase< Derived >::eval_at( const Location& x, ValueType& res ) const
-{
-	typename ShapeFuncType::Interpolation itp ;
-	m_shape.interpolate( x, itp );
-
-	d6::set_zero( res ) ;
-	for( Index k = 0 ; k < itp.nodes.rows() ; ++k ) {
-		res += itp.coeffs[k] * segment( itp.nodes[k] ) ;
-	}
-
-}
 
 template< typename Derived >
 void FieldBase< Derived >::add_at( const Location& x, const ValueType& val )
@@ -67,6 +55,52 @@ Derived& FieldBase< Derived >::divide_by_positive(const ScalarField &field, Scal
 	div_compwise< D >( m_data, field.flatten().cwiseMax(min) ) ;
 	return derived() ;
 }
+
+
+template< typename Derived >
+template< typename Func, typename OtherShape >
+typename std::enable_if< OtherShape::is_mesh_based>::type
+FieldBase< Derived >::accumulate( const FieldFuncBase< Func, D, OtherShape > &f )
+{
+	typename OtherShape::Location loc ;
+
+	// FIXME add qpBegin() on ShapeFuncBase
+	for( auto qpIt = m_shape.qpBegin() ; qpIt != m_shape.qpEnd() ; ++qpIt ) {
+		f.shape().locate( qpIt.pos(), loc ) ;
+		add_at( qpIt.loc(), qpIt.weight() * f.eval_at( loc ) ) ;
+	}
+}
+
+template< typename Derived >
+template< typename Func, typename OtherShape >
+typename std::enable_if<!OtherShape::is_mesh_based>::type
+FieldBase< Derived >::accumulate( const FieldFuncBase< Func, D, OtherShape > &f )
+{
+	Location loc ;
+
+	for( auto qpIt = f.shape().qpBegin() ; qpIt != f.shape().qpEnd() ; ++qpIt ) {
+		m_shape.locate( qpIt.pos(), loc ) ;
+		add_at( loc, qpIt.weight() * f.eval_at( qpIt.loc() ) ) ;
+	}
+
+}
+
+template< typename Derived >
+template< typename Func, typename OtherShape >
+Derived& FieldBase< Derived >::interpolate( const FieldFuncBase< Func, D, OtherShape > &f )
+{
+	ScalarField volumes( shape() );
+	shape().compute_volumes( volumes.flatten() );
+
+	set_zero() ;
+
+	accumulate( f ) ;
+
+	divide_by_positive( volumes ) ;
+
+	return derived();
+}
+
 
 } //ns d6
 

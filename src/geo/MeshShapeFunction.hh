@@ -5,6 +5,52 @@
 
 namespace d6 {
 
+template< typename MeshT >
+
+struct MeshQPIterator {
+
+	typedef MeshBase< MeshT > MeshType ;
+
+	explicit MeshQPIterator( const MeshType &mesh_, const typename MeshType::CellIterator& cIt )
+		: mesh(mesh_), cellIt( cIt ), qp(0)
+	{
+		if( cellIt != mesh.cellEnd() ) update_cache();
+	}
+
+	bool operator==( const MeshQPIterator& o ) const
+	{ return o.cellIt == cellIt && qp == o.qp ;}
+	bool operator!=( const MeshQPIterator& o ) const
+	{ return o.cellIt != cellIt || qp != o.qp ; }
+
+	MeshQPIterator& operator++() {
+		if( ++qp == MeshType::CellGeo::NQ ) {
+			qp = 0 ;
+			++cellIt ;
+			if( cellIt != mesh.cellEnd() ) update_cache();
+		}
+	}
+
+	Vec pos() const { return cached_qps.col(qp) ; }
+	Scalar weight() const { return cached_qpw.col(qp) ; }
+	typename MeshType::Location loc() const { return mesh.locate(pos()) ; }
+
+private:
+	const MeshType& mesh ;
+
+	typename MeshType::CellIterator cellIt ;
+	Index qp ;
+
+	typename MeshType::Cell::QuadPoints  cached_qps ;
+	typename MeshType::Cell::QuadWeights cached_qpw ;
+
+	void update_cache() {
+		typename MeshType::CellGeo geo ;
+		mesh.get_geo( geo ) ;
+		geo.get_qp( cached_qps, cached_qpw ) ;
+	}
+};
+
+
 // MeshShapeFunction
 template< template< typename  > class Interp, typename MeshT >
 struct MeshShapeFunc ;
@@ -24,6 +70,7 @@ struct MeshShapeFunc : public ShapeFuncBase< Interp<MeshT> >
 {
 	typedef ShapeFuncBase< Interp<MeshT> > Base ;
 	typedef MeshBase<MeshT> MeshType ;
+	typedef typename Base::QPIterator QPIterator ;
 
 	MeshShapeFunc ( const MeshType & mesh )
 		: m_mesh( mesh )
@@ -31,17 +78,48 @@ struct MeshShapeFunc : public ShapeFuncBase< Interp<MeshT> >
 
 	void compute_volumes( DynVec& volumes ) const
 	{
+		volumes.resize( Base::nDoF() ) ;
+		volumes.setZero() ;
+
+		typename MeshType::CellGeo geo ;
+		typename Base::NodeList nodes ;
 
 		for( typename MeshType::CellIterator it = m_mesh.cellBegin() ; it != m_mesh.cellEnd() ; ++it ) {
-			typename MeshType::CellGeo geo ;
-			typename MeshType::NodeList nodes ;
 
 			m_mesh.get_geo( *it, geo );
 			const Scalar vol = geo.volume() / MeshType::NV ;
 
-			Base::list_nodes( *it, nodes );
+			list_nodes( *it, nodes );
 			for( Index k = 0 ; k < MeshType::NV ; ++k ) {
 				volumes[nodes[k]] += vol ;
+			}
+		}
+	}
+
+	void all_dof_positions( DynMatW& vertices, std::vector<Index>& indexes, DynVec& totalVolumes ) const
+	{
+		vertices.resize( WD, m_mesh.nNodes() );
+		totalVolumes.resize( m_mesh.nNodes() );
+		indexes.resize( Base::nDoF() );
+
+		totalVolumes.setZero() ;
+
+		typename MeshType::CellGeo cellGeo ;
+		typename Base::NodeList meshNodes, shapeNodes ;
+
+		for( typename MeshType::CellIterator it = m_mesh.cellBegin() ; it != m_mesh.cellEnd() ; ++it )
+		{
+			m_mesh.get_geo( *it, cellGeo ) ;
+
+			list_nodes( *it, shapeNodes );
+			Linear<MeshT>( m_mesh ).list_nodes( *it, meshNodes );
+
+			const Scalar vol = cellGeo.volume() / meshNodes.rows() ;
+
+			for( int k = 0 ; k < meshNodes.rows() ; ++k ) {
+				indexes[shapeNodes[k]] = meshNodes[k] ;
+				vertices.col( meshNodes[k] ) = cellGeo.vertex( k ) ;
+				totalVolumes( meshNodes[k] ) += vol ;
 			}
 		}
 	}
@@ -65,6 +143,15 @@ struct MeshShapeFunc : public ShapeFuncBase< Interp<MeshT> >
 		return m_mesh.derived() ;
 	}
 
+
+	QPIterator qpBegin() const {
+		return QPIterator( m_mesh, m_mesh.cellBegin() ) ;
+	}
+
+	QPIterator qpEnd() const {
+		return QPIterator( m_mesh, m_mesh.cellEnd() ) ;
+	}
+
 protected:
 	const MeshType& m_mesh ;
 
@@ -80,6 +167,7 @@ struct ShapeFuncTraits< Linear<MeshT>  > : public ShapeFuncTraits< MeshShapeFunc
 		NI = Base::MeshType::NV,
 		NQ = Base::MeshType::CellGeo::NQ
 	};
+	typedef MeshQPIterator< MeshT > QPIterator ;
 
 } ;
 
@@ -106,11 +194,6 @@ struct Linear : public MeshShapeFunc< Linear, MeshT >
 		list = itp.nodes ;
 	}
 
-	void all_dof_positions( DynMatW& vertices  ) const
-	{
-		// FIXME implement
-	}
-
 } ;
 
 // DG Linear shape func
@@ -123,6 +206,7 @@ struct ShapeFuncTraits< DGLinear<MeshT>  > : public ShapeFuncTraits< MeshShapeFu
 		NI = Base::MeshType::NV,
 		NQ = Base::MeshType::CellGeo::NQ
 	};
+	typedef MeshQPIterator< MeshT > QPIterator ;
 
 } ;
 
@@ -154,11 +238,6 @@ struct DGLinear : public MeshShapeFunc< DGLinear, MeshT >
 		for( Index k = 0 ; k < MeshType::NV ; ++ k ) {
 			list[k] = cellIdx * MeshType::NV + k ;
 		}
-	}
-
-	void all_dof_positions( DynMatW& vertices  ) const
-	{
-		//FIXME implement
 	}
 
 } ;

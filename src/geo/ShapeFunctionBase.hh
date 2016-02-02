@@ -25,6 +25,7 @@ struct ShapeFuncBase
 	} ;
 	static bool constexpr is_mesh_based = Traits::is_mesh_based ;
 	typedef typename Traits::DOFDefinition DOFDefinition ;
+	typedef typename Traits::QPIterator QPIterator ;
 
 	typedef Eigen::Matrix<  Index, Traits::NI, 1  > NodeList ;
 	typedef Eigen::Matrix< Scalar, Traits::NI, 1  > CoefList ;
@@ -55,9 +56,15 @@ struct ShapeFuncBase
 		derived().compute_volumes( volumes ) ;
 	}
 
-	void all_dof_positions( DynMatW& vertices  ) const {
-		derived().all_dof_positions( vertices ) ;
+	void all_dof_positions( DynMatW& vertices, std::vector<Index>& indexes, DynVec& totalVolumes  ) const
+	{
+		derived().all_dof_positions( vertices, indexes, totalVolumes ) ;
 	}
+
+	QPIterator qpBegin()
+	{ return derived().qpBegin() ; }
+	QPIterator qpEnd()
+	{ return derived().qpEnd() ; }
 };
 
 

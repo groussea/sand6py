@@ -13,6 +13,7 @@ struct FieldTraits
 };
 
 
+
 template< typename Derived >
 class FieldBase : public FieldFuncBase< Derived,
 		FieldTraits< Derived >::Dimension,
@@ -31,6 +32,7 @@ public:
 
 	typedef FieldFuncBase< Derived, D, ShapeFuncImpl > Base ;
 	using Base::m_shape ;
+	using Base::derived ;
 
 	typedef typename Segmenter< D >::ValueType ValueType ;
 	typedef typename Segmenter< D >::Seg Seg  ;
@@ -65,35 +67,34 @@ public:
 		assert( f.size() == size() ) ;
 		#pragma omp parallel for
 		for( Index  i = 0 ; i < size() ; ++i ) {
-			f.eval_at_node( i, segment(i) );
+			f.template eval_at_node< DynVec >( i, segment(i) );
 		}
 		return derived();
 	}
 
-	// Interpolation
+	template < typename Func, typename OtherShape >
+	typename std::enable_if< !std::is_same< OtherShape, ShapeFuncImpl >::value, Derived& >::type
+	operator= ( const  Interpolation< Func, D, OtherShape, ShapeFuncImpl > & f )
+	{ return interpolate<OtherShape> ( f.func ) ; }
+
+	// Accumulation, interpolation
 
 	void  add_at( const Location& loc, const ValueType& val ) ;
 	void  add_at( const typename ShapeFuncType::Interpolation &itp, const ValueType& val ) ;
-	void eval_at( const Location& loc, ValueType& res ) const ;
 
-	ValueType eval_at( const Location& loc ) const {
-		ValueType seg ; eval_at( loc, seg );
-		return seg ;
-	}
+	template < typename Func, typename OtherShape >
+	Derived& interpolate( const FieldFuncBase< Func, D, OtherShape > &f ) ;
 
 	// Value at node
 	Seg      segment( const Index i ) { return Segmenter< D >::segment( m_data, i) ; }
 	ConstSeg segment( const Index i ) const { return Segmenter< D >::segment(m_data, i) ; }
 
-	void eval_at_node( Index i, Seg v ) const {	v = segment(i) ; }
+	template < typename Agg >
+	void eval_at_node( Index i, typename Segmenter<D, Agg>::Seg v ) const {	v = segment(i) ; }
 
 	Index size() const { return m_size ; }
 
 	// Operators
-	ValueType operator() ( const Location& loc ) const { return eval_at(loc) ; }
-	template < typename SFINAEShapeFunc = ShapeFuncType >
-	typename std::enable_if<SFINAEShapeFunc::is_mesh_based, ValueType>::type
-	operator() ( const Vec& x ) const { return eval_at(m_shape.locate(x)) ; }
 
 	ConstSeg  operator[] ( const Index i ) const { return segment(i) ; }
 	Seg       operator[] ( const Index i )       { return segment(i) ; }
@@ -115,12 +116,17 @@ public:
 		ar & m_data ;
 	}
 
-	Derived& derived()
-	{ return static_cast< Derived& >( *this ) ; }
-	const Derived& derived() const
-	{ return static_cast< const Derived& >( *this ) ; }
 
 protected:
+
+	template < typename Func, typename OtherShape >
+	typename std::enable_if< OtherShape::is_mesh_based>::type
+	accumulate( const FieldFuncBase< Func, D, OtherShape > &f ) ;
+
+	template < typename Func, typename OtherShape >
+	typename std::enable_if<!OtherShape::is_mesh_based >::type
+	accumulate( const FieldFuncBase< Func, D, OtherShape > &f ) ;
+
 	Index m_size ;
 	DynVec   m_data ;
 

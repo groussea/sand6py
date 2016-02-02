@@ -37,7 +37,7 @@ struct Segmenter {
 		return vec.template tail< Dimension >( ) ;
 	}
 
-	Seg val2seg( ValueType & v) { return v.template head< Dimension >() ; }
+	static inline Seg val2seg( ValueType & v) { return v.template head< Dimension >() ; }
 
 };
 template < typename Aggregate >
@@ -66,7 +66,7 @@ struct Segmenter< 1, Aggregate > {
 		return vec[vec.rows()-1] ;
 	}
 
-	Seg val2seg( ValueType& v) { return v ; }
+	static inline Seg val2seg( ValueType& v) { return v ; }
 } ;
 
 

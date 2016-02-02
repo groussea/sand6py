@@ -47,7 +47,8 @@ struct FieldTrace : public UnaryFieldFunc<FieldTrace<ShapeFuncT>, 1>
 	using Base::m_field ;
 	explicit FieldTrace( const FieldType & field ) : Base(field) {}
 
-	void eval_at_node( Index i, typename Base::Seg v ) const
+	template < typename Agg >
+	void eval_at_node( Index i, typename Segmenter<1, Agg>::Seg v ) const
 	{
 		v = m_field[i][0] ;
 	}
@@ -72,7 +73,8 @@ struct DeviatoricPart : public UnaryFieldFunc<DeviatoricPart<ShapeFuncT>, SD>
 	using Base::m_field ;
 	explicit DeviatoricPart( const FieldType & field ) : Base(field) {}
 
-	void eval_at_node( Index i, typename Base::Seg v ) const
+	template < typename Agg >
+	void eval_at_node( Index i, typename Segmenter<SD, Agg>::Seg v ) const
 	{
 		v = m_field[i] ;
 		v[0] = 0 ;
@@ -99,7 +101,8 @@ struct FieldNorm : public UnaryFieldFunc< FieldNorm<Field, ShapeFuncT>, 1>
 	using Base::m_field ;
 	explicit FieldNorm( const FieldType & field ) : Base(field) {}
 
-	void eval_at_node( Index i, typename Base::Seg v ) const
+	template < typename Agg >
+	void eval_at_node( Index i, typename Segmenter<1, Agg>::Seg v ) const
 	{
 		v = m_field[i].norm() ;
 	}

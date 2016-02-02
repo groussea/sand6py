@@ -304,20 +304,8 @@ void PhaseStepData::compute(const DynParticles& particles,
 	m_surfaceNodes.resize( mesh.nNodes() );
 
 	// Compute volumes of cells
-	ScalarField volumes(shape) ; volumes.set_zero();
-	for( typename MeshType::CellIterator it = mesh.cellBegin() ; it != mesh.cellEnd() ; ++it ) {
-		typename MeshType::CellGeo geo ;
-		typename MeshType::Location loc ; loc.cell = *it ;
-		typename ScalarField::ShapeFuncType::NodeList nodes ;
-
-		mesh.get_geo( *it, geo );
-		const Scalar vol = geo.volume() / MeshType::NV ;
-
-		shape.list_nodes( loc, nodes );
-		for( Index k = 0 ; k < MeshType::NV ; ++k ) {
-			volumes[nodes[k]] += vol ;
-		}
-	}
+	ScalarField volumes(shape) ;
+	shape.compute_volumes( volumes.flatten() );
 
 	// Transfer particles quantities to grid
 	ScalarField intPhi ( shape ) ;
