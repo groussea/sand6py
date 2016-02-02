@@ -4,6 +4,7 @@ utils/File.cc
 utils/File.hh
 utils/Log.hh
 utils/LogLevels.hh
+utils/Segmenter.hh
 utils/Stats.cc
 utils/Stats.hh
 utils/alg.hh

@@ -50,8 +50,7 @@ struct PlaneTestScenar : public Scenario {
 		ls->set_rotation( M_PI/8 ) ;
 
 		rbs.emplace_back( ls, 1. );
-		VecR angVel ; angVel << 0. ;
-		rbs.back().set_velocity( Vec(0,1.e-1), angVel ) ;
+		rbs.back().set_velocity( Vec(0,1.e-1), 0 ) ;
 	}
 };
 
@@ -74,9 +73,7 @@ struct ImpactScenar : public Scenario {
 		ls->scale( radius() ).set_origin( .5 * m_config->box + Vec(0,.25*m_config->box[1]) ) ;
 
 		rbs.emplace_back( ls, volMass );
-		VecR angVel ; angVel << avel ;
-		rbs.back().set_velocity( Vec(0,-zvel), angVel ) ;
-		std::cout << rbs.back().angularVelocity().transpose() << std::endl ;
+		rbs.back().set_velocity( Vec(0,-zvel), avel ) ;
 	}
 
 	Scalar radius() const {

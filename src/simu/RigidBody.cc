@@ -1,6 +1,7 @@
 #include "RigidBody.hh"
 
 #include "LevelSet.hh"
+#include "Tensor.hh"
 
 #include <iostream>
 
@@ -14,10 +15,13 @@ RigidBody::RigidBody(std::unique_ptr<LevelSet> &ls, Scalar volMass )
 
 Vec RigidBody::velocity_at(const Vec &x) const
 {
-	return velocity() + angularVelocity()(0,0) * Vec( -x[1], x[0] ) ;
+	Eigen::Matrix< Scalar, WD, RD > cross_mat ;
+	make_cross_mat( x, cross_mat ) ;
+
+	return velocity() + cross_mat * angularVelocity() ;
 }
 
-void RigidBody::integrate_forces(const Scalar dt, const VecS &forces)
+void RigidBody::integrate_forces(const Scalar dt, const Dofs &forces)
 {
 	MatS Mi ;
 	inv_inertia( Mi );
@@ -27,7 +31,7 @@ void RigidBody::integrate_forces(const Scalar dt, const VecS &forces)
 
 void RigidBody::integrate_gravity(const Scalar dt, const Vec &gravity)
 {
-	VecS forces ;
+	Dofs forces ;
 	forces.head<WD>() = m_volumicMass * m_levelSet->volume() * gravity ;
 	forces.tail<RD>().setZero() ;
 
@@ -36,7 +40,7 @@ void RigidBody::integrate_gravity(const Scalar dt, const Vec &gravity)
 
 void RigidBody::move(const Scalar dt) const
 {
-	m_levelSet->move( dt * velocity(), dt * angularVelocity()(0,0) );
+	m_levelSet->move( dt * velocity(), vel_rotation( angularVelocity(), dt ) );
 }
 
 void RigidBody::move_to(const Vec &pos) const

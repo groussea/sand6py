@@ -14,12 +14,12 @@ public:
 
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-	typedef Eigen::Matrix< Scalar, SD, 1, Eigen::DontAlign > Vel ;
+	typedef Eigen::Matrix< Scalar, WD+RD, 1, Eigen::DontAlign > Dofs ;
 
-	typedef typename Vel::     FixedSegmentReturnType< WD >::Type         VelComp ;
-	typedef typename Vel::ConstFixedSegmentReturnType< WD >::Type    ConstVelComp ;
-	typedef typename Vel::     FixedSegmentReturnType< RD >::Type      AngVelComp ;
-	typedef typename Vel::ConstFixedSegmentReturnType< RD >::Type ConstAngVelComp ;
+	typedef typename Segmenter<WD, Dofs>::Seg      VelComp ;
+	typedef typename Segmenter<WD, Dofs>::ConstSeg ConstVelComp ;
+	typedef typename Segmenter<RD, Dofs>::Seg      AngVelComp ;
+	typedef typename Segmenter<RD, Dofs>::ConstSeg ConstAngVelComp ;
 
 	RigidBody( std::unique_ptr< LevelSet > &ls, Scalar volMass ) ;
 
@@ -27,15 +27,15 @@ public:
 
 	Vec velocity_at( const Vec& x ) const ;
 
-	const Vel &velocities() const {
+	const Dofs &velocities() const {
 		return m_velocity ;
 	}
 
-	VelComp velocity() { return m_velocity.head<WD>() ; }
-	AngVelComp angularVelocity() { return m_velocity.tail<RD>() ; }
+	VelComp velocity() { return Segmenter<WD, Dofs>::head( m_velocity ) ; }
+	AngVelComp angularVelocity() { return Segmenter<RD, Dofs>::tail( m_velocity ) ; }
 
-	ConstVelComp velocity() const { return m_velocity.head<WD>() ; }
-	ConstAngVelComp angularVelocity() const { return m_velocity.tail<RD>() ; }
+	ConstVelComp velocity() const { return Segmenter<WD, Dofs>::head( m_velocity ) ; }
+	ConstAngVelComp angularVelocity() const { return Segmenter<RD, Dofs>::tail(m_velocity ) ; }
 
 	const LevelSet& levelSet() const
 	{ return *m_levelSet ; }
@@ -58,7 +58,7 @@ public:
 	}
 
 	void integrate_gravity( const Scalar dt, const Vec& gravity ) ;
-	void integrate_forces( const Scalar dt, const VecS& forces ) ;
+	void integrate_forces( const Scalar dt, const Dofs& forces ) ;
 
 	void move( const Scalar dt ) const ;
 
@@ -69,7 +69,7 @@ private:
 
 	Scalar m_volumicMass ;
 
-	Vel m_velocity ;
+	Dofs m_velocity ;
 
 } ;
 

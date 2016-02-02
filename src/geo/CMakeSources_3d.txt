@@ -38,6 +38,8 @@ geo/ShapeFunctionBase.hh
 geo/Tensor.cc
 geo/TensorField.cc
 geo/TensorField.hh
+geo/UnstructuredShapeFunction.hh
 geo/VectorField.cc
 geo/VectorField.hh
 geo/geo.fwd.hh
+geo/rotations.hh

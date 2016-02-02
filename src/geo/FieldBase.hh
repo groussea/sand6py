@@ -14,7 +14,9 @@ struct FieldTraits
 
 
 template< typename Derived >
-class FieldBase
+class FieldBase : public FieldFuncBase< Derived,
+		FieldTraits< Derived >::Dimension,
+		typename FieldTraits< Derived >::ShapeFuncImpl >
 {
 
 public:
@@ -26,15 +28,18 @@ public:
 	typedef typename ShapeFuncType::Location Location ;
 
 	static constexpr Index D = Traits::Dimension ;
-	typedef typename Traits::ValueType ValueType ;
 
+	typedef FieldFuncBase< Derived, D, ShapeFuncImpl > Base ;
+	using Base::m_shape ;
+
+	typedef typename Segmenter< D >::ValueType ValueType ;
 	typedef typename Segmenter< D >::Seg Seg  ;
 	typedef typename Segmenter< D >::ConstSeg ConstSeg  ;
 
 	typedef AbstractScalarField< ShapeFuncImpl > ScalarField ;
 
 	explicit FieldBase( const ShapeFuncType& shape )
-		: m_shape( shape.derived() )
+		: Base( shape )
 	{
 		fit_shape() ;
 	}
@@ -80,6 +85,8 @@ public:
 	Seg      segment( const Index i ) { return Segmenter< D >::segment( m_data, i) ; }
 	ConstSeg segment( const Index i ) const { return Segmenter< D >::segment(m_data, i) ; }
 
+	void eval_at_node( Index i, Seg v ) const {	v = segment(i) ; }
+
 	Index size() const { return m_size ; }
 
 	// Operators
@@ -114,7 +121,6 @@ public:
 	{ return static_cast< const Derived& >( *this ) ; }
 
 protected:
-	ShapeFuncImpl m_shape ;
 	Index m_size ;
 	DynVec   m_data ;
 

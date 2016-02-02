@@ -67,8 +67,10 @@ void Active::var2field( const DynVec& var,  FieldBase<Derived> &field ) const
 template void Active::var2field( const DynVec & var, FieldBase<ScalarField> &field ) const;
 template void Active::var2field( const DynVec & var, FieldBase<VectorField> &field ) const;
 template void Active::var2field( const DynVec & var, FieldBase<TensorField> &field ) const;
+template void Active::var2field( const DynVec & var, FieldBase<SkewTsField> &field ) const;
 template void Active::field2var( const FieldBase<ScalarField> &field, DynVec & var, bool ) const;
 template void Active::field2var( const FieldBase<VectorField> &field, DynVec & var, bool ) const;
 template void Active::field2var( const FieldBase<TensorField> &field, DynVec & var, bool ) const;
+template void Active::field2var( const FieldBase<SkewTsField> &field, DynVec & var, bool ) const;
 
 } //d6

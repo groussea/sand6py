@@ -14,7 +14,7 @@ struct FieldFuncBase
 	typedef typename Segmenter< D >::ValueType ValueType ;
 	typedef typename Segmenter< D >::Seg Seg  ;
 
-	explicit FieldFuncBase( const ShapeFuncType& shape ) : m_shape(shape) {}
+	explicit FieldFuncBase( const ShapeFuncType& shape ) : m_shape(shape.derived()) {}
 
 
 	ValueType operator[]( Index i ) const
@@ -35,7 +35,7 @@ struct FieldFuncBase
 	const ShapeFuncType& shape() const { return m_shape ; }
 
 protected:
-	const ShapeFuncType& m_shape ;
+	ShapeFuncT m_shape ;
 };
 
 

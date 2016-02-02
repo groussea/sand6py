@@ -121,6 +121,13 @@ TensorView< typename Derived::ConstMapType > tensor_view( const Eigen::MatrixBas
 	return TensorView< typename Derived::ConstMapType >( Derived::Map(vec.derived().data(), vec.size()) ) ;
 }
 
+inline TensorView< typename Eigen::Matrix<Scalar,1,1>::MapType > tensor_view( Scalar &s ) {
+	return tensor_view( Eigen::Matrix<Scalar,1,1>::Map( &s ) ) ;
+}
+inline TensorView< typename Eigen::Matrix<Scalar,1,1>::ConstMapType > tensor_view( const Scalar &s ) {
+	return TensorView< typename Eigen::Matrix<Scalar,1,1>::ConstMapType >( Eigen::Matrix<Scalar,1,1>::Map( &s ) ) ;
+}
+
 // mat * a == a ^ x
 template <typename Derived>
 void make_cross_mat( const Vec& x, const Eigen::MapBase< Derived, Eigen::WriteAccessors >& map )

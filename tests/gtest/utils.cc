@@ -61,11 +61,11 @@ TEST( utils, config )
 	ASSERT_DOUBLE_EQ( c.fps * c.substeps, 1.e2 ) ;
 
 	const Scalar Re = ( c.box.minCoeff() * std::sqrt( c.box.minCoeff() * c.gravity.norm()) * c.volMass ) / c.viscosity ;
-	ASSERT_DOUBLE_EQ( 2.e8, Re ) ;
 
 	c.internalize();
 
 #if D6_DIM==3
+	ASSERT_DOUBLE_EQ( 2.e8, Re ) ;
 	ASSERT_TRUE( c.box.isApprox( Vec(30,20,10) ) ) ;
 	ASSERT_TRUE( c.gravity.isApprox( Vec(1,0,0) ) ) ;
 #endif
