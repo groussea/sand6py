@@ -8,83 +8,178 @@
 
 namespace d6 {
 
-template < typename Func >
-void FormBuilder::integrate_qp( const typename MeshType::Cells& cells, Func func ) const
-{
-	integrate_qp( cells.begin(), cells.end(), func ) ;
+namespace form {
+	template< typename LhsShape, typename RhsShape, Side side>
+	struct GetSide {
+		typedef LhsShape Shape ;
+		typedef RhsShape Other ;
+
+		static Shape& shape( FormBuilder<LhsShape, RhsShape> &b ) { return b.m_lhsShape ; }
+		static Shape& other( FormBuilder<LhsShape, RhsShape> &b ) { return b.m_rhsShape ; }
+		static const Shape& shape( const FormBuilder<LhsShape, RhsShape> &b ) { return b.m_lhsShape ; }
+		static const Shape& other( const FormBuilder<LhsShape, RhsShape> &b ) { return b.m_rhsShape ; }
+
+		template< typename T1, typename T2 >
+		static T1& lhs( T1& l, T2& ) { return l ; }
+		template< typename T1, typename T2 >
+		static T2& rhs( T1&, T2& r ) { return r ; }
+		template< typename T1, typename T2 >
+		static const T1& lhs( const T1& l, const T2& ) { return l ; }
+		template< typename T1, typename T2 >
+		static const T2& rhs( const T1&, const T2& r ) { return r ; }
+	};
+	template< typename LhsShape, typename RhsShape>
+	struct GetSide<LhsShape, RhsShape, Right> {
+		typedef RhsShape Shape ;
+		typedef LhsShape Other ;
+
+		Shape& shape( FormBuilder<LhsShape, RhsShape> &b ) { return b.m_rhsShape ; }
+		Shape& other( FormBuilder<LhsShape, RhsShape> &b ) { return b.m_lhsShape ; }
+		const Shape& shape( const FormBuilder<LhsShape, RhsShape> &b ) { return b.m_rhsShape ; }
+		const Shape& other( const FormBuilder<LhsShape, RhsShape> &b ) { return b.m_lhsShape ; }
+
+		template< typename T1, typename T2 >
+		static T2& lhs( T1&, T2& l ) { return l ; }
+		template< typename T1, typename T2 >
+		static T1& rhs( T1& r, T2& ) { return r ; }
+		template< typename T1, typename T2 >
+		static const T2& lhs( const T1&, const T2& l ) { return l ; }
+		template< typename T1, typename T2 >
+		static const T1& rhs( const T1& r, const T2& ) { return r ; }
+	};
+
+} //form
+
+template < typename LhsShape, typename RhsShape >
+template < form::Side side, typename CellIterator>
+void FormBuilder<LhsShape, RhsShape>::addToIndex(
+		const CellIterator& cellBegin, const CellIterator& cellEnd,
+		const std::vector< Index > &rowIndices,
+		const std::vector< Index > &colIndices
+		) {
+
+	typedef form::GetSide<LhsShape, RhsShape, side> Get ;
+	const typename Get::Shape& shape = Get::shape(*this) ;
+	const typename Get::Other& other = Get::other(*this) ;
+
+	typename Get::Other::Location otherLoc ;
+	typename Get::Shape::NodeList shapeNodes ;
+	typename Get::Other::NodeList otherNodes ;
+
+	for( CellIterator cellIt = cellBegin ; cellIt != cellEnd ; ++cellIt ) {
+
+		shape.list_nodes( *cellIt, shapeNodes );
+		// FIXME if other shape cells not a substep of main shape cells
+		other.locate( shape.qpIterator( cellIt ).pos(), otherLoc );
+		other.list_nodes( otherLoc, otherNodes );
+
+		for( int k = 0 ; k < shapeNodes.rows() ; ++ k ) {
+			for( int j = 0 ; j < otherNodes.rows() ; ++ j ) {
+				const Index row = rowIndices[ Get::lhs(shapeNodes[k], otherNodes[j]) ] ;
+				const Index col = colIndices[ Get::rhs(shapeNodes[k], otherNodes[j]) ] ;
+				m_data[ row ].push_back( col ) ;
+			}
+		}
+	}
+
 }
 
-template < typename CellIterator, typename Func >
-void FormBuilder::integrate_qp( const CellIterator& cellBegin, const CellIterator& cellEnd, Func func ) const
-{
-	typename MeshType::Location loc ;
-	typename Linear<MeshImpl>::Interpolation itp ;
-	typename Linear<MeshImpl>::Derivatives dc_dx ;
 
-	Linear<MeshImpl> shape( m_mesh ) ;
+template < typename LhsShape, typename RhsShape >
+template < form::Side side, typename CellIterator, typename Func >
+void FormBuilder<LhsShape, RhsShape>::integrate_qp( const CellIterator& cellBegin, const CellIterator& cellEnd, Func func ) const
+{
+	typedef form::GetSide<LhsShape, RhsShape, side> Get ;
+	const typename Get::Shape& shape = Get::shape(*this) ;
+	const typename Get::Other& other = Get::other(*this) ;
+
+	typename LhsShape::Location      lhs_loc ;
+	typename LhsShape::Interpolation lhs_itp ;
+	typename LhsShape::Derivatives   lhs_dc_dx ;
+	typename RhsShape::Location      rhs_loc ;
+	typename RhsShape::Interpolation rhs_itp ;
+	typename RhsShape::Derivatives   rhs_dc_dx ;
+
 
 	for ( auto qpIt = shape.qpIterator(cellBegin) ; qpIt != shape.qpIterator(cellEnd) ; ++qpIt )
 	{
-		qpIt.locate( loc ) ;
-		shape.interpolate( loc, itp );
-		shape.get_derivatives( loc, dc_dx );
+		qpIt.locate(Get::lhs( lhs_loc, rhs_loc )) ;
+		const Vec &pos = qpIt.pos() ;
+		other.locate( pos, Get::rhs( lhs_loc, rhs_loc ) ) ;
 
-		func( qpIt.weight(), loc, itp, dc_dx ) ;
+		m_lhsShape.interpolate    ( lhs_loc, lhs_itp );
+		m_rhsShape.interpolate    ( rhs_loc, rhs_itp );
+		m_lhsShape.get_derivatives( lhs_loc, lhs_dc_dx );
+		m_rhsShape.get_derivatives( rhs_loc, rhs_dc_dx );
+
+		func( qpIt.weight(), qpIt.pos(), lhs_itp, lhs_dc_dx, rhs_itp, rhs_dc_dx ) ;
 	}
 }
 
-template < typename Func >
-void FormBuilder::integrate_node( const typename MeshType::Cells& cells, Func func ) const
-{
-	integrate_node( cells.begin(), cells.end(), func ) ;
-}
 
+template < typename LhsShape, typename RhsShape >
 template < typename CellIterator, typename Func >
-void FormBuilder::integrate_node( const CellIterator& cellBegin, const CellIterator& cellEnd, Func func ) const
+void FormBuilder<LhsShape, RhsShape>::integrate_node( const CellIterator& cellBegin, const CellIterator& cellEnd, Func func ) const
 {
-	typename MeshType::Location loc ;
-	typename Linear<MeshImpl>::Interpolation itp ;
+	static_assert( std::is_same<typename LhsShape::MeshType, typename RhsShape::MeshType >::value,
+				   "integrate_node only works with shapes based on the same mesh" ) ;
+	assert( &m_lhsShape.mesh() == &m_rhsShape.mesh() ) ;
+
+	typedef typename LhsShape::MeshType MeshType;
+	typename LhsShape::MeshType::Location loc ;
+	typename LhsShape::Interpolation lhs_itp ;
+	typename RhsShape::Interpolation rhs_itp ;
 
 	typename MeshType::CellGeo cellGeo ;
-
-	itp.coeffs.setZero() ;
 
 	for( CellIterator it = cellBegin ; it !=  cellEnd ; ++it )
 	{
 		const typename MeshType::Cell& cell = *it ;
 		loc.cell = cell ;
-		m_mesh.get_geo( cell, cellGeo );
-		m_mesh.template shaped<Linear>().list_nodes( loc, itp.nodes );
+
+		m_lhsShape.mesh().get_geo( cell, cellGeo );
 
 		const Scalar w = cellGeo.volume() / MeshType::NV ;
 
 		for ( int k = 0 ; k < MeshType::NV ; ++k ) {
+
 			cellGeo.vertexCoords(k, loc.coords) ;
-			itp.coeffs[k] = 1. ;
+			const Vec &pos = cellGeo.vertex(k) ;
 
-			func( w, loc, itp ) ;
+			m_lhsShape.interpolate ( loc, lhs_itp );
+			m_rhsShape.interpolate ( loc, rhs_itp );
 
-			itp.coeffs[k] = 0. ;
+			func( w, pos, lhs_itp, rhs_itp ) ;
+
 		}
 	}
 }
 
 
+template < typename LhsShape, typename RhsShape >
 template < typename Func >
-void FormBuilder::integrate_particle( const Particles& particles, Func func ) const
+void FormBuilder<LhsShape, RhsShape>::integrate_particle( const Particles& particles, Func func ) const
 {
 	const size_t n = particles.count() ;
 
-	typename MeshType::Location loc ;
-	typename Linear<MeshImpl>::Interpolation itp ;
-	typename Linear<MeshImpl>::Derivatives dc_dx ;
+	typename LhsShape::Location      lhs_loc ;
+	typename LhsShape::Interpolation lhs_itp ;
+	typename LhsShape::Derivatives   lhs_dc_dx ;
+	typename RhsShape::Location      rhs_loc ;
+	typename RhsShape::Interpolation rhs_itp ;
+	typename RhsShape::Derivatives   rhs_dc_dx ;
 
 	for ( size_t i = 0 ; i < n ; ++i ) {
-		m_mesh.locate( particles.centers().col(i), loc );
-		m_mesh.template shaped<Linear>().interpolate( loc, itp );
-		m_mesh.template shaped<Linear>().get_derivatives( loc, dc_dx );
+		const Vec& pos = particles.centers().col(i) ;
 
-		func( i, particles.volumes()[i], loc, itp, dc_dx ) ;
+		m_lhsShape.locate( pos, lhs_loc );
+		m_lhsShape.interpolate( lhs_loc, lhs_itp );
+		m_lhsShape.get_derivatives( lhs_loc, lhs_dc_dx );
+		m_rhsShape.locate( pos, rhs_loc );
+		m_rhsShape.interpolate( rhs_loc, rhs_itp );
+		m_rhsShape.get_derivatives( rhs_loc, rhs_dc_dx );
+
+		func( i, particles.volumes()[i], lhs_itp, lhs_dc_dx, rhs_itp, rhs_dc_dx ) ;
 	}
 
 }

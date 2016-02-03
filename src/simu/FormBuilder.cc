@@ -1,33 +1,16 @@
 #include "FormBuilder.hh"
 
 #include "geo/MeshImpl.hh"
+#include "geo/FormBuildingBlocks.hh"
 
 #include <bogus/Core/Block.impl.hpp>
 #include <algorithm>
 
 namespace d6 {
 
-void FormBuilder::addToIndex(
-		const typename MeshType::Cells& cells,
-		const std::vector< Index > &rowIndices,
-		const std::vector< Index > &colIndices
-		) {
 
-	// FIXME other approxes
-
-	typename Linear<MeshImpl>::NodeList nodes ;
-	for( const typename MeshType::Cell& cell : cells ) {
-		m_mesh.shaped<Linear>().list_nodes( cell, nodes );
-		for( int k = 0 ; k < Linear<MeshImpl>::NI ; ++ k ) {
-			for( int j = 0 ; j < Linear<MeshImpl>::NI ; ++ j ) {
-				m_data[ rowIndices[ nodes[k] ] ].push_back( colIndices[ nodes[j] ] ) ;
-			}
-		}
-	}
-
-}
-
-void FormBuilder::makeCompressed()
+template < typename LhsShape, typename RhsShape >
+void FormBuilder<LhsShape, RhsShape>::makeCompressed()
 {
 
 	const size_t m = m_data.size() ;
@@ -56,14 +39,16 @@ void FormBuilder::makeCompressed()
 	}
 }
 
-void FormBuilder::reset(Index rows)
+template < typename LhsShape, typename RhsShape >
+void FormBuilder<LhsShape, RhsShape>::reset(Index rows)
 {
 	m_data.clear();
 	m_data.resize( rows );
 	m_compressed.outer.clear() ;
 }
 
-void FormBuilder::addRows( Index rows )
+template < typename LhsShape, typename RhsShape >
+void FormBuilder<LhsShape, RhsShape>::addRows( Index rows )
 {
 	m_data.resize( m_data.size() + rows );
 
@@ -77,32 +62,134 @@ void FormBuilder::addRows( Index rows )
 	}
 }
 
-void FormBuilder::addDuDv( FormMat<WD,WD>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices )
+template < typename LhsShape, typename RhsShape >
+void FormBuilder<LhsShape, RhsShape>::addDuDv( FormMat<WD,WD>::Type& A, Scalar w,
+											   LhsItp lhs_itp, LhsDcdx lhs_dc_dx,
+											   RhsItp rhs_itp, RhsDcdx rhs_dc_dx,
+											   Indices rowIndices, Indices colIndices )
 {
-	for( int k = 0 ; k < Linear<MeshImpl>::NI ; ++k ) {
-		addDuDv( A, w, rowIndices[itp.nodes[k]], dc_dx.row(k), itp, dc_dx, colIndices );
+	for( int k = 0 ; k < lhs_itp.nodes.rows() ; ++k ) {
+		addDuDv( A, w, rowIndices[lhs_itp.nodes[k]], lhs_dc_dx.row(k), rhs_itp, rhs_dc_dx, colIndices );
 	}
 }
 
-void FormBuilder::addTauDu( FormMat<SD,WD>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices )
+template < typename LhsShape, typename RhsShape >
+void FormBuilder<LhsShape, RhsShape>::addTauDu( FormMat<SD,WD>::Type& A, Scalar w,
+												LhsItp lhs_itp, RhsItp rhs_itp, RhsDcdx dc_dx,
+												Indices rowIndices, Indices colIndices )
 {
-	for( int k = 0 ; k < Linear<MeshImpl>::NI ; ++k ) {
-		addTauDu( A, w * itp.coeffs[k], rowIndices[itp.nodes[k]], itp, dc_dx, colIndices );
+	for( int k = 0 ; k < lhs_itp.nodes.rows() ; ++k ) {
+		addTauDu( A, w * lhs_itp.coeffs[k], rowIndices[lhs_itp.nodes[k]], rhs_itp, dc_dx, colIndices );
 	}
 }
 
-void FormBuilder::addVDp( FormMat<WD,1>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices )
+template < typename LhsShape, typename RhsShape >
+void FormBuilder<LhsShape, RhsShape>::addVDp( FormMat<WD,1>::Type& A, Scalar w,
+											  LhsItp lhs_itp, RhsItp rhs_itp, RhsDcdx dc_dx,
+											  Indices rowIndices, Indices colIndices )
 {
-	for( int k = 0 ; k < Linear<MeshImpl>::NI ; ++k ) {
-		addVDp( A, w * itp.coeffs[k], rowIndices[itp.nodes[k]], itp, dc_dx, colIndices );
+	for( int k = 0 ; k < lhs_itp.nodes.rows() ; ++k ) {
+		addVDp( A, w * lhs_itp.coeffs[k], rowIndices[rhs_itp.nodes[k]], rhs_itp, dc_dx, colIndices );
 	}
 }
 
-void FormBuilder::addTauWu( FormMat<RD,WD>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices )
+template < typename LhsShape, typename RhsShape >
+void FormBuilder<LhsShape, RhsShape>::addTauWu( FormMat<RD,WD>::Type& A, Scalar w,
+												LhsItp lhs_itp, RhsItp rhs_itp, RhsDcdx dc_dx,
+												Indices rowIndices, Indices colIndices )
 {
-	for( int k = 0 ; k < Linear<MeshImpl>::NI ; ++k ) {
-		addTauWu( A, w * itp.coeffs[k], rowIndices[itp.nodes[k]], itp, dc_dx, colIndices );
+	for( int k = 0 ; k < lhs_itp.nodes.rows() ; ++k ) {
+		addTauWu( A, w * lhs_itp.coeffs[k], rowIndices[rhs_itp.nodes[k]], rhs_itp, dc_dx, colIndices );
 	}
 }
+
+template < typename LhsShape, typename RhsShape >
+void FormBuilder<LhsShape, RhsShape>::addDuDv( FormMat<WD,WD>::Type& A, Scalar w, Index rowIndex,
+											   LhsDcdxRow row_dx, RhsItp itp, RhsDcdx dc_dx, Indices colIndices )
+{
+	typedef FormMat<WD,WD>::Type::BlockType Block ;
+
+	for( int j = 0 ; j < itp.nodes.rows() ; ++j ) {
+		assert( A.blockPtr( rowIndex, colIndices[itp.nodes[j]] ) != A.InvalidBlockPtr ) ;
+		Block &b = A.block( rowIndex, colIndices[itp.nodes[j]] ) ;
+		FormBlocks::addDuDv( b, w, row_dx, dc_dx.row(j) ) ;
+	}
+}
+
+template < typename LhsShape, typename RhsShape >
+void FormBuilder<LhsShape, RhsShape>::addTauDu( FormMat<SD,WD>::Type& A, Scalar m, Index rowIndex,
+												RhsItp itp, RhsDcdx dc_dx, Indices colIndices )
+{
+	typedef FormMat<SD,WD>::Type::BlockType Block ;
+
+	for( int j = 0 ; j < itp.nodes.rows() ; ++j ) {
+		assert( A.blockPtr( rowIndex, colIndices[itp.nodes[j]] ) != A.InvalidBlockPtr ) ;
+		Block &b = A.block( rowIndex, colIndices[itp.nodes[j]] ) ;
+		FormBlocks::addTauDu( b, m, dc_dx.row(j) ) ;
+	}
+}
+
+template < typename LhsShape, typename RhsShape >
+void FormBuilder<LhsShape, RhsShape>::addVDp ( FormMat<WD,1>::Type& A, Scalar m, Index rowIndex,
+											   RhsItp itp, RhsDcdx dc_dx, Indices colIndices )
+{
+	typedef FormMat<WD,1>::Type::BlockType Block ;
+
+	for( int j = 0 ; j < itp.nodes.rows() ; ++j ) {
+		assert( A.blockPtr( rowIndex, colIndices[itp.nodes[j]] ) != A.InvalidBlockPtr ) ;
+		Block &b = A.block( rowIndex, colIndices[itp.nodes[j]] ) ;
+		FormBlocks::addVDp( b, m, dc_dx.row(j) ) ;
+	}
+}
+
+template < typename LhsShape, typename RhsShape >
+void FormBuilder<LhsShape, RhsShape>::addTauWu( FormMat<RD,WD>::Type& A, Scalar m, Index rowIndex,
+												RhsItp itp, RhsDcdx dc_dx, Indices colIndices )
+{
+	typedef FormMat<RD,WD>::Type::BlockType Block ;
+
+	for( int j = 0 ; j < itp.nodes.rows() ; ++j ) {
+		assert( A.blockPtr( rowIndex, colIndices[itp.nodes[j]] ) != A.InvalidBlockPtr ) ;
+		Block &b = A.block( rowIndex, colIndices[itp.nodes[j]] ) ;
+		FormBlocks::addTauWu( b, m, dc_dx.row(j) ) ;
+	}
+}
+
+template < typename LhsShape, typename RhsShape >
+void FormBuilder<LhsShape, RhsShape>::addUTauGphi( FormMat<SD,WD>::Type& A, Scalar w,
+												   LhsItp lhs_itp, RhsItp rhs_itp,
+												   const Vec& dphi_dx, Indices rowIndices, Indices colIndices )
+{
+	typedef FormMat<SD,WD>::Type::BlockType Block ;
+
+	for( int k = 0 ; k < lhs_itp.nodes.rows() ; ++k ) {
+		for( int j = 0 ; j < rhs_itp.nodes.rows() ; ++j ) {
+			assert( A.blockPtr( rowIndices[lhs_itp.nodes[k]], colIndices[rhs_itp.nodes[j]] ) != A.InvalidBlockPtr ) ;
+			Block &b = A.block( rowIndices[lhs_itp.nodes[k]], colIndices[rhs_itp.nodes[j]] ) ;
+			const Scalar m = w * lhs_itp.coeffs[k] * rhs_itp.coeffs[j] ;
+			FormBlocks::addUTauGphi( b, m, dphi_dx );
+		}
+	}
+
+}
+
+template < typename LhsShape, typename RhsShape >
+void FormBuilder<LhsShape, RhsShape>::addUTaunGphi( FormMat<SD,WD>::Type& A, Scalar w,
+													LhsItp lhs_itp, RhsItp rhs_itp,
+													const Vec& dphi_dx, Indices rowIndices, Indices colIndices )
+{
+	typedef FormMat<SD,WD>::Type::BlockType Block ;
+
+	for( int k = 0 ; k < lhs_itp.nodes.rows() ; ++k ) {
+		for( int j = 0 ; j < rhs_itp.nodes.rows() ; ++j ) {
+			assert( A.blockPtr( rowIndices[lhs_itp.nodes[k]], colIndices[rhs_itp.nodes[j]] ) != A.InvalidBlockPtr ) ;
+			Block &b = A.block( rowIndices[lhs_itp.nodes[k]], colIndices[rhs_itp.nodes[j]] ) ;
+			const Scalar m = w * lhs_itp.coeffs[k] * rhs_itp.coeffs[j] ;
+			FormBlocks::addUTaunGphi( b, m, dphi_dx );
+		}
+	}
+}
+
+template class FormBuilder< Linear< MeshImpl >, Linear< MeshImpl > > ;
 
 } //d6

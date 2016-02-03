@@ -13,31 +13,45 @@ namespace d6 {
 
 class Particles ;
 
+namespace form {
+	enum Side {
+		Left,
+		Right
+	};
+}
+
 //! Utility class for building matrices of bilinear forms
+//! a(u,v) = u' A v, i.e. row == left, col == right
+template < typename LhsShape, typename RhsShape >
 class FormBuilder {
 
 	typedef typename FormMat< WD,WD >::Type::MajorIndexType          CompressedIndexType ;
 	typedef typename CompressedIndexType::Index BgIndex ;
 
 	typedef const std::vector< Index > &Indices ;
-	typedef const typename Linear<MeshImpl>::Interpolation& Itp ;
-	typedef const typename Linear<MeshImpl>::Derivatives& Dcdx ;
-	typedef const typename Linear<MeshImpl>::Derivatives::ConstRowXpr DcdxRow ;
 
+	typedef const typename LhsShape::Interpolation& LhsItp ;
+	typedef const typename LhsShape::Derivatives& LhsDcdx ;
+	typedef const typename LhsShape::Derivatives::ConstRowXpr& LhsDcdxRow ;
+
+	typedef const typename LhsShape::Interpolation& RhsItp ;
+	typedef const typename LhsShape::Derivatives& RhsDcdx ;
 
 public:
 
-	FormBuilder( const MeshType& mesh )
-		: m_mesh(mesh)
+	FormBuilder( const LhsShape& lhsShape, const RhsShape& rhsShape )
+		: m_lhsShape( lhsShape ), m_rhsShape( rhsShape )
 	{}
 
 	void reset( Index rows ) ;
 	Index rows() const { return m_data.size() ; }
 
 	//! Computes matrices non-zero blocks (nodes sharing a cell) from list of active cells
+	template < form::Side side, typename CellIterator>
 	void addToIndex(
-			const typename MeshType::Cells& cells,
+			const CellIterator& cellBegin, const CellIterator& cellEnd,
 			Indices rowIndices, Indices colIndices	 ) ;
+
 
 	void addRows( Index rows ) ;
 
@@ -46,14 +60,10 @@ public:
 
 
 	//! Integrate over quadrature points
-	template < typename Func >
-	void integrate_qp( const typename MeshType::Cells& cells, Func func	) const ;
-	template < typename CellIterator, typename Func >
+	template < form::Side side, typename CellIterator, typename Func >
 	void integrate_qp( const CellIterator& cellBegin, const CellIterator& cellEnd, Func func ) const ;
 
 	//! Integrate over nodes ( trapezoidal approx )
-	template < typename Func >
-	void integrate_node( const typename MeshType::Cells& cells, Func func	) const ;
 	template < typename CellIterator, typename Func >
 	void integrate_node( const CellIterator& cellBegin, const CellIterator& cellEnd, Func func ) const ;
 
@@ -63,27 +73,27 @@ public:
 
 	// Building blocks
 
-	static void addDuDv     ( FormMat<WD,WD>::Type& A, Scalar w,
-							  Index rowIndex, const DcdxRow& row_dx,
-							   Itp itp, Dcdx dc_dx, Indices colIndices ) ;
+	static void addDuDv     ( FormMat<WD,WD>::Type& A, Scalar w, Index rowIndex, LhsDcdxRow row_dx,
+							  RhsItp itp, RhsDcdx dc_dx, Indices colIndices ) ;
+	static void addVDp      ( FormMat<WD, 1>::Type& A, Scalar w, Index rowIndex, RhsItp itp, RhsDcdx dc_dx, Indices colIndices ) ;
+	static void addTauDu    ( FormMat<SD,WD>::Type& A, Scalar w, Index rowIndex, RhsItp itp, RhsDcdx dc_dx, Indices colIndices ) ;
+	static void addTauWu    ( FormMat<RD,WD>::Type& A, Scalar w, Index rowIndex, RhsItp itp, RhsDcdx dc_dx, Indices colIndices ) ;
 
-	static void addVDp      ( FormMat<WD, 1>::Type& A, Scalar w, Index rowIndex, Itp itp, Dcdx dc_dx, Indices colIndices ) ;
-	static void addTauDu    ( FormMat<SD,WD>::Type& A, Scalar w, Index rowIndex, Itp itp, Dcdx dc_dx, Indices colIndices ) ;
-	static void addTauWu    ( FormMat<RD,WD>::Type& A, Scalar w, Index rowIndex, Itp itp, Dcdx dc_dx, Indices colIndices ) ;
+	static void addDuDv     ( FormMat<WD,WD>::Type& A, Scalar w, LhsItp lhs_itp, LhsDcdx lhs_dc_dx, RhsItp rhs_itp, RhsDcdx rhs_dc_dx, Indices rowIndices, Indices colIndices ) ;
+	static void addVDp      ( FormMat<WD, 1>::Type& A, Scalar w, LhsItp lhs_itp, RhsItp rhs_itp, RhsDcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
+	static void addTauDu    ( FormMat<SD,WD>::Type& A, Scalar w, LhsItp lhs_itp, RhsItp rhs_itp, RhsDcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
+	static void addTauWu    ( FormMat<RD,WD>::Type& A, Scalar w, LhsItp lhs_itp, RhsItp rhs_itp, RhsDcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
 
-	static void addDuDv     ( FormMat<WD,WD>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
-	static void addVDp      ( FormMat<WD, 1>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
-	static void addTauDu    ( FormMat<SD,WD>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
-	static void addTauWu    ( FormMat<RD,WD>::Type& A, Scalar w, Itp itp, Dcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
-
-	static void addUTaunGphi( FormMat<SD,WD>::Type& A, Scalar w, Itp itp, const Vec& dphi_dx, Indices rowIndices, Indices colIndices ) ;
-	static void addUTauGphi ( FormMat<SD,WD>::Type& A, Scalar w, Itp itp, const Vec& dphi_dx, Indices rowIndices, Indices colIndices ) ;
+	static void addUTaunGphi( FormMat<SD,WD>::Type& A, Scalar w, LhsItp lhs_itp, RhsItp rhs_itp, const Vec& dphi_dx, Indices rowIndices, Indices colIndices ) ;
+	static void addUTauGphi ( FormMat<SD,WD>::Type& A, Scalar w, LhsItp lhs_itp, RhsItp rhs_itp, const Vec& dphi_dx, Indices rowIndices, Indices colIndices ) ;
 
 	const CompressedIndexType& index() { return m_compressed ; }
 
-private:
 
-	const MeshType &m_mesh ;
+	//FIXME make private
+	LhsShape m_lhsShape ;
+	RhsShape m_rhsShape ;
+private:
 
 	CompressedIndexType m_compressed ;
 

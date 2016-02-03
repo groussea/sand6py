@@ -88,7 +88,6 @@ void RigidBodyData::integrate(const Active &phaseNodes, Index totNodes)
 {
 	//FIXME other approxes
 
-	typedef const typename Linear<MeshImpl>::Location& Loc ;
 	typedef const typename Linear<MeshImpl>::Interpolation& Itp ;
 	typedef const typename Linear<MeshImpl>::Derivatives& Dcdx ;
 
@@ -97,10 +96,12 @@ void RigidBodyData::integrate(const Active &phaseNodes, Index totNodes)
 	const TensorField::ShapeFuncImpl &shape = stresses.shape() ;
 	const MeshType &mesh = shape.mesh() ;
 
-	FormBuilder builder( mesh ) ;
+	typedef FormBuilder< Linear<MeshImpl>, Linear<MeshImpl> > Builder ;
+	Builder builder( mesh.shaped<Linear>(), mesh.shaped<Linear>() ) ;
+
 	builder.reset( totNodes );
-	builder.addToIndex( occupiedCells, phaseNodes.indices, phaseNodes.indices );
-	builder.addToIndex(   nodes.cells,      nodes.indices, phaseNodes.indices );
+	builder.addToIndex<form::Left>( occupiedCells.begin(),occupiedCells.end(), phaseNodes.indices, phaseNodes.indices );
+	builder.addToIndex<form::Left>(   nodes.cells.begin(),  nodes.cells.end(),      nodes.indices, phaseNodes.indices );
 	builder.makeCompressed();
 
 	jacobian.clear() ;
@@ -109,20 +110,20 @@ void RigidBodyData::integrate(const Active &phaseNodes, Index totNodes)
 	jacobian.cloneIndex( builder.index() ) ;
 	jacobian.setBlocksToZero() ;
 
-	builder.integrate_qp( occupiedCells, [&]( Scalar w, Loc loc, Itp itp, Dcdx )
+	builder.integrate_qp<form::Left>( occupiedCells.begin(), occupiedCells.end(), [&]( Scalar w, const Vec& pos, Itp l_itp, Dcdx, Itp r_itp, Dcdx )
 	{
 		Vec dphi_dx ;
-		grad_phi( mesh.pos( loc ), dphi_dx ) ;
+		grad_phi( pos, dphi_dx ) ;
 
-		FormBuilder:: addUTaunGphi( jacobian, w, itp, dphi_dx, phaseNodes.indices, phaseNodes.indices ) ;
+		Builder:: addUTaunGphi( jacobian, w, l_itp, r_itp, dphi_dx, phaseNodes.indices, phaseNodes.indices ) ;
 	}
 	);
-	builder.integrate_node(  nodes.cells, [&]( Scalar w, Loc loc, Itp itp )
+	builder.integrate_node(  nodes.cells.begin(), nodes.cells.end(), [&]( Scalar w, const Vec& pos, Itp l_itp, Itp r_itp )
 	{
 		Vec dphi_dx ;
-		grad_phi( mesh.pos( loc ), dphi_dx ) ;
+		grad_phi( pos, dphi_dx ) ;
 
-		FormBuilder:: addUTauGphi ( jacobian, w, itp, dphi_dx,      nodes.indices, phaseNodes.indices ) ;
+		Builder:: addUTauGphi ( jacobian, w, l_itp, r_itp, dphi_dx,      nodes.indices, phaseNodes.indices ) ;
 	}
 	);
 

@@ -19,6 +19,8 @@
 
 //#define FULL_FEM  // Ignore particles, just solve FEM system
 
+#define INTEGRATE_PARTICLES_SEQUENTIAL
+
 namespace d6 {
 
 void PhaseStepData::computeProjectors(const bool weakStressBC, const std::vector<RigidBodyData> &rbData,
@@ -70,7 +72,6 @@ void PhaseStepData::assembleMatrices(
 {
 	// FXIME other approxes
 
-	typedef typename MeshType::Location Loc ;
 	typedef typename Linear<MeshImpl>::Interpolation Itp ;
 	typedef typename Linear<MeshImpl>::Derivatives Dcdx ;
 
@@ -102,9 +103,10 @@ void PhaseStepData::assembleMatrices(
 	{
 		timer.reset() ;
 
-		FormBuilder builder( mesh ) ;
+		typedef FormBuilder< Linear<MeshImpl>, Linear<MeshImpl> > Builder ;
+		Builder builder( mesh.shaped<Linear>(), mesh.shaped<Linear>() ) ;
 		builder.reset( m );
-		builder.addToIndex( nodes.cells, nodes.indices, nodes.indices );
+		builder.addToIndex< form::Left >( nodes.cells.begin(), nodes.cells.end(), nodes.indices, nodes.indices );
 		builder.makeCompressed();
 
 		Log::Debug() << "Index computation: " << timer.elapsed() << std::endl ;
@@ -144,7 +146,7 @@ void PhaseStepData::assembleMatrices(
 #ifdef FULL_FEM
 		builder.integrate_qp( nodes.cells, [&]( Scalar w, const Loc&, const Itp& itp, const Dcdx& dc_dx )
 			{
-				FormBuilder:: addDuDv( forms.A, w, itp, dc_dx, nodes.indices, nodes.indices ) ;
+				Builder:: addDuDv( forms.A, w, itp, dc_dx, nodes.indices, nodes.indices ) ;
 			}
 		);
 		Log::Debug() << "Integrate grid: " << timer.elapsed() << std::endl ;
@@ -215,13 +217,13 @@ void PhaseStepData::assembleMatrices(
 
 		}
 #else
-		builder.integrate_particle( particles, [&]( Index, Scalar w, const Loc&, const Itp& itp, const Dcdx& dc_dx )
+		builder.integrate_particle( particles, [&]( Index, Scalar w, const Itp& l_itp, const Dcdx& l_dc_dx, const Itp& r_itp, const Dcdx& r_dc_dx )
 			{
-				FormBuilder::addTauDu( forms.B, w, itp, dc_dx, nodes.indices, nodes.indices ) ;
-				FormBuilder::addTauWu( forms.J, w, itp, dc_dx, nodes.indices, nodes.indices ) ;
-				FormBuilder:: addDuDv( forms.A, w, itp, dc_dx, nodes.indices, nodes.indices ) ;
+				Builder::addTauDu( forms.B, w, l_itp, r_itp, r_dc_dx, nodes.indices, nodes.indices ) ;
+				Builder::addTauWu( forms.J, w, l_itp, r_itp, r_dc_dx, nodes.indices, nodes.indices ) ;
+				Builder:: addDuDv( forms.A, w, l_itp, l_dc_dx, r_itp, r_dc_dx, nodes.indices, nodes.indices ) ;
 				if( config.enforceMaxFrac ) {
-					FormBuilder::addVDp  ( forms.C, w, itp, dc_dx, nodes.indices, nodes.indices ) ;
+					Builder::addVDp  ( forms.C, w, l_itp, r_itp, r_dc_dx, nodes.indices, nodes.indices ) ;
 				}
 			}
 		);
@@ -374,13 +376,15 @@ void PhaseStepData::computeGradPhi( const ScalarField& fraction, const ScalarFie
 
 	grad_phi.set_zero() ;
 
-	FormBuilder builder(mesh) ;
+	// FXIME other approxes
+	typedef FormBuilder< Linear<MeshImpl>, Linear<MeshImpl> > Builder ;
+	Builder builder( mesh.shaped<Linear>(), mesh.shaped<Linear>() ) ;
 
-	typedef const typename MeshType::Location& Loc ;
 	typedef const typename Linear<MeshImpl>::Interpolation& Itp ;
 	typedef const typename Linear<MeshImpl>::Derivatives& Dcdx ;
 
-	builder.integrate_qp( mesh.cellBegin(), mesh.cellEnd(),[&]( Scalar w, Loc , Itp itp, Dcdx dc_dx )
+	builder.integrate_qp<form::Left>( mesh.cellBegin(), mesh.cellEnd(),
+						  [&]( Scalar w, const Vec&, Itp itp, Dcdx dc_dx, Itp , Dcdx )
 	{
 		for( Index j = 0 ; j < Linear<MeshImpl>::NI ; ++j ) {
 			for( Index k = 0 ; k < Linear<MeshImpl>::NI ; ++k ) {

@@ -28,7 +28,6 @@ TEST( simu, quad ) {
 //	std::iota( indices.begin(), indices.end(), 0 );
 //	for( unsigned i = 0 ; i < indices.size() ; ++i ) std::cout << indices[i] << " " ;
 
-	typedef const typename MeshType::Location& Loc ;
 	typedef const typename Linear<MeshImpl>::Interpolation& Itp ;
 	typedef const typename Linear<MeshImpl>::Derivatives& Dcdx ;
 
@@ -37,14 +36,13 @@ TEST( simu, quad ) {
 	Scalar f_quad  = 0. ;
 	Scalar f_quad2 = 0. ;
 
-	FormBuilder builder( g ) ;
-	builder.integrate_qp( cells, [&]( Scalar w, Loc loc, Itp , Dcdx ) {
-		MeshType::CellGeo geo ;
-		g.get_geo( loc.cell, geo );
+	typedef FormBuilder< Linear<MeshImpl>, Linear<MeshImpl> > Builder ;
+	Builder builder( g.shaped<Linear>(), g.shaped<Linear>() ) ;
+	builder.integrate_qp<form::Left>( cells.begin(), cells.end(), [&]( Scalar w, const Vec&pos, Itp, Dcdx, Itp, Dcdx ) {
 		f_cst += w ;
-		f_lin += w * geo.pos( loc.coords ).prod() ;
-		f_quad  += w * geo.pos( loc.coords ).prod()  * geo.pos( loc.coords ).prod() ;
-		f_quad2 += w * geo.pos( loc.coords ).dot( geo.pos( loc.coords ) ) ;
+		f_lin +=   w * pos.prod() ;
+		f_quad  += w * pos.prod()  * pos.prod() ;
+		f_quad2 += w * pos.dot( pos ) ;
 
 	} ) ;
 
@@ -74,6 +72,7 @@ TEST( simu, DuDv ) {
 
 	MeshImpl g( Vec(1,1,1), Vec3i(1,1,1) ) ;
 	Linear<MeshImpl> shape(g) ;
+	typedef FormBuilder< Linear<MeshImpl>, Linear<MeshImpl> > Builder ;
 
 	MeshType::CellGeo vx ;
 	g.get_geo( *g.cellBegin(), vx );
@@ -91,7 +90,7 @@ TEST( simu, DuDv ) {
 		shape.get_derivatives( loc, dc_dx );
 
 		indices[ itp.nodes[q] ] = 0 ;
-		FormBuilder::addDuDv( A, qp_w[q], itp, dc_dx, indices, indices ) ;
+		Builder::addDuDv( A, qp_w[q], itp, dc_dx, itp, dc_dx, indices, indices ) ;
 		indices[ itp.nodes[q] ] = 1 ;
 	}
 
