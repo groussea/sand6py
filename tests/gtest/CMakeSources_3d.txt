@@ -1,4 +1,5 @@
 3d/gtest/geo.cc
 3d/gtest/mesh.cc
 3d/gtest/simu.cc
+gtest/geo.cc
 gtest/utils.cc

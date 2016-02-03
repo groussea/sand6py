@@ -47,7 +47,7 @@ public:
 	}
 
 	void fit_shape() {
-		m_size = m_shape.nDoF() ;
+		m_size = m_shape.nDOF() ;
 		m_data.resize( D * m_size );
 	}
 
@@ -72,18 +72,13 @@ public:
 		return derived();
 	}
 
-	template < typename Func, typename OtherShape >
-	typename std::enable_if< !std::is_same< OtherShape, ShapeFuncImpl >::value, Derived& >::type
-	operator= ( const  Interpolation< Func, D, OtherShape, ShapeFuncImpl > & f )
-	{ return interpolate<OtherShape> ( f.func ) ; }
-
 	// Accumulation, interpolation
 
 	void  add_at( const Location& loc, const ValueType& val ) ;
 	void  add_at( const typename ShapeFuncType::Interpolation &itp, const ValueType& val ) ;
 
 	template < typename Func, typename OtherShape >
-	Derived& interpolate( const FieldFuncBase< Func, D, OtherShape > &f ) ;
+	Derived& from_interpolation( const FieldFuncBase< Func, D, OtherShape > &f ) ;
 
 	// Value at node
 	Seg      segment( const Index i ) { return Segmenter< D >::segment( m_data, i) ; }
@@ -121,16 +116,48 @@ protected:
 
 	template < typename Func, typename OtherShape >
 	typename std::enable_if< OtherShape::is_mesh_based>::type
-	accumulate( const FieldFuncBase< Func, D, OtherShape > &f ) ;
+	integrate( const FieldFuncBase< Func, D, OtherShape > &f ) ;
 
 	template < typename Func, typename OtherShape >
 	typename std::enable_if<!OtherShape::is_mesh_based >::type
-	accumulate( const FieldFuncBase< Func, D, OtherShape > &f ) ;
+	integrate( const FieldFuncBase< Func, D, OtherShape > &f ) ;
 
 	Index m_size ;
 	DynVec   m_data ;
 
 } ;
+
+#define D6_MAKE_FIELD_CONSTRUCTORS_AND_ASSIGNMENT_OPERATORS( FieldName ) \
+	explicit FieldName( const typename Base::ShapeFuncType& shape ) \
+	: Base( shape ) \
+	{} \
+	explicit FieldName( const typename Base::ShapeFuncType::DOFDefinition& mesh ) \
+	: Base( typename Base::ShapeFuncImpl( mesh ) ) \
+	{} \
+	/*! Assignment from field func */\
+	template <typename Func> \
+	FieldName( const FieldFuncBase< Func, Base::D, typename Base::ShapeFuncImpl > & func ) \
+		: Base( func.shape() ) \
+	{ Base::operator=( func ); } \
+	/*! Constructor from field func */\
+	template <typename Func> \
+	FieldName& operator= ( const FieldFuncBase< Func, Base::D, typename Base::ShapeFuncImpl> & func ) \
+	{ return Base::operator=( func ); } \
+	/*! Assignment from non-trivial interpolation */\
+	template < typename Func, typename OtherShape > \
+	FieldName& operator= ( const NonTrivialInterpolation< Func, Base::D, OtherShape, typename Base::ShapeFuncImpl > & f ) \
+	{ return Base::from_interpolation ( f.func ) ; } \
+	/*! Constructors from non-trivial interpolation */\
+	template < typename Func, typename OtherShape > \
+	FieldName ( const NonTrivialInterpolation< Func, Base::D, OtherShape, typename Base::ShapeFuncImpl > & f ) \
+	: Base(  typename Base::ShapeFuncImpl( f.func.shape().dofDefinition() ) ) \
+	{ Base::from_interpolation ( f.func ) ; } \
+	template < typename Func, typename OtherShape > \
+	FieldName ( const typename Base::ShapeFuncType::DOFDefinition& mesh, \
+				const NonTrivialInterpolation< Func, Base::D, OtherShape, typename Base::ShapeFuncImpl > & f ) \
+	: Base( typename Base::ShapeFuncImpl( mesh ) ) \
+	{ Base::from_interpolation ( f.func ) ; } \
+
 
 } //d6
 

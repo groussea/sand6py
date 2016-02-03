@@ -25,7 +25,6 @@ struct ShapeFuncBase
 	} ;
 	static bool constexpr is_mesh_based = Traits::is_mesh_based ;
 	typedef typename Traits::DOFDefinition DOFDefinition ;
-	typedef typename Traits::QPIterator QPIterator ;
 
 	typedef Eigen::Matrix<  Index, Traits::NI, 1  > NodeList ;
 	typedef Eigen::Matrix< Scalar, Traits::NI, 1  > CoefList ;
@@ -37,34 +36,32 @@ struct ShapeFuncBase
 	};
 
 
-	Index nDoF() const { return derived().nDoF() ; }
+	Index nDOF() const { return derived().nDOF() ; }
 
 	const Derived& derived() const
 	{ return static_cast< const Derived& >( *this ) ; }
 
-	void interpolate( const Location& loc, Interpolation& itp ) const {
-		derived().interpolate( loc, itp ) ;
-	}
-	void get_derivatives( const Location& loc, Derivatives& dc_dx ) const {
-		derived().get_derivatives( loc, dc_dx ) ;
-	}
-	void list_nodes( const Location& loc, NodeList& list ) const {
-		derived().list_nodes( loc, list ) ;
-	}
+	void interpolate( const Location& loc, Interpolation& itp ) const
+	{ derived().interpolate( loc, itp ) ; }
+	void get_derivatives( const Location& loc, Derivatives& dc_dx ) const
+	{ derived().get_derivatives( loc, dc_dx ) ; }
+	void list_nodes( const Location& loc, NodeList& list ) const
+	{ derived().list_nodes( loc, list ) ; }
 
-	void compute_volumes( DynVec& volumes ) const {
-		derived().compute_volumes( volumes ) ;
-	}
+	void compute_volumes( DynVec& volumes ) const
+	{ derived().compute_volumes( volumes ) ; }
+	void all_dof_positions( DynMatW& vertices, std::vector<Index>& indexes  ) const
+	{ derived().all_dof_positions( vertices, indexes ) ; }
 
-	void all_dof_positions( DynMatW& vertices, std::vector<Index>& indexes, DynVec& totalVolumes  ) const
-	{
-		derived().all_dof_positions( vertices, indexes, totalVolumes ) ;
-	}
-
-	QPIterator qpBegin()
+	typename Traits::template QPIterator<>::Type qpBegin() const
 	{ return derived().qpBegin() ; }
-	QPIterator qpEnd()
+	typename Traits::template QPIterator<>::Type qpEnd() const
 	{ return derived().qpEnd() ; }
+	template <typename CellIterator>
+	typename Traits::template QPIterator<CellIterator>::Type qpIterator( const CellIterator &it ) const
+	{ return derived().template qpIterator<CellIterator>( it ) ; }
+	const DOFDefinition& dofDefinition() const
+	{ return derived().dofDefinition() ; }
 };
 
 

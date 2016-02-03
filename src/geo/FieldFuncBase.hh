@@ -68,14 +68,17 @@ protected:
 };
 
 template < typename Derived, Index D, typename ShapeFuncT, typename DestShapeFuncT >
-struct Interpolation {
+struct NonTrivialInterpolation {
 	typedef FieldFuncBase< Derived, D, ShapeFuncT > Func ;
 	const Func& func ;
 
-	static constexpr bool is_non_trivial = true ;
+	explicit NonTrivialInterpolation( const Func& func_ ) : func( func_ ) {}
+};
 
-	explicit Interpolation( const Func& func_ ) : func( func_ ) {}
-
+template < typename Derived, Index D, typename ShapeFuncT, typename DestShapeFuncT >
+struct Interpolation : public NonTrivialInterpolation< Derived, D, ShapeFuncT, DestShapeFuncT >  {
+	typedef NonTrivialInterpolation< Derived, D, ShapeFuncT, DestShapeFuncT > Base ;
+	explicit Interpolation( const typename Base::Func& func ) :	Base( func ) {}
 };
 
 
@@ -84,14 +87,18 @@ template < typename Derived, Index D, typename ShapeFuncT >
 struct Interpolation< Derived, D, ShapeFuncT, ShapeFuncT >
 		: public FieldFuncBase< Interpolation<Derived, D, ShapeFuncT, ShapeFuncT >, D, ShapeFuncT >
 {
-	typedef FieldFuncBase< Derived, D, ShapeFuncT > Func ;
+	typedef FieldFuncBase< Interpolation, D, ShapeFuncT > Base ;
+	typedef FieldFuncBase< Derived      , D, ShapeFuncT > Func ;
 	const Func& func ;
 
-	explicit Interpolation( const Func& func_ ) : func( func_ ) {}
+	explicit Interpolation( const Func& func_ )
+		:  Base( func_.shape() ), func( func_ )
+	{}
 
-	void eval_at_node( Index i, typename Func::Seg v ) const
+	template < typename Agg >
+	void eval_at_node( Index i, typename Segmenter<D, Agg>::Seg v ) const
 	{
-		return func.eval_at_node( i, v );
+		return func.eval_at_node< Agg >( i, v );
 	}
 	Index size( ) const
 	{

@@ -22,26 +22,7 @@ public:
 	typedef ShapeFuncBase< ShapeFuncT > ShapeFuncType ;
 	typedef typename ShapeFuncType::Location Location ;
 
-	explicit AbstractScalarField( const ShapeFuncType& shape )
-		: Base( shape )
-	{
-
-	}
-	explicit AbstractScalarField( const typename ShapeFuncType::DOFDefinition& mesh )
-		: Base( ShapeFuncT( mesh ) )
-	{}
-
-	template <typename Func>
-	AbstractScalarField( const FieldFuncBase< Func, Base::D, ShapeFuncT > & func )
-		: Base( func.shape() )
-	{
-		Base::operator=( func );
-	}
-	template <typename Func>
-	AbstractScalarField& operator= ( const FieldFuncBase< Func, Base::D, ShapeFuncT > & func )
-	{
-		return Base::operator=( func );
-	}
+	D6_MAKE_FIELD_CONSTRUCTORS_AND_ASSIGNMENT_OPERATORS( AbstractScalarField )
 
 	Vec grad_at( const typename ShapeFuncType::Location& loc ) const ;
 

@@ -25,25 +25,7 @@ public:
 	typedef ShapeFuncBase< ShapeFuncT > ShapeFuncType ;
 	typedef typename ShapeFuncType::Location Location ;
 
-	explicit AbstractTensorField( const ShapeFuncType& shape )
-		: Base( shape )
-	{
-	}
-	explicit AbstractTensorField( const typename ShapeFuncType::DOFDefinition& mesh )
-		: Base( ShapeFuncT( mesh ) )
-	{}
-
-	template <typename Func>
-	AbstractTensorField( const FieldFuncBase< Func, Base::D, ShapeFuncT > & func )
-		: Base( func.shape() )
-	{
-		Base::operator=( func );
-	}
-	template <typename Func>
-	AbstractTensorField& operator=( const FieldFuncBase< Func, Base::D, ShapeFuncT > & func )
-	{
-		return Base::operator=( func );
-	}
+	D6_MAKE_FIELD_CONSTRUCTORS_AND_ASSIGNMENT_OPERATORS( AbstractTensorField )
 
 	DeviatoricPart< ShapeFuncT > deviatoricPart() const {
 		return DeviatoricPart< ShapeFuncT >( *this ) ;
@@ -79,25 +61,7 @@ public:
 	typedef ShapeFuncBase< ShapeFuncT > ShapeFuncType ;
 	typedef typename ShapeFuncType::Location Location ;
 
-	explicit AbstractSkewTsField( const ShapeFuncType& shape )
-		: Base( shape )
-	{
-	}
-	explicit AbstractSkewTsField( const typename ShapeFuncType::DOFDefinition& mesh )
-		: Base( ShapeFuncT( mesh ) )
-	{}
-
-	template <typename Func>
-	AbstractSkewTsField( const FieldFuncBase< Func, Base::D, ShapeFuncT > & func )
-		: Base( func.shape() )
-	{
-		Base::operator=( func );
-	}
-	template <typename Func>
-	AbstractSkewTsField& operator=( const FieldFuncBase< Func, Base::D, ShapeFuncT > & func )
-	{
-		return Base::operator=( func );
-	}
+	D6_MAKE_FIELD_CONSTRUCTORS_AND_ASSIGNMENT_OPERATORS( AbstractSkewTsField )
 
 	void get_spi_tensor( const Location& x, Mat& tensor ) const ;
 	void add_spi_tensor( const Location& x, Mat& tensor ) const ;

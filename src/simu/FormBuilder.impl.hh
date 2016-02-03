@@ -21,27 +21,15 @@ void FormBuilder::integrate_qp( const CellIterator& cellBegin, const CellIterato
 	typename Linear<MeshImpl>::Interpolation itp ;
 	typename Linear<MeshImpl>::Derivatives dc_dx ;
 
-	Eigen::Matrix< Scalar, MeshType::NC, Linear<MeshImpl>::NQ > qp ;
-	Eigen::Matrix< Scalar,            1, Linear<MeshImpl>::NQ > qp_weights ;
+	Linear<MeshImpl> shape( m_mesh ) ;
 
-	typename MeshType::CellGeo cellGeo ;
-
-	for( CellIterator it = cellBegin ; it !=  cellEnd ; ++it )
+	for ( auto qpIt = shape.qpIterator(cellBegin) ; qpIt != shape.qpIterator(cellEnd) ; ++qpIt )
 	{
-		const typename MeshType::Cell& cell = *it ;
-		loc.cell = cell ;
-		m_mesh.get_geo( cell, cellGeo );
+		qpIt.locate( loc ) ;
+		shape.interpolate( loc, itp );
+		shape.get_derivatives( loc, dc_dx );
 
-		cellGeo.get_qp( qp, qp_weights ) ;
-
-		for ( int q = 0 ; q < Linear<MeshImpl>::NQ ; ++q ) {
-			loc.coords = qp.col(q) ;
-
-			m_mesh.template shaped<Linear>().interpolate( loc, itp );
-			m_mesh.template shaped<Linear>().get_derivatives( loc, dc_dx );
-
-			func( qp_weights[q], loc, itp, dc_dx ) ;
-		}
+		func( qpIt.weight(), loc, itp, dc_dx ) ;
 	}
 }
 

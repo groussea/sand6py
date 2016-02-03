@@ -60,42 +60,46 @@ Derived& FieldBase< Derived >::divide_by_positive(const ScalarField &field, Scal
 template< typename Derived >
 template< typename Func, typename OtherShape >
 typename std::enable_if< OtherShape::is_mesh_based>::type
-FieldBase< Derived >::accumulate( const FieldFuncBase< Func, D, OtherShape > &f )
+FieldBase< Derived >::integrate( const FieldFuncBase< Func, D, OtherShape > &f )
 {
-	typename OtherShape::Location loc ;
+	typename OtherShape::Location src_loc ;
+	Location dst_loc ;
 
-	// FIXME add qpBegin() on ShapeFuncBase
 	for( auto qpIt = m_shape.qpBegin() ; qpIt != m_shape.qpEnd() ; ++qpIt ) {
-		f.shape().locate( qpIt.pos(), loc ) ;
-		add_at( qpIt.loc(), qpIt.weight() * f.eval_at( loc ) ) ;
+		qpIt.locate( dst_loc ) ;
+		f.shape().derived().locate( qpIt.pos(), src_loc ) ;
+		add_at( dst_loc, qpIt.weight() * f.eval_at( src_loc ) ) ;
 	}
 }
 
 template< typename Derived >
 template< typename Func, typename OtherShape >
 typename std::enable_if<!OtherShape::is_mesh_based>::type
-FieldBase< Derived >::accumulate( const FieldFuncBase< Func, D, OtherShape > &f )
+FieldBase< Derived >::integrate( const FieldFuncBase< Func, D, OtherShape > &f )
 {
-	Location loc ;
+	typename OtherShape::Location src_loc ;
+	Location dst_loc ;
 
 	for( auto qpIt = f.shape().qpBegin() ; qpIt != f.shape().qpEnd() ; ++qpIt ) {
-		m_shape.locate( qpIt.pos(), loc ) ;
-		add_at( loc, qpIt.weight() * f.eval_at( qpIt.loc() ) ) ;
+		qpIt.locate( src_loc ) ;
+		m_shape.locate( qpIt.pos(), dst_loc ) ;
+		add_at( dst_loc, qpIt.weight() * f.eval_at( src_loc ) ) ;
 	}
 
 }
 
 template< typename Derived >
 template< typename Func, typename OtherShape >
-Derived& FieldBase< Derived >::interpolate( const FieldFuncBase< Func, D, OtherShape > &f )
+Derived& FieldBase< Derived >::from_interpolation( const FieldFuncBase< Func, D, OtherShape > &f )
 {
 	ScalarField volumes( shape() );
 	shape().compute_volumes( volumes.flatten() );
 
 	set_zero() ;
 
-	accumulate( f ) ;
+	integrate( f ) ;
 
+	// FIXME : solve with consistent mass matrix ?
 	divide_by_positive( volumes ) ;
 
 	return derived();

@@ -14,7 +14,6 @@
 #include "geo/Tet.hh"
 
 #include "geo/MeshShapeFunction.hh"
-#include "geo/UnstructuredShapeFunction.hh"
 
 #include "geo/BoundaryInfo.hh"
 
@@ -407,13 +406,4 @@ TEST( geo, aniso_matrix )
 
 	ASSERT_DOUBLE_EQ( Abartau[0], taubar[0] ) ;
 	ASSERT_TRUE( tauref.isApprox( Abartau )) ;
-}
-
-TEST(geo, shape_functions)
-{
-	DynMatW vertices ;
-	UnstructuredShapeFunc shape( vertices ) ;
-	AbstractScalarField< UnstructuredShapeFunc > prtScalarField( shape ) ;
-
-
 }

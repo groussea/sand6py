@@ -6,7 +6,8 @@
 namespace d6 {
 
 template<>
-void Linear<Grid>::interpolate( const Location& loc, typename Base::Interpolation& itp ) const
+void Linear<Grid>::interpolate( const Location& loc,
+								typename Base::NodeList& nodes, typename Base::CoefList& coeffs ) const
 {
 
 	const Grid& g = mesh() ;
@@ -15,8 +16,8 @@ void Linear<Grid>::interpolate( const Location& loc, typename Base::Interpolatio
 		for( int j = 0 ; j < 2 ; ++j ) {
 			const Grid::Cell corner( i,j );
 			const int idx = Voxel::cornerIndex( i, j ) ;
-			itp.nodes[ idx ] = g.nodeIndex( loc.cell + corner ) ;
-			itp.coeffs[ idx ] = Voxel::cornerCoeff( corner, loc.coords );
+			nodes[ idx ] = g.nodeIndex( loc.cell + corner ) ;
+			coeffs[ idx ] = Voxel::cornerCoeff( corner, loc.coords );
 		}
 	}
 

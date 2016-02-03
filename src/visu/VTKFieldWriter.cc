@@ -21,7 +21,7 @@ void VTKFieldWriter::writeMesh( File &vtk ) const
 	const typename VectorField::ShapeFuncImpl shape( m_mesh ) ;
 	constexpr Index NV = VectorField::ShapeFuncType::NI ;
 
-	Eigen::Matrix<float, WD, Eigen::Dynamic> vertices( WD, shape.nDoF() ) ;
+	Eigen::Matrix<float, WD, Eigen::Dynamic> vertices( WD, shape.nDOF() ) ;
 	vertices.setZero() ;
 
 	Eigen::Matrix<int, NV+1, Eigen::Dynamic > nodeIndices( NV+1, m_mesh.nCells() ) ;

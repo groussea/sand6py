@@ -2,54 +2,9 @@
 #define D6_MESH_SHAPE_FUNCTION_HH
 
 #include "ShapeFunctionBase.hh"
+#include <iostream>
 
 namespace d6 {
-
-template< typename MeshT >
-
-struct MeshQPIterator {
-
-	typedef MeshBase< MeshT > MeshType ;
-
-	explicit MeshQPIterator( const MeshType &mesh_, const typename MeshType::CellIterator& cIt )
-		: mesh(mesh_), cellIt( cIt ), qp(0)
-	{
-		if( cellIt != mesh.cellEnd() ) update_cache();
-	}
-
-	bool operator==( const MeshQPIterator& o ) const
-	{ return o.cellIt == cellIt && qp == o.qp ;}
-	bool operator!=( const MeshQPIterator& o ) const
-	{ return o.cellIt != cellIt || qp != o.qp ; }
-
-	MeshQPIterator& operator++() {
-		if( ++qp == MeshType::CellGeo::NQ ) {
-			qp = 0 ;
-			++cellIt ;
-			if( cellIt != mesh.cellEnd() ) update_cache();
-		}
-	}
-
-	Vec pos() const { return cached_qps.col(qp) ; }
-	Scalar weight() const { return cached_qpw.col(qp) ; }
-	typename MeshType::Location loc() const { return mesh.locate(pos()) ; }
-
-private:
-	const MeshType& mesh ;
-
-	typename MeshType::CellIterator cellIt ;
-	Index qp ;
-
-	typename MeshType::Cell::QuadPoints  cached_qps ;
-	typename MeshType::Cell::QuadWeights cached_qpw ;
-
-	void update_cache() {
-		typename MeshType::CellGeo geo ;
-		mesh.get_geo( geo ) ;
-		geo.get_qp( cached_qps, cached_qpw ) ;
-	}
-};
-
 
 // MeshShapeFunction
 template< template< typename  > class Interp, typename MeshT >
@@ -70,7 +25,7 @@ struct MeshShapeFunc : public ShapeFuncBase< Interp<MeshT> >
 {
 	typedef ShapeFuncBase< Interp<MeshT> > Base ;
 	typedef MeshBase<MeshT> MeshType ;
-	typedef typename Base::QPIterator QPIterator ;
+	typedef typename Base::Traits Traits ;
 
 	MeshShapeFunc ( const MeshType & mesh )
 		: m_mesh( mesh )
@@ -78,7 +33,7 @@ struct MeshShapeFunc : public ShapeFuncBase< Interp<MeshT> >
 
 	void compute_volumes( DynVec& volumes ) const
 	{
-		volumes.resize( Base::nDoF() ) ;
+		volumes.resize( Base::nDOF() ) ;
 		volumes.setZero() ;
 
 		typename MeshType::CellGeo geo ;
@@ -96,13 +51,10 @@ struct MeshShapeFunc : public ShapeFuncBase< Interp<MeshT> >
 		}
 	}
 
-	void all_dof_positions( DynMatW& vertices, std::vector<Index>& indexes, DynVec& totalVolumes ) const
+	void all_dof_positions( DynMatW& vertices, std::vector<Index>& indexes ) const
 	{
 		vertices.resize( WD, m_mesh.nNodes() );
-		totalVolumes.resize( m_mesh.nNodes() );
-		indexes.resize( Base::nDoF() );
-
-		totalVolumes.setZero() ;
+		indexes.resize( Base::nDOF() );
 
 		typename MeshType::CellGeo cellGeo ;
 		typename Base::NodeList meshNodes, shapeNodes ;
@@ -119,7 +71,6 @@ struct MeshShapeFunc : public ShapeFuncBase< Interp<MeshT> >
 			for( int k = 0 ; k < meshNodes.rows() ; ++k ) {
 				indexes[shapeNodes[k]] = meshNodes[k] ;
 				vertices.col( meshNodes[k] ) = cellGeo.vertex( k ) ;
-				totalVolumes( meshNodes[k] ) += vol ;
 			}
 		}
 	}
@@ -142,20 +93,88 @@ struct MeshShapeFunc : public ShapeFuncBase< Interp<MeshT> >
 	const MeshT& mesh()  const {
 		return m_mesh.derived() ;
 	}
+	const typename Base::DOFDefinition& dofDefinition() const
+	{ return mesh() ;  }
 
-
-	QPIterator qpBegin() const {
-		return QPIterator( m_mesh, m_mesh.cellBegin() ) ;
+	typename Traits::template QPIterator<>::Type qpBegin() const {
+		return typename Traits::template QPIterator<>::Type( m_mesh, m_mesh.cellBegin() ) ;
 	}
 
-	QPIterator qpEnd() const {
-		return QPIterator( m_mesh, m_mesh.cellEnd() ) ;
+	typename Traits::template QPIterator<>::Type qpEnd() const {
+		return typename Traits::template QPIterator<>::Type( m_mesh, m_mesh.cellEnd() ) ;
+	}
+
+	template <typename CellIterator>
+	typename Traits::template QPIterator<CellIterator>::Type qpIterator( const CellIterator &it ) const {
+		return typename Traits::template QPIterator<CellIterator>::Type( m_mesh, it ) ;
 	}
 
 protected:
 	const MeshType& m_mesh ;
 
 };
+
+// Iterator
+
+
+template< typename MeshT, typename CellIterator = typename MeshT::CellIterator >
+struct MeshQPIterator {
+
+	typedef MeshBase< MeshT > MeshType ;
+
+	explicit MeshQPIterator( const MeshType &mesh_, const CellIterator& cIt )
+		: mesh(mesh_), cellIt( cIt ), qp(0), cache_valid( false )
+	{
+	}
+
+	bool operator==( const MeshQPIterator& o ) const
+	{ return o.cellIt == cellIt && qp == o.qp ;}
+	bool operator!=( const MeshQPIterator& o ) const
+	{ return o.cellIt != cellIt || qp != o.qp ; }
+
+	MeshQPIterator& operator++() {
+		if( ++qp == MeshType::CellGeo::NQ ) {
+			qp = 0 ;
+			++cellIt ;
+			cache_valid = false ;
+		}
+		return *this ;
+	}
+
+	Vec pos() const {
+		if(! cache_valid ) update_cache();
+		return cached_geo.pos( cached_qps.col(qp) ) ;
+	}
+	Scalar weight() const {
+		if(! cache_valid ) update_cache();
+		return cached_qpw[qp] ;
+	}
+	void locate( typename MeshType::Location &loc ) const {
+		if(! cache_valid ) update_cache();
+		loc.cell = *cellIt ;
+		loc.coords = cached_qps.col(qp) ;
+	}
+
+private:
+	const MeshType& mesh ;
+
+	CellIterator cellIt ;
+	Index qp ;
+
+	mutable bool cache_valid ;
+	mutable typename MeshType::CellGeo cached_geo ;
+	mutable typename MeshType::CellGeo::QuadPoints  cached_qps ;
+	mutable typename MeshType::CellGeo::QuadWeights cached_qpw ;
+
+	void update_cache() const {
+		mesh.get_geo( *cellIt, cached_geo ) ;
+		cached_geo.get_qp( cached_qps, cached_qpw ) ;
+		cache_valid = true ;
+	}
+};
+
+
+
 
 // Linear shape func
 
@@ -167,8 +186,11 @@ struct ShapeFuncTraits< Linear<MeshT>  > : public ShapeFuncTraits< MeshShapeFunc
 		NI = Base::MeshType::NV,
 		NQ = Base::MeshType::CellGeo::NQ
 	};
-	typedef MeshQPIterator< MeshT > QPIterator ;
 
+	template <typename CellIterator = typename Base::MeshType::CellIterator >
+	struct QPIterator {
+		typedef MeshQPIterator< MeshT, CellIterator > Type ;
+	};
 } ;
 
 template <typename MeshT>
@@ -182,9 +204,10 @@ struct Linear : public MeshShapeFunc< Linear, MeshT >
 		: Base( mesh )
 	{}
 
-	Index nDoF() const { return Base::mesh().nNodes() ; }
+	Index nDOF() const { return Base::mesh().nNodes() ; }
 
-	void interpolate( const Location& loc, typename Base::Interpolation& itp ) const ;
+	void interpolate( const Location& loc, typename Base::Interpolation& itp ) const
+	{ interpolate( loc, itp.nodes, itp.coeffs ); }
 	void get_derivatives( const Location& loc, typename Base::Derivatives& dc_dx ) const ;
 
 	using Base::list_nodes ;
@@ -194,6 +217,8 @@ struct Linear : public MeshShapeFunc< Linear, MeshT >
 		list = itp.nodes ;
 	}
 
+	void interpolate( const Location& loc,
+					  typename Base::NodeList& nodes, typename Base::CoefList& coeffs ) const ;
 } ;
 
 // DG Linear shape func
@@ -206,7 +231,11 @@ struct ShapeFuncTraits< DGLinear<MeshT>  > : public ShapeFuncTraits< MeshShapeFu
 		NI = Base::MeshType::NV,
 		NQ = Base::MeshType::CellGeo::NQ
 	};
-	typedef MeshQPIterator< MeshT > QPIterator ;
+
+	template <typename CellIterator = typename Base::MeshType::CellIterator >
+	struct QPIterator {
+		typedef MeshQPIterator< MeshT, CellIterator > Type ;
+	};
 
 } ;
 
@@ -221,14 +250,14 @@ struct DGLinear : public MeshShapeFunc< DGLinear, MeshT >
 		: Base( mesh )
 	{}
 
-	Index nDoF() const { return Base::mesh().nCells() * MeshType::NV ; }
+	Index nDOF() const { return Base::mesh().nCells() * MeshType::NV ; }
 
 	void interpolate( const Location& loc, typename Base::Interpolation& itp ) const {
-		Linear<MeshT>( Base::mesh() ) .interpolate( loc, itp ) ;
+		Linear<MeshT>( Base::mesh() ).interpolate( loc, itp.nodes, itp.coeffs ) ;
 		list_nodes( loc, itp.nodes ) ;
 	}
 	void get_derivatives( const Location& loc, typename Base::Derivatives& dc_dx ) const {
-		Linear<MeshT>( Base::mesh() ) .interpolate( loc, dc_dx ) ;
+		Linear<MeshT>( Base::mesh() ).get_derivatives( loc, dc_dx ) ;
 	}
 
 	// Orderin:g all nodes from cell 0, all nodes from cell, ... etc

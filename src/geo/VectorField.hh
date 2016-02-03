@@ -25,24 +25,7 @@ public:
 	typedef ShapeFuncBase< ShapeFuncT > ShapeFuncType ;
 	typedef typename ShapeFuncType::Location Location ;
 
-	explicit AbstractVectorField( const ShapeFuncType& shape )
-		: Base( shape )
-	{}
-	explicit AbstractVectorField( const typename ShapeFuncType::DOFDefinition& mesh )
-		: Base( ShapeFuncT( mesh ) )
-	{}
-
-	template <typename Func>
-	AbstractVectorField( const FieldFuncBase< Func, Base::D, ShapeFuncT > & func )
-		: Base( func.shape() )
-	{
-		Base::operator=( func );
-	}
-	template <typename Func>
-	AbstractVectorField& operator=( const FieldFuncBase< Func, Base::D, ShapeFuncT > & func )
-	{
-		return Base::operator=( func );
-	}
+	D6_MAKE_FIELD_CONSTRUCTORS_AND_ASSIGNMENT_OPERATORS( AbstractVectorField )
 
 	FieldNorm< d6::AbstractVectorField, ShapeFuncT > norm() const {
 		return FieldNorm< d6::AbstractVectorField, ShapeFuncT >( *this ) ;
