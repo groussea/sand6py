@@ -44,8 +44,14 @@ struct FieldFuncBase
 	operator() ( const Vec& x ) const { return eval_at(m_shape.locate(x)) ; }
 
 	template< typename DestShape >
-	Interpolation< Derived, D, ShapeFuncT, DestShape > interpolate() const
-	{ return Interpolation< Derived, D, ShapeFuncT, DestShape >(*this) ; }
+	typename std::enable_if< std::is_same<typename DestShape::DOFDefinition, typename ShapeFuncType::DOFDefinition >::value,
+	Interpolation< Derived, D, ShapeFuncT, DestShape > >::type
+	interpolate() const
+	{ return Interpolation< Derived, D, ShapeFuncT, DestShape >(*this, m_shape.dofDefinition() ) ; }
+
+	template< typename DestShape >
+	Interpolation< Derived, D, ShapeFuncT, DestShape > interpolate( const typename DestShape::DOFDefinition& dest ) const
+	{ return Interpolation< Derived, D, ShapeFuncT, DestShape >(*this, dest) ; }
 
 	// Abstract
 
@@ -70,15 +76,20 @@ protected:
 template < typename Derived, Index D, typename ShapeFuncT, typename DestShapeFuncT >
 struct NonTrivialInterpolation {
 	typedef FieldFuncBase< Derived, D, ShapeFuncT > Func ;
-	const Func& func ;
 
-	explicit NonTrivialInterpolation( const Func& func_ ) : func( func_ ) {}
+	const Func& src ;
+	const typename ShapeFuncT::DOFDefinition& dest ;
+
+	explicit NonTrivialInterpolation( const Func& func_, const typename ShapeFuncT::DOFDefinition& dest_ )
+		: src( func_ ), dest(dest_) {}
 };
 
 template < typename Derived, Index D, typename ShapeFuncT, typename DestShapeFuncT >
 struct Interpolation : public NonTrivialInterpolation< Derived, D, ShapeFuncT, DestShapeFuncT >  {
 	typedef NonTrivialInterpolation< Derived, D, ShapeFuncT, DestShapeFuncT > Base ;
-	explicit Interpolation( const typename Base::Func& func ) :	Base( func ) {}
+	explicit Interpolation( const typename Base::Func& func, const typename ShapeFuncT::DOFDefinition& dest )
+		:	Base( func, dest )
+	{}
 };
 
 
@@ -91,7 +102,7 @@ struct Interpolation< Derived, D, ShapeFuncT, ShapeFuncT >
 	typedef FieldFuncBase< Derived      , D, ShapeFuncT > Func ;
 	const Func& func ;
 
-	explicit Interpolation( const Func& func_ )
+	explicit Interpolation( const Func& func_, const typename ShapeFuncT::DOFDefinition& )
 		:  Base( func_.shape() ), func( func_ )
 	{}
 

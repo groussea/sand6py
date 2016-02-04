@@ -26,14 +26,17 @@ namespace d6 {
 void PhaseStepData::computeProjectors(const bool weakStressBC, const std::vector<RigidBodyData> &rbData,
 									  Projectors& mats) const
 {
-	const Index m  = nNodes() ;
-	const Index mc = nSuppNodes() ;
+	const Index m  = nPrimalNodes() ;
+	const Index n  = nDualNodes() ;
+	const Index nc = nSuppNodes() ;
 
 	mats.vel.setRows( m );
 	mats.vel.reserve( m );
 
-	mats.stress.setRows( m+mc );
-	mats.stress.reserve( m+mc );
+	mats.stress.setRows( n+nc );
+	mats.stress.reserve( n+nc );
+
+	// FIXME different nodes
 
 	for( Index i = 0 ; i < nodes.count() ; ++i  ) {
 		const Index idx = nodes.revIndices[ i ] ;
@@ -64,21 +67,27 @@ void PhaseStepData::computeProjectors(const bool weakStressBC, const std::vector
 	mats.vel   .finalize();
 }
 
-void PhaseStepData::assembleMatrices(
-		const Particles &particles,
-		const Config &config, const Scalar dt, const MeshType &mesh, const ScalarField &phiInt,
+void PhaseStepData::assembleMatrices(const Particles &particles,
+		const Config &config, const Scalar dt, const DualShape &dShape,
+									 const PrimalScalarField &phiInt,
 		std::vector< RigidBodyData >&rbData
 		)
 {
+	const PrimalShape& pShape = phiInt.shape() ;
+
+
 	// FXIME other approxes
 
-	typedef typename Linear<MeshImpl>::Interpolation Itp ;
-	typedef typename Linear<MeshImpl>::Derivatives Dcdx ;
+	typedef typename PrimalShape::Interpolation P_Itp ;
+	typedef typename PrimalShape::Derivatives   P_Dcdx ;
+	typedef typename DualShape::Interpolation   D_Itp ;
+	typedef typename DualShape::Derivatives     D_Dcdx ;
 
 	bogus::Timer timer;
 
-	const Index m  = nNodes() ;
-	const Index mc = nSuppNodes() ;
+	const Index m  = nPrimalNodes() ;
+	const Index n  = nDualNodes() ;
+	const Index nc = nSuppNodes() ;
 
 	const Scalar mass_regul = 1.e-8 ;
 
@@ -99,17 +108,15 @@ void PhaseStepData::assembleMatrices(
 		}
 	}
 
-	// Other bilinear forms
 	{
 		timer.reset() ;
+		//A
 
-		typedef FormBuilder< Linear<MeshImpl>, Linear<MeshImpl> > Builder ;
-		Builder builder( mesh.shaped<Linear>(), mesh.shaped<Linear>() ) ;
+		typedef FormBuilder< PrimalShape, PrimalShape > Builder ;
+		Builder builder( pShape, pShape ) ;
 		builder.reset( m );
 		builder.addToIndex< form::Left >( nodes.cells.begin(), nodes.cells.end(), nodes.indices, nodes.indices );
 		builder.makeCompressed();
-
-		Log::Debug() << "Index computation: " << timer.elapsed() << std::endl ;
 
 		// A
 		forms.A.clear();
@@ -117,9 +124,44 @@ void PhaseStepData::assembleMatrices(
 		forms.A.setCols( m );
 		forms.A.cloneIndex( builder.index() ) ;
 		forms.A.setBlocksToZero() ;
+
+		Log::Debug() << "A Index computation: " << timer.elapsed() << std::endl ;
+
+#ifdef FULL_FEM
+		builder.integrate_qp( [&]( Scalar w, const Vec&, const P_Itp& itp, const P_Dcdx& dc_dx )
+			{
+				Builder:: addDuDv( forms.A, w, itp, dc_dx, nodes.indices, nodes.indices ) ;
+			}
+		);
+		Log::Debug() << "A Integrate grid: " << timer.elapsed() << std::endl ;
+#endif
+
+		timer.reset() ;
+
+		builder.integrate_particle( particles, [&]( Index, Scalar w, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& r_dc_dx )
+			{
+				Builder:: addDuDv( forms.A, w, l_itp, l_dc_dx, r_itp, r_dc_dx, nodes.indices, nodes.indices ) ;
+			}
+		);
+	}
+
+	// Other bilinear forms
+	{
+		timer.reset() ;
+
+
+		typedef FormBuilder< DualShape, PrimalShape > Builder ;
+
+		Builder builder( dShape, pShape ) ;
+		builder.reset( n );
+		builder.addToIndex< form::Right >( nodes.cells.begin(), nodes.cells.end(), nodes.indices, nodes.indices );
+		builder.makeCompressed();
+
+		Log::Debug() << "Index computation: " << timer.elapsed() << std::endl ;
+
 		// J
 		forms.J.clear();
-		forms.J.setRows( m );
+		forms.J.setRows( builder.rows() );
 		forms.J.setCols( m );
 		forms.J.cloneIndex( builder.index() ) ;
 		forms.J.setBlocksToZero() ;
@@ -133,7 +175,7 @@ void PhaseStepData::assembleMatrices(
 			forms.C.setBlocksToZero() ;
 		}
 
-		builder.addRows(mc) ;
+		builder.addRows(nc) ;
 
 		// B
 		forms.B.clear();
@@ -141,16 +183,6 @@ void PhaseStepData::assembleMatrices(
 		forms.B.setCols( m );
 		forms.B.cloneIndex( builder.index() ) ;
 		forms.B.setBlocksToZero() ;
-
-		timer.reset() ;
-#ifdef FULL_FEM
-		builder.integrate_qp( nodes.cells, [&]( Scalar w, const Loc&, const Itp& itp, const Dcdx& dc_dx )
-			{
-				Builder:: addDuDv( forms.A, w, itp, dc_dx, nodes.indices, nodes.indices ) ;
-			}
-		);
-		Log::Debug() << "Integrate grid: " << timer.elapsed() << std::endl ;
-#endif
 
 		timer.reset() ;
 
@@ -217,13 +249,12 @@ void PhaseStepData::assembleMatrices(
 
 		}
 #else
-		builder.integrate_particle( particles, [&]( Index, Scalar w, const Itp& l_itp, const Dcdx& l_dc_dx, const Itp& r_itp, const Dcdx& r_dc_dx )
+		builder.integrate_particle( particles, [&]( Index, Scalar w, const D_Itp& l_itp, const D_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& r_dc_dx )
 			{
 				Builder::addTauDu( forms.B, w, l_itp, r_itp, r_dc_dx, nodes.indices, nodes.indices ) ;
 				Builder::addTauWu( forms.J, w, l_itp, r_itp, r_dc_dx, nodes.indices, nodes.indices ) ;
-				Builder:: addDuDv( forms.A, w, l_itp, l_dc_dx, r_itp, r_dc_dx, nodes.indices, nodes.indices ) ;
 				if( config.enforceMaxFrac ) {
-					Builder::addVDp  ( forms.C, w, l_itp, r_itp, r_dc_dx, nodes.indices, nodes.indices ) ;
+					Builder::addDpV  ( forms.C, w, l_itp, l_dc_dx, r_itp, nodes.indices, nodes.indices ) ;
 				}
 			}
 		);
@@ -237,7 +268,7 @@ void PhaseStepData::assembleMatrices(
 #pragma omp parallel for if( rbData.size() > 1)
 	for( unsigned k = 0 ; k < rbData.size() ; ++k )
 	{
-		rbData[k].assemble_matrices( nodes, m+mc ) ;
+		rbData[k].assemble_matrices( pShape, nodes, n+nc ) ;
 	}
 	Log::Debug() << "Integrate rbs: " << timer.elapsed() << std::endl ;
 
@@ -297,62 +328,60 @@ void PhaseStepData::computeAnisotropy(const DynVec &orientation, const Config& c
 void PhaseStepData::compute(const DynParticles& particles,
 		const Config &config, const Scalar dt, Phase &phase,
 		std::vector< RigidBody   >& rigidBodies,
-		std::vector<TensorField > &rbStresses , std::vector<RigidBodyData> & rbData)
+		std::vector< RBStresses > &rbStresses , std::vector<RigidBodyData> & rbData)
 {
-	const ScalarField::ShapeFuncType& shape = phase.fraction.shape() ;
-	const MeshType& mesh = shape.derived().mesh() ;
+	const PrimalShape& pShape = phase.velocity.shape() ;
+	const   DualShape& dShape = phase.stresses.shape() ;
 
+	//FIXME surface nodes
 	m_surfaceNodes.clear();
-	m_surfaceNodes.resize( mesh.nNodes() );
-
-	// Compute volumes of cells
-	ScalarField volumes(shape) ;
-	shape.compute_volumes( volumes.flatten() );
+	m_surfaceNodes.resize( pShape.mesh().nNodes() );
 
 	// Transfer particles quantities to grid
-	ScalarField intPhi ( shape ) ;
-	VectorField intPhiVel     ( shape ) ;
-	ScalarField intPhiInertia ( shape ) ;
-	ScalarField intPhiCohesion( shape ) ;
-	TensorField intPhiOrient  ( shape ) ;
-	std::vector< bool > activeCells ;
+	PrimalScalarField intPhiPrimal  ( pShape ) ;
+	PrimalVectorField intPhiVel     ( pShape ) ;
+
+	DualScalarField intPhiDual    ( dShape ) ;
+	DualScalarField intPhiInertia ( dShape ) ;
+	DualScalarField intPhiCohesion( dShape ) ;
+	DualTensorField intPhiOrient  ( dShape ) ;
+
+	std::vector< bool > activeCells, dualActiveCells ;
 
 #if defined(FULL_FEM)
-	intPhi.set_constant( 1. ) ;
+	intPhiPrimal.set_constant( 1. ) ;
+	intPhiDual  .set_constant( 1. ) ;
 	intPhiVel.set_zero() ;
 	intPhiInertia.set_zero() ;
 	intPhiCohesion.set_zero() ;
 	intPhiOrient.set_zero() ;
 	activeCells.assign( activeCells.size(), true ) ;
 #else
-	particles.read( activeCells, intPhi, intPhiVel, intPhiInertia, intPhiOrient, intPhiCohesion ) ;
+	particles.integratePrimal( activeCells, intPhiPrimal, intPhiVel ) ;
+	particles.integrateDual( dualActiveCells, intPhiDual, intPhiInertia, intPhiOrient, intPhiCohesion ) ;
 #endif
 
 	// Compute phi and grad_phi (for visualization purposes )
-	phase.fraction.flatten() = intPhi.flatten() ;
-	phase.fraction.divide_by( volumes ) ;
-	computeGradPhi( phase.fraction, volumes, phase.grad_phi ) ;
+	computePhiAndGradPhi( intPhiPrimal, phase.fraction, phase.grad_phi ) ;
 
 	// Active nodes
 	computeActiveNodes( activeCells, phase.grad_phi ) ;
-	Log::Verbose() << "Active nodes: " << nodes.count() << " / " << mesh.nNodes() << std::endl;
+	Log::Verbose() << "Active nodes: " << nodes.count() << " / " << pShape.nDOF() << std::endl;
 
 	//Rigid bodies and frictional boundaries
 	computeActiveBodies( rigidBodies, rbStresses, rbData );
 
 	// Bilinear forms matrices
-	mesh.make_bc( StrBoundaryMapper( config.boundary ), m_surfaceNodes ) ;
-	nodes.field2var( volumes, forms.volumes ) ;
-	assembleMatrices( particles.geo(), config, dt, mesh, intPhi, rbData );
+	pShape.mesh().make_bc( StrBoundaryMapper( config.boundary ), m_surfaceNodes ) ;
+	assembleMatrices( particles.geo(), config, dt, dShape, intPhiPrimal, rbData );
 
-	nodes.field2var( phase.fraction, fraction ) ;
 	nodes.field2var( intPhiVel, forms.phiu ) ;
 
 	// Cohesion, inertia, orientation
 	DynVec orientation ;
-	intPhiCohesion.divide_by_positive( intPhi ) ;
-	intPhiInertia .divide_by_positive( intPhi ) ;
-	intPhiOrient  .divide_by_positive( intPhi ) ;
+	intPhiCohesion.divide_by_positive( intPhiDual ) ;
+	intPhiInertia .divide_by_positive( intPhiDual ) ;
+	intPhiOrient  .divide_by_positive( intPhiDual ) ;
 
 	nodes.field2var( intPhiCohesion, cohesion ) ;
 	nodes.field2var( intPhiInertia , inertia  ) ;
@@ -360,34 +389,50 @@ void PhaseStepData::compute(const DynParticles& particles,
 
 	computeAnisotropy( orientation, config, Aniso );
 
+	// Averaged fraction (dual)
+	{
+		//TODO fraction -> int_fraction
+		DualScalarField volumes ( intPhiDual.shape() ) ;
+		intPhiDual.shape().compute_volumes( volumes.flatten() );
+		intPhiDual.divide_by_positive( volumes ) ;
+		nodes.field2var( volumes, forms.volumes ) ;
+		nodes.field2var( intPhiDual, fraction ) ;
+	}
+
 	// External forces
-	VectorField gravity ( shape ) ;
+	PrimalVectorField gravity ( intPhiPrimal.shape() ) ;
 	gravity.set_constant( config.gravity );
-	gravity.multiply_by( intPhi ) ;
+	gravity.multiply_by( intPhiPrimal ) ;
 	gravity.flatten() *= config.volMass ;
 	nodes.field2var( gravity, forms.externalForces ) ;
 }
 
 
-void PhaseStepData::computeGradPhi( const ScalarField& fraction, const ScalarField& volumes, VectorField &grad_phi ) const
+void PhaseStepData::computePhiAndGradPhi(const PrimalScalarField &intPhi, PrimalScalarField& fraction, PrimalVectorField &grad_phi ) const
 {
-	const ScalarField::ShapeFuncType& shape = fraction.shape() ;
-	const MeshType& mesh = shape.derived().mesh() ;
+	const PrimalShape& shape = intPhi.shape() ;
+
+	// Compute volumes of cells
+	PrimalScalarField volumes(shape) ;
+	intPhi.shape().compute_volumes( volumes.flatten() );
+
+	fraction = intPhi;
+	fraction.divide_by_positive( volumes ) ;
 
 	grad_phi.set_zero() ;
 
 	// FXIME other approxes
-	typedef FormBuilder< Linear<MeshImpl>, Linear<MeshImpl> > Builder ;
-	Builder builder( mesh.shaped<Linear>(), mesh.shaped<Linear>() ) ;
+	typedef FormBuilder< PrimalShape, PrimalShape > Builder ;
+	Builder builder( shape, shape ) ;
 
-	typedef const typename Linear<MeshImpl>::Interpolation& Itp ;
-	typedef const typename Linear<MeshImpl>::Derivatives& Dcdx ;
+	typedef const typename PrimalShape::Interpolation& Itp ;
+	typedef const typename PrimalShape::Derivatives& Dcdx ;
 
-	builder.integrate_qp<form::Left>( mesh.cellBegin(), mesh.cellEnd(),
+	builder.integrate_qp<form::Left>(
 						  [&]( Scalar w, const Vec&, Itp itp, Dcdx dc_dx, Itp , Dcdx )
 	{
-		for( Index j = 0 ; j < Linear<MeshImpl>::NI ; ++j ) {
-			for( Index k = 0 ; k < Linear<MeshImpl>::NI ; ++k ) {
+		for( Index j = 0 ; j < PrimalShape::NI ; ++j ) {
+			for( Index k = 0 ; k < PrimalShape::NI ; ++k ) {
 				grad_phi[ itp.nodes[j] ] += w * dc_dx.row(k) * itp.coeffs[k] * fraction[ itp.nodes[k] ] ;
 			}
 		}
@@ -397,9 +442,12 @@ void PhaseStepData::computeGradPhi( const ScalarField& fraction, const ScalarFie
 }
 
 void PhaseStepData::computeActiveNodes(const std::vector<bool> &activeCells ,
-									 const VectorField &grad_phi )
+									 const PrimalVectorField &grad_phi )
 {
-	const VectorField::ShapeFuncImpl& shape = grad_phi.shape() ;
+	typedef typename PrimalShape::MeshType MeshType ;
+	//FIXME compute acitve dual nodes
+
+	const PrimalVectorField::ShapeFuncImpl& shape = grad_phi.shape() ;
 	const MeshType& mesh = shape.derived().mesh() ;
 
 	nodes.reset( mesh.nNodes() );
@@ -415,10 +463,10 @@ void PhaseStepData::computeActiveNodes(const std::vector<bool> &activeCells ,
 
 		nodes.cells.push_back( *it );
 
-		typename VectorField::ShapeFuncType::NodeList nodes ;
+		typename PrimalShape::NodeList nodes ;
 		shape.list_nodes( *it, nodes );
 
-		for( int k = 0 ; k < Linear<MeshImpl>::NI ; ++ k ) {
+		for( int k = 0 ; k < PrimalShape::NI ; ++ k ) {
 			++activeNodes[ nodes[k] ] ;
 		}
 
@@ -438,7 +486,7 @@ void PhaseStepData::computeActiveNodes(const std::vector<bool> &activeCells ,
 }
 
 void PhaseStepData::computeActiveBodies( std::vector<RigidBody> &rigidBodies,
-										 std::vector<TensorField> &rbStresses,
+										 std::vector<RBStresses> &rbStresses,
 										 std::vector< RigidBodyData > &rbData
 										 )
 {

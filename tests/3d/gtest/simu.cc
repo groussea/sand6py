@@ -38,7 +38,7 @@ TEST( simu, quad ) {
 
 	typedef FormBuilder< Linear<MeshImpl>, Linear<MeshImpl> > Builder ;
 	Builder builder( g.shaped<Linear>(), g.shaped<Linear>() ) ;
-	builder.integrate_qp<form::Left>( cells.begin(), cells.end(), [&]( Scalar w, const Vec&pos, Itp, Dcdx, Itp, Dcdx ) {
+	builder.integrate_cell<form::Left>( cells.begin(), cells.end(), [&]( Scalar w, const Vec&pos, Itp, Dcdx, Itp, Dcdx ) {
 		f_cst += w ;
 		f_lin +=   w * pos.prod() ;
 		f_quad  += w * pos.prod()  * pos.prod() ;

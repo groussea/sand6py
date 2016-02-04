@@ -1,5 +1,7 @@
 #include "ActiveIndices.hh"
 
+#include "PhaseFields.hh"
+
 #include "geo/ScalarField.hh"
 #include "geo/VectorField.hh"
 #include "geo/TensorField.hh"
@@ -64,13 +66,13 @@ void Active::var2field( const DynVec& var,  FieldBase<Derived> &field ) const
 }
 
 
-template void Active::var2field( const DynVec & var, FieldBase<ScalarField> &field ) const;
-template void Active::var2field( const DynVec & var, FieldBase<VectorField> &field ) const;
-template void Active::var2field( const DynVec & var, FieldBase<TensorField> &field ) const;
-template void Active::var2field( const DynVec & var, FieldBase<SkewTsField> &field ) const;
-template void Active::field2var( const FieldBase<ScalarField> &field, DynVec & var, bool ) const;
-template void Active::field2var( const FieldBase<VectorField> &field, DynVec & var, bool ) const;
-template void Active::field2var( const FieldBase<TensorField> &field, DynVec & var, bool ) const;
-template void Active::field2var( const FieldBase<SkewTsField> &field, DynVec & var, bool ) const;
+template void Active::var2field( const DynVec & var, FieldBase<DualScalarField> &field ) const;
+template void Active::var2field( const DynVec & var, FieldBase<PrimalVectorField> &field ) const;
+template void Active::var2field( const DynVec & var, FieldBase<DualTensorField> &field ) const;
+template void Active::var2field( const DynVec & var, FieldBase<DualSkewTsField> &field ) const;
+template void Active::field2var( const FieldBase<DualScalarField> &field, DynVec & var, bool ) const;
+template void Active::field2var( const FieldBase<PrimalVectorField> &field, DynVec & var, bool ) const;
+template void Active::field2var( const FieldBase<DualTensorField> &field, DynVec & var, bool ) const;
+template void Active::field2var( const FieldBase<DualSkewTsField> &field, DynVec & var, bool ) const;
 
 } //d6

@@ -11,20 +11,23 @@
 
 namespace d6 {
 
-VTKFieldWriter::VTKFieldWriter( const char* base_dir, const MeshType& mesh )
-	: VTKWriter( base_dir ), m_mesh( mesh )
+template <typename ShapeFuncT>
+VTKFieldWriter<ShapeFuncT>::VTKFieldWriter(const char* base_dir, const ShapeFuncT &shape )
+	: VTKWriter( base_dir ), m_shape( shape )
 {
 }
 
-void VTKFieldWriter::writeMesh( File &vtk ) const
+template <typename ShapeFuncT>
+void VTKFieldWriter<ShapeFuncT>::writeMesh( File &vtk ) const
 {
-	const typename VectorField::ShapeFuncImpl shape( m_mesh ) ;
-	constexpr Index NV = VectorField::ShapeFuncType::NI ;
+	constexpr Index NV = ShapeFuncT::NI ;
+	typedef typename ShapeFuncT::MeshType MeshType ;
+	const MeshType& mesh = m_shape.mesh() ;
 
-	Eigen::Matrix<float, WD, Eigen::Dynamic> vertices( WD, shape.nDOF() ) ;
+	Eigen::Matrix<float, WD, Eigen::Dynamic> vertices( WD, m_shape.nDOF() ) ;
 	vertices.setZero() ;
 
-	Eigen::Matrix<int, NV+1, Eigen::Dynamic > nodeIndices( NV+1, m_mesh.nCells() ) ;
+	Eigen::Matrix<int, NV+1, Eigen::Dynamic > nodeIndices( NV+1, mesh.nCells() ) ;
 	nodeIndices.row(0).setConstant( NV ) ;
 
 	const Index elemType =
@@ -36,23 +39,24 @@ void VTKFieldWriter::writeMesh( File &vtk ) const
 			;
 
 	const Eigen::VectorXi cellTypes =
-		Eigen::VectorXi::Constant( m_mesh.nCells(), elemType ) ;
+		Eigen::VectorXi::Constant( mesh.nCells(), elemType ) ;
 
 
 	typename MeshType::CellGeo cellGeo ;
-	typename  VectorField::ShapeFuncType::NodeList cellNodes ;
-	typename  VectorField::ShapeFuncType::Location loc ;
+	typename ShapeFuncT::NodeList cellNodes ;
+	typename ShapeFuncT::Location loc ;
 
-	for( typename MeshType::CellIterator it = m_mesh.cellBegin() ; it != m_mesh.cellEnd() ; ++it )
+	// FXIME if shape nodes do not coincide with mesh
+	for( typename MeshType::CellIterator it = mesh.cellBegin() ; it != mesh.cellEnd() ; ++it )
 	{
-		m_mesh.get_geo( *it, cellGeo ) ;
+		mesh.get_geo( *it, cellGeo ) ;
 		loc.cell = *it ;
-		shape.list_nodes( loc, cellNodes );
+		m_shape.list_nodes( loc, cellNodes );
 
-		nodeIndices.block< NV, 1 >( 1, it.index() ) = cellNodes ;
+		nodeIndices.template block< NV, 1 >( 1, it.index() ) = cellNodes ;
 
 		for( int k = 0 ; k < NV ; ++k ) {
-			vertices.col( cellNodes[k] ).head<WD>() = cellGeo.vertex( k ).cast< float >() ;
+			vertices.col( cellNodes[k] ).template head<WD>() = cellGeo.vertex( k ).cast< float >() ;
 		}
 	}
 
@@ -65,13 +69,15 @@ void VTKFieldWriter::writeMesh( File &vtk ) const
 	write( vtk, cellTypes.data(), 1, nodeIndices.cols() ) ;
 }
 
-size_t VTKFieldWriter::nDataPoints() const
+template <typename ShapeFuncT>
+size_t VTKFieldWriter<ShapeFuncT>::nDataPoints() const
 {
-	return m_mesh.nNodes() ;
+	return m_shape.nDOF() ;
 }
 
+template <typename ShapeFuncT>
 template< typename Derived >
-bool VTKFieldWriter::dump( const char* name, const FieldBase< Derived >& field )
+bool VTKFieldWriter<ShapeFuncT>::dump( const char* name, const FieldBase< Derived >& field )
 {
 	if( !m_file.is_open() ) {
 		Log::Error() << " VTKParticlesWriter: should call startFile() before dumping data " << std::endl ;
@@ -83,8 +89,9 @@ bool VTKFieldWriter::dump( const char* name, const FieldBase< Derived >& field )
 	return true ;
 }
 
-template bool VTKFieldWriter::dump( const char*, const FieldBase< ScalarField >& ) ;
-template bool VTKFieldWriter::dump( const char*, const FieldBase< VectorField >& ) ;
-template bool VTKFieldWriter::dump( const char*, const FieldBase< TensorField >& ) ;
+template class VTKFieldWriter<Linear<MeshImpl>> ;
+template  bool VTKFieldWriter<Linear<MeshImpl>>::dump( const char*, const FieldBase< AbstractScalarField<Linear<MeshImpl> > >& ) ;
+template  bool VTKFieldWriter<Linear<MeshImpl>>::dump( const char*, const FieldBase< AbstractVectorField<Linear<MeshImpl> > >& ) ;
+template  bool VTKFieldWriter<Linear<MeshImpl>>::dump( const char*, const FieldBase< AbstractTensorField<Linear<MeshImpl> > >& ) ;
 
 } //d6

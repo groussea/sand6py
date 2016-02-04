@@ -1,6 +1,7 @@
 #ifndef D6_PHASE_SOLVE_HH
 #define D6_PHASE_SOLVE_HH
 
+#include "PhaseFields.hh"
 #include "ActiveIndices.hh"
 
 #include "geo/BoundaryInfo.hh"
@@ -34,7 +35,7 @@ public:
 	void step(const Config &config, const Scalar dt,
 			  Phase& phase, Stats &stats,
 			  std::vector<RigidBody> &rigidBodies,
-			  std::vector<TensorField> &rbStresses
+			  std::vector<RBStresses> &rbStresses
 			  ) const ;
 
 private:

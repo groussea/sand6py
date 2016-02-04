@@ -1,7 +1,7 @@
 #ifndef D6_SIMU_HH
 #define D6_SIMU_HH
 
-#include "geo/geo.fwd.hh"
+#include "simu/PhaseFields.hh"
 
 #include "simu/DynParticles.hh"
 #include "simu/PhaseSolver.hh"
@@ -66,7 +66,7 @@ private:
 	std::unique_ptr<MeshType>  m_mesh ;
 	std::unique_ptr<Phase>     m_grains ;
 	// Useful for warm-starting stresses at frictional boundary conditions
-	std::vector< TensorField > m_rbStresses  ;
+	std::vector< RBStresses > m_rbStresses  ;
 
 	PhaseSolver m_solver ;
 };

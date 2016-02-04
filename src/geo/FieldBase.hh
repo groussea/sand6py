@@ -61,6 +61,13 @@ public:
 	Derived& set_zero() ;
 	Derived& set_constant( const ValueType& val ) ;
 
+	Derived& operator= ( const FieldBase& f )
+	{
+		assert( f.size() == size() ) ;
+		flatten() = f.flatten() ;
+		return derived() ;
+	}
+
 	template < typename Func >
 	Derived& operator= ( const FieldFuncBase< Func, D, ShapeFuncImpl > & f )
 	{
@@ -134,6 +141,9 @@ protected:
 	explicit FieldName( const typename Base::ShapeFuncType::DOFDefinition& mesh ) \
 	: Base( typename Base::ShapeFuncImpl( mesh ) ) \
 	{} \
+	/*! Copy constructor */\
+	FieldName( const FieldName& o ) : Base( o.shape() ) { Base::operator=( o ) ; } \
+	FieldName& operator=( const FieldName& o ) { return Base::operator=( o ) ; } \
 	/*! Assignment from field func */\
 	template <typename Func> \
 	FieldName( const FieldFuncBase< Func, Base::D, typename Base::ShapeFuncImpl > & func ) \
@@ -146,17 +156,12 @@ protected:
 	/*! Assignment from non-trivial interpolation */\
 	template < typename Func, typename OtherShape > \
 	FieldName& operator= ( const NonTrivialInterpolation< Func, Base::D, OtherShape, typename Base::ShapeFuncImpl > & f ) \
-	{ return Base::from_interpolation ( f.func ) ; } \
+	{ return Base::from_interpolation ( f.src ) ; } \
 	/*! Constructors from non-trivial interpolation */\
 	template < typename Func, typename OtherShape > \
 	FieldName ( const NonTrivialInterpolation< Func, Base::D, OtherShape, typename Base::ShapeFuncImpl > & f ) \
-	: Base(  typename Base::ShapeFuncImpl( f.func.shape().dofDefinition() ) ) \
-	{ Base::from_interpolation ( f.func ) ; } \
-	template < typename Func, typename OtherShape > \
-	FieldName ( const typename Base::ShapeFuncType::DOFDefinition& mesh, \
-				const NonTrivialInterpolation< Func, Base::D, OtherShape, typename Base::ShapeFuncImpl > & f ) \
-	: Base( typename Base::ShapeFuncImpl( mesh ) ) \
-	{ Base::from_interpolation ( f.func ) ; } \
+	: Base( typename Base::ShapeFuncImpl( f.dest ) ) \
+	{ Base::from_interpolation ( f.src ) ; } \
 
 
 } //d6

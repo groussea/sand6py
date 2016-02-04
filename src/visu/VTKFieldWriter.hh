@@ -8,13 +8,13 @@
 
 namespace d6 {
 
-
+template < typename ShapeFuncT >
 class VTKFieldWriter : public VTKWriter
 {
 
 public:
 
-	VTKFieldWriter( const char* base_dir, const MeshType& mesh ) ;
+	VTKFieldWriter( const char* base_dir, const ShapeFuncT& shape ) ;
 
 	template< typename Derived >
 	bool dump( const char* name, const FieldBase< Derived >& field ) ;
@@ -24,8 +24,7 @@ protected:
 	size_t nDataPoints( ) const ;
 
 private:
-
-	const MeshType& m_mesh ;
+	const ShapeFuncT& m_shape ;
 
 };
 

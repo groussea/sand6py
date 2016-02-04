@@ -38,7 +38,7 @@ struct PhaseStepData {
 		typename FormMat<SD,WD>::Type B ; //!< \phi Tau:D(u)
 		typename FormMat<RD,WD>::Type J ; //!< \phi Tau:W(u)
 
-		typename FormMat<WD,1>::Type C ; //!< \phi v.grad(p)
+		typename FormMat<1 ,WD>::Type C ; //!< \phi v.grad(p)
 	} forms ;
 
 	//! Projectors enforcing boundary conditions
@@ -58,8 +58,14 @@ struct PhaseStepData {
 		: m_totRbNodes( 0 )
 	{}
 
-	Index nNodes() const
+	Index nPrimalNodes() const
 	{
+		return nodes.count() ;
+	}
+
+	Index nDualNodes() const
+	{
+		//FIXME for DG
 		return nodes.count() ;
 	}
 
@@ -72,14 +78,14 @@ struct PhaseStepData {
 			const DynParticles& particles, const Config &config, const Scalar dt,
 			Phase &phase,
 			std::vector< RigidBody   >& rigidBodies,
-			std::vector<TensorField > &rbStresses,
+			std::vector< RBStresses > &rbStresses,
 			std::vector< RigidBodyData > &rbData  ) ;
 
 private:
 	void computeActiveNodes(const std::vector< bool >& activeCells,
-							const VectorField &grad_phi ) ;
+							const PrimalVectorField &grad_phi ) ;
 	void computeActiveBodies( std::vector<RigidBody> &rigidBodies,
-							  std::vector<TensorField> &rbStresses,
+							  std::vector<RBStresses> &rbStresses,
 							  std::vector< RigidBodyData > &rbData ) ;
 
 	void computeProjectors( const bool weakStressBC, const std::vector<RigidBodyData> & rbData,
@@ -88,10 +94,10 @@ private:
 	void computeAnisotropy(const DynVec& orientation,  const Config &config,
 						   typename FormMat<SD,SD>::SymType &Aniso ) const ;
 
-	void computeGradPhi( const ScalarField& fraction, const ScalarField& volumes, VectorField &grad_phi ) const ;
+	void computePhiAndGradPhi(const PrimalScalarField& intPhi, PrimalScalarField&phi, PrimalVectorField &grad_phi ) const ;
 
-	void assembleMatrices( const Particles& particles, const Config& c, const Scalar dt,
-						   const MeshType& mesh, const ScalarField &phiInt,
+	void assembleMatrices(const Particles& particles, const Config& c, const Scalar dt,
+						   const DualShape &dShape, const PrimalScalarField &phiInt,
 						   std::vector< RigidBodyData > &rbData ) ;
 
 

@@ -31,7 +31,7 @@ PhaseSolver::PhaseSolver(const DynParticles &particles)
 
 void PhaseSolver::step(const Config &config, const Scalar dt, Phase &phase, Stats& stats,
 					   std::vector< RigidBody   >& rigidBodies,
-					   std::vector<TensorField > &rbStresses) const
+					   std::vector<RBStresses > &rbStresses) const
 {
 	bogus::Timer timer ;
 
@@ -41,7 +41,8 @@ void PhaseSolver::step(const Config &config, const Scalar dt, Phase &phase, Stat
 	// Read data from particles, assemble matrices, etc
 	stepData.compute( m_particles, config, dt, phase, rigidBodies, rbStresses, rbData );
 
-	stats.nActiveNodes = stepData.nNodes() ;
+	stats.nPrimalNodes = stepData.nPrimalNodes() ;
+	stats.nDualNodes = stepData.nPrimalNodes() ;
 	stats.nCouplingNodes = stepData.nSuppNodes() ;
 	stats.assemblyTime = timer.elapsed() ;
 	Log::Debug() << "Step assembled  at " << timer.elapsed() << std::endl ;
@@ -266,7 +267,7 @@ void PhaseSolver::enforceMaxFrac(const Config &c, const PhaseStepData &stepData,
 
 	LCPData pbData ;
 
-	pbData.H = stepData.proj.vel * stepData.forms.C ;
+	pbData.H = stepData.forms.C * stepData.proj.vel ;
 	pbData.w.setZero( pbData.n() );
 
 	DynArr totFraction = stepData.fraction ;

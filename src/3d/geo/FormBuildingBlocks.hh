@@ -80,14 +80,14 @@ struct FormBlocks {
 		b(5,1) += m * col_dx(2) ;
 	}
 
-	template < typename ColDerived >
-	static inline void addVDp( Eigen::Matrix<Scalar, WD, 1>& b,
+	template < typename RowDerived >
+	static inline void addDpV( Eigen::Matrix<Scalar, 1, WD>& b,
 							   const Scalar m,
-							   const Eigen::MatrixBase< ColDerived >& col_dx )
+							   const Eigen::MatrixBase< RowDerived >& row_dx )
 	{
 
 		// ( vx da_dx + vy da_dy + vz da_dz)
-		b += m * col_dx ;
+		b += m * row_dx ;
 	}
 
 

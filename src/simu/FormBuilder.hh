@@ -60,8 +60,13 @@ public:
 
 
 	//! Integrate over quadrature points
+	template < form::Side side, typename QPIterator, typename Func >
+	void integrate_qp( const QPIterator& qpBegin, const QPIterator& qpEnd, Func func ) const ;
+
+	template < form::Side side, typename Func >
+	void integrate_qp( Func func ) const ;
 	template < form::Side side, typename CellIterator, typename Func >
-	void integrate_qp( const CellIterator& cellBegin, const CellIterator& cellEnd, Func func ) const ;
+	void integrate_cell( const CellIterator& cellBegin, const CellIterator& cellEnd, Func func ) const ;
 
 	//! Integrate over nodes ( trapezoidal approx )
 	template < typename CellIterator, typename Func >
@@ -75,12 +80,12 @@ public:
 
 	static void addDuDv     ( FormMat<WD,WD>::Type& A, Scalar w, Index rowIndex, LhsDcdxRow row_dx,
 							  RhsItp itp, RhsDcdx dc_dx, Indices colIndices ) ;
-	static void addVDp      ( FormMat<WD, 1>::Type& A, Scalar w, Index rowIndex, RhsItp itp, RhsDcdx dc_dx, Indices colIndices ) ;
+	static void addDpV      ( FormMat< 1,WD>::Type& A, Scalar w, Index colIndex, LhsItp itp, LhsDcdx dc_dx, Indices rowIndices ) ;
 	static void addTauDu    ( FormMat<SD,WD>::Type& A, Scalar w, Index rowIndex, RhsItp itp, RhsDcdx dc_dx, Indices colIndices ) ;
 	static void addTauWu    ( FormMat<RD,WD>::Type& A, Scalar w, Index rowIndex, RhsItp itp, RhsDcdx dc_dx, Indices colIndices ) ;
 
 	static void addDuDv     ( FormMat<WD,WD>::Type& A, Scalar w, LhsItp lhs_itp, LhsDcdx lhs_dc_dx, RhsItp rhs_itp, RhsDcdx rhs_dc_dx, Indices rowIndices, Indices colIndices ) ;
-	static void addVDp      ( FormMat<WD, 1>::Type& A, Scalar w, LhsItp lhs_itp, RhsItp rhs_itp, RhsDcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
+	static void addDpV      ( FormMat<1, WD>::Type& A, Scalar w, LhsItp lhs_itp, LhsDcdx dc_dx, RhsItp rhs_itp, Indices rowIndices, Indices colIndices ) ;
 	static void addTauDu    ( FormMat<SD,WD>::Type& A, Scalar w, LhsItp lhs_itp, RhsItp rhs_itp, RhsDcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
 	static void addTauWu    ( FormMat<RD,WD>::Type& A, Scalar w, LhsItp lhs_itp, RhsItp rhs_itp, RhsDcdx dc_dx, Indices rowIndices, Indices colIndices ) ;
 

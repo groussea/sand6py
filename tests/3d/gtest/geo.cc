@@ -189,7 +189,7 @@ TEST( geo, field_func )
 	MeshImpl g( box, dim ) ;
 
 	Linear<MeshImpl> shape(g) ;
-	TensorField tf( shape ) ;
+	AbstractTensorField<Linear<MeshImpl>> tf( shape ) ;
 
 	Vec6 sym ( Vec6::Zero() ) ;
 	sym[0] = 3. ;
@@ -197,7 +197,7 @@ TEST( geo, field_func )
 
 	tf.set_constant( sym );
 
-	ScalarField sf ( tf.trace() );
+	AbstractScalarField<Linear<MeshImpl>> sf ( tf.trace() );
 
 	for( Index i = 0 ; i < sf.size() ; ++i ) {
 		ASSERT_DOUBLE_EQ( 3., sf[i] ) ;

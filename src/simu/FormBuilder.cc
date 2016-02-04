@@ -84,12 +84,12 @@ void FormBuilder<LhsShape, RhsShape>::addTauDu( FormMat<SD,WD>::Type& A, Scalar 
 }
 
 template < typename LhsShape, typename RhsShape >
-void FormBuilder<LhsShape, RhsShape>::addVDp( FormMat<WD,1>::Type& A, Scalar w,
-											  LhsItp lhs_itp, RhsItp rhs_itp, RhsDcdx dc_dx,
+void FormBuilder<LhsShape, RhsShape>::addDpV( FormMat<1,WD>::Type& A, Scalar w,
+											  LhsItp lhs_itp, LhsDcdx dc_dx, RhsItp rhs_itp,
 											  Indices rowIndices, Indices colIndices )
 {
-	for( int k = 0 ; k < lhs_itp.nodes.rows() ; ++k ) {
-		addVDp( A, w * lhs_itp.coeffs[k], rowIndices[rhs_itp.nodes[k]], rhs_itp, dc_dx, colIndices );
+	for( int k = 0 ; k < rhs_itp.nodes.rows() ; ++k ) {
+		addDpV( A, w * rhs_itp.coeffs[k], colIndices[rhs_itp.nodes[k]], lhs_itp, dc_dx, rowIndices );
 	}
 }
 
@@ -130,15 +130,15 @@ void FormBuilder<LhsShape, RhsShape>::addTauDu( FormMat<SD,WD>::Type& A, Scalar 
 }
 
 template < typename LhsShape, typename RhsShape >
-void FormBuilder<LhsShape, RhsShape>::addVDp ( FormMat<WD,1>::Type& A, Scalar m, Index rowIndex,
-											   RhsItp itp, RhsDcdx dc_dx, Indices colIndices )
+void FormBuilder<LhsShape, RhsShape>::addDpV ( FormMat<1,WD>::Type& A, Scalar m, Index colIndex,
+											   LhsItp itp, LhsDcdx dc_dx, Indices rowIndices )
 {
-	typedef FormMat<WD,1>::Type::BlockType Block ;
+	typedef FormMat<1,WD>::Type::BlockType Block ;
 
 	for( int j = 0 ; j < itp.nodes.rows() ; ++j ) {
-		assert( A.blockPtr( rowIndex, colIndices[itp.nodes[j]] ) != A.InvalidBlockPtr ) ;
-		Block &b = A.block( rowIndex, colIndices[itp.nodes[j]] ) ;
-		FormBlocks::addVDp( b, m, dc_dx.row(j) ) ;
+		assert( A.blockPtr( rowIndices[itp.nodes[j]], colIndex ) != A.InvalidBlockPtr ) ;
+		Block &b = A.block( rowIndices[itp.nodes[j]], colIndex ) ;
+		FormBlocks::addDpV( b, m, dc_dx.row(j) ) ;
 	}
 }
 

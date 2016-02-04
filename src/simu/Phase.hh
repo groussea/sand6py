@@ -1,7 +1,8 @@
 #ifndef D6_PHASE_DESCR_HH
 #define D6_PHASE_DESCR_HH
 
-#include "geo/geo.fwd.hh"
+#include "simu/PhaseFields.hh"
+
 #include "geo/ScalarField.hh"
 #include "geo/VectorField.hh"
 #include "geo/TensorField.hh"
@@ -13,16 +14,17 @@ namespace d6 {
 struct Phase
 {
 
-	ScalarField fraction ;
-	VectorField velocity ;
 
-	TensorField stresses ;
-	TensorField sym_grad ;
-	SkewTsField spi_grad ;
+	PrimalScalarField fraction ;
+	PrimalVectorField velocity ;
 
-	VectorField grad_phi ;
-	VectorField geo_proj ;
-	VectorField fcontact ;
+	DualTensorField stresses ;
+	DualTensorField sym_grad ;
+	DualSkewTsField spi_grad ;
+
+	PrimalVectorField grad_phi ;
+	PrimalVectorField geo_proj ;
+	PrimalVectorField fcontact ;
 
 	Phase( const MeshType& mesh )
 		: fraction(mesh), velocity(mesh),

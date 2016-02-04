@@ -525,7 +525,7 @@ void GLViewer::draw( ) const
 	}
 }
 
-const VectorField& GLViewer::getVectorEntity() const
+const typename GLViewer::VectorField& GLViewer::getVectorEntity() const
 {
 	switch ( m_vectorEntity ) {
 	case veVelocity :
@@ -538,7 +538,7 @@ const VectorField& GLViewer::getVectorEntity() const
 		return m_offline.grains().grad_phi ;
 	}
 }
-ScalarField GLViewer::getScalarEntity() const
+typename GLViewer::ScalarField GLViewer::getScalarEntity() const
 {
 	switch ( m_scalarEntity ) {
 	case seFraction :
@@ -550,7 +550,7 @@ ScalarField GLViewer::getScalarEntity() const
 	}
 }
 
-const TensorField& GLViewer::getTensorEntity() const
+const typename GLViewer::TensorField& GLViewer::getTensorEntity() const
 {
 	switch ( m_tensorEntity ) {
 	case teDu:

@@ -1,6 +1,8 @@
 #ifndef D6_DYN_PARTICLES_HH
 #define D6_DYN_PARTICLES_HH
 
+#include "simu/PhaseFields.hh"
+
 #include "geo/Particles.hh"
 
 namespace d6 {
@@ -17,10 +19,13 @@ public:
 	void generate( const Config &c, const MeshType& mesh, const Scenario &scenario ) ;
 
 	void update( const Config&c, const Scalar dt, const Phase& phase ) ;
-	void read(std::vector< bool > &activeCells,
-			   ScalarField &phi, VectorField &phiVel,
-			   ScalarField &phiInertia, TensorField &phiOrient,
-			   ScalarField &phiCohesion
+
+	void integratePrimal( std::vector< bool > &activeCells,
+			   PrimalScalarField &phi,    PrimalVectorField &phiVel ) const ;
+
+	void integrateDual( std::vector< bool > &activeCells,
+			   DualScalarField &phi,      DualScalarField &phiInertia,
+			   DualTensorField &phiOrient,DualScalarField &phiCohesion
 			   ) const ;
 
 	const Particles &geo() const { return m_geo ; }

@@ -1,10 +1,12 @@
 #ifndef D6_RIGID_BODY_DATA_HH
 #define D6_RIGID_BODY_DATA_HH
 
-#include "utils/block_mat.hh"
 #include "ActiveIndices.hh"
+#include "PhaseFields.hh"
 
 #include "geo/BoundaryInfo.hh"
+
+#include "utils/block_mat.hh"
 
 namespace d6 {
 
@@ -12,6 +14,8 @@ class RigidBody ;
 
 struct RigidBodyData
 {
+	typedef RBStresses TensorField ;
+
 	RigidBodyData( RigidBody& rb_, TensorField &s ) ;
 
 	//! Volume fraction taken by the rigid-body at a given point
@@ -22,7 +26,7 @@ struct RigidBodyData
 	//! Computes nodes that are influenced by the rigid-body
 	void compute_active( const Active& phaseNodes, BoundaryConditions &bc ) ;
 	//! Assembles projection and jacobian matrices
-	void assemble_matrices( const Active& phaseNodes, Index totNodes ) ;
+	void assemble_matrices(const PrimalShape &primalShape, const Active& phaseNodes, Index totNodes ) ;
 
 	RigidBody&   rb ;
 	TensorField& stresses ;
@@ -38,7 +42,7 @@ struct RigidBodyData
 private:
 	static const Scalar s_splatRad ;
 
-	void integrate(const Active& phaseNodes, Index totNodes  ) ;
+	void integrate(const PrimalShape& primalShape, const Active& phaseNodes, Index totNodes  ) ;
 
 };
 

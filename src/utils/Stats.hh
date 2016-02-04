@@ -12,7 +12,8 @@ namespace d6 {
 	STAT_FIELD( delta_t					, Scalar		, "dt"		) \
 	STAT_FIELD( nParticles				, unsigned		, "nPart"	) \
 	STAT_FIELD( nNodes					, unsigned		, "totNds"  ) \
-	STAT_FIELD( nActiveNodes			, unsigned		, "actNds"  ) \
+	STAT_FIELD( nPrimalNodes			, unsigned		, "priNds"  ) \
+	STAT_FIELD( nDualNodes				, unsigned		, "duaNds"  ) \
 	STAT_FIELD( nCouplingNodes			, unsigned		, "cplNds" ) \
 	STAT_FIELD( maxVelocity				, Scalar		, "maxVel"	) \
 	STAT_FIELD( frictionError			, Scalar		, "slvErr"	) \

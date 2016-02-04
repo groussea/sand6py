@@ -84,20 +84,20 @@ void RigidBodyData::compute_active( const Active& phaseNodes, BoundaryConditions
 	}
 }
 
-void RigidBodyData::integrate(const Active &phaseNodes, Index totNodes)
+void RigidBodyData::integrate(const PrimalShape& primalShape, const Active &phaseNodes, Index totNodes)
 {
 	//FIXME other approxes
+	typedef typename RBStresses::ShapeFuncImpl DualShapeFunc ;
 
-	typedef const typename Linear<MeshImpl>::Interpolation& Itp ;
-	typedef const typename Linear<MeshImpl>::Derivatives& Dcdx ;
+	typedef const typename PrimalShape  ::Interpolation& P_Itp ;
+	typedef const typename PrimalShape  ::Derivatives&   P_Dcdx ;
+	typedef const typename DualShapeFunc::Interpolation& D_Itp ;
+	typedef const typename DualShapeFunc::Derivatives&   D_Dcdx ;
 
 	const Index m = phaseNodes.count() ;
 
-	const TensorField::ShapeFuncImpl &shape = stresses.shape() ;
-	const MeshType &mesh = shape.mesh() ;
-
-	typedef FormBuilder< Linear<MeshImpl>, Linear<MeshImpl> > Builder ;
-	Builder builder( mesh.shaped<Linear>(), mesh.shaped<Linear>() ) ;
+	typedef FormBuilder< DualShapeFunc, PrimalShape > Builder ;
+	Builder builder( stresses.shape(), primalShape ) ;
 
 	builder.reset( totNodes );
 	builder.addToIndex<form::Left>( occupiedCells.begin(),occupiedCells.end(), phaseNodes.indices, phaseNodes.indices );
@@ -110,7 +110,7 @@ void RigidBodyData::integrate(const Active &phaseNodes, Index totNodes)
 	jacobian.cloneIndex( builder.index() ) ;
 	jacobian.setBlocksToZero() ;
 
-	builder.integrate_qp<form::Left>( occupiedCells.begin(), occupiedCells.end(), [&]( Scalar w, const Vec& pos, Itp l_itp, Dcdx, Itp r_itp, Dcdx )
+	builder.integrate_cell<form::Right>( occupiedCells.begin(), occupiedCells.end(), [&]( Scalar w, const Vec& pos, D_Itp l_itp, D_Dcdx, P_Itp r_itp, P_Dcdx )
 	{
 		Vec dphi_dx ;
 		grad_phi( pos, dphi_dx ) ;
@@ -118,7 +118,7 @@ void RigidBodyData::integrate(const Active &phaseNodes, Index totNodes)
 		Builder:: addUTaunGphi( jacobian, w, l_itp, r_itp, dphi_dx, phaseNodes.indices, phaseNodes.indices ) ;
 	}
 	);
-	builder.integrate_node(  nodes.cells.begin(), nodes.cells.end(), [&]( Scalar w, const Vec& pos, Itp l_itp, Itp r_itp )
+	builder.integrate_node(  nodes.cells.begin(), nodes.cells.end(), [&]( Scalar w, const Vec& pos, D_Itp l_itp, P_Itp r_itp )
 	{
 		Vec dphi_dx ;
 		grad_phi( pos, dphi_dx ) ;
@@ -129,7 +129,7 @@ void RigidBodyData::integrate(const Active &phaseNodes, Index totNodes)
 
 }
 
-void RigidBodyData::assemble_matrices(const Active &phaseNodes, Index totNodes)
+void RigidBodyData::assemble_matrices( const PrimalShape& primalShape, const Active &phaseNodes, Index totNodes)
 
 {
 	const TensorField::ShapeFuncImpl &shape = stresses.shape() ;
@@ -173,7 +173,7 @@ void RigidBodyData::assemble_matrices(const Active &phaseNodes, Index totNodes)
 
 	projection = proj.transpose() ;
 
-	integrate( phaseNodes, totNodes );
+	integrate( primalShape, phaseNodes, totNodes );
 }
 
 
