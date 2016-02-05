@@ -25,7 +25,9 @@ struct PhaseStepData {
 
 		DynVec phiu ;           //!< integral of fraction times velocity
 		DynVec externalForces ; //!< integral of external forces
-		DynVec volumes  ;	    //!< Volume aossciated to each node = int(1)
+		DynArr volumes  ;	    //!< Volume aossciated to each node = int(1)
+
+		DynArr fraction  ;		//!< integrated volume fraction occupied by the phase
 
 		// Bilinear Form marices
 
@@ -49,9 +51,8 @@ struct PhaseStepData {
 	} proj ;
 
 
-	DynVec fraction  ;	//!< interpolated volume fraction occupied by the phase
-	DynVec cohesion ;   //!< interpolated cohesivity
-	DynVec inertia  ;   //!< interpolated inertial number
+	DynArr cohesion ;   //!< interpolated cohesivity
+	DynArr inertia  ;   //!< interpolated inertial number
 
 	typename FormMat<SD,SD>::SymType Aniso ; //!< Anisotropy linear operator (N^{-1})
 

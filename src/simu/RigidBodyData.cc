@@ -122,6 +122,26 @@ void RigidBodyData::integrate(const PrimalShape& primalShape, const DualShape& d
 			Builder:: addUTaunGphi( jacobian, w, l_itp, r_itp, dphi_dx, dualNodes.indices, primalNodes.indices ) ;
 		}
 		);
+
+		// Fraction
+		intFraction.resize( dualNodes.count() ) ;
+		intFraction.setZero() ;
+		// TODO do not process all cells -- or factorize for all rbs
+		for( auto qpIt = dualShape.qpBegin() ; qpIt != dualShape.qpEnd() ; ++qpIt  ) {
+			typename DualShape::Location loc ;
+			typename DualShape::Interpolation itp ;
+			qpIt.locate( loc ) ;
+			dualShape.interpolate( loc, itp ) ;
+
+			const Scalar phiRb = std::max( 0., std::min(1., rb.levelSet().eval_at( qpIt.pos() ) ) ) ;
+
+			for( Index k = 0 ; k < itp.nodes.rows() ; ++ k ) {
+				const Index idx = dualNodes.indices[ itp.nodes[k] ] ;
+				if( idx != Active::s_Inactive ) {
+					intFraction[ idx ] += qpIt.weight() * itp.coeffs[k] * phiRb ;
+				}
+			}
+		}
 	}
 
 	{
@@ -160,14 +180,10 @@ void RigidBodyData::assemble_matrices( const PrimalShape& primalShape, const Dua
 									   Index totNodes)
 
 {
-	const TensorField::ShapeFuncImpl &shape = stresses.shape() ;
-	const MeshType &mesh = shape.mesh() ;
+	typedef typename PrimalShape::MeshType MeshType ;
+	const MeshType &mesh = primalShape.mesh() ;
 
 	typename TensorField::ShapeFuncType::NodeList nodelist ;
-	typename MeshType::CellGeo geo ;
-
-	fraction.resize( nodes.count() );
-	fraction.setConstant( -1 ) ;
 
 	typename FormMat<WD,SD>::UncompressedType	proj ;
 	proj.clear() ;
@@ -175,28 +191,29 @@ void RigidBodyData::assemble_matrices( const PrimalShape& primalShape, const Dua
 	proj.setCols( 1 );
 
 	typename FormMat<WD,SD>::BlockT P ;
-	P.block<WD,WD>(0,0).setIdentity() ;
+	P.topLeftCorner<WD,WD>().setIdentity() ;
 
 	for( const typename MeshType::Cell& cell : nodes.cells )
 	{
-		mesh.get_geo( cell, geo );
-		shape.list_nodes( cell, nodelist );
+		typename PrimalShape::Location ploc ;
+		ploc.cell = cell ;
+		primalShape.list_nodes( ploc, nodelist );
 
 		for( Index k = 0 ; k < nodelist.rows() ; ++k  ) {
-			const Index glb_idx = nodelist[k] ;
-			const Index loc_idx = nodes.indices[glb_idx] - nodes.offset ;
-			const Vec pos = geo.vertex(k) ;
 
-			if( fraction( loc_idx ) < 0. ) {
-				fraction( loc_idx ) = phi( pos ) ;
+			const Index glb_idx = nodelist[k] ;
+			const Index row = primalNodes.indices[ glb_idx ] ;
+
+			if( proj.majorIndex().size(row) == 0 ) {
+
+				primalShape.locate_dof( ploc, k ) ;
+				const Vec pos = mesh.pos( ploc ) ;
 				const Vec dx = pos - rb.levelSet().origin() ;
 				make_cross_mat( dx, P.block<WD,RD>(0,WD) ) ;
-				proj.insert( primalNodes.indices[ glb_idx ], 0  ) = P ;
+				proj.insert( row, 0  ) = P ;
 			}
 		}
 	}
-
-
 	proj.finalize() ;
 
 	projection = proj.transpose() ;

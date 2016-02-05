@@ -406,9 +406,10 @@ void PhaseStepData::compute(const DynParticles& particles,
 	// Bilinear forms matrices
 	assembleMatrices( particles.geo(), config, dt, dShape, intPhiPrimal, rbData );
 
-	primalNodes.field2var( intPhiVel, forms.phiu ) ;
+	primalNodes.field2var( intPhiVel , forms.phiu ) ;
+	dualNodes  .field2var( intPhiDual, forms.fraction ) ;
 
-	// Cohesion, inertia, orientation
+	// Cohesion, inertia, orientation -- trapezoidal approx
 	DynVec orientation ;
 	intPhiCohesion.divide_by_positive( intPhiDual ) ;
 	intPhiInertia .divide_by_positive( intPhiDual ) ;
@@ -420,14 +421,11 @@ void PhaseStepData::compute(const DynParticles& particles,
 
 	computeAnisotropy( orientation, config, Aniso );
 
-	// Averaged fraction (dual)
+	// Volumes
 	{
-		//TODO fraction -> int_fraction
-		DualScalarField volumes ( intPhiDual.shape() ) ;
-		intPhiDual.shape().compute_volumes( volumes.flatten() );
-		intPhiDual.divide_by_positive( volumes ) ;
+		DualScalarField volumes ( dShape ) ;
+		dShape.compute_volumes( volumes.flatten() );
 		dualNodes.field2var( volumes, forms.volumes ) ;
-		dualNodes.field2var( intPhiDual, fraction ) ;
 	}
 
 	// External forces

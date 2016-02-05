@@ -52,6 +52,21 @@ void Active::field2var( const FieldBase<Derived> &field, DynVec& var, bool resiz
 }
 
 template < typename Derived >
+void Active::field2var( const FieldBase<Derived> &field, DynArr& var, bool resize ) const
+{
+	constexpr Index D = FieldBase<Derived>::D ;
+
+	if( resize )
+		var.resize( (offset + D) * count() );
+
+#pragma omp parallel for
+	for( Index i = 0 ; i < nNodes ; ++ i) {
+		const Index idx = revIndices[ i ] ;
+		Segmenter<D, DynArr>::segment( var, offset+i ) = field[ idx ] ;
+	}
+}
+
+template < typename Derived >
 void Active::var2field( const DynVec& var,  FieldBase<Derived> &field ) const
 {
 	constexpr Index D = FieldBase<Derived>::D ;
@@ -71,6 +86,7 @@ template void Active::var2field( const DynVec & var, FieldBase<PrimalVectorField
 template void Active::var2field( const DynVec & var, FieldBase<DualTensorField> &field ) const;
 template void Active::var2field( const DynVec & var, FieldBase<DualSkewTsField> &field ) const;
 template void Active::field2var( const FieldBase<DualScalarField> &field, DynVec & var, bool ) const;
+template void Active::field2var( const FieldBase<DualScalarField> &field, DynArr & var, bool ) const;
 template void Active::field2var( const FieldBase<PrimalVectorField> &field, DynVec & var, bool ) const;
 template void Active::field2var( const FieldBase<DualTensorField> &field, DynVec & var, bool ) const;
 template void Active::field2var( const FieldBase<DualSkewTsField> &field, DynVec & var, bool ) const;

@@ -53,7 +53,7 @@ private:
 	//! Add contbutions from a rigid body to the friction problem
 	void addRigidBodyContrib(const Config &c, const Scalar dt, const PhaseStepData &stepData,
 							 const DynVec &u, const RigidBodyData &rb,
-							 PrimalData& primalData, DynArr &totFraction ) const ;
+							 PrimalData& primalData, DynArr &rbIntFraction ) const ;
 	//! Add contribution from chesive forces to the friction problem
 	void addCohesionContrib (const Config&c, const PhaseStepData &stepData,
 							  PrimalData& primalData, DynVec &u ) const ;

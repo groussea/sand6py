@@ -99,7 +99,7 @@ void PhaseSolver::solve(
 		// Velocities gradient D(u) and W(u)
 		DynVec int_phiDu = .5 * ( stepData.proj.stress * stepData.forms.B * u ).head( SD * stepData.nDualNodes() ) ;
 		DynVec int_phiWu = .5 * stepData.forms.J * u ;
-		const DynVec int_phi = stepData.forms.volumes.array()*stepData.fraction.array().max( 1.e-16 ) ;
+		const DynVec int_phi = stepData.forms.fraction.max( 1.e-16 ) ;
 
 		div_compwise<SD>( int_phiDu, int_phi ) ;
 		div_compwise<RD>( int_phiWu, int_phi ) ;
@@ -112,7 +112,7 @@ void PhaseSolver::solve(
 
 void PhaseSolver::addRigidBodyContrib( const Config &c, const Scalar dt, const PhaseStepData &stepData,
 									   const DynVec &u, const RigidBodyData &rb,
-									   PrimalData& pbData, DynArr &totFraction ) const
+									   PrimalData& pbData, DynArr &rbIntFraction ) const
 {
 
 	typename FormMat<SD,WD>::Type J =	stepData.Aniso * ( stepData.proj.stress * ( rb.jacobian ) ) ;
@@ -125,7 +125,7 @@ void PhaseSolver::addRigidBodyContrib( const Config &c, const Scalar dt, const P
 
 	// Add volume fraction taken by rb
 	for( Index i = 0 ; i < rb.nodes.count() ; ++i ) {
-		totFraction( stepData.dualNodes.indices[ rb.nodes.revIndices[i] ] ) += rb.fraction[i] ;
+		rbIntFraction += rb.intFraction ;
 	}
 
 	pbData.mu.segment( rb.nodes.offset, rb.nodes.count() ).setConstant( c.muRigid ) ;
@@ -146,11 +146,13 @@ void PhaseSolver::addCohesionContrib (const Config&c, const PhaseStepData &stepD
 	DynVec cohe_force ;
 	{
 		const Scalar cohe_start = .999 * c.phiMax ;
-		const DynArr contact_zone = ( ( stepData.fraction.array() - cohe_start )/ (c.phiMax - cohe_start) ).max(0).min(1) ;
+		const DynArr contact_zone = (
+					( stepData.forms.fraction/stepData.forms.volumes - cohe_start )
+					/ (c.phiMax - cohe_start) ).max(0).min(1) ;
 
 		DynVec cohe_stress  = DynVec::Zero( pbData.H.rows() ) ;
 		component< SD >( cohe_stress, 0 ).head( stepData.cohesion.rows()).array() =
-				c.cohesion * stepData.cohesion.array() * contact_zone ;
+				c.cohesion * stepData.cohesion * contact_zone ;
 		cohe_force = pbData.H.transpose() * cohe_stress ;
 	}
 
@@ -174,10 +176,11 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 
 	// Inertia, mu(I) = \delta_mu * (1./ (1 + I0/I) ), I = dp * sqrt( rho ) * inertia, inertia = |D(U)|/sqrt(p)
 	const Scalar I0bar = c.I0 / ( c.grainDiameter * std::sqrt( c.volMass )) ;
-	pbData.mu.segment(0,stepData.fraction.rows()).array() = c.mu +
-			c.delta_mu / ( 1. + I0bar / stepData.inertia.array().max(1.e-12) ) ;
+	pbData.mu.segment(0,stepData.nDualNodes()).array() = c.mu +
+			c.delta_mu / ( 1. + I0bar / stepData.inertia.max(1.e-12) ) ;
 
-	DynArr totFraction = stepData.fraction ;
+	DynArr rbIntFraction( stepData.nDualNodes() ) ;
+	rbIntFraction.setZero() ;
 
 	// Rigid bodies
 	pbData.jacobians.reserve( rbData.size() ) ;
@@ -189,7 +192,7 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 		if( rb.nodes.count() == 0 )
 			continue ;
 
-		addRigidBodyContrib( c, dt, stepData, u, rb, pbData, totFraction );
+		addRigidBodyContrib( c, dt, stepData, u, rb, pbData, rbIntFraction );
 
 		// Do not use 2-ways coupling for bodies with very high inertias ( fixed boundaries)
 		if( pbData.inv_inertia_matrices.back().block(0).squaredNorm() < 1.e-16 ) {
@@ -205,8 +208,9 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 
 	// Compressability beta(phi)
 	{
-		const DynArr beta = ( c.phiMax - totFraction).max( 0 ) / dt ;
-		component< SD >( pbData.w, 0 ).head(beta.rows()).array() += beta * s_sqrt_2_d * stepData.forms.volumes.array() ;
+		const DynArr intBeta = ( c.phiMax*stepData.forms.volumes
+								 - stepData.forms.fraction - rbIntFraction ).max( 0 );
+		component< SD >( pbData.w, 0 ).head( stepData.nDualNodes() ).array() += intBeta  * s_sqrt_2_d / dt  ;
 	}
 
 	// Warm-start stresses
@@ -270,7 +274,8 @@ void PhaseSolver::enforceMaxFrac(const Config &c, const PhaseStepData &stepData,
 	pbData.H = stepData.forms.C * stepData.proj.vel ;
 	pbData.w.setZero( pbData.n() );
 
-	DynArr totFraction = stepData.fraction ;
+	DynArr rbIntFraction ( stepData.nDualNodes() ) ;
+	rbIntFraction.setZero() ;
 
 	for( const RigidBodyData& rb: rbData ) {
 
@@ -278,13 +283,12 @@ void PhaseSolver::enforceMaxFrac(const Config &c, const PhaseStepData &stepData,
 			continue ;
 
 		for( Index i = 0 ; i < rb.nodes.count() ; ++i ) {
-			Scalar& frac = totFraction( stepData.dualNodes.indices[ rb.nodes.revIndices[i] ] ) ;
-			frac = std::min( std::max( 1., frac ), frac + rb.fraction[i] ) ;
+			rbIntFraction += rb.intFraction ;
 		}
 	}
 
-	pbData.w.segment(0, totFraction.rows()) = ( c.phiMax - totFraction )
-			* stepData.forms.volumes.array()  ;
+	pbData.w.segment(0, stepData.nDualNodes() ) =
+			( c.phiMax*stepData.forms.volumes - stepData.forms.fraction - rbIntFraction ) ;
 
 	DynVec x = DynVec::Zero( pbData.n() ) ;
 	LCP lcp( pbData ) ;

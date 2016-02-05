@@ -155,13 +155,12 @@ void FormBuilder<LhsShape, RhsShape>::integrate_node( const CellIterator& cellBe
 		loc.cell = cell ;
 
 		m_lhsShape.mesh().get_geo( cell, cellGeo );
+		const Scalar w = cellGeo.volume() / LhsShape::NI ;
 
-		const Scalar w = cellGeo.volume() / MeshType::NV ;
+		for ( int k = 0 ; k < LhsShape::NI ; ++k ) {
 
-		for ( int k = 0 ; k < MeshType::NV ; ++k ) {
-
-			cellGeo.vertexCoords(k, loc.coords) ;
-			const Vec &pos = cellGeo.vertex(k) ;
+			m_lhsShape.locate_dof(loc, k) ;
+			const Vec &pos = cellGeo.pos( loc.coords ) ;
 
 			m_lhsShape.interpolate ( loc, lhs_itp );
 			m_rhsShape.interpolate ( loc, rhs_itp );
