@@ -23,7 +23,9 @@
 
 namespace d6 {
 
-void PhaseStepData::computeProjectors(const bool weakStressBC, const std::vector<RigidBodyData> &rbData,
+void PhaseStepData::computeProjectors(const Config&config,
+									  const PrimalShape& pShape, const DualShape &dShape,
+									  const std::vector<RigidBodyData> &rbData,
 									  Projectors& mats) const
 {
 	const Index m  = nPrimalNodes() ;
@@ -31,40 +33,72 @@ void PhaseStepData::computeProjectors(const bool weakStressBC, const std::vector
 	const Index nc = nSuppNodes() ;
 
 	mats.vel.setRows( m );
-	mats.vel.reserve( m );
+	mats.vel.setIdentity() ;
 
 	mats.stress.setRows( n+nc );
-	mats.stress.reserve( n+nc );
+	mats.stress.setIdentity() ;
 
-	// FIXME different nodes
+	typedef typename PrimalShape::MeshType MeshType ;
 
-	for( Index i = 0 ; i < nodes.count() ; ++i  ) {
-		const Index idx = nodes.revIndices[ i ] ;
+	StrBoundaryMapper bdMapper ( config.boundary ) ;
 
-		m_surfaceNodes[idx].velProj( mats.vel.insertBack( i,i ) ) ;
+	for( const typename MeshType::Cell& cell : nodes.cells )
+	{
+		if( ! pShape.mesh().onBoundary(cell) ) continue ;
 
-		if( weakStressBC )
-			mats.stress.insertBack( i,i ).setIdentity() ;
-		else
-			m_surfaceNodes[idx].stressProj( mats.stress.insertBack( i,i ) ) ;
+		typename PrimalShape::Location ploc ;
+		typename PrimalShape::NodeList pnodes ;
+		ploc.cell = cell ;
+		pShape.list_nodes( ploc, pnodes ) ;
+
+		for( unsigned k = 0 ; k < PrimalShape::NI ; ++k ) {
+			const Index i = nodes.indices[ pnodes[k] ] ;
+			BoundaryInfo info ;
+			pShape.locate_dof( ploc, k ) ;
+			pShape.mesh().boundaryInfo( ploc, bdMapper, info ) ;
+			info.velProj( mats.vel.block( i ) ) ;
+		}
+
+		if( config.weakStressBC )  continue ;
+
+		typename DualShape::Location dloc ;
+		typename DualShape::NodeList dnodes ;
+		dShape.locate( pShape.qpIterator(&cell).pos(), dloc ) ;
+		dShape.list_nodes( dloc, dnodes ) ;
+
+		for( unsigned k = 0 ; k < DualShape::NI ; ++k ) {
+			const Index i = nodes.indices[ dnodes[k] ] ;
+			BoundaryInfo info ;
+			dShape.locate_dof( dloc, k ) ;
+			dShape.mesh().boundaryInfo( dloc, bdMapper, info ) ;
+			info.stressProj( mats.stress.block( i ) ) ;
+		}
+
 	}
 
 	// Additional nodes for frictional boundaries
-	for( unsigned k = 0 ; k < rbData.size() ; ++k ) {
-		for( Index i = 0 ; i < rbData[k].nodes.count() ; ++i  ) {
-			const Index   j = rbData[k].nodes.offset + i ;
-			const Index idx = rbData[k].nodes.revIndices[ i ] ;
+	for( const RigidBodyData& rb: rbData ) {
+		for( const typename MeshType::Cell& cell : rb.nodes.cells )	{
+			if( ! pShape.mesh().onBoundary(cell) ) continue ;
+
+			typename PrimalShape::Location ploc ;
+			typename PrimalShape::NodeList pnodes ;
+			ploc.cell = cell ;
+			pShape.list_nodes( ploc, pnodes ) ;
 
 			// Ignore RB-boundary constraints on Dirichlet boundaries
-			if( m_surfaceNodes[idx].bc == BoundaryInfo::Stick )
-				mats.stress.insertBack( j,j ).setZero() ;
-			else
-				mats.stress.insertBack( j,j ).setIdentity() ;
+			for( unsigned k = 0 ; k < PrimalShape::NI ; ++k ) {
+				dShape.locate_dof( ploc, k ) ;
+				BoundaryInfo info ;
+				pShape.mesh().boundaryInfo( ploc, bdMapper, info ) ;
+				if( info.bc == BoundaryInfo::Stick ) {
+					const Index i = rb.nodes.indices[ pnodes[k] ] ;
+					mats.stress.block( i ).setZero() ;
+				}
+			}
 		}
 	}
 
-	mats.stress.finalize();
-	mats.vel   .finalize();
 }
 
 void PhaseStepData::assembleMatrices(const Particles &particles,
@@ -91,7 +125,7 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 
 	const Scalar mass_regul = 1.e-8 ;
 
-	computeProjectors( config.weakStressBC, rbData, proj ) ;
+	computeProjectors( config, pShape, dShape, rbData, proj ) ;
 
 	// Lumped mass matrix
 	{
@@ -333,10 +367,6 @@ void PhaseStepData::compute(const DynParticles& particles,
 	const PrimalShape& pShape = phase.velocity.shape() ;
 	const   DualShape& dShape = phase.stresses.shape() ;
 
-	//FIXME surface nodes
-	m_surfaceNodes.clear();
-	m_surfaceNodes.resize( pShape.mesh().nNodes() );
-
 	// Transfer particles quantities to grid
 	PrimalScalarField intPhiPrimal  ( pShape ) ;
 	PrimalVectorField intPhiVel     ( pShape ) ;
@@ -372,7 +402,6 @@ void PhaseStepData::compute(const DynParticles& particles,
 	computeActiveBodies( rigidBodies, rbStresses, rbData );
 
 	// Bilinear forms matrices
-	pShape.mesh().make_bc( StrBoundaryMapper( config.boundary ), m_surfaceNodes ) ;
 	assembleMatrices( particles.geo(), config, dt, dShape, intPhiPrimal, rbData );
 
 	nodes.field2var( intPhiVel, forms.phiu ) ;
@@ -478,7 +507,6 @@ void PhaseStepData::computeActiveNodes(const std::vector<bool> &activeCells ,
 
 			nodes.indices[i] = nodes.nNodes++ ;
 
-			m_surfaceNodes[i].bc = BoundaryInfo::Interior ;
 		}
 	}
 
@@ -497,7 +525,7 @@ void PhaseStepData::computeActiveBodies( std::vector<RigidBody> &rigidBodies,
 
 #pragma omp parallel for
 	for( unsigned i = 0 ; i < rigidBodies.size() ; ++i ) {
-		rbData[i].compute_active( nodes, m_surfaceNodes ) ;
+		rbData[i].compute_active( nodes ) ;
 		rbData[i].nodes.computeRevIndices() ;
 	}
 
@@ -507,8 +535,6 @@ void PhaseStepData::computeActiveBodies( std::vector<RigidBody> &rigidBodies,
 		rbData[i].nodes.setOffset( m_totRbNodes + nodes.count() ) ;
 		m_totRbNodes += rbData[i].nodes.count() ;
 	}
-	Log::Debug() << "Tot coupling nodes: " << nSuppNodes() << std::endl ;
-
 
 
 }

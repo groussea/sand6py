@@ -69,8 +69,12 @@ public:
 		derived().get_geo( cell, geo ) ;
 	}
 
-	void make_bc( const BoundaryMapper& mapper, BoundaryConditions &bc ) const {
-		derived().make_bc( mapper, bc ) ;
+	bool onBoundary( const Cell &cell ) const {
+		return derived().onBoundary( cell ) ;
+	}
+
+	void boundaryInfo( const Location &loc, const BoundaryMapper& mapper, BoundaryInfo& bc ) const {
+		derived().boundaryInfo( loc, mapper, bc ) ;
 	}
 
 	Vec pos( const Location& loc ) const ;

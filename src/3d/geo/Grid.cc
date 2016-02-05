@@ -35,27 +35,29 @@ void Grid::set_box( const Vec& box )
 	m_dx = box.array()/m_dim.array().cast< Scalar >() ;
 }
 
-
-void Grid::make_bc( const BoundaryMapper& mapper, BoundaryConditions &bc ) const
+void Grid::boundaryInfo( const Location &loc, const BoundaryMapper& mapper, BoundaryInfo &info ) const
 {
-	for( Index i = 0 ; i <= m_dim[1] ; ++i ) {
-		for( Index j = 0 ; j <= m_dim[2] ; ++j ) {
-			bc[ nodeIndex( Vertex(0       , i, j) ) ].combine( mapper( "left"), Vec(-1,0,0) ) ;
-			bc[ nodeIndex( Vertex(m_dim[0], i, j) ) ].combine( mapper("right"), Vec( 1,0,0) ) ;
-		}
-	}
-	for( Index i = 0 ; i <= m_dim[0] ; ++i ) {
-		for( Index j = 0 ; j <= m_dim[2] ; ++j ) {
-			bc[ nodeIndex( Vertex(i, 0       , j) ) ].combine( mapper("front"), Vec(0,-1,0) ) ;
-			bc[ nodeIndex( Vertex(i, m_dim[1], j) ) ].combine( mapper( "back"), Vec(0, 1,0) ) ;
-		}
-	}
-	for( Index i = 0 ; i <= m_dim[0] ; ++i ) {
-		for( Index j = 0 ; j <= m_dim[1] ; ++j ) {
-			bc[ nodeIndex( Vertex(i, j, 0       ) ) ].combine( mapper("bottom"), Vec(0,0,-1) ) ;
-			bc[ nodeIndex( Vertex(i, j, m_dim[2]) ) ].combine( mapper(   "top"), Vec(0,0, 1) ) ;
-		}
-	}
+	constexpr Scalar eps = 1.e-6 ;
+
+	const Vec &p = pos( loc ) ;
+	const Vec &b = box() ;
+
+	info.bc = BoundaryInfo::Interior ;
+
+	if( p[0] < eps )
+		info.combine( mapper( "left"), Vec(-1,0,0) ) ;
+	if( p[0] > b[0] - eps )
+		info.combine( mapper("right"), Vec( 1,0,0) ) ;
+
+	if( p[1] < eps )
+		info.combine( mapper("front"), Vec(0,-1,0) ) ;
+	if( p[1] > b[1] - eps )
+		info.combine( mapper( "back"), Vec(0, 1,0) ) ;
+
+	if( p[2] < eps )
+		info.combine( mapper("bottom"), Vec(0,0,-1) ) ;
+	if( p[2] > b[2] - eps )
+		info.combine( mapper(   "top"), Vec(0,0, 1) ) ;
 }
 
 } //d6

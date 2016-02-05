@@ -80,9 +80,7 @@ struct UnstructuredShapeFunc : public ShapeFuncBase< UnstructuredShapeFunc >
 
 	void compute_volumes( DynVec& volumes ) const
 	{
-		// FIXME
-		// TODO compute half-distance to nearest-neighbour
-		volumes.setZero( nDOF() ) ;
+		volumes = m_dofDef.weights ;
 	}
 
 	Index nDOF() const { return m_dofDef.vertices.cols() ; }

@@ -5,42 +5,50 @@ namespace d6 {
 
 GridIterator& GridIterator::operator ++()
 {
-	++cell[1] ;
-	if(cell[1] == grid.dim()[1]) {
-		cell[1] = 0 ;
-		++cell[0] ;
-	}
+    ++cell[1] ;
+    if(cell[1] == grid.dim()[1]) {
+        cell[1] = 0 ;
+        ++cell[0] ;
+    }
 
-	return *this ;
+    return *this ;
 }
 
 Index GridIterator::index() const
 {
-	return grid.cellIndex( cell ) ;
+    return grid.cellIndex( cell ) ;
 }
 
 Grid::Grid(const Vec &box, const VecWi &res)
-	: Base()
+    : Base()
 {
-	m_dim = res ;
-	set_box( box ) ;
+    m_dim = res ;
+    set_box( box ) ;
 }
 
 void Grid::set_box( const Vec& box )
 {
-	m_dx.array() = box.array()/m_dim.array().cast< Scalar >() ;
+    m_dx.array() = box.array()/m_dim.array().cast< Scalar >() ;
 }
 
-void Grid::make_bc( const BoundaryMapper& mapper, BoundaryConditions &bc ) const
+void Grid::boundaryInfo( const Location &loc, const BoundaryMapper& mapper, BoundaryInfo &info ) const
 {
-	for( Index i = 0 ; i <= m_dim[1] ; ++i ) {
-		bc[ nodeIndex( Vertex(0       , i) ) ].combine( mapper( "left"), Vec(-1,0) ) ;
-		bc[ nodeIndex( Vertex(m_dim[0], i) ) ].combine( mapper("right"), Vec( 1,0) ) ;
-	}
-	for( Index i = 0 ; i <= m_dim[0] ; ++i ) {
-		bc[ nodeIndex( Vertex(i, 0       ) ) ].combine( mapper("bottom"), Vec(0,-1) ) ;
-		bc[ nodeIndex( Vertex(i, m_dim[1]) ) ].combine( mapper(   "top"), Vec(0, 1) ) ;
-	}
+    constexpr Scalar eps = 1.e-6 ;
+
+    const Vec &p = pos( loc ) ;
+    const Vec &b = box() ;
+
+    info.bc = BoundaryInfo::Interior ;
+
+    if( p[0] < eps )
+        info.combine( mapper( "left"), Vec(-1,0) ) ;
+    if( p[0] > b[0] - eps )
+        info.combine( mapper("right"), Vec( 1,0) ) ;
+
+    if( p[1] < eps )
+        info.combine( mapper("bottom"), Vec(0,-1) ) ;
+    if( p[1] > b[1] - eps )
+        info.combine( mapper(   "top"), Vec(0, 1) ) ;
 }
 
 } //d6

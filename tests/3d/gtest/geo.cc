@@ -352,6 +352,9 @@ TEST( geo, adjacency )
 	Eigen::VectorXi nAdj ( g.nNodes() ) ;
 	nAdj.setZero() ;
 
+	StrBoundaryMapper mapper("diri") ;
+	std::vector< BoundaryInfo > bc ( nAdj.rows() ) ;
+
 	for( typename MeshType::CellIterator it = g.cellBegin() ; it != g.cellEnd() ; ++it ) {
 
 		typename Linear<MeshImpl>::NodeList nodes ;
@@ -360,12 +363,12 @@ TEST( geo, adjacency )
 
 		for( Index k = 0 ; k < Linear<MeshImpl>::NI ; ++k ) {
 			nAdj[nodes[k]]++ ;
+
+			shape.locate_dof( loc, k );
+			g.boundaryInfo( loc, mapper, bc[nodes[k]] );
 		}
 	}
 
-	StrBoundaryMapper mapper("diri") ;
-	std::vector< BoundaryInfo > bc ( nAdj.rows() ) ;
-	g.make_bc( mapper, bc ) ;
 
 	for( Index i = 0 ; i < nAdj.rows() ; ++i ) {
 		if( bc[i].bc == BoundaryInfo::Interior ) {

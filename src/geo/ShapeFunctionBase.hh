@@ -47,6 +47,8 @@ struct ShapeFuncBase
 	{ derived().get_derivatives( loc, dc_dx ) ; }
 	void list_nodes( const Location& loc, NodeList& list ) const
 	{ derived().list_nodes( loc, list ) ; }
+	void locate_dof( Location& loc, Index dofIndex ) const
+	{ derived().locate_dof( loc, dofIndex ) ; }
 
 	void compute_volumes( DynVec& volumes ) const
 	{ derived().compute_volumes( volumes ) ; }
@@ -62,6 +64,7 @@ struct ShapeFuncBase
 	{ return derived().template qpIterator<CellIterator>( it ) ; }
 	const DOFDefinition& dofDefinition() const
 	{ return derived().dofDefinition() ; }
+
 };
 
 

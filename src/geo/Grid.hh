@@ -109,7 +109,11 @@ public:
 		ar &  m_dx ;
 	}
 
-	void make_bc( const BoundaryMapper& mapper, BoundaryConditions &bc ) const ;
+	bool onBoundary( const Cell &cell ) const {
+		return cell.minCoeff() == 0 || (m_dim - cell).minCoeff() == 1 ;
+	}
+
+	void boundaryInfo( const Location &loc, const BoundaryMapper& mapper, BoundaryInfo &info ) const ;
 
 	Index nAdjacent( Index ) const {
 		return NV ;

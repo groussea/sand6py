@@ -34,7 +34,7 @@ void RigidBodyData::grad_phi(const Vec &x, Vec &grad) const
 	grad /= s_splatRad ;
 }
 
-void RigidBodyData::compute_active( const Active& phaseNodes, BoundaryConditions& bc )
+void RigidBodyData::compute_active( const Active& phaseNodes )
 {
 	const TensorField::ShapeFuncImpl &shape = stresses.shape() ;
 	const MeshType &mesh = shape.mesh() ;
@@ -77,7 +77,6 @@ void RigidBodyData::compute_active( const Active& phaseNodes, BoundaryConditions
 			for( Index k = 0 ; k < nodelist.rows() ; ++k  ) {
 				if( nodes.indices[ nodelist[k] ] == Active::s_Inactive ) {
 					nodes.indices[ nodelist[k] ] = nodes.nNodes++ ;
-					bc[ nodelist[k] ].bc = BoundaryInfo::Interior ;
 				}
 			}
 		}

@@ -109,6 +109,12 @@ struct MeshShapeFunc : public ShapeFuncBase< Interp<MeshT> >
 		return typename Traits::template QPIterator<CellIterator>::Type( m_mesh, it ) ;
 	}
 
+	void locate_dof( typename Base::Location& loc, Index dofIndex ) const {
+		typename MeshType::CellGeo geo ;
+		m_mesh.get_geo( loc.cell, geo ) ;
+		geo.vertexCoords( dofIndex, loc.coords ) ;
+	}
+
 protected:
 	const MeshType& m_mesh ;
 

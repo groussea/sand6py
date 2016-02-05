@@ -40,7 +40,7 @@ void TetGrid::locate(const Vec &x, Location &loc) const
 	Vec pos = x.array()*m_idx.array() ;
 
 	loc.cell.segment<3>(0) =
-			pos.cast< Index >().cwiseMax( Vec3i::Zero() ).cwiseMin(m_dim-Vec3i::Ones()) ;
+			pos.cast< Index >().array().max( ArrWi::Zero() ).min(m_dim-ArrWi::Ones()) ;
 
 //	pos -= loc.cell.segment<3>(0).cast< Scalar >() ;
 
@@ -66,26 +66,29 @@ void TetGrid::get_geo( const Cell &cell, CellGeo& geo ) const {
 
 }
 
-void TetGrid::make_bc( const BoundaryMapper& mapper, BoundaryConditions &bc ) const
+void TetGrid::boundaryInfo( const Location &loc, const BoundaryMapper& mapper, BoundaryInfo &info ) const
 {
-	for( Index i = 0 ; i <= m_dim[1] ; ++i ) {
-		for( Index j = 0 ; j <= m_dim[2] ; ++j ) {
-			bc[ nodeIndex( Vertex(0       , i, j) ) ].combine( mapper( "left"), Vec(-1,0,0) ) ;
-			bc[ nodeIndex( Vertex(m_dim[0], i, j) ) ].combine( mapper("right"), Vec( 1,0,0) ) ;
-		}
-	}
-	for( Index i = 0 ; i <= m_dim[0] ; ++i ) {
-		for( Index j = 0 ; j <= m_dim[2] ; ++j ) {
-			bc[ nodeIndex( Vertex(i, 0       , j) ) ].combine( mapper("front"), Vec(0,-1,0) ) ;
-			bc[ nodeIndex( Vertex(i, m_dim[1], j) ) ].combine( mapper( "back"), Vec(0, 1,0) ) ;
-		}
-	}
-	for( Index i = 0 ; i <= m_dim[0] ; ++i ) {
-		for( Index j = 0 ; j <= m_dim[1] ; ++j ) {
-			bc[ nodeIndex( Vertex(i, j, 0       ) ) ].combine( mapper("bottom"), Vec(0,0,-1) ) ;
-			bc[ nodeIndex( Vertex(i, j, m_dim[2]) ) ].combine( mapper(   "top"), Vec(0,0, 1) ) ;
-		}
-	}
+	constexpr Scalar eps = 1.e-6 ;
+
+	const Vec &p = pos( loc ) ;
+	const Vec &b = box() ;
+
+	info.bc = BoundaryInfo::Interior ;
+
+	if( p[0] < eps )
+		info.combine( mapper( "left"), Vec(-1,0,0) ) ;
+	if( p[0] > b[0] - eps )
+		info.combine( mapper("right"), Vec( 1,0,0) ) ;
+
+	if( p[1] < eps )
+		info.combine( mapper("front"), Vec(0,-1,0) ) ;
+	if( p[1] > b[1] - eps )
+		info.combine( mapper( "back"), Vec(0, 1,0) ) ;
+
+	if( p[2] < eps )
+		info.combine( mapper("bottom"), Vec(0,0,-1) ) ;
+	if( p[2] > b[2] - eps )
+		info.combine( mapper(   "top"), Vec(0,0, 1) ) ;
 }
 
 

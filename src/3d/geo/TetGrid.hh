@@ -88,8 +88,6 @@ public:
 		ar & m_idx ;
 	}
 
-	void make_bc( const BoundaryMapper& mapper, BoundaryConditions &bc ) const ;
-
 	Index nAdjacent( Index idx ) const {
 		Vec3i node ;
 		node[0] = idx / ( (m_dim[2]+1) * (m_dim[1]+1) ) ;
@@ -103,7 +101,7 @@ public:
 
 	}
 
-	const Vec3i& dim() const { return m_dim ; }
+	const ArrWi& dim() const { return m_dim ; }
 	const Vec&    dx() const { return  m_dx ; }
 	const Vec&   idx() const { return m_idx ; }
 
@@ -114,6 +112,12 @@ public:
 			+  node[2] ;
 	}
 
+	bool onBoundary( const Cell &cell ) const {
+		return cell.head<WD>().minCoeff() == 0 || (m_dim - cell.head<WD>()).minCoeff() == 1 ;
+	}
+
+	void boundaryInfo( const Location &loc, const BoundaryMapper& mapper, BoundaryInfo &info ) const ;
+
 private:
 
 
@@ -121,10 +125,10 @@ private:
 		corner = (cell.array().cast< Scalar >() * m_dx.array()).matrix() ;
 	}
 
-	Vec firstCorner( const Vec3i &cell ) const
+	Vec firstCorner( const ArrWi &cell ) const
 	{ Vec corner ; get_corner( cell, corner ) ; return corner ; }
 
-	Vec3i m_dim ;
+	ArrWi m_dim ;
 	Vec   m_dx  ;
 	Vec   m_idx  ;
 

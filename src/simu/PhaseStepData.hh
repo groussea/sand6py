@@ -88,8 +88,8 @@ private:
 							  std::vector<RBStresses> &rbStresses,
 							  std::vector< RigidBodyData > &rbData ) ;
 
-	void computeProjectors( const bool weakStressBC, const std::vector<RigidBodyData> & rbData,
-							Projectors& mats ) const ;
+	void computeProjectors(const Config &config, const PrimalShape &pShape, const DualShape &dShape,
+						   const std::vector<RigidBodyData> & rbData, Projectors& mats ) const ;
 
 	void computeAnisotropy(const DynVec& orientation,  const Config &config,
 						   typename FormMat<SD,SD>::SymType &Aniso ) const ;
@@ -104,7 +104,6 @@ private:
 	PhaseStepData( const PhaseStepData& ) = delete ;
 	PhaseStepData& operator=( const PhaseStepData& ) = delete ;
 
-	BoundaryConditions m_surfaceNodes ;
 	Index m_totRbNodes ;
 };
 

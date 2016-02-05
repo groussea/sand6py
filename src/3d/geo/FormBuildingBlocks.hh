@@ -4,9 +4,7 @@ namespace d6 {
 
 struct FormBlocks {
 
-	// FIXME differente approx for
-
-	/*
+/*
  *
  * D( u )
  * a = Tr D(u) / sqrt(6) = ( dux_dx + duy_dy + duz_dz ) / sqrt(6)

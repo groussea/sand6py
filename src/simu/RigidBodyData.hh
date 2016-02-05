@@ -24,7 +24,7 @@ struct RigidBodyData
 	void grad_phi( const Vec &x, Vec &grad ) const ;
 
 	//! Computes nodes that are influenced by the rigid-body
-	void compute_active( const Active& phaseNodes, BoundaryConditions &bc ) ;
+	void compute_active( const Active& phaseNodes ) ;
 	//! Assembles projection and jacobian matrices
 	void assemble_matrices(const PrimalShape &primalShape, const DualShape &dualShape,
 						   const Active &primalNodes, const Active& dualNodes,
