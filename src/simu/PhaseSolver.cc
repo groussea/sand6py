@@ -83,7 +83,7 @@ void PhaseSolver::solve(
 		Eigen::VectorXd depl ;
 		enforceMaxFrac( config, stepData, rbData, depl );
 
-		stepData.nodes.var2field( depl, phase.geo_proj ) ; //Purely geometric
+		stepData.primalNodes.var2field( depl, phase.geo_proj ) ; //Purely geometric
 		// u += depl/dt ; // Includes proj into inertia
 
 		stats.lcpSolveTime = timer.elapsed() -  stats.linSolveTime ;
@@ -93,19 +93,19 @@ void PhaseSolver::solve(
 	solveComplementarity( config, dt, stepData, rbData,  u, phase, stats );
 
 	// Output
-	stepData.nodes.var2field( u, phase.velocity ) ;
+	stepData.primalNodes.var2field( u, phase.velocity ) ;
 
 	{
 		// Velocities gradient D(u) and W(u)
-		DynVec int_phiDu = .5 * ( stepData.proj.stress * stepData.forms.B * u ).head( SD * stepData.nodes.count() ) ;
+		DynVec int_phiDu = .5 * ( stepData.proj.stress * stepData.forms.B * u ).head( SD * stepData.nDualNodes() ) ;
 		DynVec int_phiWu = .5 * stepData.forms.J * u ;
 		const DynVec int_phi = stepData.forms.volumes.array()*stepData.fraction.array().max( 1.e-16 ) ;
 
 		div_compwise<SD>( int_phiDu, int_phi ) ;
 		div_compwise<RD>( int_phiWu, int_phi ) ;
 
-		stepData.nodes.var2field( int_phiWu, phase.spi_grad ) ;
-		stepData.nodes.var2field( int_phiDu, phase.sym_grad ) ;
+		stepData.dualNodes.var2field( int_phiWu, phase.spi_grad ) ;
+		stepData.dualNodes.var2field( int_phiDu, phase.sym_grad ) ;
 	}
 }
 
@@ -125,7 +125,7 @@ void PhaseSolver::addRigidBodyContrib( const Config &c, const Scalar dt, const P
 
 	// Add volume fraction taken by rb
 	for( Index i = 0 ; i < rb.nodes.count() ; ++i ) {
-		totFraction( stepData.nodes.indices[ rb.nodes.revIndices[i] ] ) += rb.fraction[i] ;
+		totFraction( stepData.dualNodes.indices[ rb.nodes.revIndices[i] ] ) += rb.fraction[i] ;
 	}
 
 	pbData.mu.segment( rb.nodes.offset, rb.nodes.count() ).setConstant( c.muRigid ) ;
@@ -212,7 +212,7 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	// Warm-start stresses
 	DynVec x( pbData.w.rows() ), y( pbData.w.rows() ) ;
 
-	stepData.nodes.field2var( phase.stresses, x, false ) ;
+	stepData.dualNodes.field2var( phase.stresses, x, false ) ;
 	for( unsigned k = 0 ; k < rbData.size() ; ++k ) {
 		RigidBodyData& rb = rbData[k] ;
 		rb.nodes.field2var( rb.stresses, x, false ) ;
@@ -241,11 +241,11 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	{
 		const DynVec fcontact = stepData.proj.vel * stepData.forms.B.transpose() *
 								stepData.proj.stress *  stepData.Aniso * x ;
-		stepData.nodes.var2field( fcontact, phase.fcontact ) ;
+		stepData.primalNodes.var2field( fcontact, phase.fcontact ) ;
 	}
 
 	// Save stresses for warm-starting next step
-	stepData.nodes.var2field( x, phase.stresses ) ;
+	stepData.dualNodes.var2field( x, phase.stresses ) ;
 	for( unsigned k = 0 ; k < rbData.size() ; ++k ) {
 		RigidBodyData& rb = rbData[k] ;
 		rb.nodes.var2field( x, rb.stresses ) ;
@@ -278,7 +278,7 @@ void PhaseSolver::enforceMaxFrac(const Config &c, const PhaseStepData &stepData,
 			continue ;
 
 		for( Index i = 0 ; i < rb.nodes.count() ; ++i ) {
-			Scalar& frac = totFraction( stepData.nodes.indices[ rb.nodes.revIndices[i] ] ) ;
+			Scalar& frac = totFraction( stepData.dualNodes.indices[ rb.nodes.revIndices[i] ] ) ;
 			frac = std::min( std::max( 1., frac ), frac + rb.fraction[i] ) ;
 		}
 	}

@@ -42,7 +42,7 @@ void PhaseStepData::computeProjectors(const Config&config,
 
 	StrBoundaryMapper bdMapper ( config.boundary ) ;
 
-	for( const typename MeshType::Cell& cell : nodes.cells )
+	for( const typename MeshType::Cell& cell : primalNodes.cells )
 	{
 		if( ! pShape.mesh().onBoundary(cell) ) continue ;
 
@@ -52,7 +52,7 @@ void PhaseStepData::computeProjectors(const Config&config,
 		pShape.list_nodes( ploc, pnodes ) ;
 
 		for( unsigned k = 0 ; k < PrimalShape::NI ; ++k ) {
-			const Index i = nodes.indices[ pnodes[k] ] ;
+			const Index i = primalNodes.indices[ pnodes[k] ] ;
 			BoundaryInfo info ;
 			pShape.locate_dof( ploc, k ) ;
 			pShape.mesh().boundaryInfo( ploc, bdMapper, info ) ;
@@ -67,7 +67,7 @@ void PhaseStepData::computeProjectors(const Config&config,
 		dShape.list_nodes( dloc, dnodes ) ;
 
 		for( unsigned k = 0 ; k < DualShape::NI ; ++k ) {
-			const Index i = nodes.indices[ dnodes[k] ] ;
+			const Index i = dualNodes.indices[ dnodes[k] ] ;
 			BoundaryInfo info ;
 			dShape.locate_dof( dloc, k ) ;
 			dShape.mesh().boundaryInfo( dloc, bdMapper, info ) ;
@@ -138,7 +138,7 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 
 	#pragma omp parallel for
 		for( Index i = 0 ; i < m ; ++i ) {
-			forms.M_lumped.block( i ) *= phiInt[ nodes.revIndices[i] ] ;
+			forms.M_lumped.block( i ) *= phiInt[ primalNodes.revIndices[i] ] ;
 		}
 	}
 
@@ -149,7 +149,7 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 		typedef FormBuilder< PrimalShape, PrimalShape > Builder ;
 		Builder builder( pShape, pShape ) ;
 		builder.reset( m );
-		builder.addToIndex< form::Left >( nodes.cells.begin(), nodes.cells.end(), nodes.indices, nodes.indices );
+		builder.addToIndex< form::Left >( primalNodes.cells.begin(), primalNodes.cells.end(), primalNodes.indices, primalNodes.indices );
 		builder.makeCompressed();
 
 		// A
@@ -164,7 +164,7 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 #ifdef FULL_FEM
 		builder.integrate_qp( [&]( Scalar w, const Vec&, const P_Itp& itp, const P_Dcdx& dc_dx )
 			{
-				Builder:: addDuDv( forms.A, w, itp, dc_dx, nodes.indices, nodes.indices ) ;
+				Builder:: addDuDv( forms.A, w, itp, dc_dx, primalNodes.indices, primalNodes.indices ) ;
 			}
 		);
 		Log::Debug() << "A Integrate grid: " << timer.elapsed() << std::endl ;
@@ -174,7 +174,7 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 
 		builder.integrate_particle( particles, [&]( Index, Scalar w, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& r_dc_dx )
 			{
-				Builder:: addDuDv( forms.A, w, l_itp, l_dc_dx, r_itp, r_dc_dx, nodes.indices, nodes.indices ) ;
+				Builder:: addDuDv( forms.A, w, l_itp, l_dc_dx, r_itp, r_dc_dx, primalNodes.indices, primalNodes.indices ) ;
 			}
 		);
 	}
@@ -188,7 +188,7 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 
 		Builder builder( dShape, pShape ) ;
 		builder.reset( n );
-		builder.addToIndex< form::Right >( nodes.cells.begin(), nodes.cells.end(), nodes.indices, nodes.indices );
+		builder.addToIndex< form::Right >( primalNodes.cells.begin(), primalNodes.cells.end(), dualNodes.indices, primalNodes.indices );
 		builder.makeCompressed();
 
 		Log::Debug() << "Index computation: " << timer.elapsed() << std::endl ;
@@ -285,10 +285,10 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 #else
 		builder.integrate_particle( particles, [&]( Index, Scalar w, const D_Itp& l_itp, const D_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& r_dc_dx )
 			{
-				Builder::addTauDu( forms.B, w, l_itp, r_itp, r_dc_dx, nodes.indices, nodes.indices ) ;
-				Builder::addTauWu( forms.J, w, l_itp, r_itp, r_dc_dx, nodes.indices, nodes.indices ) ;
+				Builder::addTauDu( forms.B, w, l_itp, r_itp, r_dc_dx, dualNodes.indices, primalNodes.indices ) ;
+				Builder::addTauWu( forms.J, w, l_itp, r_itp, r_dc_dx, dualNodes.indices, primalNodes.indices ) ;
 				if( config.enforceMaxFrac ) {
-					Builder::addDpV  ( forms.C, w, l_itp, l_dc_dx, r_itp, nodes.indices, nodes.indices ) ;
+					Builder::addDpV  ( forms.C, w, l_itp, l_dc_dx, r_itp, dualNodes.indices, primalNodes.indices ) ;
 				}
 			}
 		);
@@ -302,7 +302,7 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 #pragma omp parallel for if( rbData.size() > 1)
 	for( unsigned k = 0 ; k < rbData.size() ; ++k )
 	{
-		rbData[k].assemble_matrices( pShape, dShape, nodes, nodes, n+nc ) ;
+		rbData[k].assemble_matrices( pShape, dShape, primalNodes, dualNodes, n+nc ) ;
 	}
 	Log::Debug() << "Integrate rbs: " << timer.elapsed() << std::endl ;
 
@@ -343,10 +343,10 @@ void PhaseStepData::computeAnisotropy(const DynVec &orientation, const Config& c
 	if( config.anisotropy <= 0 )
 		return ;
 
-	const Index m  = nodes.count() ;
+	const Index n  = nDualNodes() ;
 
 #pragma omp parallel for
-	for( Index i = 0 ; i < m ; ++i ) {
+	for( Index i = 0 ; i < n ; ++i ) {
 
 		Mat ori ;
 		tensor_view( Segmenter<SD>::segment( orientation, i ) ).get( ori ) ;
@@ -395,16 +395,18 @@ void PhaseStepData::compute(const DynParticles& particles,
 	computePhiAndGradPhi( intPhiPrimal, phase.fraction, phase.grad_phi ) ;
 
 	// Active nodes
-	computeActiveNodes( activeCells, phase.grad_phi ) ;
-	Log::Verbose() << "Active nodes: " << nodes.count() << " / " << pShape.nDOF() << std::endl;
+	computeActiveNodes( activeCells, pShape, dShape ) ;
+	Log::Verbose() << "Active nodes: " << nPrimalNodes() << " / " << pShape.nDOF() << std::endl;
+	Log::Verbose() << "  Dual nodes: " <<   nDualNodes() << " / " << dShape.nDOF() << std::endl;
 
 	//Rigid bodies and frictional boundaries
 	computeActiveBodies( rigidBodies, rbStresses, rbData );
+	Log::Debug() << "Tot coupling nodes: " << nSuppNodes() << std::endl ;
 
 	// Bilinear forms matrices
 	assembleMatrices( particles.geo(), config, dt, dShape, intPhiPrimal, rbData );
 
-	nodes.field2var( intPhiVel, forms.phiu ) ;
+	primalNodes.field2var( intPhiVel, forms.phiu ) ;
 
 	// Cohesion, inertia, orientation
 	DynVec orientation ;
@@ -412,9 +414,9 @@ void PhaseStepData::compute(const DynParticles& particles,
 	intPhiInertia .divide_by_positive( intPhiDual ) ;
 	intPhiOrient  .divide_by_positive( intPhiDual ) ;
 
-	nodes.field2var( intPhiCohesion, cohesion ) ;
-	nodes.field2var( intPhiInertia , inertia  ) ;
-	nodes.field2var( intPhiOrient  , orientation  ) ;
+	dualNodes.field2var( intPhiCohesion, cohesion ) ;
+	dualNodes.field2var( intPhiInertia , inertia  ) ;
+	dualNodes.field2var( intPhiOrient  , orientation  ) ;
 
 	computeAnisotropy( orientation, config, Aniso );
 
@@ -424,8 +426,8 @@ void PhaseStepData::compute(const DynParticles& particles,
 		DualScalarField volumes ( intPhiDual.shape() ) ;
 		intPhiDual.shape().compute_volumes( volumes.flatten() );
 		intPhiDual.divide_by_positive( volumes ) ;
-		nodes.field2var( volumes, forms.volumes ) ;
-		nodes.field2var( intPhiDual, fraction ) ;
+		dualNodes.field2var( volumes, forms.volumes ) ;
+		dualNodes.field2var( intPhiDual, fraction ) ;
 	}
 
 	// External forces
@@ -433,7 +435,7 @@ void PhaseStepData::compute(const DynParticles& particles,
 	gravity.set_constant( config.gravity );
 	gravity.multiply_by( intPhiPrimal ) ;
 	gravity.flatten() *= config.volMass ;
-	nodes.field2var( gravity, forms.externalForces ) ;
+	primalNodes.field2var( gravity, forms.externalForces ) ;
 }
 
 
@@ -471,46 +473,60 @@ void PhaseStepData::computePhiAndGradPhi(const PrimalScalarField &intPhi, Primal
 }
 
 void PhaseStepData::computeActiveNodes(const std::vector<bool> &activeCells ,
-									 const PrimalVectorField &grad_phi )
+									 const PrimalShape& pShape, const DualShape& dShape )
 {
 	typedef typename PrimalShape::MeshType MeshType ;
-	//FIXME compute acitve dual nodes
 
-	const PrimalVectorField::ShapeFuncImpl& shape = grad_phi.shape() ;
-	const MeshType& mesh = shape.derived().mesh() ;
+	const MeshType& mesh = pShape.derived().mesh() ;
 
-	nodes.reset( mesh.nNodes() );
+	primalNodes.reset( pShape.nDOF() );
+	  dualNodes.reset( dShape.nDOF() ) ;
 
-	std::vector< int > activeNodes( mesh.nNodes(), 0 ) ;
+	std::vector< int > activePrimalNodes( mesh.nNodes(), 0 ) ;
+	std::vector< int >   activeDualNodes( mesh.nNodes(), 0 ) ;
 
 	Eigen::Matrix< Scalar, WD, Eigen::Dynamic > vecs( WD, mesh.nNodes() ) ;
 	vecs.setZero() ;
 
+
 	for( typename MeshType::CellIterator it = mesh.cellBegin() ; it != mesh.cellEnd() ; ++it )
 	{
 		if (!activeCells[ it.index() ] ) continue ;
+		primalNodes.cells.push_back( *it ) ;
 
-		nodes.cells.push_back( *it );
-
-		typename PrimalShape::NodeList nodes ;
-		shape.list_nodes( *it, nodes );
+		// Primal
+		typename PrimalShape::NodeList pnodes ;
+		pShape.list_nodes( *it, pnodes );
 
 		for( int k = 0 ; k < PrimalShape::NI ; ++ k ) {
-			++activeNodes[ nodes[k] ] ;
+			++activePrimalNodes[ pnodes[k] ] ;
 		}
 
+		// Dual
+		typename DualShape::Location dloc ;
+		typename DualShape::NodeList dnodes ;
+		dShape.locate( pShape.qpIterator( it ).pos(), dloc );
+		dShape.list_nodes( dloc, dnodes );
 
+		for( int k = 0 ; k < DualShape::NI ; ++ k ) {
+			++activeDualNodes[ dnodes[k] ] ;
+		}
 	}
-
-	for( size_t i = 0 ; i < activeNodes.size() ; ++i ) {
-		if( activeNodes[i] > 0 ) {
-
-			nodes.indices[i] = nodes.nNodes++ ;
-
+	for( size_t i = 0 ; i < activePrimalNodes.size() ; ++i ) {
+		if( activePrimalNodes[i] > 0 ) {
+			primalNodes.indices[i] = primalNodes.nNodes++ ;
+		}
+	}
+	for( size_t i = 0 ; i < activeDualNodes.size() ; ++i ) {
+		if( activeDualNodes[i] > 0 ) {
+			dualNodes.indices[i] = dualNodes.nNodes++ ;
 		}
 	}
 
-	nodes.computeRevIndices();
+	primalNodes.computeRevIndices();
+	  dualNodes.computeRevIndices();
+
+
 }
 
 void PhaseStepData::computeActiveBodies( std::vector<RigidBody> &rigidBodies,
@@ -525,14 +541,14 @@ void PhaseStepData::computeActiveBodies( std::vector<RigidBody> &rigidBodies,
 
 #pragma omp parallel for
 	for( unsigned i = 0 ; i < rigidBodies.size() ; ++i ) {
-		rbData[i].compute_active( nodes ) ;
+		rbData[i].compute_active( primalNodes ) ;
 		rbData[i].nodes.computeRevIndices() ;
 	}
 
 	m_totRbNodes = 0 ;
 	for( unsigned i = 0 ; i < rigidBodies.size() ; ++i )
 	{
-		rbData[i].nodes.setOffset( m_totRbNodes + nodes.count() ) ;
+		rbData[i].nodes.setOffset( m_totRbNodes + dualNodes.count() ) ;
 		m_totRbNodes += rbData[i].nodes.count() ;
 	}
 

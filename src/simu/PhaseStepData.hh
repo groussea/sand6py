@@ -17,7 +17,8 @@ struct Phase ;
 struct PhaseStepData {
 
 	//! Active nodes: nodes under the influence of at least one particle
-	Active nodes ;
+	Active primalNodes ;
+	Active dualNodes ;
 
 	struct Forms {
 		// Linear form vectors
@@ -60,13 +61,12 @@ struct PhaseStepData {
 
 	Index nPrimalNodes() const
 	{
-		return nodes.count() ;
+		return primalNodes.count() ;
 	}
 
 	Index nDualNodes() const
 	{
-		//FIXME for DG
-		return nodes.count() ;
+		return dualNodes.count() ;
 	}
 
 	Index nSuppNodes() const
@@ -83,7 +83,7 @@ struct PhaseStepData {
 
 private:
 	void computeActiveNodes(const std::vector< bool >& activeCells,
-							const PrimalVectorField &grad_phi ) ;
+							const PrimalShape &pShape , const DualShape &dShape) ;
 	void computeActiveBodies( std::vector<RigidBody> &rigidBodies,
 							  std::vector<RBStresses> &rbStresses,
 							  std::vector< RigidBodyData > &rbData ) ;
