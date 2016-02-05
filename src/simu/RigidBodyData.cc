@@ -84,52 +84,81 @@ void RigidBodyData::compute_active( const Active& phaseNodes, BoundaryConditions
 	}
 }
 
-void RigidBodyData::integrate(const PrimalShape& primalShape, const Active &phaseNodes, Index totNodes)
+void RigidBodyData::integrate(const PrimalShape& primalShape, const DualShape& dualShape,
+							  const Active &primalNodes, const Active& dualNodes,
+							  Index totNodes)
 {
 	//FIXME other approxes
-	typedef typename RBStresses::ShapeFuncImpl DualShapeFunc ;
+	typedef typename RBStresses::ShapeFuncImpl RBShapeFunc ;
 
-	typedef const typename PrimalShape  ::Interpolation& P_Itp ;
-	typedef const typename PrimalShape  ::Derivatives&   P_Dcdx ;
-	typedef const typename DualShapeFunc::Interpolation& D_Itp ;
-	typedef const typename DualShapeFunc::Derivatives&   D_Dcdx ;
+	static_assert( std::is_same< PrimalShape, RBShapeFunc >::value,
+			"Different RB and primal shape func not allowed yet" ) ;
 
-	const Index m = phaseNodes.count() ;
+	typedef const typename PrimalShape::Interpolation& P_Itp ;
+	typedef const typename PrimalShape::Derivatives&   P_Dcdx ;
+	typedef const typename DualShape  ::Interpolation& D_Itp ;
+	typedef const typename DualShape  ::Derivatives&   D_Dcdx ;
 
-	typedef FormBuilder< DualShapeFunc, PrimalShape > Builder ;
-	Builder builder( stresses.shape(), primalShape ) ;
+	const Index m = primalNodes.count() ;
 
-	builder.reset( totNodes );
-	builder.addToIndex<form::Left>( occupiedCells.begin(),occupiedCells.end(), phaseNodes.indices, phaseNodes.indices );
-	builder.addToIndex<form::Left>(   nodes.cells.begin(),  nodes.cells.end(),      nodes.indices, phaseNodes.indices );
-	builder.makeCompressed();
-
-	jacobian.clear() ;
-	jacobian.setRows( totNodes );
-	jacobian.setCols( m );
-	jacobian.cloneIndex( builder.index() ) ;
-	jacobian.setBlocksToZero() ;
-
-	builder.integrate_cell<form::Right>( occupiedCells.begin(), occupiedCells.end(), [&]( Scalar w, const Vec& pos, D_Itp l_itp, D_Dcdx, P_Itp r_itp, P_Dcdx )
 	{
-		Vec dphi_dx ;
-		grad_phi( pos, dphi_dx ) ;
+		typedef FormBuilder< DualShape, PrimalShape > Builder ;
+		Builder builder( dualShape, primalShape ) ;
 
-		Builder:: addUTaunGphi( jacobian, w, l_itp, r_itp, dphi_dx, phaseNodes.indices, phaseNodes.indices ) ;
+		builder.reset( totNodes );
+		builder.addToIndex<form::Right>( occupiedCells.begin(),occupiedCells.end(), dualNodes.indices, primalNodes.indices );
+		builder.makeCompressed();
+
+		jacobian.clear() ;
+		jacobian.setRows( totNodes );
+		jacobian.setCols( m );
+		jacobian.cloneIndex( builder.index() ) ;
+		jacobian.setBlocksToZero() ;
+
+		builder.integrate_cell<form::Right>( occupiedCells.begin(), occupiedCells.end(), [&]( Scalar w, const Vec& pos, D_Itp l_itp, D_Dcdx, P_Itp r_itp, P_Dcdx )
+		{
+			Vec dphi_dx ;
+			grad_phi( pos, dphi_dx ) ;
+
+			Builder:: addUTaunGphi( jacobian, w, l_itp, r_itp, dphi_dx, dualNodes.indices, primalNodes.indices ) ;
+		}
+		);
 	}
-	);
-	builder.integrate_node(  nodes.cells.begin(), nodes.cells.end(), [&]( Scalar w, const Vec& pos, D_Itp l_itp, P_Itp r_itp )
+
 	{
-		Vec dphi_dx ;
-		grad_phi( pos, dphi_dx ) ;
+		FormMat<SD,WD>::Type jacobian_2 ;
 
-		Builder:: addUTauGphi ( jacobian, w, l_itp, r_itp, dphi_dx,      nodes.indices, phaseNodes.indices ) ;
+		typedef FormBuilder< RBShapeFunc, PrimalShape > Builder ;
+		Builder builder( dualShape, primalShape ) ;
+
+		builder.reset( totNodes );
+		builder.addToIndex<form::Left>(   nodes.cells.begin(),  nodes.cells.end(),      nodes.indices, primalNodes.indices );
+		builder.makeCompressed();
+
+		jacobian_2.clear() ;
+		jacobian_2.setRows( totNodes );
+		jacobian_2.setCols( m );
+		jacobian_2.cloneIndex( builder.index() ) ;
+		jacobian_2.setBlocksToZero() ;
+
+		builder.integrate_node(  nodes.cells.begin(), nodes.cells.end(), [&]( Scalar w, const Vec& pos, P_Itp l_itp, P_Itp r_itp )
+		{
+			Vec dphi_dx ;
+			grad_phi( pos, dphi_dx ) ;
+
+			Builder:: addUTauGphi ( jacobian_2, w, l_itp, r_itp, dphi_dx,      nodes.indices, primalNodes.indices ) ;
+		}
+		);
+
+		jacobian += jacobian_2 ;
+
 	}
-	);
 
 }
 
-void RigidBodyData::assemble_matrices( const PrimalShape& primalShape, const Active &phaseNodes, Index totNodes)
+void RigidBodyData::assemble_matrices( const PrimalShape& primalShape, const DualShape& dualShape,
+									   const Active &primalNodes, const Active& dualNodes,
+									   Index totNodes)
 
 {
 	const TensorField::ShapeFuncImpl &shape = stresses.shape() ;
@@ -143,7 +172,7 @@ void RigidBodyData::assemble_matrices( const PrimalShape& primalShape, const Act
 
 	typename FormMat<WD,SD>::UncompressedType	proj ;
 	proj.clear() ;
-	proj.setRows( phaseNodes.count() );
+	proj.setRows( primalNodes.count() );
 	proj.setCols( 1 );
 
 	typename FormMat<WD,SD>::BlockT P ;
@@ -163,7 +192,7 @@ void RigidBodyData::assemble_matrices( const PrimalShape& primalShape, const Act
 				fraction( loc_idx ) = phi( pos ) ;
 				const Vec dx = pos - rb.levelSet().origin() ;
 				make_cross_mat( dx, P.block<WD,RD>(0,WD) ) ;
-				proj.insert( phaseNodes.indices[ glb_idx ], 0  ) = P ;
+				proj.insert( primalNodes.indices[ glb_idx ], 0  ) = P ;
 			}
 		}
 	}
@@ -173,7 +202,7 @@ void RigidBodyData::assemble_matrices( const PrimalShape& primalShape, const Act
 
 	projection = proj.transpose() ;
 
-	integrate( primalShape, phaseNodes, totNodes );
+	integrate( primalShape, dualShape, primalNodes, dualNodes, totNodes );
 }
 
 

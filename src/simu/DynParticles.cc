@@ -237,7 +237,7 @@ void DynParticles::integratePrimal( std::vector< bool > &activeCells,
 	}
 }
 
-void DynParticles::integrateDual( std::vector< bool > &activeCells,
+void DynParticles::integrateDual(
 								  DualScalarField &phi,      DualScalarField &phiInertia,
 								  DualTensorField &phiOrient,DualScalarField &phiCohesion
 								  ) const
@@ -245,7 +245,6 @@ void DynParticles::integrateDual( std::vector< bool > &activeCells,
 	typedef typename DualScalarField::ShapeFuncImpl Shape ;
 
 	const Shape& shape = phi.shape().derived() ;
-	activeCells.assign( shape.mesh().nCells(), false );
 
 	phi.set_zero();
 	phiInertia .set_zero();
@@ -262,8 +261,6 @@ void DynParticles::integrateDual( std::vector< bool > &activeCells,
 
 		typename Shape::Interpolation itp ;
 		shape.interpolate( loc, itp );
-
-		activeCells[ shape.mesh().cellIndex( loc.cell ) ] = true ;
 
 		phi.add_at( itp, m );
 		phiInertia .add_at( itp, m * m_inertia[i] );

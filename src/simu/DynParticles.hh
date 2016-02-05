@@ -23,7 +23,7 @@ public:
 	void integratePrimal( std::vector< bool > &activeCells,
 			   PrimalScalarField &phi,    PrimalVectorField &phiVel ) const ;
 
-	void integrateDual( std::vector< bool > &activeCells,
+	void integrateDual(
 			   DualScalarField &phi,      DualScalarField &phiInertia,
 			   DualTensorField &phiOrient,DualScalarField &phiCohesion
 			   ) const ;

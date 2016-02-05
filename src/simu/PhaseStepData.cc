@@ -268,7 +268,7 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 #pragma omp parallel for if( rbData.size() > 1)
 	for( unsigned k = 0 ; k < rbData.size() ; ++k )
 	{
-		rbData[k].assemble_matrices( pShape, nodes, n+nc ) ;
+		rbData[k].assemble_matrices( pShape, dShape, nodes, nodes, n+nc ) ;
 	}
 	Log::Debug() << "Integrate rbs: " << timer.elapsed() << std::endl ;
 
@@ -346,7 +346,7 @@ void PhaseStepData::compute(const DynParticles& particles,
 	DualScalarField intPhiCohesion( dShape ) ;
 	DualTensorField intPhiOrient  ( dShape ) ;
 
-	std::vector< bool > activeCells, dualActiveCells ;
+	std::vector< bool > activeCells ;
 
 #if defined(FULL_FEM)
 	intPhiPrimal.set_constant( 1. ) ;
@@ -358,7 +358,7 @@ void PhaseStepData::compute(const DynParticles& particles,
 	activeCells.assign( activeCells.size(), true ) ;
 #else
 	particles.integratePrimal( activeCells, intPhiPrimal, intPhiVel ) ;
-	particles.integrateDual( dualActiveCells, intPhiDual, intPhiInertia, intPhiOrient, intPhiCohesion ) ;
+	particles.integrateDual( intPhiDual, intPhiInertia, intPhiOrient, intPhiCohesion ) ;
 #endif
 
 	// Compute phi and grad_phi (for visualization purposes )

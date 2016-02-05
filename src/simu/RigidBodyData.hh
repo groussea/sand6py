@@ -26,7 +26,9 @@ struct RigidBodyData
 	//! Computes nodes that are influenced by the rigid-body
 	void compute_active( const Active& phaseNodes, BoundaryConditions &bc ) ;
 	//! Assembles projection and jacobian matrices
-	void assemble_matrices(const PrimalShape &primalShape, const Active& phaseNodes, Index totNodes ) ;
+	void assemble_matrices(const PrimalShape &primalShape, const DualShape &dualShape,
+						   const Active &primalNodes, const Active& dualNodes,
+						   Index totNodes ) ;
 
 	RigidBody&   rb ;
 	TensorField& stresses ;
@@ -42,7 +44,9 @@ struct RigidBodyData
 private:
 	static const Scalar s_splatRad ;
 
-	void integrate(const PrimalShape& primalShape, const Active& phaseNodes, Index totNodes  ) ;
+	void integrate( const PrimalShape& primalShape, const DualShape& dualShape,
+					const Active &primalNodes, const Active& dualNodes,
+					Index totNodes  ) ;
 
 };
 

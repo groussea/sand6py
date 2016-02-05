@@ -16,7 +16,7 @@ namespace d6 {
     typedef AbstractTensorField<   DualShape > DualTensorField ;
     typedef AbstractSkewTsField<   DualShape > DualSkewTsField ;
 
-    typedef DualTensorField RBStresses ;
+    typedef PrimalTensorField RBStresses ;
 
 
 } //d6
