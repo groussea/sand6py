@@ -2,6 +2,7 @@
 
 #include "visu/Offline.hh"
 
+#include "geo/FieldBase.impl.hh"
 #include "geo/Particles.hh"
 #include "geo/Tensor.hh"
 #include "geo/MeshImpl.hh"

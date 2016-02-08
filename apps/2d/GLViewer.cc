@@ -1,5 +1,6 @@
 #include "GLViewer.hh"
 
+#include "geo/FieldBase.impl.hh"
 #include "geo/MeshImpl.hh"
 #include "geo/LevelSet.hh"
 
@@ -31,6 +32,7 @@ void GLViewer::zoom(double factor)
 	m_yOffset = ( m_yOffset + .5 )/factor - .5 ;
 	updateViewport();
 }
+#include "geo/FieldBase.impl.hh"
 
 
 void GLViewer::updateViewport()
@@ -544,19 +546,19 @@ typename GLViewer::ScalarField GLViewer::getScalarEntity() const
 	case seFraction :
 		return m_offline.grains().fraction ;
 	case sePressure :
-		return m_offline.grains().stresses.trace() ;
+		return m_offline.grains().stresses.trace().interpolate< Shape >( m_offline.mesh() ) ;
 	default:
-		return ScalarField( m_offline.grains().spi_grad ) ;
+		return m_offline.grains().spi_grad.interpolate< Shape >( m_offline.mesh() );
 	}
 }
 
-const typename GLViewer::TensorField& GLViewer::getTensorEntity() const
+typename GLViewer::TensorField GLViewer::getTensorEntity() const
 {
 	switch ( m_tensorEntity ) {
 	case teDu:
-		return m_offline.grains().sym_grad ;
+		return m_offline.grains().sym_grad.interpolate< Shape >( m_offline.mesh() ) ;
 	default:
-		return m_offline.grains().stresses ;
+		return m_offline.grains().stresses.interpolate< Shape >( m_offline.mesh() )  ;
 	}
 }
 

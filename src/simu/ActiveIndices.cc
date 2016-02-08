@@ -81,14 +81,22 @@ void Active::var2field( const DynVec& var,  FieldBase<Derived> &field ) const
 }
 
 
-template void Active::var2field( const DynVec & var, FieldBase<DualScalarField> &field ) const;
-template void Active::var2field( const DynVec & var, FieldBase<PrimalVectorField> &field ) const;
-template void Active::var2field( const DynVec & var, FieldBase<DualTensorField> &field ) const;
-template void Active::var2field( const DynVec & var, FieldBase<DualSkewTsField> &field ) const;
-template void Active::field2var( const FieldBase<DualScalarField> &field, DynVec & var, bool ) const;
-template void Active::field2var( const FieldBase<DualScalarField> &field, DynArr & var, bool ) const;
-template void Active::field2var( const FieldBase<PrimalVectorField> &field, DynVec & var, bool ) const;
-template void Active::field2var( const FieldBase<DualTensorField> &field, DynVec & var, bool ) const;
-template void Active::field2var( const FieldBase<DualSkewTsField> &field, DynVec & var, bool ) const;
+template void Active::var2field( const DynVec & var, FieldBase<AbstractScalarField<Linear<MeshImpl>>> &field ) const;
+template void Active::var2field( const DynVec & var, FieldBase<AbstractVectorField<Linear<MeshImpl>>> &field ) const;
+template void Active::var2field( const DynVec & var, FieldBase<AbstractTensorField<Linear<MeshImpl>>> &field ) const;
+template void Active::var2field( const DynVec & var, FieldBase<AbstractSkewTsField<Linear<MeshImpl>>> &field ) const;
+template void Active::var2field( const DynVec & var, FieldBase<AbstractScalarField<DGLinear<MeshImpl>>> &field ) const;
+template void Active::var2field( const DynVec & var, FieldBase<AbstractTensorField<DGLinear<MeshImpl>>> &field ) const;
+template void Active::var2field( const DynVec & var, FieldBase<AbstractSkewTsField<DGLinear<MeshImpl>>> &field ) const;
+
+template void Active::field2var( const FieldBase<AbstractScalarField<Linear<MeshImpl>>> &field, DynArr & var, bool ) const;
+template void Active::field2var( const FieldBase<AbstractScalarField<Linear<MeshImpl>>> &field, DynVec & var, bool ) const;
+template void Active::field2var( const FieldBase<AbstractVectorField<Linear<MeshImpl>>> &field, DynVec & var, bool ) const;
+template void Active::field2var( const FieldBase<AbstractTensorField<Linear<MeshImpl>>> &field, DynVec & var, bool ) const;
+template void Active::field2var( const FieldBase<AbstractSkewTsField<Linear<MeshImpl>>> &field, DynVec & var, bool ) const;
+
+template void Active::field2var( const FieldBase<AbstractScalarField<DGLinear<MeshImpl>>> &field, DynArr & var, bool ) const;
+template void Active::field2var( const FieldBase<AbstractTensorField<DGLinear<MeshImpl>>> &field, DynVec & var, bool ) const;
+template void Active::field2var( const FieldBase<AbstractSkewTsField<DGLinear<MeshImpl>>> &field, DynVec & var, bool ) const;
 
 } //d6

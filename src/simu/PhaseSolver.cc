@@ -229,6 +229,9 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 
 	// Proper solving
 	Primal::SolverOptions options ;
+//	options.algorithm = Primal::SolverOptions::Cadoux_PG_NoAssembly ;
+//	options.projectedGradientVariant = 2 ;
+//	options.tolerance = 1.e-8 ;
 	Primal::SolverStats stats ;
 	Primal( pbData ).solve( options, x, stats ) ;
 

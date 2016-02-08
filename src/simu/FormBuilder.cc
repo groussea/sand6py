@@ -99,7 +99,7 @@ void FormBuilder<LhsShape, RhsShape>::addTauWu( FormMat<RD,WD>::Type& A, Scalar 
 												Indices rowIndices, Indices colIndices )
 {
 	for( int k = 0 ; k < lhs_itp.nodes.rows() ; ++k ) {
-		addTauWu( A, w * lhs_itp.coeffs[k], rowIndices[rhs_itp.nodes[k]], rhs_itp, dc_dx, colIndices );
+		addTauWu( A, w * lhs_itp.coeffs[k], rowIndices[lhs_itp.nodes[k]], rhs_itp, dc_dx, colIndices );
 	}
 }
 
@@ -190,6 +190,7 @@ void FormBuilder<LhsShape, RhsShape>::addUTaunGphi( FormMat<SD,WD>::Type& A, Sca
 	}
 }
 
-template class FormBuilder< Linear< MeshImpl >, Linear< MeshImpl > > ;
+template class FormBuilder<   Linear< MeshImpl >, Linear< MeshImpl > > ;
+template class FormBuilder< DGLinear< MeshImpl >, Linear< MeshImpl > > ;
 
 } //d6

@@ -34,8 +34,8 @@ class FormBuilder {
 	typedef const typename LhsShape::Derivatives& LhsDcdx ;
 	typedef const typename LhsShape::Derivatives::ConstRowXpr& LhsDcdxRow ;
 
-	typedef const typename LhsShape::Interpolation& RhsItp ;
-	typedef const typename LhsShape::Derivatives& RhsDcdx ;
+	typedef const typename RhsShape::Interpolation& RhsItp ;
+	typedef const typename RhsShape::Derivatives& RhsDcdx ;
 
 public:
 

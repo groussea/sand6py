@@ -480,8 +480,8 @@ void PhaseStepData::computeActiveNodes(const std::vector<bool> &activeCells ,
 	primalNodes.reset( pShape.nDOF() );
 	  dualNodes.reset( dShape.nDOF() ) ;
 
-	std::vector< int > activePrimalNodes( mesh.nNodes(), 0 ) ;
-	std::vector< int >   activeDualNodes( mesh.nNodes(), 0 ) ;
+	std::vector< int > activePrimalNodes( pShape.nDOF(), 0 ) ;
+	std::vector< int >   activeDualNodes( dShape.nDOF(), 0 ) ;
 
 	Eigen::Matrix< Scalar, WD, Eigen::Dynamic > vecs( WD, mesh.nNodes() ) ;
 	vecs.setZero() ;

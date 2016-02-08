@@ -94,4 +94,8 @@ template  bool VTKFieldWriter<Linear<MeshImpl>>::dump( const char*, const FieldB
 template  bool VTKFieldWriter<Linear<MeshImpl>>::dump( const char*, const FieldBase< AbstractVectorField<Linear<MeshImpl> > >& ) ;
 template  bool VTKFieldWriter<Linear<MeshImpl>>::dump( const char*, const FieldBase< AbstractTensorField<Linear<MeshImpl> > >& ) ;
 
+template class VTKFieldWriter<DGLinear<MeshImpl>> ;
+template  bool VTKFieldWriter<DGLinear<MeshImpl>>::dump( const char*, const FieldBase< AbstractScalarField<DGLinear<MeshImpl> > >& ) ;
+template  bool VTKFieldWriter<DGLinear<MeshImpl>>::dump( const char*, const FieldBase< AbstractTensorField<DGLinear<MeshImpl> > >& ) ;
+
 } //d6

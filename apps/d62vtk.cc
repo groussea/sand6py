@@ -7,6 +7,7 @@
 
 #include "simu/Phase.hh"
 
+#include "geo/FieldBase.impl.hh"
 #include "geo/ScalarField.hh"
 #include "geo/TensorField.hh"
 
@@ -43,6 +44,7 @@ void dump_frame( const d6::Offline& offline, bool particles,
 		d6::VTKFieldWriter<d6::PrimalShape> fieldWriter( base_dir, offline.mesh() ) ;
 	//	fieldWriter.setMode( d6::VTKWriter::Ascii );
 		fieldWriter.startFile( "primal-fields", frame ) ;
+		fieldWriter.dump(    "phi", offline.grains().fraction ) ;
 		fieldWriter.dump(      "u", offline.grains().velocity ) ;
 		fieldWriter.dump(  "d_phi", offline.grains().grad_phi ) ;
 		fieldWriter.dump( "forces", offline.grains().fcontact ) ;
@@ -55,8 +57,6 @@ void dump_frame( const d6::Offline& offline, bool particles,
 	{
 		d6::VTKFieldWriter<d6::DualShape> fieldWriter( base_dir, offline.mesh() ) ;
 		fieldWriter.startFile( "dual-fields", frame ) ;
-
-		fieldWriter.dump(    "phi", offline.grains().fraction ) ;
 
 		d6::DualScalarField p   = offline.grains().stresses.trace() ;
 		d6::DualScalarField dh  = offline.grains().sym_grad.trace() ;

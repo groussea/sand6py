@@ -6,7 +6,7 @@
 namespace d6 {
 
     typedef   Linear<MeshImpl> PrimalShape ;
-    typedef   Linear<MeshImpl>   DualShape ;
+    typedef DGLinear<MeshImpl>   DualShape ;
 
     typedef AbstractScalarField< PrimalShape > PrimalScalarField ;
     typedef AbstractVectorField< PrimalShape > PrimalVectorField ;

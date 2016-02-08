@@ -15,9 +15,9 @@ namespace form {
 		typedef RhsShape Other ;
 
 		static Shape& shape( FormBuilder<LhsShape, RhsShape> &b ) { return b.m_lhsShape ; }
-		static Shape& other( FormBuilder<LhsShape, RhsShape> &b ) { return b.m_rhsShape ; }
+		static Other& other( FormBuilder<LhsShape, RhsShape> &b ) { return b.m_rhsShape ; }
 		static const Shape& shape( const FormBuilder<LhsShape, RhsShape> &b ) { return b.m_lhsShape ; }
-		static const Shape& other( const FormBuilder<LhsShape, RhsShape> &b ) { return b.m_rhsShape ; }
+		static const Other& other( const FormBuilder<LhsShape, RhsShape> &b ) { return b.m_rhsShape ; }
 
 		template< typename T1, typename T2 >
 		static T1& lhs( T1& l, T2& ) { return l ; }
@@ -34,9 +34,9 @@ namespace form {
 		typedef LhsShape Other ;
 
 		static Shape& shape( FormBuilder<LhsShape, RhsShape> &b ) { return b.m_rhsShape ; }
-		static Shape& other( FormBuilder<LhsShape, RhsShape> &b ) { return b.m_lhsShape ; }
+		static Other& other( FormBuilder<LhsShape, RhsShape> &b ) { return b.m_lhsShape ; }
 		static const Shape& shape( const FormBuilder<LhsShape, RhsShape> &b ) { return b.m_rhsShape ; }
-		static const Shape& other( const FormBuilder<LhsShape, RhsShape> &b ) { return b.m_lhsShape ; }
+		static const Other& other( const FormBuilder<LhsShape, RhsShape> &b ) { return b.m_lhsShape ; }
 
 		template< typename T1, typename T2 >
 		static T2& lhs( T1&, T2& l ) { return l ; }

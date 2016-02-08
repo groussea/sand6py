@@ -113,7 +113,7 @@ private:
 
     const VectorField &getVectorEntity() const ;
     ScalarField getScalarEntity() const ;
-    const TensorField& getTensorEntity() const ;
+    TensorField getTensorEntity() const ;
 
     const Offline& m_offline ;
 

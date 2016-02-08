@@ -148,7 +148,7 @@ void RigidBodyData::integrate(const PrimalShape& primalShape, const DualShape& d
 		FormMat<SD,WD>::Type jacobian_2 ;
 
 		typedef FormBuilder< RBShapeFunc, PrimalShape > Builder ;
-		Builder builder( dualShape, primalShape ) ;
+		Builder builder( primalShape, primalShape ) ;
 
 		builder.reset( totNodes );
 		builder.addToIndex<form::Left>(   nodes.cells.begin(),  nodes.cells.end(),      nodes.indices, primalNodes.indices );

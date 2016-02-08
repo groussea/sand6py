@@ -53,5 +53,17 @@ template class AbstractTensorField< Linear<TetGrid> > ;
 template class FieldBase< AbstractSkewTsField< Linear<TetGrid> > > ;
 template class AbstractSkewTsField< Linear<TetGrid> > ;
 #endif
+
+template class FieldBase< AbstractTensorField< DGLinear<Grid> > > ;
+template class AbstractTensorField< DGLinear<Grid> > ;
+template class FieldBase< AbstractSkewTsField< DGLinear<Grid> > > ;
+template class AbstractSkewTsField< DGLinear<Grid> > ;
+
+#if HAS_TET
+template class FieldBase< AbstractTensorField< DGLinear<TetGrid> > > ;
+template class AbstractTensorField< DGLinear<TetGrid> > ;
+template class FieldBase< AbstractSkewTsField< DGLinear<TetGrid> > > ;
+template class AbstractSkewTsField< DGLinear<TetGrid> > ;
+#endif
 }
 
