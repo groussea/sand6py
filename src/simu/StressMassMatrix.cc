@@ -11,7 +11,7 @@
 namespace d6 {
 
 template < typename Shape>
-void AbstractStressMassMatrix<Shape>::compute( const Shape& shape, const Active& nodes, const Index totNodes )
+void AbstractStressMassMatrix<Shape>::compute( const Shape& , const Active& , const Index totNodes )
 {
     inv_sqrt.setRows( totNodes ) ;
     inv_sqrt.setIdentity() ;

@@ -46,7 +46,6 @@ void VTKFieldWriter<ShapeFuncT>::writeMesh( File &vtk ) const
 	typename ShapeFuncT::NodeList cellNodes ;
 	typename ShapeFuncT::Location loc ;
 
-	// FXIME if shape nodes do not coincide with mesh
 	for( typename MeshType::CellIterator it = mesh.cellBegin() ; it != mesh.cellEnd() ; ++it )
 	{
 		mesh.get_geo( *it, cellGeo ) ;

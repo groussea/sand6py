@@ -40,10 +40,10 @@ public:
 
 	typedef AbstractScalarField< ShapeFuncImpl > ScalarField ;
 
-	explicit FieldBase( const ShapeFuncType& shape )
+	explicit FieldBase( const ShapeFuncType& shape, bool doFit = true )
 		: Base( shape )
 	{
-		fit_shape() ;
+		if(doFit) fit_shape() ;
 	}
 
 	void fit_shape() {
@@ -65,6 +65,14 @@ public:
 	{
 		assert( f.size() == size() ) ;
 		flatten() = f.flatten() ;
+		return derived() ;
+	}
+
+	Derived& from_rvalue ( Derived&& f )
+	{
+		assert( f.size() == size() ) ;
+		m_size = f.size() ;
+		m_data.swap( f.m_data ) ;
 		return derived() ;
 	}
 
@@ -144,6 +152,9 @@ protected:
 	/*! Copy constructor */\
 	FieldName( const FieldName& o ) : Base( o.shape() ) { Base::operator=( o ) ; } \
 	FieldName& operator=( const FieldName& o ) { return Base::operator=( o ) ; } \
+	/*! Move constructor */\
+	FieldName( FieldName&& o ) : Base( o.shape(), false ) { Base::from_rvalue(std::move(o)) ; } \
+	FieldName& operator=( FieldName&& o ) { return Base::from_rvalue(std::move(o)) ; } \
 	/*! Assignment from field func */\
 	template <typename Func> \
 	FieldName( const FieldFuncBase< Func, Base::D, typename Base::ShapeFuncImpl > & func ) \
