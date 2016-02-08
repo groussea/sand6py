@@ -23,6 +23,7 @@
 
 namespace d6 {
 
+
 void PhaseStepData::computeProjectors(const Config&config,
 									  const PrimalShape& pShape, const DualShape &dShape,
 									  const std::vector<RigidBodyData> &rbData,
@@ -110,8 +111,6 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 	const PrimalShape& pShape = phiInt.shape() ;
 
 
-	// FXIME other approxes
-
 	typedef typename PrimalShape::Interpolation P_Itp ;
 	typedef typename PrimalShape::Derivatives   P_Dcdx ;
 	typedef typename DualShape::Interpolation   D_Itp ;
@@ -162,21 +161,23 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 		Log::Debug() << "A Index computation: " << timer.elapsed() << std::endl ;
 
 #ifdef FULL_FEM
-		builder.integrate_qp( [&]( Scalar w, const Vec&, const P_Itp& itp, const P_Dcdx& dc_dx )
+		builder.integrate_qp<form::Left>( [&]( Scalar w, const Vec&, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& r_dc_dx )
 			{
-				Builder:: addDuDv( forms.A, w, itp, dc_dx, primalNodes.indices, primalNodes.indices ) ;
+				Builder:: addDuDv( forms.A, w, l_itp, l_dc_dx, r_itp, r_dc_dx, primalNodes.indices, primalNodes.indices ) ;
 			}
 		);
 		Log::Debug() << "A Integrate grid: " << timer.elapsed() << std::endl ;
-#endif
-
-		timer.reset() ;
-
+#else
 		builder.integrate_particle( particles, [&]( Index, Scalar w, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& r_dc_dx )
 			{
 				Builder:: addDuDv( forms.A, w, l_itp, l_dc_dx, r_itp, r_dc_dx, primalNodes.indices, primalNodes.indices ) ;
 			}
 		);
+		Log::Debug() << "A Integrate particle: " << timer.elapsed() << std::endl ;
+#endif
+
+		timer.reset() ;
+
 	}
 
 	// Other bilinear forms
@@ -295,6 +296,10 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 #endif
 		Log::Debug() << "Integrate particle: " << timer.elapsed() << std::endl ;
 
+
+		// S
+		forms.S.compute( dShape, dualNodes, n+nc );
+
 	}
 
 	// Rigid bodies
@@ -308,11 +313,12 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 
 
 	// A = mass + viscosity
+	forms.A *= 2 * config.viscosity ;
 #ifndef FULL_FEM
 	forms.M_lumped *= config.volMass / dt  ;
-
-	forms.A *= 2 * config.viscosity ;
 	forms.A += forms.M_lumped ;
+#else
+	(void) dt ;
 #endif
 
 
@@ -379,13 +385,13 @@ void PhaseStepData::compute(const DynParticles& particles,
 	std::vector< bool > activeCells ;
 
 #if defined(FULL_FEM)
-	intPhiPrimal.set_constant( 1. ) ;
-	intPhiDual  .set_constant( 1. ) ;
+	pShape.compute_volumes( intPhiPrimal.flatten() ) ;
+	dShape.compute_volumes( intPhiDual  .flatten() ) ;
 	intPhiVel.set_zero() ;
 	intPhiInertia.set_zero() ;
 	intPhiCohesion.set_zero() ;
 	intPhiOrient.set_zero() ;
-	activeCells.assign( activeCells.size(), true ) ;
+	activeCells.assign( pShape.mesh().nCells(), true ) ;
 #else
 	particles.integratePrimal( activeCells, intPhiPrimal, intPhiVel ) ;
 	particles.integrateDual( intPhiDual, intPhiInertia, intPhiOrient, intPhiCohesion ) ;

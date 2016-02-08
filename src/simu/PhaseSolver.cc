@@ -115,7 +115,7 @@ void PhaseSolver::addRigidBodyContrib( const Config &c, const Scalar dt, const P
 									   PrimalData& pbData, DynArr &rbIntFraction ) const
 {
 
-	typename FormMat<SD,WD>::Type J =	stepData.Aniso * ( stepData.proj.stress * ( rb.jacobian ) ) ;
+	typename FormMat<SD,WD>::Type J = stepData.forms.S.inv_sqrt * stepData.Aniso * ( stepData.proj.stress * ( rb.jacobian ) ) ;
 
 	pbData.H -= J * stepData.forms.M_lumped_inv_sqrt ;
 
@@ -169,8 +169,10 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	static unsigned s_stepId = 0 ;
 
 	PrimalData	pbData ;
-	pbData.H = stepData.Aniso * ( stepData.proj.stress * ( stepData.forms.B * stepData.forms.M_lumped_inv_sqrt ) ) ;
-	pbData.w = stepData.Aniso * ( stepData.proj.stress * ( stepData.forms.B * u ) ) ;
+	pbData.H = stepData.forms.S.inv_sqrt * stepData.Aniso *
+			( stepData.proj.stress * ( stepData.forms.B * stepData.forms.M_lumped_inv_sqrt ) ) ;
+	pbData.w = stepData.forms.S.inv_sqrt * stepData.Aniso *
+			( stepData.proj.stress * ( stepData.forms.B * u ) ) ;
 
 	pbData.mu.resize( pbData.n() ) ;
 
@@ -209,8 +211,12 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	// Compressability beta(phi)
 	{
 		const DynArr intBeta = ( c.phiMax*stepData.forms.volumes
-								 - stepData.forms.fraction - rbIntFraction ).max( 0 );
-		component< SD >( pbData.w, 0 ).head( stepData.nDualNodes() ).array() += intBeta  * s_sqrt_2_d / dt  ;
+								 - stepData.forms.fraction - rbIntFraction );
+
+		DynVec intBeta_s ( DynVec::Zero( pbData.n() * SD ) ) ;
+		component< SD >( intBeta_s, 0 ).head( stepData.nDualNodes() ).array() = intBeta  * s_sqrt_2_d / dt  ;
+
+		pbData.w += ( stepData.forms.S.inv_sqrt * intBeta_s ).cwiseMax(0) ;
 	}
 
 	// Warm-start stresses
@@ -231,7 +237,9 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	Primal::SolverOptions options ;
 //	options.algorithm = Primal::SolverOptions::Cadoux_PG_NoAssembly ;
 //	options.projectedGradientVariant = 2 ;
-//	options.tolerance = 1.e-8 ;
+#if D6_DIM == 2
+	options.tolerance = 1.e-8 ;
+#endif
 	Primal::SolverStats stats ;
 	Primal( pbData ).solve( options, x, stats ) ;
 
@@ -247,7 +255,7 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	// Contact forces -- useless, debug only
 	{
 		const DynVec fcontact = stepData.proj.vel * stepData.forms.B.transpose() *
-								stepData.proj.stress *  stepData.Aniso * x ;
+								stepData.proj.stress * stepData.Aniso * stepData.forms.S.inv_sqrt * x ;
 		stepData.primalNodes.var2field( fcontact, phase.fcontact ) ;
 	}
 
@@ -297,7 +305,7 @@ void PhaseSolver::enforceMaxFrac(const Config &c, const PhaseStepData &stepData,
 	LCP lcp( pbData ) ;
 	lcp.solve( x ) ;
 
-	depl = - pbData.H * x ;
+	depl = -( pbData.H.transpose() * x );
 
 }
 

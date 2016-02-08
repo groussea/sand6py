@@ -5,6 +5,9 @@
 #include "FormBuilder.hh"
 #include "RigidBodyData.hh"
 
+#include "PhaseFields.hh"
+#include "StressMassMatrix.hh"
+
 #include "geo/BoundaryInfo.hh"
 
 namespace d6 {
@@ -42,6 +45,9 @@ struct PhaseStepData {
 		typename FormMat<RD,WD>::Type J ; //!< \phi Tau:W(u)
 
 		typename FormMat<1 ,WD>::Type C ; //!< \phi v.grad(p)
+
+		StressMassMatrix S ;
+
 	} forms ;
 
 	//! Projectors enforcing boundary conditions

@@ -27,7 +27,7 @@ struct BedScenar : public Scenario {
 
 struct CollapseScenar : public Scenario {
 	Scalar particle_density( const Vec &x ) const override {
-		return ( x[0] > .75*m_config->box[0] ) ? 1. : 0. ;
+		return ( x[0] > .75*m_config->box[0] &&  x[1] < .75*m_config->box[1] ) ? 1. : 0. ;
 	}
 
 	virtual void init( const Params& params ) override {

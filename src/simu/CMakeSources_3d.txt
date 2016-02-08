@@ -22,3 +22,5 @@ simu/Scenario.cc
 simu/Scenario.hh
 simu/Simu.cc
 simu/Simu.hh
+simu/StressMassMatrix.cc
+simu/StressMassMatrix.hh

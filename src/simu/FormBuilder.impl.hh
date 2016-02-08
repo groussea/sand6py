@@ -77,7 +77,8 @@ void FormBuilder<LhsShape, RhsShape>::addToIndex(
 			for( int j = 0 ; j < otherNodes.rows() ; ++ j ) {
 				const Index row = rowIndices[ Get::lhs(shapeNodes[k], otherNodes[j]) ] ;
 				const Index col = colIndices[ Get::rhs(shapeNodes[k], otherNodes[j]) ] ;
-				m_data[ row ].push_back( col ) ;
+				if( row >= 0 && col >= 0  )
+					m_data[ row ].push_back( col ) ;
 			}
 		}
 	}

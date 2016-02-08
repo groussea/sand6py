@@ -42,6 +42,7 @@ struct Phase
 		ar & spi_grad ;
 		ar & grad_phi ;
 		ar & fcontact ;
+		ar & geo_proj ;
 	}
 };
 

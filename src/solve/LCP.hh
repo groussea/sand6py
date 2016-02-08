@@ -11,7 +11,7 @@ struct LCPData {
 	HType H   ;
 	DynVec w  ;
 
-	Index n() const { return H.colsOfBlocks() ; }
+	Index n() const { return H.rowsOfBlocks() ; }
 };
 
 class LCP {
