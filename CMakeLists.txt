@@ -8,7 +8,8 @@ OPTION( CUDA "Build cuda stuff" OFF )
 
 OPTION( OPENMP  "Use OpenMP" ON )
 OPTION( TETGRID "Use regulard grid of tetrehedra" OFF )
-OPTION( 2D "Build 2d soft" OFF )
+OPTION( DG	    "Use DG stresses" OFF )
+OPTION( 2D      "Build 2d soft" OFF )
 
 if( DIM2 )
     add_definitions( -DD6_DIM=2 )
@@ -20,6 +21,10 @@ endif()
 
 if (TETGRID)
     add_definitions( -DD6_MESH_IMPL=1 )
+endif()
+
+if (DG)
+    add_definitions( -DD6_DG_STRESSES )
 endif()
 
 SET( D6_ROOT ${CMAKE_CURRENT_SOURCE_DIR} )

@@ -1,12 +1,9 @@
 #ifndef D6_MESH_TRAITS_HH
 #define D6_MESH_TRAITS_HH
 
-#define HAS_TET (D6_DIM == 3)
 
 #include "geo/Voxel.hh"
-#if HAS_TET
 #include "geo/Tet.hh"
-#endif
 
 #include <vector>
 
@@ -34,7 +31,6 @@ struct MeshTraits< Grid > {
 	typedef std::vector<Cell> Cells ;
 };
 
-#if HAS_TET
 // TetGrid
 
 class  TetGrid ;
@@ -52,7 +48,6 @@ struct MeshTraits< TetGrid > {
 
 	typedef std::vector<Cell> Cells ;
 };
-#endif
 
 } //d6
 

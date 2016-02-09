@@ -35,12 +35,6 @@ typedef Grid    MeshImpl ;
 template < typename MeshT > struct Linear ;
 template < typename MeshT > struct DGLinear ;
 
-//typedef AbstractScalarField< Linear<MeshImpl> >  ScalarField ;
-//typedef AbstractVectorField< Linear<MeshImpl> >  VectorField ;
-//typedef AbstractTensorField< Linear<MeshImpl> >  TensorField ;
-//typedef AbstractSkewTsField< Linear<MeshImpl> >  SkewTsField ;
-
-
 typedef MeshBase< MeshImpl > MeshType ;
 
 }

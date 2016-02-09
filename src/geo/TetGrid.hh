@@ -48,22 +48,26 @@ public:
 
 	typedef typename Base::Cell Cell ;
 	typedef typename Base::CellGeo CellGeo ;
-	typedef Vec3i 				Vertex ;
+	typedef VecWi 				Vertex ;
 
-	TetGrid( const Vec& box, const Vec3i &res ) ;
+	static constexpr Index Nsub = WD == 3 ? 6 : 2 ;
+
+	TetGrid( const Vec& box, const VecWi &res ) ;
 
 
 	Index nNodes() const
-	{ return (m_dim[0]+1) * (m_dim[1]+1) * (m_dim[2] + 1) ; }
+	{ return (m_dim+1).prod() ; }
 
 	Index nCells() const
-	{ return 6 * (m_dim[0]) * (m_dim[1]) * (m_dim[2]) ; }
+	{ return m_dim.prod() * Nsub ; }
 
 	Index cellIndex( const Cell& cell ) const
 	{
-		return  (  (m_dim[2]) * (m_dim[1]) * cell[0]
-				+  (m_dim[2]) * cell[1]
-				+  cell[2] ) * 6 + cell[3] ;
+		Index idx =  (m_dim[1]) * cell[0]	+ cell[1] ;
+		if( WD == 3 )
+			idx = idx*m_dim[2] + cell[2] ;
+
+		return Nsub*idx + cell[WD] ;
 	}
 
 	Vec box() const
@@ -76,7 +80,10 @@ public:
 		return TetGridIterator( *this, Cell::Zero() ) ;
 	}
 	CellIterator cellEnd() const {
-		return TetGridIterator( *this, Cell(m_dim[0],0,0,0) ) ;
+		Cell cell ;
+		cell[0] = m_dim[0] ;
+		cell.tail<WD>().setZero() ;
+		return TetGridIterator( *this, cell ) ;
 	}
 
 	void get_geo( const Cell &cell, CellGeo& geo ) const  ;
@@ -85,31 +92,16 @@ public:
 	void serialize( Archive &ar, unsigned int ) {
 		ar & m_dim ;
 		ar &  m_dx ;
-		ar & m_idx ;
 	}
 
-	Index nAdjacent( Index idx ) const {
-		Vec3i node ;
-		node[0] = idx / ( (m_dim[2]+1) * (m_dim[1]+1) ) ;
-		idx -= node[0] * (m_dim[2]+1) * (m_dim[1]+1) ;
-		node[1] = idx / (m_dim[2]+1) ;
-		node[2] = idx - node[1]*(m_dim[2]+1)  ;
-
-		// (0,0,1) et (1m,0,0)
-		return ( ( (node[0]%2) == (node[1]%2) ) && ( (node[0]%2) != (node[2]%2) ) )
-			? 48 : 16 ;
-
-	}
-
-	const ArrWi& dim() const { return m_dim ; }
-	const Vec&    dx() const { return  m_dx ; }
-	const Vec&   idx() const { return m_idx ; }
+	Index nAdjacent( Index idx ) const ;
 
 	Index nodeIndex( const Vertex& node ) const
 	{
-		return (m_dim[2]+1) * (m_dim[1]+1) * node[0]
-			+  (m_dim[2]+1) * node[1]
-			+  node[2] ;
+		Index idx = (m_dim[1]+1) * node[0] + node[1] ;
+		if( WD == 2 )
+			return idx ;
+		return idx*(m_dim[2]+1) + node[2] ;
 	}
 
 	bool onBoundary( const Cell &cell ) const {
@@ -118,19 +110,20 @@ public:
 
 	void boundaryInfo( const Location &loc, const BoundaryMapper& mapper, BoundaryInfo &info ) const ;
 
+	const ArrWi& dim() const { return m_dim ; }
+	const Arr&    dx() const { return  m_dx ; }
+
 private:
 
-
-	void get_corner( const Vec3i &cell, Vec& corner ) const {
-		corner = (cell.array().cast< Scalar >() * m_dx.array()).matrix() ;
+	void get_corner( const VecWi &cell, Vec& corner ) const {
+		corner = ( cell.array().cast< Scalar >() * m_dx ).matrix() ;
 	}
 
-	Vec firstCorner( const ArrWi &cell ) const
+	Vec firstCorner( const VecWi &cell ) const
 	{ Vec corner ; get_corner( cell, corner ) ; return corner ; }
 
 	ArrWi m_dim ;
-	Vec   m_dx  ;
-	Vec   m_idx  ;
+	Arr   m_dx  ;
 
 	friend struct TetGridIterator ;
 };

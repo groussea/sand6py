@@ -187,10 +187,16 @@ void GLViewer::update_buffers()
 			g.get_geo( *it, cellGeo ) ;
 			shape.list_nodes( *it, cellNodes );
 
-			nodeIndices[ 4*it.index() + 0 ] = cellNodes[0] ;
-			nodeIndices[ 4*it.index() + 1 ] = cellNodes[1] ;
-			nodeIndices[ 4*it.index() + 2 ] = cellNodes[3] ;
-			nodeIndices[ 4*it.index() + 3 ] = cellNodes[2] ;
+			if( NV == 4 ) {
+				nodeIndices[ 4*it.index() + 0 ] = cellNodes[0] ;
+				nodeIndices[ 4*it.index() + 1 ] = cellNodes[1] ;
+				nodeIndices[ 4*it.index() + 2 ] = cellNodes[3] ;
+				nodeIndices[ 4*it.index() + 3 ] = cellNodes[2] ;
+			} else {
+				for( int k = 0 ; k < NV ; ++k ) {
+					nodeIndices[ NV*it.index() + k ] = cellNodes[k] ;
+				}
+			}
 
 			for( int k = 0 ; k < NV ; ++k ) {
 				vertices.col( cellNodes[k] ) = cellGeo.vertex( k ).cast< float >() ;
@@ -418,13 +424,15 @@ void GLViewer::draw( ) const
 	glLineWidth( 1.f );
 
 	// Grid
+	const GLint mesh_primitives = ( MeshType::NV == 4 )
+			? GL_QUADS : GL_TRIANGLES ;
 
 	if( m_shouldRender[ eColors ])
 	{
 		m_gridQuadIndices.bind() ;
 		gl::VertexPointer vp( m_gridVertices ) ;
 		gl::ColorPointer cp( m_gridColors ) ;
-		glDrawElements( GL_QUADS, m_gridQuadIndices.size(), GL_UNSIGNED_INT, 0 );
+		glDrawElements( mesh_primitives, m_gridQuadIndices.size(), GL_UNSIGNED_INT, 0 );
 	}
 
 	glColor3f( .5, .5, .5 );
@@ -433,7 +441,7 @@ void GLViewer::draw( ) const
 		m_gridQuadIndices.bind() ;
 		gl::VertexPointer vp( m_gridVertices ) ;
 		glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
-		glDrawElements( GL_QUADS, m_gridQuadIndices.size(), GL_UNSIGNED_INT, 0 );
+		glDrawElements( mesh_primitives, m_gridQuadIndices.size(), GL_UNSIGNED_INT, 0 );
 		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 
 //		glDrawArrays( GL_LINES, 0, m_gridVertices.size()/2 );

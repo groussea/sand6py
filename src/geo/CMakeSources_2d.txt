@@ -6,6 +6,9 @@
 2d/geo/LevelSet.impl.hh
 2d/geo/LevelSet.io.hh
 2d/geo/Tensor.hh
+2d/geo/Tet.cc
+2d/geo/Tet.hh
+2d/geo/TetGrid.cc
 2d/geo/Voxel.cc
 2d/geo/Voxel.hh
 geo/BoundaryInfo.cc
@@ -32,6 +35,7 @@ geo/ShapeFunctionBase.hh
 geo/Tensor.cc
 geo/TensorField.cc
 geo/TensorField.hh
+geo/TetGrid.hh
 geo/UnstructuredShapeFunction.hh
 geo/VectorField.cc
 geo/VectorField.hh

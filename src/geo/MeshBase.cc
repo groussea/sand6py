@@ -1,9 +1,7 @@
 #include "MeshBase.hh"
 
 #include "Grid.hh"
-#if HAS_TET
 #include "TetGrid.hh"
-#endif
 
 namespace d6 {
 
@@ -16,9 +14,7 @@ Vec MeshBase< Derived>::pos( const Location& loc ) const
 }
 
 template class MeshBase< Grid > ;
-#if HAS_TET
 template class MeshBase< TetGrid > ;
-#endif
 
 
 }  //d6

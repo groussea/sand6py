@@ -5,9 +5,7 @@
 #include "Tensor.hh"
 
 #include "Grid.hh"
-#if HAS_TET
 #include "TetGrid.hh"
-#endif
 
 #include "MeshShapeFunction.hh"
 
@@ -37,17 +35,13 @@ Vec AbstractScalarField< ShapeFuncT >::grad_at( const typename ShapeFuncType::Lo
 
 template class FieldBase< AbstractScalarField< Linear<Grid> > > ;
 template class AbstractScalarField< Linear<Grid> > ;
-#if HAS_TET
 template class FieldBase< AbstractScalarField< Linear<TetGrid> > > ;
 template class AbstractScalarField< Linear<TetGrid> > ;
-#endif
 
 
 template class FieldBase< AbstractScalarField< DGLinear<Grid> > > ;
 template class AbstractScalarField< DGLinear<Grid> > ;
-#if HAS_TET
 template class FieldBase< AbstractScalarField< DGLinear<TetGrid> > > ;
 template class AbstractScalarField< DGLinear<TetGrid> > ;
-#endif
 
 }
