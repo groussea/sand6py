@@ -27,18 +27,19 @@ Simu::Simu(const Config &config, const char *base_dir)
 	: m_config(config), m_base_dir( base_dir ),
 	  m_stats( m_base_dir ),
 	  m_scenario( Scenario::parse( config ) ),
-	  m_mesh( new MeshImpl( config.box, config.res ) ),
-	  m_grains( new Phase( mesh() ) ),
+	  m_meshes{ std::unique_ptr<PrimalMesh>(new PrimalMesh( config.box, config.res )),
+				std::unique_ptr<  DualMesh>(new   DualMesh( config.box, config.res )) },
+	  m_grains( new Phase( meshes() ) ),
 	  m_solver( m_particles )
 {
 
-	m_particles.generate( config, mesh(), *m_scenario );
+	m_particles.generate( config, meshes().primal(), *m_scenario );
 
 	// Rigid bodies
 	m_scenario->add_rigid_bodies( m_rigidBodies ) ;
 
 	for( unsigned i = 0 ; i < m_rigidBodies.size() ; ++i ) {
-		m_rbStresses.emplace_back( mesh() );
+		m_rbStresses.emplace_back( meshes().primal() );
 		m_rbStresses.back().set_zero() ;
 	}
 }
@@ -118,7 +119,7 @@ void Simu::step(const Scalar dt)
 	// TODO: if we were to adapt the mesh, it would be here
 
 	m_stats.nParticles = m_particles.count() ;
-	m_stats.nNodes = m_mesh->nNodes() ;
+	m_stats.nNodes = meshes().primal().nNodes() ;
 
 	//! Compute new grid velocities
 	m_solver.step( m_config, dt, *m_grains, m_stats, m_rigidBodies, m_rbStresses ) ;
@@ -183,9 +184,10 @@ void Simu::dump_fields( unsigned frame ) const
 
 	// Grid
 	{
-		std::ofstream ofs( dir.filePath("mesh") );
+		std::ofstream ofs( dir.filePath("meshes") );
 		boost::archive::binary_oarchive oa(ofs);
-		oa << m_mesh->derived() ;
+		oa << meshes().primal() ;
+		oa << meshes().  dual() ;
 	}
 	// Velocity, Stress, Phi
 	{

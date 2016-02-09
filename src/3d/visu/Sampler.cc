@@ -50,7 +50,7 @@ void Sampler::move( )
 	for(Index i = 0 ; i < n ; ++i) {
 
 		const Vec p0 = m_positions.col(i).cast< Scalar >() ;
-		auto p0loc = m_offline.mesh().locate( p0 ) ;
+		auto p0loc = m_offline.meshes().primal().locate( p0 ) ;
 		const Vec p1 = p0 + dt * grains.velocity( p0loc ) ;
 		m_positions.col(i) = p1.cast< float >() ;
 
@@ -82,7 +82,7 @@ void Sampler::move( )
 	const Index np = m_particlesCount ;
 #pragma omp parallel for
 	for(Index i = 0 ; i < np ; ++i) {
-		m_predPos.col(i) += dt*grains.velocity( m_offline.mesh().locate( m_predPos.col(i) ) )   ;
+		m_predPos.col(i) += dt*grains.velocity( m_offline.meshes().primal().locate( m_predPos.col(i) ) )   ;
 	}
 
 }
@@ -115,12 +115,12 @@ void Sampler::compute_absolute()
 		const Scalar vn = std::max( 1., Scalar( m_offsets.col(i).transpose() *  frame.inverse() * m_offsets.col(i) ) ) ;
 		m_offsets.col( i ) /= std::sqrt(vn)  ;
 
-		const Vec pos = m_offline.mesh().clamp_point(p0 + m_offsets.col(i) ) ;
+		const Vec pos = m_offline.meshes().primal().clamp_point(p0 + m_offsets.col(i) ) ;
 		m_offsets.col( i ) = pos - p0 ;
 
 		m_positions.col(i) = pos.cast< float >() ;
 
-		const auto& pos_loc = m_offline.mesh().locate( pos ) ;
+		const auto& pos_loc = m_offline.meshes().primal().locate( pos ) ;
 		Eigen::Vector3f grad_phi = grains.grad_phi( pos_loc ).cast<float>() ;
 		const float gn = grad_phi.norm() ;
 

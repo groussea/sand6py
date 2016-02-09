@@ -169,7 +169,7 @@ void GLViewer::init( )
 
 void GLViewer::update_buffers()
 {
-	const MeshType& g = m_offline.mesh() ;
+	const MeshType& g = m_offline.meshes().primal() ;
 	const typename VectorField::ShapeFuncImpl shape( g ) ;
 	constexpr Index NV = VectorField::ShapeFuncType::NI ;
 
@@ -343,7 +343,7 @@ void GLViewer::update_tensor_buffers()
 void GLViewer::update_texture()
 {
 	const Config& c = m_offline.config() ;
-	const MeshType& g = m_offline.mesh() ;
+	const MeshType& g = m_offline.meshes().primal() ;
 
 	// Texture
 
@@ -523,7 +523,7 @@ void GLViewer::draw( ) const
 
 	//LS
 	for( const LevelSet::Ptr& ls: m_offline.levelSets() ) {
-		m_shapeRenderer.draw( *ls, m_offline.mesh().box());
+		m_shapeRenderer.draw( *ls, m_offline.box());
 	}
 }
 
@@ -546,9 +546,11 @@ typename GLViewer::ScalarField GLViewer::getScalarEntity() const
 	case seFraction :
 		return m_offline.grains().fraction ;
 	case sePressure :
-		return m_offline.grains().stresses.trace().interpolate< Shape >( m_offline.mesh() ) ;
+		return m_offline.grains().stresses.trace().interpolate< Shape >( m_offline.meshes().primal() ) ;
+	case seDivergence :
+		return m_offline.grains().sym_grad.trace().interpolate< Shape >( m_offline.meshes().primal() ) ;
 	default:
-		return m_offline.grains().spi_grad.interpolate< Shape >( m_offline.mesh() );
+		return m_offline.grains().spi_grad.interpolate< Shape >( m_offline.meshes().primal() );
 	}
 }
 
@@ -556,9 +558,9 @@ typename GLViewer::TensorField GLViewer::getTensorEntity() const
 {
 	switch ( m_tensorEntity ) {
 	case teDu:
-		return m_offline.grains().sym_grad.interpolate< Shape >( m_offline.mesh() ) ;
+		return m_offline.grains().sym_grad.interpolate< Shape >( m_offline.meshes().primal() ) ;
 	default:
-		return m_offline.grains().stresses.interpolate< Shape >( m_offline.mesh() )  ;
+		return m_offline.grains().stresses.interpolate< Shape >( m_offline.meshes().primal() )  ;
 	}
 }
 

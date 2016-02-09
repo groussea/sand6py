@@ -214,7 +214,7 @@ void GLViewer::draw()
 
 	if(m_drawObjects) {
 		for( const LevelSet::Ptr& ls: m_offline.levelSets() ) {
-			m_shapeRenderer.draw( *ls, m_offline.mesh().box(), lightPosition(), shadowed, m_depthTexture, depthModelView, depthProjection );
+			m_shapeRenderer.draw( *ls, m_offline.box(), lightPosition(), shadowed, m_depthTexture, depthModelView, depthProjection );
 		}
 	}
 
@@ -252,7 +252,7 @@ void GLViewer::drawWithNames()
 void GLViewer::drawObject(const LevelSet &ls)
 {
 	if(!m_drawObjects) return ;
-	m_shapeRenderer.draw( ls, m_offline.mesh().box(), lightPosition(), false, m_depthTexture, Eigen::Matrix4f::Zero(), Eigen::Matrix4f::Zero() );
+	m_shapeRenderer.draw( ls, m_offline.box(), lightPosition(), false, m_depthTexture, Eigen::Matrix4f::Zero(), Eigen::Matrix4f::Zero() );
 }
 
 void GLViewer::init()
@@ -271,7 +271,7 @@ void GLViewer::init()
 	setBackgroundColor( QColor(255, 255, 255, 255 ) );
 
 	// Camera
-	const Vec& box = m_offline.mesh().box() ;
+	const Vec& box = m_offline.box() ;
 	const qglviewer::Vec qgl_box( box[0], box[1], box[2] ) ;
 	const qglviewer::Vec qgl_ori(0,0,0) ;
 	setSceneBoundingBox( qgl_ori, qgl_box) ;
@@ -332,7 +332,7 @@ void GLViewer::animate()
 
 Eigen::Vector3f GLViewer::lightPosition() const
 {
-	return ( m_offline.mesh().box() / 2 ).cast< float >() + camera()->sceneRadius() * m_lightDirection ;
+	return ( m_offline.box() / 2 ).cast< float >() + camera()->sceneRadius() * m_lightDirection ;
 }
 
 void GLViewer::update_buffers()

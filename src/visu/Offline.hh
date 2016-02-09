@@ -1,6 +1,7 @@
 #ifndef D6_OFFLINE_HH
 #define D6_OFFLINE_HH
 
+#include "simu/PhaseFields.hh"
 
 #include "geo/geo.fwd.hh"
 #include "geo/Particles.hh"
@@ -25,7 +26,7 @@ public:
 
 	const Particles &particles() const { return m_particles ; }
 
-	const MeshType &mesh() const { return *m_mesh ; }
+	const PhaseMeshes &meshes() const { return m_meshes ; }
 	const Phase &grains() const { return *m_grains ; }
 
 	const char* base_dir() const
@@ -50,6 +51,8 @@ public:
 		return m_config ;
 	}
 
+	const Vec& box() const { return config().box ; }
+
 private:
 	const char* m_base_dir ;
 	Config m_config ;
@@ -57,7 +60,7 @@ private:
 	Particles  m_particles ;
 	Particles::EventLog  m_events ;
 
-	std::unique_ptr< MeshType >  m_mesh ;
+	PhaseMeshes  m_meshes ;
 	std::unique_ptr< Phase >     m_grains ;
 
 	std::vector< std::unique_ptr< LevelSet > > m_levelSets ;

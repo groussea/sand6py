@@ -19,8 +19,9 @@ namespace d6 {
 
 Offline::Offline(const char *base_dir)
 	: m_base_dir( base_dir ),
-	  m_mesh( new MeshImpl( Vec::Ones(), VecWi::Ones() ) ),
-	  m_grains( new Phase( *m_mesh ) )
+	  m_meshes{ std::unique_ptr<PrimalMesh>(new PrimalMesh( Vec::Ones(), VecWi::Ones() )),
+				std::unique_ptr<  DualMesh>(new   DualMesh( Vec::Ones(), VecWi::Ones() )) },
+	  m_grains( new Phase( m_meshes ) )
 {
 	m_config.from_file( FileInfo( base_dir ).filePath( "config" ) ) ;
 	m_config.internalize() ;
@@ -42,9 +43,10 @@ bool Offline::load_frame(unsigned frame )
 
 		// Grid
 		{
-			std::ifstream ifs( dir.filePath("mesh") );
+			std::ifstream ifs( dir.filePath("meshes") );
 			boost::archive::binary_iarchive ia(ifs);
-			ia >> m_mesh->derived() ;
+			ia >> *m_meshes.m_primal ;
+			ia >> *m_meshes.m_dual ;
 		}
 		// Velocity, Stress, Phi
 		{

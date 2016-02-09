@@ -41,7 +41,7 @@ void dump_frame( const d6::Offline& offline, bool particles,
 	}
 
 	{
-		d6::VTKFieldWriter<d6::PrimalShape> fieldWriter( base_dir, offline.mesh() ) ;
+		d6::VTKFieldWriter<d6::PrimalShape> fieldWriter( base_dir, offline.meshes().primal() ) ;
 	//	fieldWriter.setMode( d6::VTKWriter::Ascii );
 		fieldWriter.startFile( "primal-fields", frame ) ;
 		fieldWriter.dump(    "phi", offline.grains().fraction ) ;
@@ -50,12 +50,12 @@ void dump_frame( const d6::Offline& offline, bool particles,
 		fieldWriter.dump( "forces", offline.grains().fcontact ) ;
 
 		d6::PrimalTensorField tau = offline.grains().stresses.interpolate<d6::PrimalShape>(
-					offline.grains().velocity.shape().mesh()) ;
+					offline.meshes().primal()) ;
 		fieldWriter.dump("stresses", tau ) ;
 	}
 
 	{
-		d6::VTKFieldWriter<d6::DualShape> fieldWriter( base_dir, offline.mesh() ) ;
+		d6::VTKFieldWriter<d6::DualShape> fieldWriter( base_dir, offline.meshes().primal() ) ;
 		fieldWriter.startFile( "dual-fields", frame ) ;
 
 		d6::DualScalarField p   = offline.grains().stresses.trace() ;

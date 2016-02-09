@@ -27,8 +27,7 @@ public:
 	//! Runs the simulation
 	void run() ;
 
-	MeshType& mesh() { return * m_mesh ;  }
-	const MeshType& mesh() const { return * m_mesh ;  }
+	const PhaseMeshes& meshes() const { return m_meshes ;  }
 
 	std::vector< RigidBody > &rigidBodies ()
 	{
@@ -63,7 +62,7 @@ private:
 
 	std::vector< RigidBody   > m_rigidBodies ;
 
-	std::unique_ptr<MeshType>  m_mesh ;
+	PhaseMeshes  m_meshes ;
 	std::unique_ptr<Phase>     m_grains ;
 	// Useful for warm-starting stresses at frictional boundary conditions
 	std::vector< RBStresses > m_rbStresses  ;

@@ -26,11 +26,11 @@ struct Phase
 	PrimalVectorField geo_proj ;
 	PrimalVectorField fcontact ;
 
-	Phase( const MeshType& mesh )
-		: fraction(mesh), velocity(mesh),
-		  stresses(mesh), sym_grad(mesh),
-		  spi_grad(mesh), grad_phi(mesh),
-		  geo_proj(mesh), fcontact(mesh)
+	Phase( const PhaseMeshes & meshes )
+		: fraction(meshes.primal()), velocity(meshes.primal()),
+		  stresses(meshes.  dual()), sym_grad(meshes.  dual()),
+		  spi_grad(meshes.  dual()), grad_phi(meshes.primal()),
+		  geo_proj(meshes.primal()), fcontact(meshes.primal())
 	{}
 
 	template < typename Archive >
