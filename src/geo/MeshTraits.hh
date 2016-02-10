@@ -26,7 +26,6 @@ struct MeshTraits< Grid > {
 	typedef Voxel CellGeo ;
 	static constexpr Index NV = CellGeo::NV ;
 	static constexpr Index NC = CellGeo::NC ;
-	static constexpr Index NQ = CellGeo::NQ ;
 
 	typedef std::vector<Cell> Cells ;
 };
@@ -44,7 +43,6 @@ struct MeshTraits< TetGrid > {
 	typedef Tet CellGeo ;
 	static constexpr Index NV = CellGeo::NV ;
 	static constexpr Index NC = CellGeo::NC ;
-	static constexpr Index NQ = CellGeo::NQ ;
 
 	typedef std::vector<Cell> Cells ;
 };

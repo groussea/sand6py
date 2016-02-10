@@ -31,46 +31,43 @@ struct MeshShapeFunc : public ShapeFuncBase< Interp<MeshT> >
 		: m_mesh( mesh )
 	{}
 
+	// ~ lumped mass matrix
 	void compute_volumes( DynVec& volumes ) const
 	{
 		volumes.resize( Base::nDOF() ) ;
 		volumes.setZero() ;
 
-		typename MeshType::CellGeo geo ;
-		typename Base::NodeList nodes ;
+		typename Base::Location loc ;
+		typename Base::Interpolation itp ;
 
-		for( typename MeshType::CellIterator it = m_mesh.cellBegin() ; it != m_mesh.cellEnd() ; ++it ) {
+		for( auto qpIt = Base::qpBegin() ; qpIt != Base::qpEnd() ; ++qpIt  ) {
+			qpIt.locate(loc) ;
+			Base::interpolate(loc, itp);
 
-			m_mesh.get_geo( *it, geo );
-			const Scalar vol = geo.volume() / MeshType::NV ;
-
-			list_nodes( *it, nodes );
-			for( Index k = 0 ; k < MeshType::NV ; ++k ) {
-				volumes[nodes[k]] += vol ;
+			for( Index k = 0 ; k < itp.nodes.size() ; ++k ) {
+				volumes[itp.nodes[k]] += itp.coeffs[k]*qpIt.weight() ;
 			}
 		}
 	}
 
-	void all_dof_positions( DynMatW& vertices, std::vector<Index>& indexes ) const
+	void build_visu_mesh( DynMatW& vertices, DynMati& indices ) const
 	{
-		vertices.resize( WD, m_mesh.nNodes() );
-		indexes.resize( Base::nDOF() );
+		constexpr Index NV = MeshType::NV ;
+
+		indices.resize( NV, m_mesh.nCells() ) ;
+		vertices.resize( WD, Base::nDOF() );
 
 		typename MeshType::CellGeo cellGeo ;
-		typename Base::NodeList meshNodes, shapeNodes ;
-
+		typename Base::NodeList cellNodes ;
 		for( typename MeshType::CellIterator it = m_mesh.cellBegin() ; it != m_mesh.cellEnd() ; ++it )
 		{
 			m_mesh.get_geo( *it, cellGeo ) ;
+			list_nodes( *it, cellNodes );
 
-			list_nodes( *it, shapeNodes );
-			Linear<MeshT>( m_mesh ).list_nodes( *it, meshNodes );
+			indices.col( it.index() ) = cellNodes ;
 
-			const Scalar vol = cellGeo.volume() / meshNodes.rows() ;
-
-			for( int k = 0 ; k < meshNodes.rows() ; ++k ) {
-				indexes[shapeNodes[k]] = meshNodes[k] ;
-				vertices.col( meshNodes[k] ) = cellGeo.vertex( k ) ;
+			for( int k = 0 ; k < NV ; ++k ) {
+				vertices.col( cellNodes[k] ) = cellGeo.vertex( k ) ;
 			}
 		}
 	}
@@ -93,6 +90,10 @@ struct MeshShapeFunc : public ShapeFuncBase< Interp<MeshT> >
 	const MeshT& mesh()  const {
 		return m_mesh.derived() ;
 	}
+	const MeshT& visuMesh()  const {
+		return m_mesh.derived() ;
+	}
+
 	const typename Base::DOFDefinition& dofDefinition() const
 	{ return mesh() ;  }
 
@@ -109,12 +110,6 @@ struct MeshShapeFunc : public ShapeFuncBase< Interp<MeshT> >
 		return typename Traits::template QPIterator<CellIterator>::Type( m_mesh, it ) ;
 	}
 
-	void locate_dof( typename Base::Location& loc, Index dofIndex ) const {
-		typename MeshType::CellGeo geo ;
-		m_mesh.get_geo( loc.cell, geo ) ;
-		geo.vertexCoords( dofIndex, loc.coords ) ;
-	}
-
 protected:
 	const MeshType& m_mesh ;
 
@@ -123,10 +118,11 @@ protected:
 // Iterator
 
 
-template< typename MeshT, typename CellIterator = typename MeshT::CellIterator >
+template< typename MeshT, typename CellIterator = typename MeshT::CellIterator, Index Order = 2 >
 struct MeshQPIterator {
 
 	typedef MeshBase< MeshT > MeshType ;
+	typedef QuadraturePoints< typename MeshT::CellGeo, Order > QP ;
 
 	explicit MeshQPIterator( const MeshType &mesh_, const CellIterator& cIt )
 		: mesh(mesh_), cellIt( cIt ), qp(0), cache_valid( false )
@@ -139,7 +135,7 @@ struct MeshQPIterator {
 	{ return o.cellIt != cellIt || qp != o.qp ; }
 
 	MeshQPIterator& operator++() {
-		if( ++qp == MeshType::CellGeo::NQ ) {
+		if( ++qp == QP::NQ ) {
 			qp = 0 ;
 			++cellIt ;
 			cache_valid = false ;
@@ -149,16 +145,18 @@ struct MeshQPIterator {
 
 	Vec pos() const {
 		if(! cache_valid ) update_cache();
-		return cached_geo.pos( cached_qps.col(qp) ) ;
+		typename MeshType::Coords coords ;
+		QP::get( cached_geo, qp, coords ) ;
+		return cached_geo.pos( coords ) ;
 	}
 	Scalar weight() const {
 		if(! cache_valid ) update_cache();
-		return cached_qpw[qp] ;
+		return QP::weight( cached_geo, qp ) ;
 	}
 	void locate( typename MeshType::Location &loc ) const {
 		if(! cache_valid ) update_cache();
 		loc.cell = *cellIt ;
-		loc.coords = cached_qps.col(qp) ;
+		QP::get( cached_geo, qp, loc.coords ) ;
 	}
 
 private:
@@ -169,12 +167,9 @@ private:
 
 	mutable bool cache_valid ;
 	mutable typename MeshType::CellGeo cached_geo ;
-	mutable typename MeshType::CellGeo::QuadPoints  cached_qps ;
-	mutable typename MeshType::CellGeo::QuadWeights cached_qpw ;
 
 	void update_cache() const {
 		mesh.get_geo( *cellIt, cached_geo ) ;
-		cached_geo.get_qp( cached_qps, cached_qpw ) ;
 		cache_valid = true ;
 	}
 };
@@ -188,14 +183,14 @@ template< typename MeshT >
 struct ShapeFuncTraits< Linear<MeshT>  > : public ShapeFuncTraits< MeshShapeFunc< Linear, MeshT >  >
 {
 	typedef ShapeFuncTraits< MeshShapeFunc< Linear, MeshT > > Base ;
-	enum {
-		NI = Base::MeshType::NV,
-		NQ = Base::MeshType::CellGeo::NQ
-	};
 
 	template <typename CellIterator = typename Base::MeshType::CellIterator >
 	struct QPIterator {
 		typedef MeshQPIterator< MeshT, CellIterator > Type ;
+	};
+
+	enum {
+		NI = Base::MeshType::NV
 	};
 } ;
 
@@ -223,6 +218,12 @@ struct Linear : public MeshShapeFunc< Linear, MeshT >
 		list = itp.nodes ;
 	}
 
+	void locate_dof( typename Base::Location& loc, Index dofIndex ) const {
+		typename MeshType::CellGeo geo ;
+		Base::mesh().get_geo( loc.cell, geo ) ;
+		geo.vertexCoords( dofIndex, loc.coords ) ;
+	}
+
 	void interpolate( const Location& loc,
 					  typename Base::NodeList& nodes, typename Base::CoefList& coeffs ) const ;
 } ;
@@ -234,8 +235,7 @@ struct ShapeFuncTraits< DGLinear<MeshT>  > : public ShapeFuncTraits< MeshShapeFu
 {
 	typedef ShapeFuncTraits< MeshShapeFunc< DGLinear, MeshT > > Base ;
 	enum {
-		NI = Base::MeshType::NV,
-		NQ = Base::MeshType::CellGeo::NQ
+		NI = Base::MeshType::NV
 	};
 
 	template <typename CellIterator = typename Base::MeshType::CellIterator >
@@ -264,6 +264,12 @@ struct DGLinear : public MeshShapeFunc< DGLinear, MeshT >
 	}
 	void get_derivatives( const Location& loc, typename Base::Derivatives& dc_dx ) const {
 		Linear<MeshT>( Base::mesh() ).get_derivatives( loc, dc_dx ) ;
+	}
+
+	void locate_dof( typename Base::Location& loc, Index dofIndex ) const {
+		typename MeshType::CellGeo geo ;
+		Base::mesh().get_geo( loc.cell, geo ) ;
+		geo.vertexCoords( dofIndex, loc.coords ) ;
 	}
 
 	// Orderin:g all nodes from cell 0, all nodes from cell, ... etc

@@ -34,8 +34,12 @@ typedef Grid    MeshImpl ;
 
 template < typename MeshT > struct Linear ;
 template < typename MeshT > struct DGLinear ;
+template < typename MeshT > struct P2 ;
 
 typedef MeshBase< MeshImpl > MeshType ;
+
+template < typename CellT, int Order >
+struct QuadraturePoints ;
 
 }
 

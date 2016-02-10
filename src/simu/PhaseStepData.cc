@@ -17,7 +17,7 @@
 
 #include <utility>
 
-//#define FULL_FEM  // Ignore particles, just solve FEM system
+#define FULL_FEM  // Ignore particles, just solve FEM system
 
 #define INTEGRATE_PARTICLES_SEQUENTIAL
 

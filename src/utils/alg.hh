@@ -43,6 +43,7 @@ typedef Eigen::Matrix< Scalar, WD, Eigen::Dynamic > DynMatW ;
 typedef Eigen::Matrix< Scalar, SD, Eigen::Dynamic > DynMatS ;
 typedef Eigen::Matrix< Scalar, 3, Eigen::Dynamic > DynMat3 ;
 typedef Eigen::Matrix< Scalar, 6, Eigen::Dynamic > DynMat6 ;
+typedef Eigen::Matrix<  Index, Eigen::Dynamic, Eigen::Dynamic > DynMati;
 
 
 } //d6

@@ -8,6 +8,7 @@
 #include "TetGrid.hh"
 
 #include "MeshShapeFunction.hh"
+#include "P2ShapeFunction.hh"
 
 namespace d6
 {
@@ -43,5 +44,7 @@ template class FieldBase< AbstractScalarField< DGLinear<Grid> > > ;
 template class AbstractScalarField< DGLinear<Grid> > ;
 template class FieldBase< AbstractScalarField< DGLinear<TetGrid> > > ;
 template class AbstractScalarField< DGLinear<TetGrid> > ;
+template class FieldBase< AbstractScalarField< P2<TetGrid> > > ;
+template class AbstractScalarField< P2<TetGrid> > ;
 
 }

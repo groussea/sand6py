@@ -20,44 +20,28 @@ VTKFieldWriter<ShapeFuncT>::VTKFieldWriter(const char* base_dir, const ShapeFunc
 template <typename ShapeFuncT>
 void VTKFieldWriter<ShapeFuncT>::writeMesh( File &vtk ) const
 {
-	constexpr Index NV = ShapeFuncT::NI ;
-	typedef typename ShapeFuncT::MeshType MeshType ;
-	const MeshType& mesh = m_shape.mesh() ;
+	DynMatW vertices ;
+	DynMati ids ;
+	m_shape.derived().build_visu_mesh( vertices, ids ) ;
 
-	Eigen::Matrix<float, WD, Eigen::Dynamic> vertices( WD, m_shape.nDOF() ) ;
-	vertices.setZero() ;
+	const Index NV = ids.rows() ;
 
-	Eigen::Matrix<int, NV+1, Eigen::Dynamic > nodeIndices( NV+1, mesh.nCells() ) ;
+	Eigen::MatrixXi nodeIndices( NV+1, ids.cols() ) ;
+
 	nodeIndices.row(0).setConstant( NV ) ;
+	nodeIndices.bottomRows(NV) = ids.cast<int>() ;
 
 	const Index elemType =
 		#if D6_DIM == 3
-		MeshType::NV == 4 ? /*VTK_TETRA*/ 10 : /*VTK_VOXEL*/ 11
+		NV == 4 ? /*VTK_TETRA*/ 10 : /*VTK_VOXEL*/ 11
 		#else
-		MeshType::NV == 3 ? /*VTK_TRIANGLE*/ 5 : /*VTK_PIXEL*/ 8
+		NV == 3 ? /*VTK_TRIANGLE*/ 5 : /*VTK_PIXEL*/ 8
 		#endif
 			;
 
 	const Eigen::VectorXi cellTypes =
-		Eigen::VectorXi::Constant( mesh.nCells(), elemType ) ;
+		Eigen::VectorXi::Constant( ids.cols(), elemType ) ;
 
-
-	typename MeshType::CellGeo cellGeo ;
-	typename ShapeFuncT::NodeList cellNodes ;
-	typename ShapeFuncT::Location loc ;
-
-	for( typename MeshType::CellIterator it = mesh.cellBegin() ; it != mesh.cellEnd() ; ++it )
-	{
-		mesh.get_geo( *it, cellGeo ) ;
-		loc.cell = *it ;
-		m_shape.list_nodes( loc, cellNodes );
-
-		nodeIndices.template block< NV, 1 >( 1, it.index() ) = cellNodes ;
-
-		for( int k = 0 ; k < NV ; ++k ) {
-			vertices.col( cellNodes[k] ).template head<WD>() = cellGeo.vertex( k ).cast< float >() ;
-		}
-	}
 
 	vtk << "DATASET UNSTRUCTURED_GRID\n" ;
 	vtk << "POINTS " << vertices.cols() << " float\n" ;
@@ -96,5 +80,10 @@ template  bool VTKFieldWriter<Linear<MeshImpl>>::dump( const char*, const FieldB
 template class VTKFieldWriter<DGLinear<MeshImpl>> ;
 template  bool VTKFieldWriter<DGLinear<MeshImpl>>::dump( const char*, const FieldBase< AbstractScalarField<DGLinear<MeshImpl> > >& ) ;
 template  bool VTKFieldWriter<DGLinear<MeshImpl>>::dump( const char*, const FieldBase< AbstractTensorField<DGLinear<MeshImpl> > >& ) ;
+
+template class VTKFieldWriter<P2<MeshImpl>> ;
+template  bool VTKFieldWriter<P2<MeshImpl>>::dump( const char*, const FieldBase< AbstractScalarField<P2<MeshImpl> > >& ) ;
+template  bool VTKFieldWriter<P2<MeshImpl>>::dump( const char*, const FieldBase< AbstractVectorField<P2<MeshImpl> > >& ) ;
+template  bool VTKFieldWriter<P2<MeshImpl>>::dump( const char*, const FieldBase< AbstractTensorField<P2<MeshImpl> > >& ) ;
 
 } //d6

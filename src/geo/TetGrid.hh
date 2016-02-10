@@ -58,6 +58,8 @@ public:
 	Index nNodes() const
 	{ return (m_dim+1).prod() ; }
 
+	Index nEdges() const ;
+
 	Index nCells() const
 	{ return m_dim.prod() * Nsub ; }
 

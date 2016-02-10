@@ -70,7 +70,6 @@ public:
 
 	Derived& from_rvalue ( Derived&& f )
 	{
-		assert( f.size() == size() ) ;
 		m_size = f.size() ;
 		m_data.swap( f.m_data ) ;
 		return derived() ;

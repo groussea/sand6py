@@ -97,14 +97,6 @@ struct UnstructuredShapeFunc : public ShapeFuncBase< UnstructuredShapeFunc >
 		list[0] = loc ;
 	}
 
-	void all_dof_positions( DynMatW& v, std::vector<Index>& indexes  ) const
-	{
-		v = m_dofDef.vertices ;
-		indexes.resize( nDOF() ) ;
-		std::iota( indexes.begin(), indexes.end(), 0 ) ;
-	}
-
-
 	UnstructuredDOFIterator qpBegin() const {
 		return UnstructuredDOFIterator( m_dofDef, 0 ) ;
 	}

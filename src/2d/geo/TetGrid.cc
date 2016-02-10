@@ -30,6 +30,10 @@ TetGrid::TetGrid(const Vec &box, const VecWi &res)
 	m_dx = box.array()/res.array().cast< Scalar >() ;
 }
 
+Index TetGrid::nEdges() const {
+	return ( m_dim*(m_dim+1) ).sum() + m_dim.prod() ;
+}
+
 void TetGrid::locate(const Vec &x, Location &loc) const
 {
 	Vec pos = x.array() / m_dx ;

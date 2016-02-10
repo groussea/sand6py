@@ -8,6 +8,7 @@
 #include "TetGrid.hh"
 
 #include "MeshShapeFunction.hh"
+#include "P2ShapeFunction.hh"
 
 namespace d6
 {
@@ -49,6 +50,11 @@ template class FieldBase< AbstractTensorField< Linear<TetGrid> > > ;
 template class AbstractTensorField< Linear<TetGrid> > ;
 template class FieldBase< AbstractSkewTsField< Linear<TetGrid> > > ;
 template class AbstractSkewTsField< Linear<TetGrid> > ;
+
+template class FieldBase< AbstractTensorField< P2<TetGrid> > > ;
+template class AbstractTensorField< P2<TetGrid> > ;
+template class FieldBase< AbstractSkewTsField< P2<TetGrid> > > ;
+template class AbstractSkewTsField< P2<TetGrid> > ;
 
 template class FieldBase< AbstractTensorField< DGLinear<Grid> > > ;
 template class AbstractTensorField< DGLinear<Grid> > ;

@@ -90,6 +90,8 @@ Index Tet::sample_uniform( const unsigned N, const Index start, Points &points, 
 		const Scalar a = 1./6 ;
 		const Scalar b = 2./3 ;
 
+		constexpr Index NQ = QuadraturePoints<Tet,2>::NQ ;
+
 		(void) N ;
 		const Vec subBox = box.array() / std::pow( NQ*2, 1./WD) ; //Nsub.array().cast< Scalar >() ;
 

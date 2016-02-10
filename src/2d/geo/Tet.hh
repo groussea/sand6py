@@ -2,6 +2,7 @@
 #define D6_TET_HH
 
 #include "utils/alg.hh"
+#include "geo/geo.fwd.hh"
 
 namespace d6 {
 
@@ -9,13 +10,9 @@ struct Tet {
 
 	static constexpr Index NV = 3 ;
 	static constexpr Index NC = 3 ;
-	static constexpr Index NQ = 3 ;
 
 	typedef Eigen::Matrix< Scalar, NC, 1  > Coords ;
-	typedef Eigen::Matrix< Scalar, NV, WD > Derivatives ;
-
-	typedef Eigen::Matrix< Scalar, NC, NQ> QuadPoints ;
-	typedef Eigen::Matrix< Scalar,  1, NQ> QuadWeights ;
+	typedef Eigen::Matrix< Scalar, NC, WD > Derivatives ;
 
 	typedef Eigen::Matrix< Scalar, WD, NV > Vertices ;
 	typedef Eigen::Matrix< Scalar, WD, Eigen::Dynamic > Points ;
@@ -68,6 +65,10 @@ struct Tet {
 		coords.setZero() ;
 		coords[cornerIndex] = 1. ;
 	}
+	void edgeCenterCoords( int edgeIndex, Coords& coords ) const {
+		coords.setConstant( 1./2 ) ;
+		coords[edgeIndex] = 0. ;
+	}
 
 	Scalar volume() const {
 		return box.prod() / 2 ;
@@ -81,15 +82,6 @@ struct Tet {
 	void compute_derivatives( const Coords & coords, Derivatives& dc_dx ) const ;
 
 	Index sample_uniform( const unsigned N, const Index start, Points &points, Frames &frames ) const ;
-
-	void get_qp( QuadPoints& qps, QuadWeights& weights ) const {
-		const Scalar a = 1./6 ;
-		const Scalar b = 2./3 ;
-
-		qps.setConstant( a ) ;
-		qps.diagonal().setConstant( b ) ;
-		weights.setConstant( volume() / NQ ) ;
-	}
 
 	void update_geometry( unsigned char rotation, int num ) ;
 
@@ -105,6 +97,54 @@ private:
 	void local_coords( const Vec& pos, Coords& coords ) const ;
 
 } ;
+
+template<>
+struct QuadraturePoints< Tet, 2 >
+{
+	static constexpr Index NQ = 3 ;
+	typedef Eigen::Matrix< Scalar, Tet::NC, 1> QuadPoint ;
+
+	static void get( const Tet&, Index k, QuadPoint& qp ) {
+		static constexpr Scalar a = 1./6 ;
+		static constexpr Scalar b = 2./3 ;
+
+		qp.setConstant(a) ;
+		qp[k] = b ;
+	}
+
+	static Scalar weight( const Tet& geo, Index ) {
+		return geo.volume()/NQ ;
+	}
+
+} ;
+
+template<>
+struct QuadraturePoints< Tet, 4 >
+{
+	static constexpr Index NQ = 6 ;
+	typedef Eigen::Matrix< Scalar, Tet::NC, 1> QuadPoint ;
+
+	static void get( const Tet&, Index k, QuadPoint& qp ) {
+		const Scalar a = k<3
+				? 0.091576213509771
+				: 0.445948490915965 ;
+		const Scalar b = k<3
+				? 0.816847572980459
+				: 0.108103018168070 ;
+
+		qp.setConstant(a) ;
+		qp[k<3?k:(k-3)] = b ;
+	}
+
+	static Scalar weight( const Tet& geo, Index k ) {
+		return ( k<3
+				 ? 0.109951743655322
+				 : 0.223381589678011
+				   ) * geo.volume() ;
+	}
+
+} ;
+
 
 } //d6
 

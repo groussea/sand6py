@@ -20,8 +20,7 @@ struct ShapeFuncBase
 
 	typedef typename Traits::Location Location ;
 	enum {
-		NI = Traits::NI,
-		NQ = Traits::NQ
+		NI = Traits::NI
 	} ;
 	static bool constexpr is_mesh_based = Traits::is_mesh_based ;
 	typedef typename Traits::DOFDefinition DOFDefinition ;
@@ -52,8 +51,6 @@ struct ShapeFuncBase
 
 	void compute_volumes( DynVec& volumes ) const
 	{ derived().compute_volumes( volumes ) ; }
-	void all_dof_positions( DynMatW& vertices, std::vector<Index>& indexes  ) const
-	{ derived().all_dof_positions( vertices, indexes ) ; }
 
 	typename Traits::template QPIterator<>::Type qpBegin() const
 	{ return derived().qpBegin() ; }
@@ -64,6 +61,9 @@ struct ShapeFuncBase
 	{ return derived().template qpIterator<CellIterator>( it ) ; }
 	const DOFDefinition& dofDefinition() const
 	{ return derived().dofDefinition() ; }
+
+	void build_visu_mesh( DynMatW& vertices, DynMati& indices ) const
+	{ derived().build_visu_mesh( vertices, indices ) ; }
 
 };
 

@@ -50,7 +50,7 @@ TEST( geo, interp )
 
 	AbstractScalarField< DGLinear<Grid> > dg ( lin.interpolate< DGLinear<Grid> >() ) ;
 
-	ASSERT_EQ( g.nCells() * Voxel::NQ, dg.size() ) ;
+	ASSERT_EQ( g.nCells() * Voxel::NV, dg.size() ) ;
 	ASSERT_DOUBLE_EQ( 1., dg( c.box/2 ) ) ;
 	ASSERT_DOUBLE_EQ( dg.size(), dg.flatten().sum() ) ;
 

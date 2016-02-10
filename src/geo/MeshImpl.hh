@@ -10,5 +10,6 @@
 #endif
 
 #include "geo/MeshShapeFunction.hh"
+#include "geo/P2ShapeFunction.hh"
 
 #endif
