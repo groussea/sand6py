@@ -17,7 +17,7 @@
 
 #include <utility>
 
-#define FULL_FEM  // Ignore particles, just solve FEM system
+//#define FULL_FEM  // Ignore particles, just solve FEM system
 
 #define INTEGRATE_PARTICLES_SEQUENTIAL
 
@@ -26,7 +26,7 @@ namespace d6 {
 
 void PhaseStepData::computeProjectors(const Config&config,
 									  const PrimalShape& pShape, const DualShape &dShape,
-									  const std::vector<RigidBodyData> &rbData,
+									  const std::vector<RigidBodyData> &rbData, const PrimalScalarField &lumped_mass,
 									  Projectors& mats) const
 {
 	const Index m  = nPrimalNodes() ;
@@ -54,6 +54,11 @@ void PhaseStepData::computeProjectors(const Config&config,
 
 		for( unsigned k = 0 ; k < PrimalShape::NI ; ++k ) {
 			const Index i = primalNodes.indices[ pnodes[k] ] ;
+			if( lumped_mass[pnodes[k]] < 1.e-8 ) {
+				mats.vel.block( i ).setZero() ;
+				continue ;
+			}
+
 			BoundaryInfo info ;
 			pShape.locate_dof( ploc, k ) ;
 			pShape.mesh().boundaryInfo( ploc, bdMapper, info ) ;
@@ -124,7 +129,7 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 
 	const Scalar mass_regul = 1.e-8 ;
 
-	computeProjectors( config, pShape, dShape, rbData, proj ) ;
+	computeProjectors( config, pShape, dShape, rbData, phiInt, proj ) ;
 
 	// Lumped mass matrix
 	{
@@ -385,7 +390,7 @@ void PhaseStepData::compute(const DynParticles& particles,
 	std::vector< bool > activeCells ;
 
 #if defined(FULL_FEM)
-	pShape.compute_volumes( intPhiPrimal.flatten() ) ;
+	pShape.compute_volumes_tpz( intPhiPrimal.flatten() ) ;
 	dShape.compute_volumes( intPhiDual  .flatten() ) ;
 	intPhiVel.set_zero() ;
 	intPhiInertia.set_zero() ;
@@ -449,7 +454,7 @@ void PhaseStepData::computePhiAndGradPhi(const PrimalScalarField &intPhi, Primal
 
 	// Compute volumes of cells
 	PrimalScalarField volumes(shape) ;
-	intPhi.shape().compute_volumes( volumes.flatten() );
+	intPhi.shape().compute_volumes_tpz( volumes.flatten() );
 
 	fraction = intPhi;
 	fraction.divide_by_positive( volumes ) ;

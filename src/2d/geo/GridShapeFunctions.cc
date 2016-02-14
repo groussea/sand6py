@@ -100,9 +100,9 @@ void P2<TetGrid>::dof_coeffs( const typename MeshType::Coords& coords, typename 
 	//   |/  4
 	//   2
 
-	const Scalar c0 = coords[0] ;
-	const Scalar c1 = coords[1] ;
-	const Scalar c2 = coords[2] ;
+	const Scalar &c0 = coords[0] ;
+	const Scalar &c1 = coords[1] ;
+	const Scalar &c2 = coords[2] ;
 
 	coeffs[0] = c0 * ( 2*c0 - 1 ) ;
 	coeffs[1] = c1 * ( 2*c1 - 1 ) ;
@@ -110,6 +110,22 @@ void P2<TetGrid>::dof_coeffs( const typename MeshType::Coords& coords, typename 
 	coeffs[3] = 4 * (c1*c2) ;
 	coeffs[4] = 4 * (c0*c2) ;
 	coeffs[5] = 4 * (c1*c0) ;
+}
+
+template<>
+void P2<TetGrid>::dof_coeffs_tpz( const typename MeshType::Coords& coords, typename Base::CoefList& coeffs) const
+{
+	const Scalar &c0 = coords[0] ;
+	const Scalar &c1 = coords[1] ;
+	const Scalar &c2 = coords[2] ;
+
+	coeffs[0] = std::max( 0., 2*c0 -1 ) ;
+	coeffs[1] = std::max( 0., 2*c1 -1 ) ;
+	coeffs[2] = std::max( 0., 2*c2 -1 ) ;
+
+	coeffs[3] = std::max(0., 1 - std::max( 2*c0, c0 + std::fabs(c1-c2) )) ;
+	coeffs[4] = std::max(0., 1 - std::max( 2*c1, c1 + std::fabs(c0-c2) )) ;
+	coeffs[5] = std::max(0., 1 - std::max( 2*c2, c2 + std::fabs(c1-c0) )) ;
 }
 
 template<>
@@ -121,9 +137,9 @@ void P2<TetGrid>::get_derivatives( const Location& loc, typename Base::Derivativ
 	typename Tet::Derivatives lin_dx ;
 	geo.compute_derivatives( loc.coords, lin_dx ) ;
 
-	const Scalar c0 = loc.coords[0] ;
-	const Scalar c1 = loc.coords[1] ;
-	const Scalar c2 = loc.coords[2] ;
+	const Scalar &c0 = loc.coords[0] ;
+	const Scalar &c1 = loc.coords[1] ;
+	const Scalar &c2 = loc.coords[2] ;
 
 	dc_dx.row(0) = ( 4*c0 - 1 ) * lin_dx.row(0) ;
 	dc_dx.row(1) = ( 4*c1 - 1 ) * lin_dx.row(1) ;

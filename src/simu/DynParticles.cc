@@ -213,7 +213,7 @@ void DynParticles::integratePrimal( std::vector< bool > &activeCells,
 		shape.locate( p0, loc );
 
 		typename Shape::Interpolation itp ;
-		shape.interpolate( loc, itp );
+		shape.interpolate_tpz( loc, itp );
 
 		activeCells[ shape.mesh().cellIndex( loc.cell ) ] = true ;
 

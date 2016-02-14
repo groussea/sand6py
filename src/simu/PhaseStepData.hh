@@ -96,7 +96,8 @@ private:
 							  std::vector< RigidBodyData > &rbData ) ;
 
 	void computeProjectors(const Config &config, const PrimalShape &pShape, const DualShape &dShape,
-						   const std::vector<RigidBodyData> & rbData, Projectors& mats ) const ;
+						   const std::vector<RigidBodyData> & rbData, const PrimalScalarField& lumped_mass,
+						   Projectors& mats ) const ;
 
 	void computeAnisotropy(const DynVec& orientation,  const Config &config,
 						   typename FormMat<SD,SD>::SymType &Aniso ) const ;

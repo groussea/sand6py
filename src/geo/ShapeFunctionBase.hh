@@ -42,6 +42,9 @@ struct ShapeFuncBase
 
 	void interpolate( const Location& loc, Interpolation& itp ) const
 	{ derived().interpolate( loc, itp ) ; }
+	void interpolate_tpz( const Location& loc, Interpolation& itp ) const
+	{ derived().interpolate_tpz( loc, itp ) ; }
+
 	void get_derivatives( const Location& loc, Derivatives& dc_dx ) const
 	{ derived().get_derivatives( loc, dc_dx ) ; }
 	void list_nodes( const Location& loc, NodeList& list ) const
@@ -51,6 +54,8 @@ struct ShapeFuncBase
 
 	void compute_volumes( DynVec& volumes ) const
 	{ derived().compute_volumes( volumes ) ; }
+	void compute_volumes_tpz( DynVec& volumes ) const
+	{ derived().compute_volumes_tpz( volumes ) ; }
 
 	typename Traits::template QPIterator<>::Type qpBegin() const
 	{ return derived().qpBegin() ; }
@@ -59,6 +64,7 @@ struct ShapeFuncBase
 	template <typename CellIterator>
 	typename Traits::template QPIterator<CellIterator>::Type qpIterator( const CellIterator &it ) const
 	{ return derived().template qpIterator<CellIterator>( it ) ; }
+
 	const DOFDefinition& dofDefinition() const
 	{ return derived().dofDefinition() ; }
 

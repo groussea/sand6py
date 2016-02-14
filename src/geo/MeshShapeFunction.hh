@@ -50,6 +50,29 @@ struct MeshShapeFunc : public ShapeFuncBase< Interp<MeshT> >
 		}
 	}
 
+	// ~ lumped mass matrix
+	void compute_volumes_tpz( DynVec& volumes ) const
+	{
+		volumes.resize( Base::nDOF() ) ;
+		volumes.setZero() ;
+
+		typename MeshType::CellGeo cellGeo ;
+
+		typename Base::NodeList nodes ;
+		for( auto it = m_mesh.cellBegin() ; it !=  m_mesh.cellEnd() ; ++it )
+		{
+			list_nodes( *it, nodes ) ;
+
+			m_mesh.get_geo( *it, cellGeo );
+			const Scalar vol = cellGeo.volume() ;
+
+			for ( int k = 0 ; k < Base::NI ; ++k ) {
+				volumes[nodes[k]] += vol * dof_volume_fraction( k ) ;
+			}
+		}
+	}
+
+
 	void build_visu_mesh( DynMatW& vertices, DynMati& indices ) const
 	{
 		constexpr Index NV = MeshType::NV ;
@@ -109,6 +132,9 @@ struct MeshShapeFunc : public ShapeFuncBase< Interp<MeshT> >
 	typename Traits::template QPIterator<CellIterator>::Type qpIterator( const CellIterator &it ) const {
 		return typename Traits::template QPIterator<CellIterator>::Type( m_mesh, it ) ;
 	}
+
+	Scalar dof_volume_fraction( Index k ) const
+	{ return Base::derived().dof_volume_fraction(k) ; }
 
 protected:
 	const MeshType& m_mesh ;
@@ -226,6 +252,11 @@ struct Linear : public MeshShapeFunc< Linear, MeshT >
 
 	void interpolate( const Location& loc,
 					  typename Base::NodeList& nodes, typename Base::CoefList& coeffs ) const ;
+
+	void interpolate_tpz( const Location& loc, typename Base::Interpolation& itp ) const
+	{ interpolaye(loc,itp) ; }
+
+	Scalar dof_volume_fraction( Index ) const	{ return 1./Base::NI ; }
 } ;
 
 // DG Linear shape func
@@ -280,6 +311,11 @@ struct DGLinear : public MeshShapeFunc< DGLinear, MeshT >
 			list[k] = cellIdx * MeshType::NV + k ;
 		}
 	}
+
+	void interpolate_tpz( const Location& loc, typename Base::Interpolation& itp ) const
+	{ interpolaye(loc,itp) ; }
+
+	Scalar dof_volume_fraction( Index ) const	{ return 1./Base::NI ; }
 
 } ;
 

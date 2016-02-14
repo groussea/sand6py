@@ -62,9 +62,18 @@ struct P2 : public MeshShapeFunc< P2, MeshT >
 
 	void build_visu_mesh( DynMatW& vertices, DynMati& indices ) const ;
 
+	void interpolate_tpz( const Location& loc, typename Base::Interpolation& itp ) const
+	{
+		dof_coeffs_tpz( loc.coords, itp.coeffs ) ;
+		list_nodes( loc, itp.nodes ) ;
+	}
+
+	Scalar dof_volume_fraction( Index ) const	{ return 1./Base::NI ; }
+
 private:
 
 	void dof_coeffs( const typename MeshType::Coords& coords, typename Base::CoefList& coeffs ) const ;
+	void dof_coeffs_tpz( const typename MeshType::Coords& coords, typename Base::CoefList& coeffs ) const ;
 
 	void dof_coords( const typename MeshType::CellGeo& geo, Index dofIndex, typename MeshType::Coords& coords  ) const
 	{
