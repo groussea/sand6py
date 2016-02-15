@@ -12,17 +12,21 @@ struct UnstructuredDOFs {
 	typedef Eigen::Matrix< Scalar,  1, Eigen::Dynamic > Weights ;
 
 	const Vertices& vertices ;
+	Index count ;
 	Weights weights ;
 
-	UnstructuredDOFs( const Vertices& v, const Weights& w )
-		: vertices(v), weights(w)
-	{}
 	explicit UnstructuredDOFs( const Vertices& v )
-		: vertices(v)
+		: vertices(v), count(0)
 	{}
 
+	void compute_weights_from_vertices( Index n )
+	{
+		count = n ;
+		weights.setConstant( vertices.cols(), 0 ) ;
+	}
+
 	template <typename Ar>
-	void serialize( Ar&, const unsigned int ) {}
+	void serialize( Ar&, const unsigned int ) { }
 };
 
 struct UnstructuredDOFIterator
@@ -89,7 +93,7 @@ struct UnstructuredShapeFunc : public ShapeFuncBase< UnstructuredShapeFunc >
 		volumes = m_dofDef.weights ;
 	}
 
-	Index nDOF() const { return m_dofDef.vertices.cols() ; }
+	Index nDOF() const { return m_dofDef.count ; }
 
 	void locate_by_pos_or_id( const Vec&, const Index id, typename Base::Location & loc ) const {
 		loc = id ;
@@ -121,7 +125,7 @@ struct UnstructuredShapeFunc : public ShapeFuncBase< UnstructuredShapeFunc >
 	}
 
 protected:
-	DOFDefinition m_dofDef ;
+	const DOFDefinition &m_dofDef ;
 };
 
 } //d6

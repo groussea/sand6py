@@ -67,7 +67,7 @@ TEST(geo, shape_functions)
 	typename UnstructuredDOFs::Vertices vertices ;
 	typename UnstructuredDOFs::Weights weights ;
 
-	UnstructuredDOFs dofs ( vertices, weights) ;
+	UnstructuredDOFs dofs ( vertices ) ;
 	UnstructuredShapeFunc shape( dofs ) ;
 	AbstractScalarField< UnstructuredShapeFunc > prtScalarField( shape ) ;
 

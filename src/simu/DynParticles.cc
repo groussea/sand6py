@@ -15,9 +15,11 @@
 
 #include <random>
 
-
+//TODO allow resampling particles w/ unstructured dual
+#ifndef D6_UNSTRUCTURED_DUAL
 #define SPLIT
 #define MERGE
+#endif
 
 namespace d6 {
 
@@ -462,6 +464,8 @@ void DynParticles::splitMerge( const MeshType & mesh )
 
 #endif
 
+#else
+	(void) mesh ;
 #endif
 }
 

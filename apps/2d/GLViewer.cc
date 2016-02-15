@@ -245,7 +245,7 @@ void GLViewer::update_particle_buffers()
 			tensor_view( p.orient().col( i ) ).get( tensor ) ;
 			Eigen::SelfAdjointEigenSolver<Mat> es( tensor );
 
-			const Vec ev = es.eigenvalues().array().max(0).sqrt() ;
+			const Vec ev = es.eigenvalues().array().max(0).sqrt().max( 1.e-2 ) ;
 
 			mat = ( es.eigenvectors() * ev.asDiagonal() ).cast< GLfloat >()
 					* .5 * std::pow( p.volumes()[i], 1./2 )  ;
@@ -256,7 +256,7 @@ void GLViewer::update_particle_buffers()
 			tensor_view( p.frames().col( i ) ).get( tensor ) ;
 			Eigen::SelfAdjointEigenSolver<Mat> es( tensor );
 
-			const Vec ev = es.eigenvalues().array().max(0).sqrt() ;
+			const Vec ev = es.eigenvalues().array().max(0).sqrt().max( 1.e-2 ) ;
 			const Scalar vol = 4 * ev.prod() ;
 
 			mat = ( es.eigenvectors() * ev.asDiagonal() ).cast< GLfloat >()  ;
