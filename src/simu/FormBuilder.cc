@@ -1,4 +1,4 @@
-#include "FormBuilder.hh"
+#include "FormBuilder.impl.hh"
 
 #include "geo/MeshImpl.hh"
 #include "geo/FormBuildingBlocks.hh"
@@ -8,6 +8,14 @@
 
 namespace d6 {
 
+
+template < typename LhsShape, typename RhsShape >
+void FormBuilder<LhsShape, RhsShape>::addToIndex(
+		const std::vector< Index > &rowIndices,
+		const std::vector< Index > &colIndices
+		) {
+	addToIndexIf( rowIndices, colIndices, [](const Vec&){return true ;} ) ;
+}
 
 template < typename LhsShape, typename RhsShape >
 void FormBuilder<LhsShape, RhsShape>::makeCompressed()
@@ -193,6 +201,8 @@ void FormBuilder<LhsShape, RhsShape>::addUTaunGphi( FormMat<SD,WD>::Type& A, Sca
 template class FormBuilder<     Linear< MeshImpl >, Linear< MeshImpl > > ;
 template class FormBuilder<   DGLinear< MeshImpl >, Linear< MeshImpl > > ;
 template class FormBuilder< DGConstant< MeshImpl >, Linear< MeshImpl > > ;
+template class FormBuilder<  UnstructuredShapeFunc, Linear< MeshImpl > > ;
+
 template class FormBuilder<   Linear< MeshImpl >, P2< MeshImpl > > ;
 template class FormBuilder< DGLinear< MeshImpl >, P2< MeshImpl > > ;
 template class FormBuilder<       P2< MeshImpl >, P2< MeshImpl > > ;

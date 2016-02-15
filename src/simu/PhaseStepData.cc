@@ -30,6 +30,9 @@ void PhaseStepData::computeProjectors(const Config&config,
 									  Projectors& mats) const
 {
 	const Scalar discard_empty = 1.e-8 ;
+#ifdef D6_UNSTRUCTURED_DUAL
+	(void) dShape ;
+#endif
 
 	const Index m  = nPrimalNodes() ;
 	const Index n  = nDualNodes() ;
@@ -69,6 +72,7 @@ void PhaseStepData::computeProjectors(const Config&config,
 
 		if( config.weakStressBC )  continue ;
 
+#ifndef D6_UNSTRUCTURED_DUAL
 		typename DualShape::Location dloc ;
 		typename DualShape::NodeList dnodes ;
 		dShape.locate( pShape.qpIterator(&cell).pos(), dloc ) ;
@@ -81,6 +85,7 @@ void PhaseStepData::computeProjectors(const Config&config,
 			dShape.mesh().boundaryInfo( dloc, bdMapper, info ) ;
 			info.stressProj( mats.stress.block( i ) ) ;
 		}
+#endif
 
 	}
 
@@ -196,7 +201,7 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 
 		Builder builder( dShape, pShape ) ;
 		builder.reset( n );
-		builder.addToIndex( primalNodes.cells.begin(), primalNodes.cells.end(), dualNodes.indices, primalNodes.indices );
+		builder.addToIndex( dualNodes.indices, primalNodes.indices );
 		builder.makeCompressed();
 
 		Log::Debug() << "Index computation: " << timer.elapsed() << std::endl ;
@@ -494,6 +499,9 @@ void PhaseStepData::computeActiveNodes(const std::vector<bool> &activeCells ,
 
 	std::vector< int > activePrimalNodes( pShape.nDOF(), 0 ) ;
 	std::vector< int >   activeDualNodes( dShape.nDOF(), 0 ) ;
+#ifdef D6_UNSTRUCTURED_DUAL
+	activeDualNodes.assign( dShape.nDOF(), 1 ) ;
+#endif
 
 	Eigen::Matrix< Scalar, WD, Eigen::Dynamic > vecs( WD, mesh.nNodes() ) ;
 	vecs.setZero() ;
@@ -513,6 +521,7 @@ void PhaseStepData::computeActiveNodes(const std::vector<bool> &activeCells ,
 		}
 
 		// Dual
+#ifndef D6_UNSTRUCTURED_DUAL
 		typename DualShape::Location dloc ;
 		typename DualShape::NodeList dnodes ;
 		dShape.locate( pShape.qpIterator( it ).pos(), dloc );
@@ -521,6 +530,7 @@ void PhaseStepData::computeActiveNodes(const std::vector<bool> &activeCells ,
 		for( int k = 0 ; k < DualShape::NI ; ++ k ) {
 			++activeDualNodes[ dnodes[k] ] ;
 		}
+#endif
 	}
 	for( size_t i = 0 ; i < activePrimalNodes.size() ; ++i ) {
 		if( activePrimalNodes[i] > 0 ) {

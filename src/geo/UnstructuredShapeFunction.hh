@@ -12,11 +12,17 @@ struct UnstructuredDOFs {
 	typedef Eigen::Matrix< Scalar,  1, Eigen::Dynamic > Weights ;
 
 	const Vertices& vertices ;
-	const  Weights& weights ;
+	Weights weights ;
 
 	UnstructuredDOFs( const Vertices& v, const Weights& w )
 		: vertices(v), weights(w)
 	{}
+	explicit UnstructuredDOFs( const Vertices& v )
+		: vertices(v)
+	{}
+
+	template <typename Ar>
+	void serialize( Ar&, const unsigned int ) {}
 };
 
 struct UnstructuredDOFIterator

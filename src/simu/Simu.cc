@@ -28,7 +28,12 @@ Simu::Simu(const Config &config, const char *base_dir)
 	  m_stats( m_base_dir ),
 	  m_scenario( Scenario::parse( config ) ),
 	  m_meshes{ std::unique_ptr<PrimalMesh>(new PrimalMesh( config.box, config.res )),
-				std::unique_ptr<  DualMesh>(new   DualMesh( config.box, config.res )) },
+				#ifdef D6_UNSTRUCTURED_DUAL
+				std::unique_ptr<  DualMesh>(new   DualMesh( m_particles.geo().centers() ))
+				#else
+				std::unique_ptr<  DualMesh>(new   DualMesh( config.box, config.res ))
+				#endif
+			   },
 	  m_grains( new Phase( meshes() ) ),
 	  m_solver( m_particles )
 {

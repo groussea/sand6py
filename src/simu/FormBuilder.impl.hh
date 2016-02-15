@@ -10,11 +10,6 @@ namespace d6 {
 
 namespace form {
 
-	enum Side {
-		Left,
-		Right
-	};
-
 	template< typename LhsShape, typename RhsShape>
 	struct IntSide {
 		static constexpr Side side = Side::Left ;
@@ -28,8 +23,10 @@ namespace form {
 		static constexpr Side side = Side::Right ;
 	} ;
 
-	template< typename LhsShape, typename RhsShape, Side side = IntSide<LhsShape, RhsShape>::side >
+	template< typename LhsShape, typename RhsShape, Side side_ = IntSide<LhsShape, RhsShape>::side >
 	struct GetSide {
+		static constexpr Side side = side_ ;
+
 		typedef LhsShape Shape ;
 		typedef RhsShape Other ;
 
@@ -49,6 +46,8 @@ namespace form {
 	};
 	template< typename LhsShape, typename RhsShape>
 	struct GetSide<LhsShape, RhsShape, Right> {
+		static constexpr Side side = Side::Right ;
+
 		typedef RhsShape Shape ;
 		typedef LhsShape Other ;
 
@@ -70,33 +69,35 @@ namespace form {
 } //form
 
 template < typename LhsShape, typename RhsShape >
-template < typename CellIterator>
-void FormBuilder<LhsShape, RhsShape>::addToIndex(
-		const CellIterator& cellBegin, const CellIterator& cellEnd,
-		const std::vector< Index > &rowIndices,
-		const std::vector< Index > &colIndices
-		) {
-
-	typedef form::GetSide<LhsShape, RhsShape > Get ;
+template < form::Side side, typename QPIterator, typename Func >
+void FormBuilder<LhsShape, RhsShape>::addToIndexIf(
+		const QPIterator& qpBegin, const QPIterator& qpEnd,
+		Indices rowIndices, Indices colIndices,	const Func &f )
+{
+	typedef form::GetSide<LhsShape, RhsShape, side > Get ;
 	const typename Get::Shape& shape = Get::shape(*this) ;
 	const typename Get::Other& other = Get::other(*this) ;
 
+	typename Get::Shape::Location shapeLoc ;
 	typename Get::Other::Location otherLoc ;
 	typename Get::Shape::NodeList shapeNodes ;
 	typename Get::Other::NodeList otherNodes ;
 
-	for( CellIterator cellIt = cellBegin ; cellIt != cellEnd ; ++cellIt ) {
+	for( auto qpIt = qpBegin ; qpIt != qpEnd ; ++qpIt ) {
+		const Vec& pos = qpIt.pos() ;
+		if( !f(pos) ) continue ;
 
-		shape.list_nodes( *cellIt, shapeNodes );
-		// FIXME if other shape cells not a substep of main shape cells
-		other.locate( shape.qpIterator( cellIt ).pos(), otherLoc );
+		 qpIt.locate( shapeLoc );
+		other.locate( pos, otherLoc );
+
+		shape.list_nodes( shapeLoc, shapeNodes );
 		other.list_nodes( otherLoc, otherNodes );
 
 		for( int k = 0 ; k < shapeNodes.rows() ; ++ k ) {
 			for( int j = 0 ; j < otherNodes.rows() ; ++ j ) {
-				const Index row = rowIndices[ Get::lhs(shapeNodes[k], otherNodes[j]) ] ;
 				const Index col = colIndices[ Get::rhs(shapeNodes[k], otherNodes[j]) ] ;
-				if( row >= 0 && col >= 0  )
+				const Index row = rowIndices[ Get::lhs(shapeNodes[k], otherNodes[j]) ] ;
+				if( row >= 0 && col >= 0 )
 					m_data[ row ].push_back( col ) ;
 			}
 		}
@@ -105,10 +106,33 @@ void FormBuilder<LhsShape, RhsShape>::addToIndex(
 }
 
 template < typename LhsShape, typename RhsShape >
-template < typename QPIterator, typename Func >
-void FormBuilder<LhsShape, RhsShape>::integrate_qp( const QPIterator& qpBegin, const QPIterator& qpEnd, Func func ) const
+template < typename Func>
+void FormBuilder<LhsShape, RhsShape>::addToIndexIf(
+		Indices rowIndices,	Indices colIndices,	const Func &f )
+{
+
+	typedef form::GetSide<LhsShape, RhsShape > Get ;
+	const typename Get::Shape& shape = Get::shape(*this) ;
+	addToIndexIf< Get::side >( shape.qpBegin(), shape.qpEnd(), rowIndices, colIndices, f ) ;
+}
+
+template < typename LhsShape, typename RhsShape >
+template < typename CellIterator >
+void FormBuilder<LhsShape, RhsShape>::addToIndex(
+		const CellIterator& cellBegin, const CellIterator& cellEnd,
+		Indices rowIndices,	Indices colIndices	)
 {
 	typedef form::GetSide<LhsShape, RhsShape > Get ;
+	const typename Get::Shape& shape = Get::shape(*this) ;
+	addToIndexIf< Get::side >( shape.qpIterator(cellBegin), shape.qpIterator(cellEnd), rowIndices, colIndices,
+				  [](const Vec&){ return true ; } ) ;
+}
+
+template < typename LhsShape, typename RhsShape >
+template < form::Side side, typename QPIterator, typename Func >
+void FormBuilder<LhsShape, RhsShape>::integrate_qp( const QPIterator& qpBegin, const QPIterator& qpEnd, Func func ) const
+{
+	typedef form::GetSide<LhsShape, RhsShape, side > Get ;
 	const typename Get::Other& other = Get::other(*this) ;
 
 	typename LhsShape::Location      lhs_loc ;
@@ -136,12 +160,12 @@ void FormBuilder<LhsShape, RhsShape>::integrate_qp( const QPIterator& qpBegin, c
 
 
 template < typename LhsShape, typename RhsShape >
-template < typename CellIterator, typename Func >
+template < form::Side side, typename CellIterator, typename Func >
 void FormBuilder<LhsShape, RhsShape>::integrate_cell( const CellIterator& cellBegin, const CellIterator& cellEnd, Func func ) const
 {
-	typedef form::GetSide<LhsShape, RhsShape > Get ;
+	typedef form::GetSide<LhsShape, RhsShape, side > Get ;
 	const typename Get::Shape& shape = Get::shape(*this) ;
-	integrate_qp( shape.qpIterator(cellBegin), shape.qpIterator(cellEnd), func ) ;
+	integrate_qp<side>( shape.qpIterator(cellBegin), shape.qpIterator(cellEnd), func ) ;
 }
 
 template < typename LhsShape, typename RhsShape >
@@ -150,7 +174,7 @@ void FormBuilder<LhsShape, RhsShape>::integrate_qp( Func func ) const
 {
 	typedef form::GetSide<LhsShape, RhsShape > Get ;
 	const typename Get::Shape& shape = Get::shape(*this) ;
-	integrate_qp( shape.qpBegin(), shape.qpEnd(), func ) ;
+	integrate_qp<Get::side>( shape.qpBegin(), shape.qpEnd(), func ) ;
 }
 
 
@@ -208,10 +232,10 @@ void FormBuilder<LhsShape, RhsShape>::integrate_particle( const Particles& parti
 	for ( size_t i = 0 ; i < n ; ++i ) {
 		const Vec& pos = particles.centers().col(i) ;
 
-		m_lhsShape.locate( pos, lhs_loc );
+		m_lhsShape.locate_by_pos_or_id( pos, i, lhs_loc );
 		m_lhsShape.interpolate( lhs_loc, lhs_itp );
 		m_lhsShape.get_derivatives( lhs_loc, lhs_dc_dx );
-		m_rhsShape.locate( pos, rhs_loc );
+		m_rhsShape.locate_by_pos_or_id( pos, i, rhs_loc );
 		m_rhsShape.interpolate( rhs_loc, rhs_itp );
 		m_rhsShape.get_derivatives( rhs_loc, rhs_dc_dx );
 

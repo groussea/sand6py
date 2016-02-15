@@ -78,16 +78,16 @@ struct NonTrivialInterpolation {
 	typedef FieldFuncBase< Derived, D, ShapeFuncT > Func ;
 
 	const Func& src ;
-	const typename ShapeFuncT::DOFDefinition& dest ;
+	const typename DestShapeFuncT::DOFDefinition& dest ;
 
-	explicit NonTrivialInterpolation( const Func& func_, const typename ShapeFuncT::DOFDefinition& dest_ )
+	explicit NonTrivialInterpolation( const Func& func_, const typename DestShapeFuncT::DOFDefinition& dest_ )
 		: src( func_ ), dest(dest_) {}
 };
 
 template < typename Derived, Index D, typename ShapeFuncT, typename DestShapeFuncT >
 struct Interpolation : public NonTrivialInterpolation< Derived, D, ShapeFuncT, DestShapeFuncT >  {
 	typedef NonTrivialInterpolation< Derived, D, ShapeFuncT, DestShapeFuncT > Base ;
-	explicit Interpolation( const typename Base::Func& func, const typename ShapeFuncT::DOFDefinition& dest )
+	explicit Interpolation( const typename Base::Func& func, const typename DestShapeFuncT::DOFDefinition& dest )
 		:	Base( func, dest )
 	{}
 };

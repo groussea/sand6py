@@ -242,8 +242,7 @@ void DynParticles::integrateDual(
 								  DualTensorField &phiOrient,DualScalarField &phiCohesion
 								  ) const
 {
-	typedef typename DualScalarField::ShapeFuncImpl Shape ;
-
+	typedef DualShape Shape ;
 	const Shape& shape = phi.shape().derived() ;
 
 	phi.set_zero();
@@ -257,7 +256,7 @@ void DynParticles::integrateDual(
 		const Vec p0 = m_geo.centers().col(i) ;
 
 		typename Shape::Location loc ;
-		shape.locate( p0, loc );
+		shape.locate_by_pos_or_id( p0, i, loc );
 
 		typename Shape::Interpolation itp ;
 		shape.interpolate( loc, itp );

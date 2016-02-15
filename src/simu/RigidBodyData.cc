@@ -105,7 +105,8 @@ void RigidBodyData::integrate(const PrimalShape& primalShape, const DualShape& d
 		Builder builder( dualShape, primalShape ) ;
 
 		builder.reset( totNodes );
-		builder.addToIndex( occupiedCells.begin(),occupiedCells.end(), dualNodes.indices, primalNodes.indices );
+		builder.addToIndexIf( dualNodes.indices, primalNodes.indices,
+							  [&](const Vec& pos){ return phi( pos ) > 0 ; } );
 		builder.makeCompressed();
 
 		jacobian.clear() ;
@@ -114,12 +115,14 @@ void RigidBodyData::integrate(const PrimalShape& primalShape, const DualShape& d
 		jacobian.cloneIndex( builder.index() ) ;
 		jacobian.setBlocksToZero() ;
 
-		builder.integrate_cell( occupiedCells.begin(), occupiedCells.end(), [&]( Scalar w, const Vec& pos, D_Itp l_itp, D_Dcdx, P_Itp r_itp, P_Dcdx )
+		builder.integrate_qp( [&]( Scalar w, const Vec& pos, D_Itp l_itp, D_Dcdx, P_Itp r_itp, P_Dcdx )
 		{
-			Vec dphi_dx ;
-			grad_phi( pos, dphi_dx ) ;
+			if( phi( pos ) > 0 ) {
+				Vec dphi_dx ;
+				grad_phi( pos, dphi_dx ) ;
 
-			Builder:: addUTaunGphi( jacobian, w, l_itp, r_itp, dphi_dx, dualNodes.indices, primalNodes.indices ) ;
+				Builder:: addUTaunGphi( jacobian, w, l_itp, r_itp, dphi_dx, dualNodes.indices, primalNodes.indices ) ;
+			}
 		}
 		);
 

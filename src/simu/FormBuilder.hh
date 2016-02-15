@@ -13,6 +13,12 @@ namespace d6 {
 
 class Particles ;
 
+namespace form {
+	enum Side {
+		Left,
+		Right
+	};
+}
 
 //! Utility class for building matrices of bilinear forms
 //! a(u,v) = u' A v, i.e. row == left, col == right
@@ -41,11 +47,18 @@ public:
 	Index rows() const { return m_data.size() ; }
 
 	//! Computes matrices non-zero blocks (nodes sharing a cell) from list of active cells
-	template < typename CellIterator>
-	void addToIndex(
-			const CellIterator& cellBegin, const CellIterator& cellEnd,
-			Indices rowIndices, Indices colIndices	 ) ;
+	template < form::Side side, typename QPIterator, typename Func >
+	void addToIndexIf( const QPIterator& qpBegin, const QPIterator& qpEnd,
+					   Indices rowIndices, Indices colIndices, const Func& f ) ;
 
+	template < typename Func >
+	void addToIndexIf( Indices rowIndices, Indices colIndices, const Func& f ) ;
+	void addToIndex( Indices rowIndices, Indices colIndices	 ) ;
+
+	// only for LhsShape==RhsShape )
+	template < typename CellIterator >
+	void addToIndex( const CellIterator& cellBegin, const CellIterator& cellEnd,
+					 Indices rowIndices, Indices colIndices	 ) ;
 
 	void addRows( Index rows ) ;
 
@@ -54,15 +67,15 @@ public:
 
 
 	//! Integrate over quadrature points
-	template < typename QPIterator, typename Func >
+	template < form::Side side, typename QPIterator, typename Func >
 	void integrate_qp( const QPIterator& qpBegin, const QPIterator& qpEnd, Func func ) const ;
-
 	template < typename Func >
 	void integrate_qp( Func func ) const ;
-	template < typename CellIterator, typename Func >
+
+	template < form::Side side, typename CellIterator, typename Func >
 	void integrate_cell( const CellIterator& cellBegin, const CellIterator& cellEnd, Func func ) const ;
 
-	//! Integrate over nodes ( trapezoidal approx )
+	//! Integrate over nodes ( trapezoidal approx -- only for LHSShape==RhsShape )
 	template < typename CellIterator, typename Func >
 	void integrate_node( const CellIterator& cellBegin, const CellIterator& cellEnd, Func func ) const ;
 

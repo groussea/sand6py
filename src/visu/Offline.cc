@@ -20,7 +20,12 @@ namespace d6 {
 Offline::Offline(const char *base_dir)
 	: m_base_dir( base_dir ),
 	  m_meshes{ std::unique_ptr<PrimalMesh>(new PrimalMesh( Vec::Ones(), VecWi::Ones() )),
-				std::unique_ptr<  DualMesh>(new   DualMesh( Vec::Ones(), VecWi::Ones() )) },
+				#ifdef D6_UNSTRUCTURED_DUAL
+				std::unique_ptr<  DualMesh>(new   DualMesh( m_particles.centers() ))
+				#else
+				std::unique_ptr<  DualMesh>(new   DualMesh( Vec::Ones(), VecWi::Ones() ))
+				#endif
+			   },
 	  m_grains( new Phase( m_meshes ) )
 {
 	m_config.from_file( FileInfo( base_dir ).filePath( "config" ) ) ;
