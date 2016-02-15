@@ -32,7 +32,7 @@ struct MeshShapeFunc : public ShapeFuncBase< Interp<MeshT> >
 	{}
 
 	// ~ lumped mass matrix
-	void compute_volumes( DynVec& volumes ) const
+	void compute_lumped_mass( DynVec& volumes ) const
 	{
 		volumes.resize( Base::nDOF() ) ;
 		volumes.setZero() ;
@@ -51,7 +51,7 @@ struct MeshShapeFunc : public ShapeFuncBase< Interp<MeshT> >
 	}
 
 	// ~ lumped mass matrix
-	void compute_volumes_tpz( DynVec& volumes ) const
+	void compute_tpz_mass( DynVec& volumes ) const
 	{
 		volumes.resize( Base::nDOF() ) ;
 		volumes.setZero() ;
@@ -254,7 +254,7 @@ struct Linear : public MeshShapeFunc< Linear, MeshT >
 					  typename Base::NodeList& nodes, typename Base::CoefList& coeffs ) const ;
 
 	void interpolate_tpz( const Location& loc, typename Base::Interpolation& itp ) const
-	{ interpolaye(loc,itp) ; }
+	{ interpolate(loc,itp) ; }
 
 	Scalar dof_volume_fraction( Index ) const	{ return 1./Base::NI ; }
 } ;
@@ -313,7 +313,7 @@ struct DGLinear : public MeshShapeFunc< DGLinear, MeshT >
 	}
 
 	void interpolate_tpz( const Location& loc, typename Base::Interpolation& itp ) const
-	{ interpolaye(loc,itp) ; }
+	{ interpolate(loc,itp) ; }
 
 	Scalar dof_volume_fraction( Index ) const	{ return 1./Base::NI ; }
 

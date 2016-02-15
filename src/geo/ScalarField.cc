@@ -2,13 +2,7 @@
 #include "ScalarField.hh"
 #include "FieldBase.impl.hh"
 
-#include "Tensor.hh"
-
-#include "Grid.hh"
-#include "TetGrid.hh"
-
-#include "MeshShapeFunction.hh"
-#include "P2ShapeFunction.hh"
+#include "geo/instanciations.hh"
 
 namespace d6
 {
@@ -33,18 +27,11 @@ Vec AbstractScalarField< ShapeFuncT >::grad_at( const typename ShapeFuncType::Lo
 	return grad ;
 }
 
+#define INSTANTIATE( Shape ) \
+	template class FieldBase< AbstractScalarField< Shape > > ; \
+	template class AbstractScalarField< Shape > ;
 
-template class FieldBase< AbstractScalarField< Linear<Grid> > > ;
-template class AbstractScalarField< Linear<Grid> > ;
-template class FieldBase< AbstractScalarField< Linear<TetGrid> > > ;
-template class AbstractScalarField< Linear<TetGrid> > ;
-
-
-template class FieldBase< AbstractScalarField< DGLinear<Grid> > > ;
-template class AbstractScalarField< DGLinear<Grid> > ;
-template class FieldBase< AbstractScalarField< DGLinear<TetGrid> > > ;
-template class AbstractScalarField< DGLinear<TetGrid> > ;
-template class FieldBase< AbstractScalarField< P2<TetGrid> > > ;
-template class AbstractScalarField< P2<TetGrid> > ;
+EXPAND_INSTANTIATIONS
+#undef INSTANTIATE
 
 }

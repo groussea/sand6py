@@ -78,7 +78,7 @@ struct UnstructuredShapeFunc : public ShapeFuncBase< UnstructuredShapeFunc >
 	UnstructuredShapeFunc( const DOFDefinition &v ) : m_dofDef(v)
 	{}
 
-	void compute_volumes( DynVec& volumes ) const
+	void compute_lumped_mass( DynVec& volumes ) const
 	{
 		volumes = m_dofDef.weights ;
 	}

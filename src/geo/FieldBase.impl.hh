@@ -93,7 +93,7 @@ template< typename Func, typename OtherShape >
 Derived& FieldBase< Derived >::from_interpolation( const FieldFuncBase< Func, D, OtherShape > &f )
 {
 	ScalarField volumes( shape() );
-	shape().compute_volumes( volumes.flatten() );
+	shape().compute_lumped_mass( volumes.flatten() );
 
 	set_zero() ;
 

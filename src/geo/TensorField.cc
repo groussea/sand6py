@@ -4,11 +4,7 @@
 
 #include "Tensor.hh"
 
-#include "Grid.hh"
-#include "TetGrid.hh"
-
-#include "MeshShapeFunction.hh"
-#include "P2ShapeFunction.hh"
+#include "instanciations.hh"
 
 namespace d6
 {
@@ -41,29 +37,14 @@ void AbstractSkewTsField< ShapeFuncT >::add_spi_tensor(const Location &x, Mat &t
 	tensor_view( v ).add( tensor ) ;
 }
 
-template class FieldBase< AbstractTensorField< Linear<Grid> > > ;
-template class AbstractTensorField< Linear<Grid> > ;
-template class FieldBase< AbstractSkewTsField< Linear<Grid> > > ;
-template class AbstractSkewTsField< Linear<Grid> > ;
+#define INSTANTIATE( Shape ) \
+	template class FieldBase< AbstractTensorField< Shape > > ; \
+	template class AbstractTensorField< Shape > ; \
+	template class FieldBase< AbstractSkewTsField< Shape > > ; \
+	template class AbstractSkewTsField< Shape > ;
 
-template class FieldBase< AbstractTensorField< Linear<TetGrid> > > ;
-template class AbstractTensorField< Linear<TetGrid> > ;
-template class FieldBase< AbstractSkewTsField< Linear<TetGrid> > > ;
-template class AbstractSkewTsField< Linear<TetGrid> > ;
+EXPAND_INSTANTIATIONS
+#undef INSTANTIATE
 
-template class FieldBase< AbstractTensorField< P2<TetGrid> > > ;
-template class AbstractTensorField< P2<TetGrid> > ;
-template class FieldBase< AbstractSkewTsField< P2<TetGrid> > > ;
-template class AbstractSkewTsField< P2<TetGrid> > ;
-
-template class FieldBase< AbstractTensorField< DGLinear<Grid> > > ;
-template class AbstractTensorField< DGLinear<Grid> > ;
-template class FieldBase< AbstractSkewTsField< DGLinear<Grid> > > ;
-template class AbstractSkewTsField< DGLinear<Grid> > ;
-
-template class FieldBase< AbstractTensorField< DGLinear<TetGrid> > > ;
-template class AbstractTensorField< DGLinear<TetGrid> > ;
-template class FieldBase< AbstractSkewTsField< DGLinear<TetGrid> > > ;
-template class AbstractSkewTsField< DGLinear<TetGrid> > ;
 }
 

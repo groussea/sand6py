@@ -29,6 +29,8 @@ void PhaseStepData::computeProjectors(const Config&config,
 									  const std::vector<RigidBodyData> &rbData, const PrimalScalarField &lumped_mass,
 									  Projectors& mats) const
 {
+	const Scalar discard_empty = 1.e-8 ;
+
 	const Index m  = nPrimalNodes() ;
 	const Index n  = nDualNodes() ;
 	const Index nc = nSuppNodes() ;
@@ -54,7 +56,7 @@ void PhaseStepData::computeProjectors(const Config&config,
 
 		for( unsigned k = 0 ; k < PrimalShape::NI ; ++k ) {
 			const Index i = primalNodes.indices[ pnodes[k] ] ;
-			if( lumped_mass[pnodes[k]] < 1.e-8 ) {
+			if( lumped_mass[pnodes[k]] < discard_empty ) {
 				mats.vel.block( i ).setZero() ;
 				continue ;
 			}
@@ -390,8 +392,8 @@ void PhaseStepData::compute(const DynParticles& particles,
 	std::vector< bool > activeCells ;
 
 #if defined(FULL_FEM)
-	pShape.compute_volumes_tpz( intPhiPrimal.flatten() ) ;
-	dShape.compute_volumes( intPhiDual  .flatten() ) ;
+	pShape.compute_tpz_mass   ( intPhiPrimal.flatten() ) ;
+	dShape.compute_lumped_mass( intPhiDual  .flatten() ) ;
 	intPhiVel.set_zero() ;
 	intPhiInertia.set_zero() ;
 	intPhiCohesion.set_zero() ;
@@ -435,7 +437,7 @@ void PhaseStepData::compute(const DynParticles& particles,
 	// Volumes
 	{
 		DualScalarField volumes ( dShape ) ;
-		dShape.compute_volumes( volumes.flatten() );
+		dShape.compute_lumped_mass( volumes.flatten() );
 		dualNodes.field2var( volumes, forms.volumes ) ;
 	}
 
@@ -454,7 +456,7 @@ void PhaseStepData::computePhiAndGradPhi(const PrimalScalarField &intPhi, Primal
 
 	// Compute volumes of cells
 	PrimalScalarField volumes(shape) ;
-	intPhi.shape().compute_volumes_tpz( volumes.flatten() );
+	intPhi.shape().compute_tpz_mass( volumes.flatten() );
 
 	fraction = intPhi;
 	fraction.divide_by_positive( volumes ) ;

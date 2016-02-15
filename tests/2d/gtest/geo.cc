@@ -63,10 +63,10 @@ TEST( geo, p2 )
 
 	}
 
-	p2.compute_volumes( f.flatten() );
+	p2.compute_lumped_mass( f.flatten() );
 	ASSERT_DOUBLE_EQ( g.box().prod(), f.flatten().sum() );
 
-	p2.compute_volumes_tpz( f.flatten() );
+	p2.compute_tpz_mass( f.flatten() );
 	ASSERT_DOUBLE_EQ( g.box().prod(), f.flatten().sum() );
 
 }

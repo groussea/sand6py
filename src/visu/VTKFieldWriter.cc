@@ -4,7 +4,7 @@
 #include "geo/VectorField.hh"
 #include "geo/TensorField.hh"
 
-#include "geo/MeshImpl.hh"
+#include "geo/instanciations.hh"
 
 #include "utils/File.hh"
 #include "utils/Log.hh"
@@ -72,18 +72,13 @@ bool VTKFieldWriter<ShapeFuncT>::dump( const char* name, const FieldBase< Derive
 	return true ;
 }
 
-template class VTKFieldWriter<Linear<MeshImpl>> ;
-template  bool VTKFieldWriter<Linear<MeshImpl>>::dump( const char*, const FieldBase< AbstractScalarField<Linear<MeshImpl> > >& ) ;
-template  bool VTKFieldWriter<Linear<MeshImpl>>::dump( const char*, const FieldBase< AbstractVectorField<Linear<MeshImpl> > >& ) ;
-template  bool VTKFieldWriter<Linear<MeshImpl>>::dump( const char*, const FieldBase< AbstractTensorField<Linear<MeshImpl> > >& ) ;
+#define INSTANTIATE( Shape ) \
+	template class VTKFieldWriter<Shape> ; \
+	template  bool VTKFieldWriter<Shape>::dump( const char*, const FieldBase< AbstractScalarField<Shape> >& ) ; \
+	template  bool VTKFieldWriter<Shape>::dump( const char*, const FieldBase< AbstractVectorField<Shape> >& ) ; \
+	template  bool VTKFieldWriter<Shape>::dump( const char*, const FieldBase< AbstractTensorField<Shape> >& ) ; \
 
-template class VTKFieldWriter<DGLinear<MeshImpl>> ;
-template  bool VTKFieldWriter<DGLinear<MeshImpl>>::dump( const char*, const FieldBase< AbstractScalarField<DGLinear<MeshImpl> > >& ) ;
-template  bool VTKFieldWriter<DGLinear<MeshImpl>>::dump( const char*, const FieldBase< AbstractTensorField<DGLinear<MeshImpl> > >& ) ;
-
-template class VTKFieldWriter<P2<MeshImpl>> ;
-template  bool VTKFieldWriter<P2<MeshImpl>>::dump( const char*, const FieldBase< AbstractScalarField<P2<MeshImpl> > >& ) ;
-template  bool VTKFieldWriter<P2<MeshImpl>>::dump( const char*, const FieldBase< AbstractVectorField<P2<MeshImpl> > >& ) ;
-template  bool VTKFieldWriter<P2<MeshImpl>>::dump( const char*, const FieldBase< AbstractTensorField<P2<MeshImpl> > >& ) ;
+EXPAND_INSTANTIATIONS
+#undef INSTANTIATE
 
 } //d6

@@ -52,10 +52,10 @@ struct ShapeFuncBase
 	void locate_dof( Location& loc, Index dofIndex ) const
 	{ derived().locate_dof( loc, dofIndex ) ; }
 
-	void compute_volumes( DynVec& volumes ) const
-	{ derived().compute_volumes( volumes ) ; }
-	void compute_volumes_tpz( DynVec& volumes ) const
-	{ derived().compute_volumes_tpz( volumes ) ; }
+	void compute_lumped_mass( DynVec& volumes ) const
+	{ derived().compute_lumped_mass( volumes ) ; }
+	void compute_tpz_mass( DynVec& volumes ) const
+	{ derived().compute_tpz_mass( volumes ) ; }
 
 	typename Traits::template QPIterator<>::Type qpBegin() const
 	{ return derived().qpBegin() ; }
