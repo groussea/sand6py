@@ -124,6 +124,10 @@ public:
 		return firstCorner( node ) ;
 	}
 
+	void clamp_cell( Cell& cell ) const {
+		cell = Cell::Zero().max(cell).min(m_dim.array()-Cell::Ones()) ;
+	}
+
 	const ArrWi& dim() const { return m_dim ; }
 	const Arr&    dx() const { return  m_dx ; }
 
@@ -131,10 +135,6 @@ private:
 
 	void get_corner( const Cell &cell, Vec& corner ) const {
 		corner = (cell.array().cast< Scalar >() * m_dx.array()).matrix() ;
-	}
-
-	void clamp_cell( Cell& cell ) const {
-		cell = Cell::Zero().max(cell).min(m_dim.array()-Cell::Ones()) ;
 	}
 
 	Vec firstCorner( const Cell &cell ) const

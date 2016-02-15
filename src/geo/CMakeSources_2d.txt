@@ -9,6 +9,7 @@
 2d/geo/Tet.cc
 2d/geo/Tet.hh
 2d/geo/TetGrid.cc
+2d/geo/UnstructuredShapeFunction.cc
 2d/geo/Voxel.cc
 2d/geo/Voxel.hh
 geo/BoundaryInfo.cc

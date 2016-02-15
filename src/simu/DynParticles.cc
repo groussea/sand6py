@@ -21,6 +21,8 @@
 #define MERGE
 #endif
 
+#define GRAD_FROM_VEL
+
 namespace d6 {
 
 DynParticles::DynParticles()
@@ -106,6 +108,7 @@ void DynParticles::update(const Config &config, const Scalar dt, const Phase &ph
 		clamp_particle( i, mesh );
 
 		//APIC
+		Mat grad ;
 		{
 			// Recompute gradient from velocities to avoid smoothing
 
@@ -125,6 +128,10 @@ void DynParticles::update(const Config &config, const Scalar dt, const Phase &ph
 
 			// Debonding function
 			m_cohesion(i) /= ( 1. + dt * config.cohesion_decay * (Bp+Bp.transpose()).norm() ) ;
+
+#ifdef GRAD_FROM_VEL
+			grad = Bp ;
+#endif
 		}
 
 
@@ -145,7 +152,9 @@ void DynParticles::update(const Config &config, const Scalar dt, const Phase &ph
 
 		// Frame
 		{
+#ifndef GRAD_FROM_VEL
 			const Mat grad = Wu + Du ;
+#endif
 
 			auto  frame_view( tensor_view( m_geo.m_frames.col(i) ) ) ;
 			Mat frame ;

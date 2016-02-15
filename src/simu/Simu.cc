@@ -122,9 +122,10 @@ void Simu::step(const Scalar dt)
 	bogus::Timer timer ;
 
 	// TODO: if we were to adapt the mesh, it would be here
-#ifdef D6_UNSTRUCTURED_SHAPE_FUNCTION
-	m_meshes.m_dual->compute_weights_from_vertices(  m_particles.count() ) ;
-	if( m_grains->stresses.size() <  (Index) m_particles.count()  ) {
+#ifdef D6_UNSTRUCTURED_DUAL
+	m_meshes.m_dual->resize( m_particles.count() ) ;
+	m_meshes.m_dual->compute_weights_from_vertices( m_config ) ;
+	if( m_grains->stresses.size() != m_meshes.m_dual->count() ) {
 		m_grains->stresses.fit_shape() ; m_grains->stresses.set_zero() ;
 		m_grains->sym_grad.fit_shape() ; m_grains->sym_grad.set_zero() ;
 		m_grains->spi_grad.fit_shape() ; m_grains->spi_grad.set_zero() ;

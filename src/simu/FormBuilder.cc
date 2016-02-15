@@ -190,7 +190,10 @@ void FormBuilder<LhsShape, RhsShape>::addUTaunGphi( FormMat<SD,WD>::Type& A, Sca
 
 	for( int k = 0 ; k < lhs_itp.nodes.rows() ; ++k ) {
 		for( int j = 0 ; j < rhs_itp.nodes.rows() ; ++j ) {
-			assert( A.blockPtr( rowIndices[lhs_itp.nodes[k]], colIndices[rhs_itp.nodes[j]] ) != A.InvalidBlockPtr ) ;
+			//TODO assert( A.blockPtr( rowIndices[lhs_itp.nodes[k]], colIndices[rhs_itp.nodes[j]] ) != A.InvalidBlockPtr ) ;
+			if( A.blockPtr( rowIndices[lhs_itp.nodes[k]], colIndices[rhs_itp.nodes[j]] ) == A.InvalidBlockPtr )
+				continue ;
+
 			Block &b = A.block( rowIndices[lhs_itp.nodes[k]], colIndices[rhs_itp.nodes[j]] ) ;
 			const Scalar m = w * lhs_itp.coeffs[k] * rhs_itp.coeffs[j] ;
 			FormBlocks::addUTaunGphi( b, m, dphi_dx );
@@ -203,8 +206,10 @@ template class FormBuilder<   DGLinear< MeshImpl >, Linear< MeshImpl > > ;
 template class FormBuilder< DGConstant< MeshImpl >, Linear< MeshImpl > > ;
 template class FormBuilder<  UnstructuredShapeFunc, Linear< MeshImpl > > ;
 
+#if (D6_MESH_IMPL == D6_MESH_TET_GRID)
 template class FormBuilder<   Linear< MeshImpl >, P2< MeshImpl > > ;
 template class FormBuilder< DGLinear< MeshImpl >, P2< MeshImpl > > ;
 template class FormBuilder<       P2< MeshImpl >, P2< MeshImpl > > ;
+#endif
 
 } //d6

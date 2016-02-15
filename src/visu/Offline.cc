@@ -98,8 +98,8 @@ bool Offline::load_frame(unsigned frame )
 		return false ;
 	}
 
-#ifdef D6_UNSTRUCTURED_SHAPE_FUNCTION
-	m_meshes.m_dual->compute_weights_from_vertices(  m_particles.count() ) ;
+#ifdef D6_UNSTRUCTURED_DUAL
+	m_meshes.m_dual->compute_weights_from_vertices( m_config ) ;
 #endif
 
 	Log::Info() << "Loaded frame " << frame << std::endl ;
