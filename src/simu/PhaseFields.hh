@@ -13,11 +13,10 @@ typedef MeshImpl   DualMesh ;
 
 typedef   Linear<PrimalMesh> PrimalShape ;
 //typedef   P2<PrimalMesh> PrimalShape ;
-#ifdef D6_DG_STRESSES
-typedef DGLinear<  DualMesh> DualShape ;
-#else
-typedef   Linear<  DualMesh> DualShape ;
-#endif
+
+//typedef DGLinear<  DualMesh> DualShape ;
+typedef DGConstant<  DualMesh> DualShape ;
+//typedef   Linear<  DualMesh> DualShape ;
 
 typedef AbstractScalarField< PrimalShape > PrimalScalarField ;
 typedef AbstractVectorField< PrimalShape > PrimalVectorField ;

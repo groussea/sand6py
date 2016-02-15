@@ -190,8 +190,9 @@ void FormBuilder<LhsShape, RhsShape>::addUTaunGphi( FormMat<SD,WD>::Type& A, Sca
 	}
 }
 
-template class FormBuilder<   Linear< MeshImpl >, Linear< MeshImpl > > ;
-template class FormBuilder< DGLinear< MeshImpl >, Linear< MeshImpl > > ;
+template class FormBuilder<     Linear< MeshImpl >, Linear< MeshImpl > > ;
+template class FormBuilder<   DGLinear< MeshImpl >, Linear< MeshImpl > > ;
+template class FormBuilder< DGConstant< MeshImpl >, Linear< MeshImpl > > ;
 template class FormBuilder<   Linear< MeshImpl >, P2< MeshImpl > > ;
 template class FormBuilder< DGLinear< MeshImpl >, P2< MeshImpl > > ;
 template class FormBuilder<       P2< MeshImpl >, P2< MeshImpl > > ;

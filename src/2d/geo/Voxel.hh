@@ -69,6 +69,24 @@ struct Voxel {
 } ;
 
 template<>
+struct QuadraturePoints< Voxel, 1 >
+{
+	static constexpr Index NQ = 1 ;
+	typedef Eigen::Matrix< Scalar, Voxel::NC, 1> QuadPoint ;
+
+	static void get( const Voxel&, Index, QuadPoint& qp ) {
+		qp.setConstant(.5) ;
+	}
+
+	static Scalar weight( const Voxel& geo, Index ) {
+		return geo.volume() ;
+	}
+
+private:
+	typedef Eigen::Matrix< Scalar, Voxel::NC, NQ> QuadPoints ;
+} ;
+
+template<>
 struct QuadraturePoints< Voxel, 2 >
 {
 	static constexpr Index NQ = 4 ;

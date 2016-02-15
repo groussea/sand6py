@@ -99,6 +99,24 @@ private:
 } ;
 
 template<>
+struct QuadraturePoints< Tet, 1 >
+{
+	static constexpr Index NQ = 1 ;
+	typedef Eigen::Matrix< Scalar, Tet::NC, 1> QuadPoint ;
+
+	static void get( const Tet&, Index, QuadPoint& qp ) {
+		qp.setConstant(1./3) ;
+	}
+
+	static Scalar weight( const Tet& geo, Index ) {
+		return geo.volume() ;
+	}
+
+private:
+	typedef Eigen::Matrix< Scalar, Tet::NC, NQ> QuadPoints ;
+} ;
+
+template<>
 struct QuadraturePoints< Tet, 2 >
 {
 	static constexpr Index NQ = 3 ;

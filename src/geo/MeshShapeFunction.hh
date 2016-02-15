@@ -319,6 +319,62 @@ struct DGLinear : public MeshShapeFunc< DGLinear, MeshT >
 
 } ;
 
+// Piecesize-constant shape func
+
+template< typename MeshT >
+struct ShapeFuncTraits< DGConstant<MeshT>  > : public ShapeFuncTraits< MeshShapeFunc< DGConstant, MeshT >  >
+{
+	typedef ShapeFuncTraits< MeshShapeFunc< DGConstant, MeshT > > Base ;
+	enum {
+		NI = 1
+	};
+
+	template <typename CellIterator = typename Base::MeshType::CellIterator >
+	struct QPIterator {
+		typedef MeshQPIterator< MeshT, CellIterator, 1 > Type ;
+	};
+
+} ;
+
+template <typename MeshT>
+struct DGConstant : public MeshShapeFunc< DGConstant, MeshT >
+{
+	typedef MeshShapeFunc< DGConstant, MeshT > Base ;
+	typedef MeshBase<MeshT> MeshType ;
+	typedef typename Base::Location Location ;
+
+	DGConstant ( const MeshType & mesh )
+		: Base( mesh )
+	{}
+
+	Index nDOF() const { return Base::mesh().nCells() ; }
+
+	void interpolate( const Location& loc, typename Base::Interpolation& itp ) const {
+		itp.coeffs[0] = 1. ;
+		list_nodes( loc, itp.nodes ) ;
+	}
+	void get_derivatives( const Location&, typename Base::Derivatives& dc_dx ) const {
+		dc_dx.setZero() ;
+	}
+
+	void locate_dof( typename Base::Location& loc, Index ) const {
+		typename MeshType::CellGeo geo ;
+		Base::mesh().get_geo( loc.cell, geo ) ;
+		QuadraturePoints< typename MeshType::CellGeo, 1>::get( geo, 0, loc.coords ) ;
+	}
+
+	using Base::list_nodes ;
+	void list_nodes( const Location& loc, typename Base::NodeList& list ) const {
+		list[0] = Base::mesh().cellIndex( loc.cell ) ;
+	}
+
+	void interpolate_tpz( const Location& loc, typename Base::Interpolation& itp ) const
+	{ interpolate(loc,itp) ; }
+
+	Scalar dof_volume_fraction( Index ) const	{ return 1. ; }
+
+} ;
+
 
 }
 

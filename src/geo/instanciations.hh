@@ -11,8 +11,10 @@
 #define EXPAND_INSTANTIATIONS \
     INSTANTIATE(   Linear<Grid   >  ) \
     INSTANTIATE( DGLinear<Grid   >  ) \
+    INSTANTIATE( DGConstant<Grid >  ) \
     INSTANTIATE(   Linear<TetGrid>  ) \
     INSTANTIATE( DGLinear<TetGrid>  ) \
+    INSTANTIATE( DGConstant<TetGrid>  ) \
     EXPAND_INSTANTIATIONS_DIM
 
 #define EXPAND_INSTANTIATIONS_2D \
