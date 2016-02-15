@@ -128,7 +128,7 @@ void DynParticles::update(const Config &config, const Scalar dt, const Phase &ph
 
 		// Dual Quantities
 		typename DualShape::Location d0loc ;
-		phase.stresses.shape().locate( p0, d0loc ) ;
+		phase.stresses.shape().locate_by_pos_or_id( p0, i, d0loc ) ;
 
 		// Frames and orientation
 		Mat Du, Wu ;

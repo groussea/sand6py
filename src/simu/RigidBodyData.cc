@@ -105,7 +105,7 @@ void RigidBodyData::integrate(const PrimalShape& primalShape, const DualShape& d
 		Builder builder( dualShape, primalShape ) ;
 
 		builder.reset( totNodes );
-		builder.addToIndex<form::Right>( occupiedCells.begin(),occupiedCells.end(), dualNodes.indices, primalNodes.indices );
+		builder.addToIndex( occupiedCells.begin(),occupiedCells.end(), dualNodes.indices, primalNodes.indices );
 		builder.makeCompressed();
 
 		jacobian.clear() ;
@@ -114,7 +114,7 @@ void RigidBodyData::integrate(const PrimalShape& primalShape, const DualShape& d
 		jacobian.cloneIndex( builder.index() ) ;
 		jacobian.setBlocksToZero() ;
 
-		builder.integrate_cell<form::Right>( occupiedCells.begin(), occupiedCells.end(), [&]( Scalar w, const Vec& pos, D_Itp l_itp, D_Dcdx, P_Itp r_itp, P_Dcdx )
+		builder.integrate_cell( occupiedCells.begin(), occupiedCells.end(), [&]( Scalar w, const Vec& pos, D_Itp l_itp, D_Dcdx, P_Itp r_itp, P_Dcdx )
 		{
 			Vec dphi_dx ;
 			grad_phi( pos, dphi_dx ) ;
@@ -151,7 +151,7 @@ void RigidBodyData::integrate(const PrimalShape& primalShape, const DualShape& d
 		Builder builder( primalShape, primalShape ) ;
 
 		builder.reset( totNodes );
-		builder.addToIndex<form::Left>(   nodes.cells.begin(),  nodes.cells.end(),      nodes.indices, primalNodes.indices );
+		builder.addToIndex(   nodes.cells.begin(),  nodes.cells.end(),      nodes.indices, primalNodes.indices );
 		builder.makeCompressed();
 
 		jacobian_2.clear() ;

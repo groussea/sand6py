@@ -40,6 +40,9 @@ struct ShapeFuncBase
 	const Derived& derived() const
 	{ return static_cast< const Derived& >( *this ) ; }
 
+	void locate_by_pos_or_id( const Vec &pos, const Index id, Location &loc ) const
+	{ derived().locate_by_pos_or_id( pos, id, loc ) ; }
+
 	void interpolate( const Location& loc, Interpolation& itp ) const
 	{ derived().interpolate( loc, itp ) ; }
 	void interpolate_tpz( const Location& loc, Interpolation& itp ) const

@@ -85,6 +85,10 @@ struct UnstructuredShapeFunc : public ShapeFuncBase< UnstructuredShapeFunc >
 
 	Index nDOF() const { return m_dofDef.vertices.cols() ; }
 
+	void locate_by_pos_or_id( const Vec&, const Index id, typename Base::Location & loc ) const {
+		loc = id ;
+	}
+
 	void interpolate( const Location& loc, typename Base::Interpolation& itp ) const {
 		itp.nodes[0] = loc ;
 		itp.coeffs[0] = 1 ;

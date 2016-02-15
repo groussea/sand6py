@@ -9,6 +9,7 @@ namespace d6 {
 
 typedef MeshImpl PrimalMesh ;
 typedef MeshImpl   DualMesh ;
+//typedef UnstructuredDOFs DualMesh ;
 
 
 typedef   Linear<PrimalMesh> PrimalShape ;
@@ -17,6 +18,8 @@ typedef   Linear<PrimalMesh> PrimalShape ;
 //typedef DGLinear<  DualMesh> DualShape ;
 typedef DGConstant<  DualMesh> DualShape ;
 //typedef   Linear<  DualMesh> DualShape ;
+
+//typedef UnstructuredShapeFunc DualShape ;
 
 typedef AbstractScalarField< PrimalShape > PrimalScalarField ;
 typedef AbstractVectorField< PrimalShape > PrimalVectorField ;

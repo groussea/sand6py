@@ -101,6 +101,9 @@ struct MeshShapeFunc : public ShapeFuncBase< Interp<MeshT> >
 		Base::derived().list_nodes( loc, list ) ;
 	}
 
+	void locate_by_pos_or_id( const Vec&x, const Index, typename Base::Location & loc ) const {
+		m_mesh.locate( x, loc ) ;
+	}
 	void locate( const Vec&x, typename Base::Location & loc ) const {
 		m_mesh.locate( x, loc ) ;
 	}

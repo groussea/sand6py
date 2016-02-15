@@ -6,6 +6,7 @@
 
 #include "MeshShapeFunction.hh"
 #include "P2ShapeFunction.hh"
+#include "UnstructuredShapeFunction.hh"
 
 
 #define EXPAND_INSTANTIATIONS \
@@ -15,6 +16,7 @@
     INSTANTIATE(   Linear<TetGrid>  ) \
     INSTANTIATE( DGLinear<TetGrid>  ) \
     INSTANTIATE( DGConstant<TetGrid>  ) \
+    INSTANTIATE( UnstructuredShapeFunc  ) \
     EXPAND_INSTANTIATIONS_DIM
 
 #define EXPAND_INSTANTIATIONS_2D \

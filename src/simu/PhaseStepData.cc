@@ -96,7 +96,7 @@ void PhaseStepData::computeProjectors(const Config&config,
 
 			// Ignore RB-boundary constraints on Dirichlet boundaries
 			for( unsigned k = 0 ; k < PrimalShape::NI ; ++k ) {
-				dShape.locate_dof( ploc, k ) ;
+				pShape.locate_dof( ploc, k ) ;
 				BoundaryInfo info ;
 				pShape.mesh().boundaryInfo( ploc, bdMapper, info ) ;
 				if( info.bc == BoundaryInfo::Stick ) {
@@ -155,7 +155,7 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 		typedef FormBuilder< PrimalShape, PrimalShape > Builder ;
 		Builder builder( pShape, pShape ) ;
 		builder.reset( m );
-		builder.addToIndex< form::Left >( primalNodes.cells.begin(), primalNodes.cells.end(), primalNodes.indices, primalNodes.indices );
+		builder.addToIndex( primalNodes.cells.begin(), primalNodes.cells.end(), primalNodes.indices, primalNodes.indices );
 		builder.makeCompressed();
 
 		// A
@@ -168,7 +168,7 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 		Log::Debug() << "A Index computation: " << timer.elapsed() << std::endl ;
 
 #ifdef FULL_FEM
-		builder.integrate_qp<form::Left>( [&]( Scalar w, const Vec&, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& r_dc_dx )
+		builder.integrate_qp( [&]( Scalar w, const Vec&, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& r_dc_dx )
 			{
 				Builder:: addDuDv( forms.A, w, l_itp, l_dc_dx, r_itp, r_dc_dx, primalNodes.indices, primalNodes.indices ) ;
 			}
@@ -196,7 +196,7 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 
 		Builder builder( dShape, pShape ) ;
 		builder.reset( n );
-		builder.addToIndex< form::Right >( primalNodes.cells.begin(), primalNodes.cells.end(), dualNodes.indices, primalNodes.indices );
+		builder.addToIndex( primalNodes.cells.begin(), primalNodes.cells.end(), dualNodes.indices, primalNodes.indices );
 		builder.makeCompressed();
 
 		Log::Debug() << "Index computation: " << timer.elapsed() << std::endl ;
@@ -470,8 +470,7 @@ void PhaseStepData::computePhiAndGradPhi(const PrimalScalarField &intPhi, Primal
 	typedef const typename PrimalShape::Interpolation& Itp ;
 	typedef const typename PrimalShape::Derivatives& Dcdx ;
 
-	builder.integrate_qp<form::Left>(
-						  [&]( Scalar w, const Vec&, Itp itp, Dcdx dc_dx, Itp , Dcdx )
+	builder.integrate_qp( [&]( Scalar w, const Vec&, Itp itp, Dcdx dc_dx, Itp , Dcdx )
 	{
 		for( Index j = 0 ; j < PrimalShape::NI ; ++j ) {
 			for( Index k = 0 ; k < PrimalShape::NI ; ++k ) {

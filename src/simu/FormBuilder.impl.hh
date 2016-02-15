@@ -9,7 +9,26 @@
 namespace d6 {
 
 namespace form {
-	template< typename LhsShape, typename RhsShape, Side side>
+
+	enum Side {
+		Left,
+		Right
+	};
+
+	template< typename LhsShape, typename RhsShape>
+	struct IntSide {
+		static constexpr Side side = Side::Left ;
+	} ;
+	template< typename LhsShape, typename MeshT >
+	struct IntSide< LhsShape, P2<MeshT> > {
+		static constexpr Side side = Side::Right ;
+	} ;
+	template< typename LhsShape >
+	struct IntSide< LhsShape, UnstructuredShapeFunc > {
+		static constexpr Side side = Side::Right ;
+	} ;
+
+	template< typename LhsShape, typename RhsShape, Side side = IntSide<LhsShape, RhsShape>::side >
 	struct GetSide {
 		typedef LhsShape Shape ;
 		typedef RhsShape Other ;
@@ -51,14 +70,14 @@ namespace form {
 } //form
 
 template < typename LhsShape, typename RhsShape >
-template < form::Side side, typename CellIterator>
+template < typename CellIterator>
 void FormBuilder<LhsShape, RhsShape>::addToIndex(
 		const CellIterator& cellBegin, const CellIterator& cellEnd,
 		const std::vector< Index > &rowIndices,
 		const std::vector< Index > &colIndices
 		) {
 
-	typedef form::GetSide<LhsShape, RhsShape, side> Get ;
+	typedef form::GetSide<LhsShape, RhsShape > Get ;
 	const typename Get::Shape& shape = Get::shape(*this) ;
 	const typename Get::Other& other = Get::other(*this) ;
 
@@ -86,10 +105,10 @@ void FormBuilder<LhsShape, RhsShape>::addToIndex(
 }
 
 template < typename LhsShape, typename RhsShape >
-template < form::Side side, typename QPIterator, typename Func >
+template < typename QPIterator, typename Func >
 void FormBuilder<LhsShape, RhsShape>::integrate_qp( const QPIterator& qpBegin, const QPIterator& qpEnd, Func func ) const
 {
-	typedef form::GetSide<LhsShape, RhsShape, side> Get ;
+	typedef form::GetSide<LhsShape, RhsShape > Get ;
 	const typename Get::Other& other = Get::other(*this) ;
 
 	typename LhsShape::Location      lhs_loc ;
@@ -117,21 +136,21 @@ void FormBuilder<LhsShape, RhsShape>::integrate_qp( const QPIterator& qpBegin, c
 
 
 template < typename LhsShape, typename RhsShape >
-template < form::Side side, typename CellIterator, typename Func >
+template < typename CellIterator, typename Func >
 void FormBuilder<LhsShape, RhsShape>::integrate_cell( const CellIterator& cellBegin, const CellIterator& cellEnd, Func func ) const
 {
-	typedef form::GetSide<LhsShape, RhsShape, side> Get ;
+	typedef form::GetSide<LhsShape, RhsShape > Get ;
 	const typename Get::Shape& shape = Get::shape(*this) ;
-	integrate_qp< side >( shape.qpIterator(cellBegin), shape.qpIterator(cellEnd), func ) ;
+	integrate_qp( shape.qpIterator(cellBegin), shape.qpIterator(cellEnd), func ) ;
 }
 
 template < typename LhsShape, typename RhsShape >
-template < form::Side side, typename Func >
+template < typename Func >
 void FormBuilder<LhsShape, RhsShape>::integrate_qp( Func func ) const
 {
-	typedef form::GetSide<LhsShape, RhsShape, side> Get ;
+	typedef form::GetSide<LhsShape, RhsShape > Get ;
 	const typename Get::Shape& shape = Get::shape(*this) ;
-	integrate_qp< side >( shape.qpBegin(), shape.qpEnd(), func ) ;
+	integrate_qp( shape.qpBegin(), shape.qpEnd(), func ) ;
 }
 
 

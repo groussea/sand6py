@@ -11,5 +11,6 @@
 
 #include "geo/MeshShapeFunction.hh"
 #include "geo/P2ShapeFunction.hh"
+#include "geo/UnstructuredShapeFunction.hh"
 
 #endif

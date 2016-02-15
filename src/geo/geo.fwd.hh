@@ -37,6 +37,9 @@ template < typename MeshT > struct DGLinear ;
 template < typename MeshT > struct DGConstant ;
 template < typename MeshT > struct P2 ;
 
+struct UnstructuredDOFs ;
+struct UnstructuredShapeFunc ;
+
 typedef MeshBase< MeshImpl > MeshType ;
 
 template < typename CellT, int Order >
