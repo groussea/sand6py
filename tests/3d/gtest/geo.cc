@@ -161,19 +161,21 @@ TEST( geo, quad ) {
 	vx.origin.setZero() ;
 	vx.box = Vec( 2, 3, .5 ) ;
 
-	typename Voxel::QuadPoints  qp ;
-	typename Voxel::QuadWeights qp_w ;
-
 	Scalar f_cst  = 0 ;
 	Scalar f_lin  = 0 ;
 	Scalar f_quad = 0 ;
 
-	vx.get_qp( qp, qp_w );
+	typedef QuadraturePoints<Voxel, 2> QuadPoints ;
 
-	for( int k = 0 ; k < Voxel::NQ ; ++k ) {
-		f_cst  += qp_w[k] ;
-		f_lin  += qp_w[k] * qp.col(k).prod() ;
-		f_quad += qp_w[k] * qp.col(k).prod() * qp.col(k).prod() ;
+	for( int k = 0 ; k < QuadPoints::NQ ; ++k ) {
+
+		typename QuadPoints::QuadPoint qp ;
+		QuadPoints::get( vx, k, qp );
+		const Scalar qp_w = QuadPoints::weight( vx, k );
+
+		f_cst  += qp_w ;
+		f_lin  += qp_w * qp.prod() ;
+		f_quad += qp_w * qp.prod() * qp.prod() ;
 	}
 
 	ASSERT_DOUBLE_EQ(   vx.box.prod()      , f_cst  ) ;

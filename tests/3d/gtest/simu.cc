@@ -48,7 +48,9 @@ TEST( simu, quad ) {
 
 	ASSERT_FLOAT_EQ( g.box().prod() , f_cst  ) ;
 	ASSERT_FLOAT_EQ( g.box().prod() * g.box().prod() / 8 , f_lin  ) ;
+#if (D6_MESH_IMPL == D6_MESH_GRID)
 	EXPECT_FLOAT_EQ( g.box().prod() * g.box().prod() * g.box().prod() / 27,  f_quad ) ;
+#endif
 	EXPECT_FLOAT_EQ( (std::pow(g.box()[0],3)*g.box()[2]*g.box()[1]
 		+ std::pow(g.box()[1],3)*g.box()[2]*g.box()[0]
 		+ std::pow(g.box()[2],3)*g.box()[0]*g.box()[1]) / 3,  f_quad2 ) ;
@@ -78,19 +80,17 @@ TEST( simu, DuDv ) {
 	g.get_geo( *g.cellBegin(), vx );
 	loc.cell = *g.cellBegin() ;
 
-	typename MeshType::CellGeo::QuadPoints  qp ;
-	typename MeshType::CellGeo::QuadWeights qp_w ;
+	typedef QuadraturePoints<Voxel, 2> QuadPoints ;
 
-	vx.get_qp( qp, qp_w );
-
-	for( int q = 0 ; q < MeshType::CellGeo::NQ ; ++q ) {
-		loc.coords = qp.col(q) ;
+	for( int q = 0 ; q < QuadPoints::NQ ; ++q ) {
+		QuadPoints::get( vx, q, loc.coords );
+		const Scalar qp_w = QuadPoints::weight( vx, q );
 
 		shape.interpolate( loc, itp );
 		shape.get_derivatives( loc, dc_dx );
 
 		indices[ itp.nodes[q] ] = 0 ;
-		Builder::addDuDv( A, qp_w[q], itp, dc_dx, itp, dc_dx, indices, indices ) ;
+		Builder::addDuDv( A, qp_w, itp, dc_dx, itp, dc_dx, indices, indices ) ;
 		indices[ itp.nodes[q] ] = 1 ;
 	}
 

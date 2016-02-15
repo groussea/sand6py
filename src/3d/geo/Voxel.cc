@@ -29,7 +29,7 @@ Index Voxel::sample_uniform(const unsigned N, const Index start, Points &points,
 	return p - start ;
 }
 
-Voxel::QuadPoints Voxel::Qps()
+typename QuadraturePoints<Voxel, 2>::QuadPoints QuadraturePoints<Voxel, 2>::Qps()
 {
 	// .5 * ( 1 +- 1./sqrt(3) )
 	const Vec dqp = Vec::Constant( 1./sqrt(3.) );
@@ -41,7 +41,7 @@ Voxel::QuadPoints Voxel::Qps()
 		for( int j = 0 ; j < 2 ; ++j ) {
 			for( int k = 0 ; k < 2 ; ++k ) {
 				Vec3i corner ( i, j, k) ;
-				qps.col( cornerIndex(corner) ) = qp0.array() + corner.cast< Scalar >().array()*dqp.array() ;
+				qps.col( Voxel::cornerIndex(corner) ) = qp0.array() + corner.cast< Scalar >().array()*dqp.array() ;
 			}
 		}
 	}

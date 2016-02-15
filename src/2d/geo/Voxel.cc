@@ -35,13 +35,11 @@ typename QuadraturePoints<Voxel, 2>::QuadPoints QuadraturePoints<Voxel, 2>::Qps(
 	//		const Vec dqp = Vec::Constant( 1. );
 	const Vec qp0 = .5 * ( Vec::Ones() - dqp );
 
-	Voxel vx ;
-
 	QuadPoints qps ;
 	for( int i = 0 ; i < 2 ; ++i ) {
 		for( int j = 0 ; j < 2 ; ++j ) {
 				VecWi corner ( i, j ) ;
-				qps.col( vx.cornerIndex(corner) ) = qp0.array() + corner.cast< Scalar >().array()*dqp.array() ;
+				qps.col( Voxel::cornerIndex(corner) ) = qp0.array() + corner.cast< Scalar >().array()*dqp.array() ;
 		}
 	}
 	return qps ;

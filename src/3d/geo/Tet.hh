@@ -2,6 +2,7 @@
 #define D6_TET_HH
 
 #include "utils/alg.hh"
+#include "geo/geo.fwd.hh"
 
 namespace d6 {
 
@@ -9,13 +10,9 @@ struct Tet {
 
 	static constexpr Index NV = 4 ;
 	static constexpr Index NC = 4 ;
-	static constexpr Index NQ = 4 ;
 
 	typedef Eigen::Matrix< Scalar, NC, 1 > Coords ;
 	typedef Eigen::Matrix< Scalar, NV, 3 > Derivatives ;
-
-	typedef Eigen::Matrix< Scalar, NC, NQ> QuadPoints ;
-	typedef Eigen::Matrix< Scalar,  1, NQ> QuadWeights ;
 
 	typedef Eigen::Matrix< Scalar, 3, 4 > Vertices ;
 	typedef Eigen::Matrix< Scalar, 3, Eigen::Dynamic > Points ;
@@ -90,15 +87,6 @@ struct Tet {
 
 	Index sample_uniform( const unsigned N, const Index start, Points &points, Frames &frames ) const ;
 
-	void get_qp( QuadPoints& qps, QuadWeights& weights ) const {
-		const Scalar a = (5. -   std::sqrt(5.) ) / 20 ;
-		const Scalar b = (5. + 3*std::sqrt(5.) ) / 20 ;
-
-		qps.setConstant( a ) ;
-		qps.diagonal().setConstant( b ) ;
-		weights.setConstant( volume() / NQ ) ;
-	}
-
 	void update_geometry( unsigned char rotation, int num ) ;
 
 private:
@@ -111,6 +99,26 @@ private:
 	void to_local( Vec& pos ) const ;
 
 	void local_coords( const Vec& pos, Coords& coords ) const ;
+
+} ;
+
+template<>
+struct QuadraturePoints< Tet, 2 >
+{
+	static constexpr Index NQ = 4 ;
+	typedef Eigen::Matrix< Scalar, Tet::NC, 1> QuadPoint ;
+
+	static void get( const Tet&, Index k, QuadPoint& qp ) {
+		static constexpr Scalar a = (5. -   std::sqrt(5.) ) / 20 ;
+		static constexpr Scalar b = (5. + 3*std::sqrt(5.) ) / 20 ;
+
+		qp.setConstant(a) ;
+		qp[k] = b ;
+	}
+
+	static Scalar weight( const Tet& geo, Index ) {
+		return geo.volume()/NQ ;
+	}
 
 } ;
 
