@@ -142,7 +142,8 @@ private:
 
 	//Grid
 	gl::VertexBuffer2f m_gridVertices ;
-	gl::IndexBuffer m_gridQuadIndices ;
+	gl::IndexBuffer    m_gridQuadIndices ;
+	int				   m_gridPrimitive ;
 
 	//Color field
 	gl::VertexBuffer3f m_gridColors ;
