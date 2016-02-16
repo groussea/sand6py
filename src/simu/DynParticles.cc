@@ -15,11 +15,8 @@
 
 #include <random>
 
-//TODO allow resampling particles w/ unstructured dual
-#ifndef D6_UNSTRUCTURED_DUAL
 #define SPLIT
 #define MERGE
-#endif
 
 //#define GRAD_FROM_VEL
 

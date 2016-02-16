@@ -89,6 +89,8 @@ void Simu::run()
 			// Update external objects (moving boundaries,...)
 			m_scenario->update( *this, t, m_stats.delta_t ) ;
 
+			adapt_meshes();
+
 			// Dump particles at last substep of each frame
 			if( m_config.output && substeps == s+1 ) {
 				dump_particles( frame+1 ) ;
@@ -117,20 +119,28 @@ void Simu::run()
 
 }
 
-void Simu::step(const Scalar dt)
+void Simu::adapt_meshes()
 {
-	bogus::Timer timer ;
 
-	// TODO: if we were to adapt the mesh, it would be here
 #ifdef D6_UNSTRUCTURED_DUAL
 	m_meshes.m_dual->resize( m_particles.count() ) ;
 	m_meshes.m_dual->compute_weights_from_vertices( m_config ) ;
-	if( m_grains->stresses.size() != m_meshes.m_dual->count() ) {
-		m_grains->stresses.fit_shape() ; m_grains->stresses.set_zero() ;
-		m_grains->sym_grad.fit_shape() ; m_grains->sym_grad.set_zero() ;
-		m_grains->spi_grad.fit_shape() ; m_grains->spi_grad.set_zero() ;
-	}
+
+	// ; m_grains->stresses.set_zero() ;
+	m_particles.events().replay( m_grains->stresses ) ;
+
+	m_grains->stresses.fit_shape() ;
+	m_grains->sym_grad.fit_shape() ;
+	m_grains->spi_grad.fit_shape() ;
+
 #endif
+
+
+}
+
+void Simu::step(const Scalar dt)
+{
+	bogus::Timer timer ;
 
 	m_stats.nParticles = m_particles.count() ;
 	m_stats.nNodes = meshes().primal().nNodes() ;

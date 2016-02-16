@@ -50,6 +50,10 @@ public:
 		m_size = m_shape.nDOF() ;
 		m_data.resize( D * m_size );
 	}
+	void fit_conservative( Index n ) {
+		m_size = n ;
+		m_data.conservativeResize( D * m_size );
+	}
 
 	const DynVec& flatten() const { return m_data ; }
 	DynVec& flatten() { return m_data ; }

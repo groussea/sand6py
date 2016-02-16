@@ -60,6 +60,9 @@ public:
 			return m_log ;
 		}
 
+		template < typename Derived >
+		void replay( FieldBase<Derived>& field ) const ;
+
 	private:
 		std::vector< std::vector< Event > > m_log ;
 		std::mutex m_log_mutex ;

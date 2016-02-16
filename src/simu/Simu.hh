@@ -45,6 +45,8 @@ private:
 	//! Advances the simulation with time step \p dt
 	void step( const Scalar dt ) ;
 
+	void adapt_meshes() ;
+
 	// Output
 	void dump_fields(unsigned frame) const ;
 	void dump_particles(unsigned frame) const ;
