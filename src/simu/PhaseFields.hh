@@ -22,9 +22,9 @@ typedef UnstructuredShapeFunc DualShape ;
 #else
 typedef MeshImpl   DualMesh ;
 
-typedef DGLinear<  DualMesh> DualShape ;
+//typedef DGLinear<  DualMesh> DualShape ;
 //typedef DGConstant<  DualMesh> DualShape ;
-//typedef   Linear<  DualMesh> DualShape ;
+typedef   Linear<  DualMesh> DualShape ;
 #endif
 
 typedef AbstractScalarField< PrimalShape > PrimalScalarField ;

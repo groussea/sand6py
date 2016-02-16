@@ -166,7 +166,7 @@ void DynParticles::update(const Config &config, const Scalar dt, const Phase &ph
 			Vec ev = es.eigenvalues().array().max(0).min(1) ;
 
 			// Translate to tangent space
-			Mat a2 = .5 * es.eigenvectors() * (1. - ev.array()).matrix().asDiagonal() * es.eigenvectors().transpose() ;
+			Mat a2 = 1./(WD-1) * es.eigenvectors() * (1. - ev.array()).matrix().asDiagonal() * es.eigenvectors().transpose() ;
 
 			// Quadratic closure
 			Mat a4grad = (a2.cwiseProduct( Du ).sum() * a2 ) ;
