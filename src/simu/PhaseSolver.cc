@@ -235,10 +235,12 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 
 	// Proper solving
 	Primal::SolverOptions options ;
-//	options.algorithm = Primal::SolverOptions::Cadoux_PG_NoAssembly ;
-//	options.projectedGradientVariant = 2 ;
+	options.algorithm = Primal::SolverOptions::Cadoux_PG_NoAssembly ;
+	options.projectedGradientVariant = 4 ;
+	options.useInfinityNorm = true ;
+	options.maxOuterIterations = 30 ;
 #if D6_DIM == 2
-	options.tolerance = 1.e-8 ;
+	options.tolerance = 1.e-5 ;
 #endif
 	Primal::SolverStats stats ;
 	Primal( pbData ).solve( options, x, stats ) ;

@@ -77,9 +77,9 @@ void Primal::SolverStats::log( unsigned iter, Scalar res, Scalar time )
 
 Primal::SolverOptions::SolverOptions()
 	: algorithm( GaussSeidel ),
-	  maxIterations(250), maxOuterIterations( 15 ),
+	  maxIterations(1250), maxOuterIterations( 15 ),
 	  projectedGradientVariant( -1  ),
-	  tolerance( 1.e-6 )
+	  useInfinityNorm( true ), tolerance( 1.e-6 )
 {}
 
 
@@ -127,6 +127,7 @@ Scalar Primal::solve( const SolverOptions& options, DynVec &lambda, SolverStats 
 
 		pg.setTol( options.tolerance );
 		pg.setMaxIters( options.maxIterations );
+		pg.useInfinityNorm( options.useInfinityNorm );
 
 		res = bogus::solveCadoux<SD>( W, m_data.w.data(), m_data.mu.data(), pg,
 									 lambda.data(), options.maxOuterIterations, &callback ) ;
@@ -157,6 +158,7 @@ Scalar Primal::solve( const SolverOptions& options, DynVec &lambda, SolverStats 
 			bogus::GaussSeidel< WType > gs( W ) ;
 			gs.setTol( options.tolerance );
 			gs.setMaxIters( options.maxIterations );
+			gs.useInfinityNorm( options.useInfinityNorm );
 			gs.callback().connect( callbackProxy, &CallbackProxy<WType>::ackResidual );
 
 			res = gs.solve( law, m_data.w, lambda ) ;
@@ -175,6 +177,7 @@ Scalar Primal::solve( const SolverOptions& options, DynVec &lambda, SolverStats 
 				bogus::GaussSeidel< WType > gs ;
 				gs.setTol( options.tolerance );
 				gs.setMaxIters( options.maxIterations );
+				gs.useInfinityNorm( options.useInfinityNorm );
 
 				res = bogus::solveCadoux<SD>( W, m_data.w.data(), m_data.mu.data(), gs,
 											  lambda.data(), options.maxOuterIterations, &callback ) ;
@@ -192,6 +195,7 @@ Scalar Primal::solve( const SolverOptions& options, DynVec &lambda, SolverStats 
 
 				pg.setTol( options.tolerance );
 				pg.setMaxIters( options.maxIterations );
+				pg.useInfinityNorm( options.useInfinityNorm );
 
 				res = bogus::solveCadoux<SD>( W, m_data.w.data(), m_data.mu.data(), pg,
 											  lambda.data(), options.maxOuterIterations, &callback ) ;

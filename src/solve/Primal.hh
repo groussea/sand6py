@@ -56,6 +56,7 @@ public:
 
 		int projectedGradientVariant ;
 
+		bool useInfinityNorm ;
 		Scalar tolerance ;
 
 		SolverOptions() ;
