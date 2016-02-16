@@ -108,7 +108,7 @@ struct QuadraturePoints< Tet, 1 >
 	static constexpr Index NQ = 1 ;
 	typedef Eigen::Matrix< Scalar, Tet::NC, 1> QuadPoint ;
 
-	static void get( const Voxel&, Index, QuadPoint& qp ) {
+	static void get( const Tet&, Index, QuadPoint& qp ) {
 		qp.setConstant(.25) ;
 	}
 

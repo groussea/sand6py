@@ -110,20 +110,8 @@ void DynParticles::update(const Config &config, const Scalar dt, const Phase &ph
 		//APIC
 		Mat grad ;
 		{
-			// Recompute gradient from velocities to avoid smoothing
-
-			typename PrimalShape::Interpolation itp ;
-			typename PrimalShape::Derivatives derivatives ;
-
-			shape.interpolate( p0loc, itp );
-			shape.get_derivatives( p0loc, derivatives ) ;
-
-			Mat Bp = Mat::Zero() ;
-
-			for( Index k = 0 ; k < itp.nodes.rows() ; ++k ) {
-				Bp += phase.velocity[ itp.nodes[k] ] * derivatives.row(k) ;
-			}
-
+			// Compute gradient from velocities to avoid smoothing
+			const Mat& Bp = phase.velocity.grad_at(p0loc) ;
 			tensor_view( m_affine.col(i) ).set( Bp );
 
 			// Debonding function
@@ -141,8 +129,14 @@ void DynParticles::update(const Config &config, const Scalar dt, const Phase &ph
 
 		// Frames and orientation
 		Mat Du, Wu ;
+#ifdef GRAD_FROM_VEL
+		Du = .5 * (grad + grad.transpose()) ;
+		Wu = .5 * (grad - grad.transpose()) ;
+#else
 		phase.sym_grad.get_sym_tensor( d0loc, Du );
 		phase.spi_grad.get_spi_tensor( d0loc, Wu );
+		grad = Wu + Du ;
+#endif
 
 		// Inertia
 		{
@@ -152,9 +146,6 @@ void DynParticles::update(const Config &config, const Scalar dt, const Phase &ph
 
 		// Frame
 		{
-#ifndef GRAD_FROM_VEL
-			const Mat grad = Wu + Du ;
-#endif
 
 			auto  frame_view( tensor_view( m_geo.m_frames.col(i) ) ) ;
 			Mat frame ;

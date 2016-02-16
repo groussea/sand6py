@@ -79,7 +79,7 @@ Primal::SolverOptions::SolverOptions()
 	: algorithm( GaussSeidel ),
 	  maxIterations(250), maxOuterIterations( 15 ),
 	  projectedGradientVariant( -1  ),
-	  useInfinityNorm( true ), tolerance( 1.e-6 )
+	  useInfinityNorm( false ), tolerance( 1.e-6 )
 {}
 
 

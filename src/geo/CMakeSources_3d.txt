@@ -44,4 +44,5 @@ geo/UnstructuredShapeFunction.hh
 geo/VectorField.cc
 geo/VectorField.hh
 geo/geo.fwd.hh
+geo/instanciations.hh
 geo/rotations.hh

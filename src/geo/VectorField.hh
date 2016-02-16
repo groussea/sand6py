@@ -31,6 +31,8 @@ public:
 		return FieldNorm< d6::AbstractVectorField, ShapeFuncT >( *this ) ;
 	}
 
+	Mat grad_at( const typename ShapeFuncType::Location& loc ) const ;
+
 };
 
 

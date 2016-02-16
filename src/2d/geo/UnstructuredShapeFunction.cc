@@ -9,6 +9,9 @@ namespace d6 {
 
 void UnstructuredDOFs::compute_weights_from_vertices( const Config &c )
 {
+
+	//FIXME -- chains of particles -> max density
+
 	const Index n = count() ;
 	weights.setConstant( vertices.cols(), 0 ) ;
 

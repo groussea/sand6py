@@ -50,15 +50,17 @@ void Sampler::move( )
 	for(Index i = 0 ; i < n ; ++i) {
 
 		const Vec p0 = m_positions.col(i).cast< Scalar >() ;
+
 		auto p0loc = m_offline.meshes().primal().locate( p0 ) ;
+
 		const Vec p1 = p0 + dt * grains.velocity( p0loc ) ;
 		m_positions.col(i) = p1.cast< float >() ;
 
 		// Orientation
 		if( m_mode == Discs ) {
-			Mat Wu, Du ;
-			tensor_view( grains.sym_grad(p0loc) ).get( Du ) ;
-			tensor_view( grains.spi_grad(p0loc) ).get( Wu ) ;
+			const Mat& grad = grains.velocity.grad_at(p0loc) ;
+			const Mat& Du = .5 * (grad + grad.transpose()) ;
+			const Mat& Wu = .5 * (grad - grad.transpose()) ;
 
 			Vec t0 ;
 			if ( std::fabs(m_normals(i,0)) > 1.e-6 ) {
