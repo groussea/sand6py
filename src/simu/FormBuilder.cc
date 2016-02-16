@@ -210,6 +210,7 @@ template class FormBuilder<  UnstructuredShapeFunc, Linear< MeshImpl > > ;
 template class FormBuilder<   Linear< MeshImpl >, P2< MeshImpl > > ;
 template class FormBuilder< DGLinear< MeshImpl >, P2< MeshImpl > > ;
 template class FormBuilder<       P2< MeshImpl >, P2< MeshImpl > > ;
+template class FormBuilder<  UnstructuredShapeFunc, P2< MeshImpl > > ;
 #endif
 
 } //d6

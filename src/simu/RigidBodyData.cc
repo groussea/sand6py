@@ -42,13 +42,12 @@ void RigidBodyData::compute_active( const Active& phaseNodes )
 	typename TensorField::ShapeFuncType::NodeList nodelist ;
 	typename MeshType::CellGeo geo ;
 
-	nodes.reset( mesh.nNodes() );
+	nodes.reset( shape.nDOF() );
 
 	for( const typename MeshType::Cell& cell : phaseNodes.cells )
 	{
 		mesh.get_geo( cell, geo );
 
-		bool occupied = false ;
 		bool boundary = false ;
 		bool interior = true  ;
 
@@ -58,15 +57,8 @@ void RigidBodyData::compute_active( const Active& phaseNodes )
 			if( phi_k >= 1. ) {
 				boundary = true ;
 			} else {
-				if( phi_k >  0. ) {
-					occupied = true ;
-				}
 				interior = false ;
 			}
-		}
-
-		if( occupied || boundary ) {
-			occupiedCells.push_back( cell ) ;
 		}
 
 		if( boundary && !interior )

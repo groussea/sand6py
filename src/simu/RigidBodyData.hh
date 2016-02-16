@@ -34,7 +34,6 @@ struct RigidBodyData
 	TensorField& stresses ;
 
 	Active	    nodes ;
-	typename MeshType::Cells occupiedCells ;
 
 	FormMat<SD,WD>::Type	jacobian ;     //!< int( (u grad phi):tau )
 	FormMat<SD,WD>::Type	projection ;   //!< Linear operator giving rb velocities at mesh nodes

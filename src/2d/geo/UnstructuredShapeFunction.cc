@@ -44,7 +44,7 @@ void UnstructuredDOFs::compute_weights_from_vertices( const Config &c )
 		}
 	}
 
-	weights = M_PI * dist / 4 ;
+	weights = dist ; // Assume sqaure shape
 
 }
 

@@ -3,6 +3,8 @@
 
 #include "FormBuilder.hh"
 
+#include "ActiveIndices.hh"
+
 #include "geo/MeshImpl.hh"
 #include "geo/Particles.hh"
 
@@ -12,15 +14,19 @@ namespace form {
 
 	template< typename LhsShape, typename RhsShape>
 	struct IntSide {
+		static constexpr Side side = Side::Right ;
+	} ;
+	template< typename MeshT >
+	struct IntSide< UnstructuredShapeFunc, P2<MeshT> > {
 		static constexpr Side side = Side::Left ;
 	} ;
-	template< typename LhsShape, typename MeshT >
-	struct IntSide< LhsShape, P2<MeshT> > {
-		static constexpr Side side = Side::Right ;
+	template< typename MeshT, typename RhsShape >
+	struct IntSide< P2<MeshT>, RhsShape > {
+		static constexpr Side side = Side::Left ;
 	} ;
-	template< typename LhsShape >
-	struct IntSide< LhsShape, UnstructuredShapeFunc > {
-		static constexpr Side side = Side::Right ;
+	template< typename RhsShape >
+	struct IntSide< UnstructuredShapeFunc, RhsShape > {
+		static constexpr Side side = Side::Left ;
 	} ;
 
 	template< typename LhsShape, typename RhsShape, Side side_ = IntSide<LhsShape, RhsShape>::side >
@@ -97,7 +103,7 @@ void FormBuilder<LhsShape, RhsShape>::addToIndexIf(
 			for( int j = 0 ; j < otherNodes.rows() ; ++ j ) {
 				const Index col = colIndices[ Get::rhs(shapeNodes[k], otherNodes[j]) ] ;
 				const Index row = rowIndices[ Get::lhs(shapeNodes[k], otherNodes[j]) ] ;
-				if( row >= 0 && col >= 0 )
+				if( row != Active::s_Inactive && col != Active::s_Inactive )
 					m_data[ row ].push_back( col ) ;
 			}
 		}

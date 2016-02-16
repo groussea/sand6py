@@ -77,7 +77,7 @@ void Primal::SolverStats::log( unsigned iter, Scalar res, Scalar time )
 
 Primal::SolverOptions::SolverOptions()
 	: algorithm( GaussSeidel ),
-	  maxIterations(1250), maxOuterIterations( 15 ),
+	  maxIterations(250), maxOuterIterations( 15 ),
 	  projectedGradientVariant( -1  ),
 	  useInfinityNorm( true ), tolerance( 1.e-6 )
 {}
@@ -161,7 +161,7 @@ Scalar Primal::solve( const SolverOptions& options, DynVec &lambda, SolverStats 
 			gs.useInfinityNorm( options.useInfinityNorm );
 			gs.callback().connect( callbackProxy, &CallbackProxy<WType>::ackResidual );
 
-			res = gs.solve( law, m_data.w, lambda ) ;
+			res = gs.solve( law, m_data.w, lambda, false ) ;
 
 		} else  {
 

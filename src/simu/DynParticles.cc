@@ -21,7 +21,7 @@
 #define MERGE
 #endif
 
-#define GRAD_FROM_VEL
+//#define GRAD_FROM_VEL
 
 namespace d6 {
 
