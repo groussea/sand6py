@@ -137,20 +137,54 @@ TEST( geo, octree )
 	ASSERT_EQ(1, tree.nLeafs() ) ;
 
 	Vec pos (.2,.3) ;
+	Vec pos2 ( pos + Vec(.5,.5) ) ;
+
 	Index lidx ;
 	Octree::Coords coords ;
 	tree.find( pos, lidx, coords );
 	ASSERT_EQ(0, lidx) ;
 	ASSERT_TRUE( coords.isApprox( pos ) ) ;
 
-	tree.split( 0 ) ;
+	tree.split( 0, 2 ) ;
 	ASSERT_EQ( 4, tree.nLeafs() ) ;
 
 	tree.find( pos, lidx, coords );
 	ASSERT_EQ( 0, lidx) ;
 	ASSERT_TRUE( coords.isApprox( 2*pos ) ) ;
 
-	tree.find( pos+Vec(.5,.5), lidx, coords );
+	tree.find( pos2, lidx, coords );
 	ASSERT_EQ( 3, lidx) ;
 	ASSERT_TRUE( coords.isApprox( 2*pos ) ) ;
+
+	tree.split( 3, 2 ) ;
+	ASSERT_EQ( 7, tree.nLeafs() ) ;
+	tree.find( pos2, lidx, coords );
+	ASSERT_EQ( 5, lidx) ;
+
+	ASSERT_FALSE( tree.split( 5, 2 ) ) ;
+	ASSERT_EQ( 7, tree.nLeafs() ) ;
+
+	Voxel geo ;
+	tree.compute_geo( lidx, geo );
+
+	ASSERT_TRUE( ( geo.origin.array() <= pos2.array() ).all() ) ;
+	ASSERT_TRUE( ( geo.origin.array() + geo.box.array() >= pos2.array() ).all() ) ;
+
+	VecWi dim(2,2) ;
+	Vec   box(1.,1.) ;
+	Octree g( box, dim ) ;
+
+	ASSERT_EQ(4, g.nCells() );
+	ASSERT_EQ(9, g.nNodes() );
+
+	Octree::Location loc ;
+	g.locate( pos2, loc ) ;
+	ASSERT_EQ( 3, g.cellIndex(loc.cell) ) ;
+	ASSERT_TRUE( g.pos(loc).isApprox(pos2) ) ;
+
+	ASSERT_TRUE( g.split(loc.cell) ) ;
+	g.rebuild();
+
+	ASSERT_EQ(7, g.nCells() );
+	ASSERT_EQ(14, g.nNodes() );
 }
