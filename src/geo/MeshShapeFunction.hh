@@ -116,9 +116,6 @@ struct MeshShapeFunc : public ShapeFuncBase< Interp<MeshT> >
 	const MeshT& mesh()  const {
 		return m_mesh.derived() ;
 	}
-	const MeshT& visuMesh()  const {
-		return m_mesh.derived() ;
-	}
 
 	const typename Base::DOFDefinition& dofDefinition() const
 	{ return mesh() ;  }

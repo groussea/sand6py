@@ -115,15 +115,6 @@ public:
 
 	void boundaryInfo( const Location &loc, const BoundaryMapper& mapper, BoundaryInfo &info ) const ;
 
-	Index nAdjacent( Index ) const {
-		return NV ;
-	}
-
-	Vec nodePosition( const Vertex& node ) const
-	{
-		return firstCorner( node ) ;
-	}
-
 	void clamp_cell( Cell& cell ) const {
 		cell = Cell::Zero().max(cell).min(m_dim.array()-Cell::Ones()) ;
 	}

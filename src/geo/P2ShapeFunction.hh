@@ -56,10 +56,6 @@ struct P2 : public MeshShapeFunc< P2, MeshT >
 		list_nodes( loc, nodes ) ;
 	}
 
-	MeshT visuMesh()  const {
-		return MeshT( Base::mesh().box(), Base::mesh().dim() * 2 ) ;
-	}
-
 	void build_visu_mesh( DynMatW& vertices, DynMati& indices ) const ;
 
 	void interpolate_tpz( const Location& loc, typename Base::Interpolation& itp ) const

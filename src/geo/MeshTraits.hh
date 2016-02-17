@@ -47,6 +47,24 @@ struct MeshTraits< TetGrid > {
 	typedef std::vector<Cell> Cells ;
 };
 
+
+// Octree
+
+class  Octree ;
+struct OctreeIterator ;
+
+template < >
+struct MeshTraits< Octree > {
+	typedef OctreeIterator CellIterator ;
+
+	typedef Eigen::Array< Index, WD+1, 1 > Cell    ;
+	typedef Voxel CellGeo ;
+	static constexpr Index NV = CellGeo::NV ;
+	static constexpr Index NC = CellGeo::NC ;
+
+	typedef std::vector<Cell> Cells ;
+};
+
 } //d6
 
 #endif

@@ -4,8 +4,12 @@
 #include "geo/MeshShapeFunction.hh"
 #include "geo/P2ShapeFunction.hh"
 #include "geo/TetGrid.hh"
+#include "geo/Grid.hh"
+#include "geo/Octree.hh"
 
 #include "ScalarField.hh"
+
+#include <Eigen/Eigenvalues>
 
 #include <gtest/gtest.h>
 
@@ -69,4 +73,84 @@ TEST( geo, p2 )
 	p2.compute_tpz_mass( f.flatten() );
 	ASSERT_DOUBLE_EQ( g.box().prod(), f.flatten().sum() );
 
+
+}
+
+TEST( geo, qpmat )
+{
+	typedef TetGrid MeshT ;
+	typedef Linear< MeshT > Shape ;
+
+	VecWi dim(1,1) ;
+	Vec   box(1.,1.) ;
+	MeshT g ( box,   dim ) ;
+
+	Shape shape( g ) ;
+
+	Shape::Location loc ;
+	loc.cell = *g.cellBegin() ;
+	Shape::Interpolation itp ;
+
+	typedef typename Shape::Traits::QPIterator<>::Type::QP QPs ;
+	typedef QPs::QuadPoint QP ;
+
+	typedef Eigen::Matrix< Scalar, QPs::NQ, QPs::NQ > MatQ;
+	MatQ qps ;
+	MatQ M = MatQ::Zero() ;
+	MatQ W = MatQ::Zero() ;
+
+	MeshT::CellGeo geo ;
+	g.get_geo( loc.cell, geo ) ;
+	for( Index q = 0 ; q < QPs::NQ ; ++q ) {
+		QP qp ;
+		QPs::get( geo, q, qp ) ;
+		loc.coords = qp ;
+		shape.interpolate( loc, itp );
+		qps.col(q) = itp.coeffs ;
+
+		M += qps.col(q) * QPs::weight( geo, q ) *  qps.col(q).transpose() ;
+		W(q,q) = QPs::weight( geo, q ) ;
+	}
+//	std::cout << M*QPs::NQ/M.lpNorm<1>() << std::endl ;
+//	std::cout << " --- " << std::endl ;
+//	std::cout << qps*W*qps.transpose() << std::endl ;
+//	std::cout << " --- " << std::endl ;
+//	Eigen::IOFormat HeavyFmt(Eigen::FullPrecision, 0, ", ", ",\n", "", "", "", ";");
+//	std::cout << qps.format(HeavyFmt) << std::endl ;
+//	std::cout << " --- " << std::endl ;
+//	std::cout << qps.transpose() * qps << std::endl ;
+
+	ASSERT_TRUE( qps.isApprox( qps.transpose() )) ;
+
+	MatQ S = qps*qps ;
+	Eigen::SelfAdjointEigenSolver< MatQ > es( S ) ;
+	MatQ R = es.eigenvectors() * es.eigenvalues().array().sqrt().matrix().asDiagonal() * es.eigenvectors().transpose() ;
+
+	ASSERT_TRUE( qps.isApprox( R )) ;
+}
+
+TEST( geo, octree )
+{
+	Octree::SubTree tree ;
+
+	ASSERT_EQ(1, tree.nLeafs() ) ;
+	ASSERT_EQ(1, tree.nLeafs() ) ;
+
+	Vec pos (.2,.3) ;
+	Index lidx ;
+	Octree::Coords coords ;
+	tree.find( pos, lidx, coords );
+	ASSERT_EQ(0, lidx) ;
+	ASSERT_TRUE( coords.isApprox( pos ) ) ;
+
+	tree.split( 0 ) ;
+	ASSERT_EQ( 4, tree.nLeafs() ) ;
+
+	tree.find( pos, lidx, coords );
+	ASSERT_EQ( 0, lidx) ;
+	ASSERT_TRUE( coords.isApprox( 2*pos ) ) ;
+
+	tree.find( pos+Vec(.5,.5), lidx, coords );
+	ASSERT_EQ( 3, lidx) ;
+	ASSERT_TRUE( coords.isApprox( 2*pos ) ) ;
 }
