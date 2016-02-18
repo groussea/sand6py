@@ -234,24 +234,22 @@ struct Linear : public MeshShapeFunc< Linear, MeshT >
 	Index nDOF() const { return Base::mesh().nNodes() ; }
 
 	void interpolate( const Location& loc, typename Base::Interpolation& itp ) const
-	{ interpolate( loc, itp.nodes, itp.coeffs ); }
-	void get_derivatives( const Location& loc, typename Base::Derivatives& dc_dx ) const ;
-
-	using Base::list_nodes ;
-	void list_nodes( const Location& loc, typename Base::NodeList& list ) const {
-		typename Base::Interpolation itp ;
-		interpolate( loc, itp );
-		list = itp.nodes ;
+	{
+		dof_coeffs( loc.coords, itp.coeffs ) ;
+		list_nodes( loc, itp.nodes ) ;
 	}
+
+	void dof_coeffs( const typename MeshType::Coords& coords, typename Base::CoefList& coeffs ) const ;
+	using Base::list_nodes ;
+	void list_nodes( const Location& loc, typename Base::NodeList& list ) const ;
+
+	void get_derivatives( const Location& loc, typename Base::Derivatives& dc_dx ) const ;
 
 	void locate_dof( typename Base::Location& loc, Index dofIndex ) const {
 		typename MeshType::CellGeo geo ;
 		Base::mesh().get_geo( loc.cell, geo ) ;
 		geo.vertexCoords( dofIndex, loc.coords ) ;
 	}
-
-	void interpolate( const Location& loc,
-					  typename Base::NodeList& nodes, typename Base::CoefList& coeffs ) const ;
 
 	void interpolate_tpz( const Location& loc, typename Base::Interpolation& itp ) const
 	{ interpolate(loc,itp) ; }
@@ -290,7 +288,7 @@ struct DGLinear : public MeshShapeFunc< DGLinear, MeshT >
 	Index nDOF() const { return Base::mesh().nCells() * MeshType::NV ; }
 
 	void interpolate( const Location& loc, typename Base::Interpolation& itp ) const {
-		Linear<MeshT>( Base::mesh() ).interpolate( loc, itp.nodes, itp.coeffs ) ;
+		Linear<MeshT>( Base::mesh() ).dof_coeffs( loc.coords, itp.coeffs ) ;
 		list_nodes( loc, itp.nodes ) ;
 	}
 	void get_derivatives( const Location& loc, typename Base::Derivatives& dc_dx ) const {

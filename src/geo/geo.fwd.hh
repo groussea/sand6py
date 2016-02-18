@@ -3,6 +3,7 @@
 
 #define D6_MESH_GRID     0
 #define D6_MESH_TET_GRID 1
+#define D6_MESH_OCTREE   2
 
 #ifndef D6_MESH_IMPL
 #define D6_MESH_IMPL D6_MESH_GRID
@@ -25,9 +26,13 @@ template < typename ShapeFunc > class AbstractSkewTsField ;
 
 
 class Grid ;
+class Octree ;
 class TetGrid ;
+
 #if( D6_MESH_IMPL == D6_MESH_TET_GRID )
 typedef TetGrid MeshImpl ;
+#elif( D6_MESH_IMPL == D6_MESH_OCTREE )
+typedef Octree  MeshImpl ;
 #else
 typedef Grid    MeshImpl ;
 #endif

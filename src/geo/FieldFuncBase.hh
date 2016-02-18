@@ -94,6 +94,7 @@ struct Interpolation : public NonTrivialInterpolation< Derived, D, ShapeFuncT, D
 
 
 // Trivial specializationfor non-interpolating interpolation
+/* Nope DofDefinition may de different
 template < typename Derived, Index D, typename ShapeFuncT >
 struct Interpolation< Derived, D, ShapeFuncT, ShapeFuncT >
 		: public FieldFuncBase< Interpolation<Derived, D, ShapeFuncT, ShapeFuncT >, D, ShapeFuncT >
@@ -115,7 +116,7 @@ struct Interpolation< Derived, D, ShapeFuncT, ShapeFuncT >
 	{
 		return func.size() ;
 	}
-};
+}; */
 
 
 } //d6

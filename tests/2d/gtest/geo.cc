@@ -187,4 +187,13 @@ TEST( geo, octree )
 
 	ASSERT_EQ(7, g.nCells() );
 	ASSERT_EQ(14, g.nNodes() );
+
+	Linear< Octree > shape( g ) ;
+	Linear< Octree > ::Interpolation itp ;
+
+	shape.interpolate( loc, itp );
+	for( Index i = 0 ; i < itp.nodes.rows() ; ++i ) {
+		ASSERT_GE( itp.nodes[i], 0 ) ;
+		ASSERT_LT( itp.nodes[i], shape.nDOF() ) ;
+	}
 }

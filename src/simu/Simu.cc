@@ -13,6 +13,9 @@
 
 #include "geo/LevelSet.io.hh"
 #include "geo/Particles.io.hh"
+#if D6_MESH_IMPL == D6_MESH_OCTREE
+#include "geo/Octree.io.hh"
+#endif
 
 #include "utils/serialization.hh"
 
@@ -121,21 +124,7 @@ void Simu::run()
 
 void Simu::adapt_meshes()
 {
-
-#ifdef D6_UNSTRUCTURED_DUAL
-	m_meshes.m_dual->resize( m_particles.count() ) ;
-	m_meshes.m_dual->compute_weights_from_vertices( m_config ) ;
-
-	// ; m_grains->stresses.set_zero() ;
-	m_particles.events().replay( m_grains->stresses ) ;
-
-	m_grains->stresses.fit_shape() ;
-	m_grains->sym_grad.fit_shape() ;
-	m_grains->spi_grad.fit_shape() ;
-
-#endif
-
-
+	m_meshes.adapt( m_particles, m_grains );
 }
 
 void Simu::step(const Scalar dt)
@@ -210,8 +199,7 @@ void Simu::dump_fields( unsigned frame ) const
 	{
 		std::ofstream ofs( dir.filePath("meshes") );
 		boost::archive::binary_oarchive oa(ofs);
-		oa << meshes().primal() ;
-		oa << meshes().  dual() ;
+		oa << meshes() ;
 	}
 	// Velocity, Stress, Phi
 	{

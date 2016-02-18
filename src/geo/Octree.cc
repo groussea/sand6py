@@ -8,7 +8,7 @@ namespace d6 {
 
 OctreeIterator& OctreeIterator::operator ++()
 {
-	if( ++cell[2] == grid.subtree(cell).nLeafs() ) {
+	if( ++cell[2] == grid.nSubCells( cell ) ) {
 		cell[2] = 0 ;
 		++cell[1] ;
 		if(cell[1] == grid.dim()[1]) {
@@ -52,7 +52,7 @@ Index OctreeIterator::index() const
 
 Octree::Octree(const Vec &box, const VecWi &res)
 	: Base(),
-	  m_maxDepth(4)
+	  m_maxDepth(1)
 {
 	m_dim = res ;
 	set_box( box ) ;
@@ -90,9 +90,27 @@ void Octree::rebuild()
 			const Index nodeIdx = hrNodeIndex( hires + size*corner, maxRes ) ;
 
 			if( m_nodeIds.find(nodeIdx) == m_nodeIds.end() ) {
-				m_nodeIds[nodeIdx] = m_nodeIds.size() ;
+				const size_t idx = m_nodeIds.size() ;
+				m_nodeIds[nodeIdx] = idx ;
 			}
 		}
+	}
+}
+
+void Octree::list_nodes(const Cell &cell, NodeList &nodes) const
+{
+	Index maxRes = 1 << m_maxDepth ;
+
+	ArrWi hires ; Index size ;
+	subtree( cell ).upres_cell( cell[WD], maxRes, hires, size );
+	hires += maxRes * cell.head<WD>() ;
+
+	for( Index k = 0 ; k < Voxel::NV ; ++k ) {
+		const ArrWi corner = Voxel::corner( k ) ;
+		const Index nodeIdx = hrNodeIndex( hires + size*corner, maxRes ) ;
+		const auto it = m_nodeIds.find(nodeIdx) ;
+		assert( it != m_nodeIds.end() ) ;
+		nodes[k] = it->second ;
 	}
 }
 
@@ -157,6 +175,12 @@ void Octree::SubTree::upres_cell( Index leafIndex, Index target_res, ArrWi& hire
 	hires_cell = cell.coords * size ;
 }
 
+Index Octree::SubTree::res( Index leafIndex ) const
+{
+	SubCell cell ;
+	subcell( leafIndex, cell, 0, 0 ) ;
+	return cell.res ;
+}
 
 void Octree::SubTree::find( Index offset, Arr& rel, Index &leafIndex, Coords& coords ) const
 {

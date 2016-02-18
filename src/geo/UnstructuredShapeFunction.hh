@@ -22,7 +22,7 @@ struct UnstructuredDOFs {
 	Index count() const { return m_count ; }
 
 	void resize( Index n ) { m_count = n ; }
-	void compute_weights_from_vertices( const Config &c) ;
+	void compute_weights_from_vertices(const Vec& box, const VecWi &res) ;
 
 	template <typename Ar>
 	void serialize( Ar& ar, const unsigned int ) { ar&m_count ; }

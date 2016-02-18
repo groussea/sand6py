@@ -10,6 +10,9 @@
 
 #include "geo/Particles.io.hh"
 #include "geo/LevelSet.io.hh"
+#if D6_MESH_IMPL == D6_MESH_OCTREE
+#include "geo/Octree.io.hh"
+#endif
 
 #include "utils/serialization.hh"
 
@@ -50,8 +53,7 @@ bool Offline::load_frame(unsigned frame )
 		{
 			std::ifstream ifs( dir.filePath("meshes") );
 			boost::archive::binary_iarchive ia(ifs);
-			ia >> *m_meshes.m_primal ;
-			ia >> *m_meshes.m_dual ;
+			ia >> m_meshes ;
 		}
 		// Velocity, Stress, Phi
 		{
@@ -99,7 +101,8 @@ bool Offline::load_frame(unsigned frame )
 	}
 
 #ifdef D6_UNSTRUCTURED_DUAL
-	m_meshes.m_dual->compute_weights_from_vertices( m_config ) ;
+	//TODO find a better place
+	m_meshes.m_dual->compute_weights_from_vertices( m_config.box, m_config.res ) ;
 #endif
 
 	Log::Info() << "Loaded frame " << frame << std::endl ;

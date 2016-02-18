@@ -10,6 +10,7 @@ simu/LinearSolver.cc
 simu/LinearSolver.hh
 simu/Phase.hh
 simu/PhaseFields.hh
+simu/PhaseMeshes.cc
 simu/PhaseSolver.cc
 simu/PhaseSolver.hh
 simu/PhaseStepData.cc

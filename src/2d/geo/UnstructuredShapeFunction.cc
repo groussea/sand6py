@@ -2,12 +2,10 @@
 
 #include "Grid.hh"
 
-#include "utils/Config.hh"
-
 namespace d6 {
 
 
-void UnstructuredDOFs::compute_weights_from_vertices( const Config &c )
+void UnstructuredDOFs::compute_weights_from_vertices( const Vec &box, const VecWi& res )
 {
 
 	//FIXME -- chains of particles -> max density
@@ -17,7 +15,7 @@ void UnstructuredDOFs::compute_weights_from_vertices( const Config &c )
 
 	DynArr dist = DynArr::Ones( n ) ;
 
-	Grid g( c.box, c.res ) ;
+	Grid g( box, res ) ;
 	std::vector< std::vector< Index > > ids( g.nCells() ) ;
 
 	for( Index i = 0 ; i < n ; ++i ) {

@@ -90,7 +90,8 @@ FieldBase< Derived >::integrate( const FieldFuncBase< Func, D, OtherShape > &f )
 
 template< typename Derived >
 template< typename Func, typename OtherShape >
-Derived& FieldBase< Derived >::from_interpolation( const FieldFuncBase< Func, D, OtherShape > &f )
+typename std::enable_if< FieldBase<Derived>::ShapeFuncType::is_mesh_based || OtherShape::is_mesh_based, Derived& >::type
+FieldBase< Derived >::from_interpolation( const FieldFuncBase< Func, D, OtherShape > &f )
 {
 	ScalarField volumes( shape() );
 	shape().compute_lumped_mass( volumes.flatten() );
@@ -104,7 +105,6 @@ Derived& FieldBase< Derived >::from_interpolation( const FieldFuncBase< Func, D,
 
 	return derived();
 }
-
 
 } //ns d6
 

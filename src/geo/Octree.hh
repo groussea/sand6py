@@ -55,8 +55,6 @@ public:
 
 	Octree( const Vec& box, const VecWi &res ) ;
 
-	void rebuild() ;
-
 	void set_box( const Vec& box ) ;
 
 	Index nNodes() const {
@@ -65,9 +63,6 @@ public:
 
 	Index nCells() const {
 		return m_trees.back().offset() + m_trees.back().nLeafs() ;
-	}
-	Index nSubCells( const Cell& cell ) const {
-		return subtree(cell).nLeafs() ;
 	}
 
 	Index cellIndex( const Cell& cell ) const {
@@ -91,14 +86,17 @@ public:
 
 	void get_geo( const Cell &cell, CellGeo& geo ) const ;
 
+
 	template < typename Archive >
-	void serialize( Archive &ar, unsigned int ) {
-		ar & m_dim ;
-		ar &  m_dx ;
-	}
+	void save( Archive &ar, unsigned int ) const ;
+	template < typename Archive >
+	void load( Archive &ar, unsigned int ) ;
+	template < typename Archive >
+	void serialize( Archive &ar, unsigned int ) ;
+
 
 	bool onBoundary( const Cell &cell ) const {
-		//TODO remove false-positives
+		//TODO remove false-positives (use high-res)
 		return cell.head<WD>().minCoeff() == 0 || (m_dim - cell.head<WD>()).minCoeff() == 1 ;
 	}
 
@@ -108,18 +106,35 @@ public:
 		cell.head<WD>() = ArrWi::Zero().max(cell.head<WD>()).min(m_dim.array()-ArrWi::Ones()) ;
 	}
 
-	bool split( const Cell& cell ) ;
-
 	const ArrWi& dim() const { return m_dim ; }
 	const Arr&    dx() const { return  m_dx ; }
+
+	// Octree specific public if
+
+	typedef Eigen::Matrix< Index, Traits::NV, 1 > NodeList ;
+
+	void list_nodes( const Cell& cell, NodeList& nodes ) const ;
+
+	bool split( const Cell& cell ) ;
+
+	void rebuild() ;
+
+	Index cellRes( const Cell& cell ) const {
+		return subtree(cell).res( cell[WD] ) ;
+	}
+
+	// Public for testing purposes
 
 	struct SubTree {
 
 		SubTree() ;
 
 		void find( const Vec& pos, Index &leafIndex, Coords& coords ) const ;
+
 		void compute_geo( Index leafIndex, Voxel &geo ) const ;
 		void upres_cell(Index leafIndex, Index target_res, ArrWi& hires_cell, Index &size) const ;
+
+		Index res( Index leafIndex ) const ;
 
 		Index nLeafs() const ;
 
@@ -128,10 +143,22 @@ public:
 
 		bool split( Index leafIndex, Index maxDepth ) ;
 
+		template < typename Archive >
+		void serialize( Archive &ar, unsigned int ) {
+			ar & m_nodes ;
+		}
+
 	private:
 		struct Node {
 			Index subSize ;
 			Index nLeafs  ;
+
+			template < typename Archive >
+			void serialize( Archive &ar, unsigned int ) {
+				ar & subSize ;
+				ar & nLeafs ;
+			}
+
 		} ;
 
 		Index m_offset ;
@@ -170,10 +197,14 @@ private:
 	const SubTree& subtree( const Cell& cell ) const
 	{ return m_trees[ subtreeIndex(cell)] ; }
 
+	Index nSubCells( const Cell& cell ) const {
+		return subtree(cell).nLeafs() ;
+	}
+
 	Index hrNodeIndex( const ArrWi& node, Index res ) const
 	{
 		Index idx = (res*m_dim[1]+1) * node[0] + node[1] ;
-		if( Cell::RowsAtCompileTime == 2 )
+		if( WD == 2 )
 			return idx ;
 		return idx*(res*m_dim[2]+1) + node[2] ;
 	}

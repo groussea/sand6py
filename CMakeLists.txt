@@ -21,6 +21,8 @@ endif()
 
 if (TETGRID)
     add_definitions( -DD6_MESH_IMPL=1 )
+elseif( OCTREE )
+    add_definitions( -DD6_MESH_IMPL=2 )
 endif()
 
 if (DG)

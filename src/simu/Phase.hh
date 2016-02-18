@@ -33,6 +33,8 @@ struct Phase
 		  geo_proj(meshes.primal()), fcontact(meshes.primal())
 	{}
 
+	Phase( const PhaseMeshes & meshes, const Phase& src ) ;
+
 	template < typename Archive >
 	void serialize( Archive &ar, unsigned int ) {
 		ar & fraction ;

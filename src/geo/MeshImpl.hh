@@ -5,6 +5,8 @@
 
 #if( D6_MESH_IMPL == D6_MESH_TET_GRID )
 #include "TetGrid.hh"
+#elif( D6_MESH_IMPL == D6_MESH_OCTREE )
+#include "Octree.hh"
 #else
 #include "Grid.hh"
 #endif

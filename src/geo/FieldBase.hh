@@ -96,7 +96,15 @@ public:
 	void  add_at( const typename ShapeFuncType::Interpolation &itp, const ValueType& val ) ;
 
 	template < typename Func, typename OtherShape >
-	Derived& from_interpolation( const FieldFuncBase< Func, D, OtherShape > &f ) ;
+	typename std::enable_if<ShapeFuncType::is_mesh_based || OtherShape::is_mesh_based, Derived& >::type
+	from_interpolation( const FieldFuncBase< Func, D, OtherShape > &f ) ;
+
+	template < typename Func, typename OtherShape >
+	typename std::enable_if<!ShapeFuncType::is_mesh_based && !OtherShape::is_mesh_based, Derived& >::type
+	from_interpolation( const FieldFuncBase< Func, D, OtherShape > &f ) {
+		//Degenerated case Unstructrued vs Unstructured -- simple copy
+		return derived() = f.derived() ;
+	}
 
 	// Value at node
 	Seg      segment( const Index i ) { return Segmenter< D >::segment( m_data, i) ; }
