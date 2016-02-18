@@ -100,7 +100,7 @@ FieldBase< Derived >::from_interpolation( const FieldFuncBase< Func, D, OtherSha
 
 	integrate( f ) ;
 
-	// FIXME : solve with consistent mass matrix ?
+	// TODO : solve with consistent mass matrix ?
 	divide_by_positive( volumes ) ;
 
 	return derived();

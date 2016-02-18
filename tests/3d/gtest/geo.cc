@@ -13,6 +13,7 @@
 #include "geo/TetGrid.hh"
 #include "geo/Tet.hh"
 
+#include "geo/Octree.hh"
 #include "geo/MeshShapeFunction.hh"
 
 #include "geo/BoundaryInfo.hh"
@@ -349,21 +350,21 @@ TEST( geo, adjacency )
 	Vec3i dim( 10, 15, 9 ) ;
 	Vec   box( 1, 1, 1 ) ;
 
-	MeshImpl g( box, dim ) ;
-	Linear<MeshImpl> shape(g) ;
+	TetGrid g( box, dim ) ;
+	Linear<TetGrid> shape(g) ;
 	Eigen::VectorXi nAdj ( g.nNodes() ) ;
 	nAdj.setZero() ;
 
 	StrBoundaryMapper mapper("diri") ;
 	std::vector< BoundaryInfo > bc ( nAdj.rows() ) ;
 
-	for( typename MeshType::CellIterator it = g.cellBegin() ; it != g.cellEnd() ; ++it ) {
+	for( typename TetGrid::CellIterator it = g.cellBegin() ; it != g.cellEnd() ; ++it ) {
 
-		typename Linear<MeshImpl>::NodeList nodes ;
-		typename MeshImpl::Location loc ; loc.cell = *it ;
+		typename Linear<TetGrid>::NodeList nodes ;
+		typename TetGrid::Location loc ; loc.cell = *it ;
 		shape.list_nodes( loc, nodes );
 
-		for( Index k = 0 ; k < Linear<MeshImpl>::NI ; ++k ) {
+		for( Index k = 0 ; k < Linear<TetGrid>::NI ; ++k ) {
 			nAdj[nodes[k]]++ ;
 
 			shape.locate_dof( loc, k );

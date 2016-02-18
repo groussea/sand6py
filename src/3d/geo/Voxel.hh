@@ -58,8 +58,12 @@ struct Voxel {
 		vertexCoords( cornerIndex, coords );
 		return origin + ( coords.array() * box.array() ).matrix() ;
 	}
+
+	static ArrWi corner( int cornerIndex ) {
+		return ArrWi ( (cornerIndex&1)>>0, (cornerIndex&2)>>1, (cornerIndex&4)>>2 ) ;
+	}
 	void vertexCoords( int cornerIndex, Coords& coords ) const {
-		coords = Vec( (cornerIndex&1)>>0, (cornerIndex&2)>>1, (cornerIndex&4)>>2 ) ;
+		coords = corner( cornerIndex ).cast< Scalar >() ;
 	}
 
 	Scalar volume() const { return box.prod() ; }

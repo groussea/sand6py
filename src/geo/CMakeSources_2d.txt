@@ -5,6 +5,7 @@
 2d/geo/LevelSet.cc
 2d/geo/LevelSet.impl.hh
 2d/geo/LevelSet.io.hh
+2d/geo/Octree.cc
 2d/geo/Tensor.hh
 2d/geo/Tet.cc
 2d/geo/Tet.hh
@@ -20,6 +21,7 @@ geo/FieldBase.impl.hh
 geo/FieldFuncBase.hh
 geo/FieldFuncs.hh
 geo/Grid.hh
+geo/GridShapeFunctions.cc
 geo/LevelSet.hh
 geo/MeshBase.cc
 geo/MeshBase.hh

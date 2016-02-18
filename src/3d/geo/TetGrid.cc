@@ -36,7 +36,7 @@ TetGrid::TetGrid(const Vec &box, const Vec3i &res)
 
 Index TetGrid::nEdges() const {
 	assert(false && "not implemented") ;
-	return -1 ; //FIXME ( for P2-3D)
+	return -1 ; //TODO ( for P2-3D)
 }
 
 void TetGrid::locate(const Vec &x, Location &loc) const

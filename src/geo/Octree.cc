@@ -1,49 +1,7 @@
 #include "Octree.hh"
 
-#include "BoundaryInfo.hh"
-
-#include <iostream>
-
 namespace d6 {
 
-OctreeIterator& OctreeIterator::operator ++()
-{
-	if( ++cell[2] == grid.nSubCells( cell ) ) {
-		cell[2] = 0 ;
-		++cell[1] ;
-		if(cell[1] == grid.dim()[1]) {
-			cell[1] = 0 ;
-			++cell[0] ;
-		}
-	}
-
-	return *this ;
-}
-
-/// 2D ONLY
-
-void Octree::boundaryInfo( const Location &loc, const BoundaryMapper& mapper, BoundaryInfo &info ) const
-{
-	constexpr Scalar eps = 1.e-6 ;
-
-	const Vec &p = pos( loc ) ;
-	const Vec &b = box() ;
-
-	info.bc = BoundaryInfo::Interior ;
-
-	if( p[0] < eps )
-		info.combine( mapper( "left"), Vec(-1,0) ) ;
-	if( p[0] > b[0] - eps )
-		info.combine( mapper("right"), Vec( 1,0) ) ;
-
-	if( p[1] < eps )
-		info.combine( mapper("bottom"), Vec(0,-1) ) ;
-	if( p[1] > b[1] - eps )
-		info.combine( mapper(   "top"), Vec(0, 1) ) ;
-}
-
-
-/// END 2d
 
 Index OctreeIterator::index() const
 {
@@ -128,7 +86,8 @@ void Octree::locate(const Vec &x, Location &loc) const
 void Octree::get_geo( const Cell &cell, CellGeo& geo ) const
 {
 	subtree(cell).compute_geo(cell[WD], geo);
-	geo.box.array() *= m_dx ;
+	geo.box.array()    *= m_dx ;
+	geo.origin.array() *= m_dx ;
 	geo.origin += firstCorner( cell.head<WD>() ) ;
 }
 

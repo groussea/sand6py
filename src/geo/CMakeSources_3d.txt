@@ -1,11 +1,11 @@
 3d/geo/BoundaryInfo.cc
 3d/geo/FormBuildingBlocks.hh
 3d/geo/Grid.cc
-3d/geo/GridShapeFunctions.cc
 3d/geo/LevelSet.cc
 3d/geo/LevelSet.impl.hh
 3d/geo/LevelSet.io.hh
 3d/geo/MeshLevelSet.cc
+3d/geo/Octree.cc
 3d/geo/Tensor.hh
 3d/geo/Tet.cc
 3d/geo/Tet.hh
@@ -22,6 +22,7 @@ geo/FieldBase.impl.hh
 geo/FieldFuncBase.hh
 geo/FieldFuncs.hh
 geo/Grid.hh
+geo/GridShapeFunctions.cc
 geo/LevelSet.hh
 geo/MeshBase.cc
 geo/MeshBase.hh
@@ -29,6 +30,9 @@ geo/MeshCell.hh
 geo/MeshImpl.hh
 geo/MeshShapeFunction.hh
 geo/MeshTraits.hh
+geo/Octree.cc
+geo/Octree.hh
+geo/Octree.io.hh
 geo/P2ShapeFunction.hh
 geo/Particles.cc
 geo/Particles.hh

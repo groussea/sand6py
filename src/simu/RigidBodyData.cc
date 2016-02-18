@@ -79,9 +79,9 @@ void RigidBodyData::integrate(const PrimalShape& primalShape, const DualShape& d
 							  const Active &primalNodes, const Active& dualNodes,
 							  Index totNodes)
 {
-	//FIXME other approxes
 	typedef typename RBStresses::ShapeFuncImpl RBShapeFunc ;
 
+	//TODO allow RBShapeFunc != PrimalShape
 	static_assert( std::is_same< PrimalShape, RBShapeFunc >::value,
 			"Different RB and primal shape func not allowed yet" ) ;
 

@@ -8,6 +8,7 @@ simu/FormBuilder.hh
 simu/FormBuilder.impl.hh
 simu/LinearSolver.cc
 simu/LinearSolver.hh
+simu/Phase.cc
 simu/Phase.hh
 simu/PhaseFields.hh
 simu/PhaseSolver.cc

@@ -75,6 +75,10 @@ public:
 			return idx ;
 		return idx*(m_dim[2]+1) + node[2] ;
 	}
+	Vec nodePosition( const Vertex& node ) const
+	{
+		return firstCorner( node ) ;
+	}
 
 	Vec box() const
 	{ return firstCorner( m_dim ) ; }
