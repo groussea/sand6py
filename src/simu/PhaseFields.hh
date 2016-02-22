@@ -11,14 +11,12 @@ namespace d6 {
 
 typedef MeshImpl PrimalMesh ;
 
-typedef   Linear<PrimalMesh> PrimalShape ;
+typedef Linear<PrimalMesh> PrimalShape ;
 //typedef   P2<PrimalMesh> PrimalShape ;
 
 #ifdef D6_UNSTRUCTURED_DUAL
-typedef UnstructuredDOFs DualMesh ;
-
+typedef UnstructuredDOFs      DualMesh ;
 typedef UnstructuredShapeFunc DualShape ;
-
 #else
 typedef MeshImpl   DualMesh ;
 

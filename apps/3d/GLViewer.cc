@@ -136,7 +136,7 @@ void GLViewer::draw()
 
 		// Set-up light POV camera
 //			qglviewer::Camera& cam = *camera() ; //Debug mode
-		qglviewer::Camera  cam = *camera() ;
+		qglviewer::Camera  cam ;
 		const Eigen::Vector3f& light_pos = lightPosition() ;
 		qglviewer::Vec lp( light_pos[0], light_pos[1], light_pos[2] )  ;
 
