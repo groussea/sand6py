@@ -2,6 +2,11 @@
 
 #include "geo/Particles.hh"
 
+#include "geo/ScalarField.hh"
+#include "geo/VectorField.hh"
+#include "geo/TensorField.hh"
+#include "geo/UnstructuredShapeFunction.hh"
+
 #include "utils/File.hh"
 #include "utils/Log.hh"
 
@@ -25,16 +30,23 @@ size_t VTKParticlesWriter::nDataPoints() const {
 }
 
 template< typename Derived >
-bool VTKParticlesWriter::dump( const char *name, const Eigen::MatrixBase< Derived > &data )
+bool VTKParticlesWriter::dump( const char *name, const Eigen::MatrixBase< Derived > &data, Index dim )
 {
 	if( !m_file.is_open() ) {
 		Log::Error() << " VTKParticlesWriter: should call startFile() before dumping data " << std::endl ;
 		return false ;
 	}
 
-	writeAttribute( name, data.derived().data(), Derived::RowsAtCompileTime ) ;
+	writeAttribute( name, data.derived().data(), dim ) ;
 
 	return true ;
+}
+
+template< typename Derived >
+bool VTKParticlesWriter::dump( const char* name, const FieldBase< Derived >& field )
+{
+
+	return dump( name, field.flatten(), FieldBase< Derived >::D ) ;
 }
 
 bool VTKParticlesWriter::dump_all( )
@@ -61,5 +73,9 @@ bool VTKParticlesWriter::dump( Quantity quantity) {
 	}
 	return false ;
 }
+
+template  bool VTKParticlesWriter::dump( const char*, const FieldBase< AbstractScalarField<UnstructuredShapeFunc> >& ) ;
+template  bool VTKParticlesWriter::dump( const char*, const FieldBase< AbstractVectorField<UnstructuredShapeFunc> >& ) ;
+template  bool VTKParticlesWriter::dump( const char*, const FieldBase< AbstractTensorField<UnstructuredShapeFunc> >& ) ;
 
 }

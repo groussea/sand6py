@@ -54,10 +54,12 @@ void dump_frame( const d6::Offline& offline, bool particles,
 		fieldWriter.dump("stresses", tau ) ;
 	}
 
-	// TODO use VTK particle writer
-#ifndef D6_UNSTRUCTURED_DUAL
 	{
+#ifdef D6_UNSTRUCTURED_DUAL
+		d6::VTKParticlesWriter fieldWriter( base_dir, offline.particles() ) ;
+#else
 		d6::VTKFieldWriter<d6::DualShape> fieldWriter( base_dir, offline.meshes().primal() ) ;
+#endif
 		fieldWriter.startFile( "dual-fields", frame ) ;
 
 		d6::DualScalarField p   = offline.grains().stresses.trace() ;
@@ -68,7 +70,6 @@ void dump_frame( const d6::Offline& offline, bool particles,
 		fieldWriter.dump(   "dh", dh ) ;
 		fieldWriter.dump( "taun", taun ) ;
 	}
-#endif
 
 	//	fieldWriter.dump( "lambda", offline.grains().stresses ) ;
 }

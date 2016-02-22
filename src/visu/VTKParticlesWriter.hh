@@ -3,6 +3,7 @@
 
 #include "VTKWriter.hh"
 #include "utils/alg.hh"
+#include "geo/geo.fwd.hh"
 
 namespace d6 {
 
@@ -22,7 +23,11 @@ public:
 	VTKParticlesWriter( const char* base_dir, const Particles& particles ) ;
 
 	template< typename Derived >
-	bool dump( const char* name, const Eigen::MatrixBase< Derived > &data ) ;
+	bool dump( const char* name, const Eigen::MatrixBase< Derived > &data,
+			   Index dim = Derived::RowsAtCompileTime ) ;
+
+	template< typename Derived >
+	bool dump( const char* name, const FieldBase< Derived >& field ) ;
 
 	bool dump( Quantity quantity ) ;
 	bool dump_all( ) ;
