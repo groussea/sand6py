@@ -10,9 +10,7 @@
 
 #include "geo/Particles.io.hh"
 #include "geo/LevelSet.io.hh"
-#if D6_MESH_IMPL == D6_MESH_OCTREE
-#include "geo/Octree.io.hh"
-#endif
+#include "geo/Meshes.io.hh"
 
 #include "utils/serialization.hh"
 
@@ -22,12 +20,8 @@ namespace d6 {
 
 Offline::Offline(const char *base_dir)
 	: m_base_dir( base_dir ),
-	  m_meshes{ std::unique_ptr<PrimalMesh>(new PrimalMesh( Vec::Ones(), VecWi::Ones() )),
-				#ifdef D6_UNSTRUCTURED_DUAL
-				std::unique_ptr<  DualMesh>(new   DualMesh( m_particles.centers() ))
-				#else
-				std::unique_ptr<  DualMesh>(new   DualMesh( Vec::Ones(), VecWi::Ones() ))
-				#endif
+	  m_meshes{ std::unique_ptr<PrimalMesh>(new PrimalMesh( Vec::Ones(), VecWi::Ones(), &m_particles )),
+				std::unique_ptr<  DualMesh>(new   DualMesh( Vec::Ones(), VecWi::Ones(), &m_particles ))
 			   },
 	  m_grains( new Phase( m_meshes ) )
 {
@@ -49,6 +43,12 @@ bool Offline::load_frame(unsigned frame )
 
 	try {
 
+		// Particles
+		{
+			std::ifstream ifs( dir.filePath("particles") );
+			boost::archive::binary_iarchive ia(ifs);
+			ia >> m_particles ;
+		}
 		// Grid
 		{
 			std::ifstream ifs( dir.filePath("meshes") );
@@ -60,12 +60,6 @@ bool Offline::load_frame(unsigned frame )
 			std::ifstream ifs( dir.filePath("fields") );
 			boost::archive::binary_iarchive ia(ifs);
 			ia >> *m_grains ;
-		}
-		// Particles
-		{
-			std::ifstream ifs( dir.filePath("particles") );
-			boost::archive::binary_iarchive ia(ifs);
-			ia >> m_particles ;
 		}
 		// Log
 		{
@@ -99,11 +93,6 @@ bool Offline::load_frame(unsigned frame )
 		Log::Error() << "Error reading frame data: " << e.what() << std::endl ;
 		return false ;
 	}
-
-#ifdef D6_UNSTRUCTURED_DUAL
-	//TODO find a better place
-	m_meshes.m_dual->compute_weights_from_vertices( m_config.box, m_config.res ) ;
-#endif
 
 	Log::Info() << "Loaded frame " << frame << std::endl ;
 

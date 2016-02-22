@@ -1,7 +1,7 @@
-#include "PhaseFields.hh"
+#include "Phase.hh"
+#include "PhaseMeshes.hh"
 
 #include "instanciations.hh"
-#include "Phase.hh"
 
 #include "DynParticles.hh"
 
@@ -50,12 +50,9 @@ bool adaptPrimal( const DynParticles &, const Phase &grains, Octree& primal )
 }
 
 template <>
-bool adaptDual( const DynParticles &particles, const Phase &grains, UnstructuredDOFs& dual )
+bool adaptDual( const DynParticles &particles, const Phase &, UnstructuredDOFs& dual )
 {
-	const PrimalMesh& mesh = grains.velocity.shape().mesh().derived() ;
-
 	dual.resize( particles.count() ) ;
-	dual.compute_weights_from_vertices( mesh.box(), mesh.dim() ) ;
 
 	return true ;
 }

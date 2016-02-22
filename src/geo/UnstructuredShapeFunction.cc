@@ -1,18 +1,25 @@
 #include "UnstructuredShapeFunction.hh"
 
 #include "Grid.hh"
+#include "Particles.hh"
 
 namespace d6 {
 
+UnstructuredDOFs::UnstructuredDOFs(const Vec &box, const VecWi &res, const Particles *particles)
+	: vertices( particles->centers() ), m_count( particles->count() ),
+	  m_box(box), m_res(res)
+{
+	compute_weights_from_vertices();
+}
 
-void UnstructuredDOFs::compute_weights_from_vertices( const Vec &box, const VecWi& res )
+void UnstructuredDOFs::compute_weights_from_vertices()
 {
 	static constexpr Index K = WD+1 ;
 
 	const Index n = count() ;
 	weights.setConstant( vertices.cols(), 0 ) ;
 
-	Grid g( box, res ) ;
+	Grid g( m_box, m_res ) ;
 	std::vector< std::vector< Index > > ids( g.nCells() ) ;
 
 	for( Index i = 0 ; i < n ; ++i ) {

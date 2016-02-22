@@ -7,6 +7,7 @@ namespace d6 {
 
 struct UnstructuredShapeFunc ;
 struct Config ;
+class  Particles ;
 
 struct UnstructuredDOFs {
 	typedef Eigen::Matrix< Scalar, WD, Eigen::Dynamic > Vertices ;
@@ -16,19 +17,31 @@ struct UnstructuredDOFs {
 	Weights weights ;
 
 	explicit UnstructuredDOFs( const Vertices& v )
-		: vertices(v), m_count(0)
+		: vertices(v), m_count(0), m_box( Vec::Ones() ), m_res( VecWi::Ones() )
 	{}
+	UnstructuredDOFs( const Vec& box, const VecWi &res, const Particles * particles ) ;
 
 	Index count() const { return m_count ; }
 
-	void resize( Index n ) { m_count = n ; }
-	void compute_weights_from_vertices(const Vec& box, const VecWi &res) ;
+	void resize( Index n ) {
+		m_count = n ;
+		compute_weights_from_vertices( ) ;
+	}
 
-	template <typename Ar>
-	void serialize( Ar& ar, const unsigned int ) { ar&m_count ; }
+	void compute_weights_from_vertices() ;
+
+	template < typename Archive >
+	void save( Archive &ar, unsigned int ) const ;
+	template < typename Archive >
+	void load( Archive &ar, unsigned int ) ;
+	template < typename Archive >
+	void serialize( Archive &ar, unsigned int ) ;
 
 private:
 	Index m_count ;
+	// Useful for computing weigths
+	Vec   m_box ;
+	VecWi m_res ;
 };
 
 struct UnstructuredDOFIterator

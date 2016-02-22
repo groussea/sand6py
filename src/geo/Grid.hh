@@ -9,6 +9,7 @@
 namespace d6 {
 
 class Grid ;
+class Particles ;
 
 struct GridIterator
 {
@@ -53,7 +54,7 @@ public:
 	typedef typename Base::CellGeo CellGeo ;
 	typedef VecWi 				Vertex ;
 
-	Grid( const Vec& box, const VecWi &res ) ;
+	Grid( const Vec& box, const VecWi &res, const Particles * = nullptr ) ;
 
 	void set_box( const Vec& box ) ;
 

@@ -9,6 +9,7 @@
 namespace d6 {
 
 class Octree ;
+class Particles ;
 
 struct OctreeIterator
 {
@@ -53,7 +54,7 @@ public:
 	typedef typename Base::CellGeo CellGeo ;
 	typedef VecWi 				Vertex ;
 
-	Octree( const Vec& box, const VecWi &res ) ;
+	Octree( const Vec& box, const VecWi &res, const Particles* = nullptr ) ;
 
 	void set_box( const Vec& box ) ;
 

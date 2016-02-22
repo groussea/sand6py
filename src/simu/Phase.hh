@@ -1,7 +1,7 @@
 #ifndef D6_PHASE_DESCR_HH
 #define D6_PHASE_DESCR_HH
 
-#include "simu/PhaseFields.hh"
+#include "simu/PhaseMeshes.hh"
 
 #include "geo/ScalarField.hh"
 #include "geo/VectorField.hh"

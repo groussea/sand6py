@@ -8,6 +8,7 @@ OPTION( CUDA "Build cuda stuff" OFF )
 
 OPTION( OPENMP  "Use OpenMP" ON )
 OPTION( TETGRID "Use regulard grid of tetrehedra" OFF )
+OPTION( UNSTRUCTURED "Use unstructured stresses" OFF )
 OPTION( DG	    "Use DG stresses" OFF )
 OPTION( 2D      "Build 2d soft" OFF )
 
@@ -25,7 +26,9 @@ elseif( OCTREE )
     add_definitions( -DD6_MESH_IMPL=2 )
 endif()
 
-if (DG)
+if (UNSTRUCTURED)
+    add_definitions( -DD6_UNSTRUCTURED_DUAL )
+elseif (DG)
     add_definitions( -DD6_DG_STRESSES )
 endif()
 

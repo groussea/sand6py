@@ -8,7 +8,7 @@ Index OctreeIterator::index() const
 	return grid.cellIndex( cell ) ;
 }
 
-Octree::Octree(const Vec &box, const VecWi &res)
+Octree::Octree(const Vec &box, const VecWi &res, const Particles *)
 	: Base(),
 	  m_maxDepth(1)
 {

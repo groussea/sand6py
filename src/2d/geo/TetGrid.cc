@@ -23,7 +23,7 @@ Index TetGridIterator::index() const {
 	return grid.cellIndex( cell ) ;
 }
 
-TetGrid::TetGrid(const Vec &box, const VecWi &res)
+TetGrid::TetGrid(const Vec &box, const VecWi &res, const Particles* )
 	: Base()
 {
 	m_dim = res ;

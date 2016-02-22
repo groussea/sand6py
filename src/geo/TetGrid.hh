@@ -7,6 +7,7 @@
 namespace d6 {
 
 class TetGrid ;
+class Particles ;
 
 struct TetGridIterator
 {
@@ -52,7 +53,7 @@ public:
 
 	static constexpr Index Nsub = WD == 3 ? 6 : 2 ;
 
-	TetGrid( const Vec& box, const VecWi &res ) ;
+	TetGrid( const Vec& box, const VecWi &res, const Particles * = nullptr ) ;
 
 
 	Index nNodes() const

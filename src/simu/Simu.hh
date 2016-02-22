@@ -1,7 +1,7 @@
 #ifndef D6_SIMU_HH
 #define D6_SIMU_HH
 
-#include "simu/PhaseFields.hh"
+#include "simu/PhaseMeshes.hh"
 
 #include "simu/DynParticles.hh"
 #include "simu/PhaseSolver.hh"
