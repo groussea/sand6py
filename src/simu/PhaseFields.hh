@@ -5,7 +5,7 @@
 
 #include <memory>
 
-//#define D6_UNSTRUCTURED_DUAL
+#define D6_UNSTRUCTURED_DUAL
 
 namespace d6 {
 

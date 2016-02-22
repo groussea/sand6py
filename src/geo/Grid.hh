@@ -4,6 +4,8 @@
 #include "MeshBase.hh"
 #include "Voxel.hh"
 
+#include <functional>
+
 namespace d6 {
 
 class Grid ;
@@ -125,6 +127,8 @@ public:
 
 	const ArrWi& dim() const { return m_dim ; }
 	const Arr&    dx() const { return  m_dx ; }
+
+	void each_neighbour( const Cell& cell, const std::function<void(const Cell&) >& func ) const ;
 
 private:
 

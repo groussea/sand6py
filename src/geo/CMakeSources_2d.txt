@@ -10,7 +10,6 @@
 2d/geo/Tet.cc
 2d/geo/Tet.hh
 2d/geo/TetGrid.cc
-2d/geo/UnstructuredShapeFunction.cc
 2d/geo/Voxel.cc
 2d/geo/Voxel.hh
 geo/BoundaryInfo.cc
@@ -43,6 +42,7 @@ geo/Tensor.cc
 geo/TensorField.cc
 geo/TensorField.hh
 geo/TetGrid.hh
+geo/UnstructuredShapeFunction.cc
 geo/UnstructuredShapeFunction.hh
 geo/VectorField.cc
 geo/VectorField.hh

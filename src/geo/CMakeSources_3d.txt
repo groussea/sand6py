@@ -12,7 +12,6 @@
 3d/geo/TetGrid.cc
 3d/geo/TriangularMesh.cc
 3d/geo/TriangularMesh.hh
-3d/geo/UnstructuredShapeFunction.cc
 3d/geo/Voxel.cc
 3d/geo/Voxel.hh
 geo/BoundaryInfo.cc
@@ -45,6 +44,7 @@ geo/Tensor.cc
 geo/TensorField.cc
 geo/TensorField.hh
 geo/TetGrid.hh
+geo/UnstructuredShapeFunction.cc
 geo/UnstructuredShapeFunction.hh
 geo/VectorField.cc
 geo/VectorField.hh

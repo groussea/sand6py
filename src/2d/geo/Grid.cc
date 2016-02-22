@@ -51,4 +51,21 @@ void Grid::boundaryInfo( const Location &loc, const BoundaryMapper& mapper, Boun
         info.combine( mapper(   "top"), Vec(0, 1) ) ;
 }
 
+void Grid::each_neighbour( const Cell& cell, const std::function<void(const Cell&) >& func ) const
+{
+
+    Grid::Cell min = cell - Grid::Cell::Ones() ;
+    Grid::Cell max = cell + Grid::Cell::Ones() ;
+    clamp_cell( min );
+    clamp_cell( max );
+
+    Grid::Cell nb ;
+
+    for( nb[0] = min[0] ; nb[0] <= max[0] ; ++nb[0] ) {
+        for( nb[1] = min[1] ; nb[1] <= max[1] ; ++nb[1] ) {
+            func(nb) ;
+        }
+    }
+}
+
 } //d6

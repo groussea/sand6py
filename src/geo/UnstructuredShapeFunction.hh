@@ -59,7 +59,7 @@ struct UnstructuredDOFIterator
 	}
 
 private:
-	UnstructuredDOFs dofDef ;
+	const UnstructuredDOFs& dofDef ;
 	Index index ;
 };
 
