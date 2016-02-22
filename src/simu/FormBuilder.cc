@@ -190,7 +190,7 @@ void FormBuilder<LhsShape, RhsShape>::addUTaunGphi( FormMat<SD,WD>::Type& A, Sca
 
 	for( int k = 0 ; k < lhs_itp.nodes.rows() ; ++k ) {
 		for( int j = 0 ; j < rhs_itp.nodes.rows() ; ++j ) {
-			//TODO assert( A.blockPtr( rowIndices[lhs_itp.nodes[k]], colIndices[rhs_itp.nodes[j]] ) != A.InvalidBlockPtr ) ;
+			//TODO fix RBData so we can assert( A.blockPtr( rowIndices[lhs_itp.nodes[k]], colIndices[rhs_itp.nodes[j]] ) != A.InvalidBlockPtr ) ;
 			if( A.blockPtr( rowIndices[lhs_itp.nodes[k]], colIndices[rhs_itp.nodes[j]] ) == A.InvalidBlockPtr )
 				continue ;
 

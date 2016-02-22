@@ -6,9 +6,6 @@
 
 #include "utils/block_mat.hh"
 
-// FIXME includes
-#include "geo/MeshImpl.hh"
-
 namespace d6 {
 
 class Particles ;
@@ -18,6 +15,9 @@ namespace form {
 		Left,
 		Right
 	};
+
+	template< typename LhsShape, typename RhsShape, Side side >
+	struct GetSide ;
 }
 
 //! Utility class for building matrices of bilinear forms
@@ -101,14 +101,15 @@ public:
 
 	const CompressedIndexType& index() { return m_compressed ; }
 
-
-	//FIXME make private
-	LhsShape m_lhsShape ;
-	RhsShape m_rhsShape ;
 private:
 
-	CompressedIndexType m_compressed ;
+	template< typename LhsS, typename RhsS, form::Side side >
+	friend struct form::GetSide ;
 
+	LhsShape m_lhsShape ;
+	RhsShape m_rhsShape ;
+
+	CompressedIndexType m_compressed ;
 	std::vector< std::vector< BgIndex > > m_data ;
 
 };
