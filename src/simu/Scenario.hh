@@ -51,6 +51,9 @@ protected:
 	std::string string_param( const Params& params, const std::string& key,
 						 const std::string& def = "" ) const ;
 
+	const Vec& box() const ;
+	Scalar box( Index i ) const { return box()[i] ; }
+
 	const Config* m_config ;
 
 };

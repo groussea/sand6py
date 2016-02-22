@@ -91,4 +91,8 @@ std::string Scenario::string_param(const Params &params, const std::string &key,
 
 }
 
+const Vec& Scenario::box() const {
+	return m_config->box ;
+}
+
 } //d6

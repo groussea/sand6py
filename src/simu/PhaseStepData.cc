@@ -19,6 +19,7 @@
 
 //#define FULL_FEM  // Ignore particles, just solve FEM system
 
+// TODO re-implement INTEGRATE_PARTICLES_PARALLEL
 #define INTEGRATE_PARTICLES_SEQUENTIAL
 
 namespace d6 {

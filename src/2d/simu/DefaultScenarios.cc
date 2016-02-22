@@ -40,7 +40,7 @@ private:
 
 struct PlaneTestScenar : public Scenario {
 	Scalar particle_density( const Vec &x ) const override {
-		return ( x[1] >  .5*m_config->box[1] ) ? 1. : 0. ;
+		return ( x[1] >  .5*box(1) ) ? 1. : 0. ;
 	}
 
 	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
@@ -118,6 +118,50 @@ struct SiloScenar : public Scenario {
 	}
 };
 
+struct TowerScenar : public Scenario {
+
+	Scalar particle_density( const Vec &x ) const override {
+		return ( x[0] >= .25*box(0) && x[0] <= .375*box(0) ) ? 1. : 0. ;
+	}
+
+	virtual void init( const Params& params ) {
+		volMass = scalar_param( params, "vm", Units::VolumicMass, 1.5*m_config->units().R ) ;
+		hvel = scalar_param( params, "hvel", Units::Velocity, 1 ) ;
+		avel = scalar_param( params, "avel", Units::Frequency, 0. ) ;
+		d = scalar_param( params, "d", Units::None, 0.25 ) ;
+	}
+
+	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
+	{
+		LevelSet::Ptr ls = LevelSet::make_sphere() ;
+		ls->scale( radius() ).set_origin( Vec(0,.375*box(1))  ) ;
+
+		const Scalar t = .25*box(0) / hvel ;
+		const Scalar zvel = .5 * m_config->gravity.norm() * t ;
+
+		rbs.emplace_back( ls, volMass );
+		rbs.back().set_velocity( Vec(hvel, zvel), avel ) ;
+	}
+
+	Scalar radius() const {
+		return d/2*m_config->box[1] ;
+	}
+
+	void update( Simu& simu, Scalar /*time*/, Scalar dt ) const override
+	{
+		for( RigidBody& rb: simu.rigidBodies() ) {
+			rb.integrate_gravity( dt, m_config->gravity );
+		}
+
+	}
+
+private:
+	Scalar volMass ;
+	Scalar hvel ;
+	Scalar avel ;
+	Scalar d ;
+};
+
 // Factories & stuff
 
 std::unique_ptr< Scenario > DefaultScenarioFactory::make( const std::string & str ) const
@@ -132,6 +176,8 @@ std::unique_ptr< Scenario > DefaultScenarioFactory::make( const std::string & st
 		return std::unique_ptr< Scenario >( new ImpactScenar() ) ;
 	if( str == "silo")
 		return std::unique_ptr< Scenario >( new SiloScenar() ) ;
+	if( str == "tower")
+		return std::unique_ptr< Scenario >( new TowerScenar() ) ;
 
 	return std::unique_ptr< Scenario >( new BedScenar() ) ;
 }
