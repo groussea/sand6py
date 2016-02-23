@@ -288,11 +288,13 @@ struct DGLinear : public MeshShapeFunc< DGLinear, MeshT >
 	Index nDOF() const { return Base::mesh().nCells() * MeshType::NV ; }
 
 	void interpolate( const Location& loc, typename Base::Interpolation& itp ) const {
-		Linear<MeshT>( Base::mesh() ).dof_coeffs( loc.coords, itp.coeffs ) ;
+		const Linear<MeshT> lin ( Base::mesh() ) ;
+		lin.dof_coeffs( loc.coords, itp.coeffs ) ;
 		list_nodes( loc, itp.nodes ) ;
 	}
 	void get_derivatives( const Location& loc, typename Base::Derivatives& dc_dx ) const {
-		Linear<MeshT>( Base::mesh() ).get_derivatives( loc, dc_dx ) ;
+		const Linear<MeshT> lin ( Base::mesh() ) ;
+		lin.get_derivatives( loc, dc_dx ) ;
 	}
 
 	void locate_dof( typename Base::Location& loc, Index dofIndex ) const {
