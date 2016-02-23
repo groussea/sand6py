@@ -32,7 +32,7 @@ Config::Config() :
 	cohesion(0), cohesion_decay(0),
 	anisotropy( 0 ), elongation( 1 ), brownian( 0 ),
 	initialOri( Vec::Constant(1./3) ),
-	enforceMaxFrac( false ), weakStressBC( false ),
+	enforceMaxFrac( false ), weakStressBC( false ), usePG( false ),
 	boundary("cuve"),
 	output( true ), dumpPrimalData( 0 )
 {
