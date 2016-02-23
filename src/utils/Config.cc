@@ -34,7 +34,7 @@ Config::Config() :
 	initialOri( Vec::Constant(1./3) ),
 	enforceMaxFrac( false ), weakStressBC( false ), usePG( false ),
 	boundary("cuve"),
-	output( true ), dumpPrimalData( 0 )
+	output( true ), exportAllFields( bool(3-D6_DIM) ), dumpPrimalData( 0 )
 {
 	gravity[WD-1] = -9.81 ;
 }

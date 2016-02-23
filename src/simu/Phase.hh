@@ -30,22 +30,32 @@ struct Phase
 		: fraction(meshes.primal()), velocity(meshes.primal()),
 		  stresses(meshes.  dual()), sym_grad(meshes.  dual()),
 		  spi_grad(meshes.  dual()), grad_phi(meshes.primal()),
-		  geo_proj(meshes.primal()), fcontact(meshes.primal())
+		  geo_proj(meshes.primal()), fcontact(meshes.primal()),
+		  m_serializeAllFields( true )
 	{}
 
 	Phase( const PhaseMeshes & meshes, const Phase& src ) ;
 
+	void serializeAllFields( bool doSerialize )
+	{ m_serializeAllFields = doSerialize ; }
+
 	template < typename Archive >
 	void serialize( Archive &ar, unsigned int ) {
+		ar & m_serializeAllFields ;
 		ar & fraction ;
 		ar & velocity ;
-		ar & stresses ;
-		ar & sym_grad ;
-		ar & spi_grad ;
-		ar & grad_phi ;
-		ar & fcontact ;
-		ar & geo_proj ;
+		if (m_serializeAllFields) {
+			ar & stresses ;
+			ar & sym_grad ;
+			ar & spi_grad ;
+			ar & grad_phi ;
+			ar & fcontact ;
+			ar & geo_proj ;
+		}
 	}
+
+private:
+	bool m_serializeAllFields ;
 };
 
 } //d6

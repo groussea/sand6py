@@ -34,7 +34,6 @@ Simu::Simu(const Config &config, const char *base_dir)
 	  m_grains( new Phase( meshes() ) ),
 	  m_solver( m_particles )
 {
-
 	m_particles.generate( config, meshes().primal(), *m_scenario );
 
 	// Rigid bodies
@@ -44,6 +43,8 @@ Simu::Simu(const Config &config, const char *base_dir)
 		m_rbStresses.emplace_back( meshes().primal() );
 		m_rbStresses.back().set_zero() ;
 	}
+
+	m_grains->serializeAllFields( config.exportAllFields ) ;
 }
 
 Simu::~Simu()
