@@ -111,7 +111,12 @@ void RigidBodyData::integrate(const PrimalShape& primalShape, const DualShape& d
 		intFraction.resize( dualNodes.count() ) ;
 		intFraction.setZero() ;
 
-		builder.integrate_qp( [&]( Scalar w, const Vec& pos, D_Itp l_itp, D_Dcdx, P_Itp r_itp, P_Dcdx )
+#ifdef D6_UNSTRUCTURED_DUAL
+		builder.integrate_qp(
+#else
+		builder.integrate_cell< form::Right >( primalNodes.cells.begin(), primalNodes.cells.end(),
+#endif
+					[&]( Scalar w, const Vec& pos, D_Itp l_itp, D_Dcdx, P_Itp r_itp, P_Dcdx )
 		{
 			const Scalar phiRb = phi(pos) ;
 			if( phiRb <= 0 ) return ;

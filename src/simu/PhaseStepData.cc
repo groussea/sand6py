@@ -18,7 +18,7 @@
 #include <utility>
 
 //#define FULL_FEM        // Ignore particles, just solve FEM system
-#define CONSTANT_VISC   // Assumes eta(phi) = 1./Re instead of eta(phi) = phi/Re
+//#define CONSTANT_VISC   // Assumes eta(phi) = 1./Re instead of eta(phi) = phi/Re
 //#define INTEGRATE_PARTICLES_SEQUENTIAL
 
 namespace d6 {
