@@ -17,10 +17,9 @@
 
 #include <utility>
 
-//#define FULL_FEM  // Ignore particles, just solve FEM system
-
-// TODO re-implement INTEGRATE_PARTICLES_PARALLEL
-#define INTEGRATE_PARTICLES_SEQUENTIAL
+//#define FULL_FEM        // Ignore particles, just solve FEM system
+#define CONSTANT_VISC   // Assumes eta(phi) = 1./Re instead of eta(phi) = phi/Re
+//#define INTEGRATE_PARTICLES_SEQUENTIAL
 
 namespace d6 {
 
@@ -30,7 +29,7 @@ void PhaseStepData::computeProjectors(const Config&config,
 									  const std::vector<RigidBodyData> &rbData, const PrimalScalarField &lumped_mass,
 									  Projectors& mats) const
 {
-	const Scalar discard_empty = 1.e-8 ;
+	const Scalar discard_empty = 0. ;
 #ifdef D6_UNSTRUCTURED_DUAL
 	(void) dShape ;
 #endif
@@ -60,7 +59,7 @@ void PhaseStepData::computeProjectors(const Config&config,
 
 		for( unsigned k = 0 ; k < PrimalShape::NI ; ++k ) {
 			const Index i = primalNodes.indices[ pnodes[k] ] ;
-			if( lumped_mass[pnodes[k]] < discard_empty ) {
+			if( lumped_mass[pnodes[k]] <= discard_empty ) {
 				mats.vel.block( i ).setZero() ;
 				continue ;
 			}
@@ -173,14 +172,16 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 
 		Log::Debug() << "A Index computation: " << timer.elapsed() << std::endl ;
 
-#ifdef FULL_FEM
-		builder.integrate_qp( [&]( Scalar w, const Vec&, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& r_dc_dx )
+#if defined(FULL_FEM) || defined(CONSTANT_VISC)
+		builder.integrate_cell<form::Left>( primalNodes.cells.begin(), primalNodes.cells.end(),
+								[&]( Scalar w, const Vec&, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& r_dc_dx )
 			{
 				Builder:: addDuDv( forms.A, w, l_itp, l_dc_dx, r_itp, r_dc_dx, primalNodes.indices, primalNodes.indices ) ;
 			}
 		);
 		Log::Debug() << "A Integrate grid: " << timer.elapsed() << std::endl ;
 #else
+		//TODO parallel integration
 		builder.integrate_particle( particles, [&]( Index, Scalar w, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& r_dc_dx )
 			{
 				Builder:: addDuDv( forms.A, w, l_itp, l_dc_dx, r_itp, r_dc_dx, primalNodes.indices, primalNodes.indices ) ;
@@ -216,6 +217,7 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 
 		// C
 		if( config.enforceMaxFrac ) {
+			// TODO enforceMaxFrac cannot work w/ discontinuous stress approx
 			forms.C.clear();
 			forms.C.setRows( builder.rows() );
 			forms.C.setCols( m );
@@ -234,61 +236,74 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 
 		timer.reset() ;
 
-#ifndef INTEGRATE_PARTICLES_SEQUENTIAL
+#if !( defined(INTEGRATE_PARTICLES_SEQUENTIAL) || defined(UNSTRUCTURED_DUAL) )
 		{
 			// Integrating over particles can be slow and not directly parallelizable
 			// To regain some parallelism, we first associate particles to nodes,
 			// then compute separately each row of he form matrices
 
-			const size_t n = particles.count() ;
+			const size_t np = particles.count() ;
 
-			Eigen::Matrix< Scalar, MeshType::NV, Eigen::Dynamic > coeffs ;
-			Eigen::Matrix<  Index, MeshType::NV, Eigen::Dynamic > nodeIds  ;
-			coeffs  .resize( MeshType::NV, n) ;
-			nodeIds.resize( MeshType::NV, n) ;
+			Eigen::Matrix< Scalar,   DualShape::NI, Eigen::Dynamic > coeffs ;
+			Eigen::Matrix<  Index,   DualShape::NI, Eigen::Dynamic > nodeIds  ;
 
-			std::vector< std::vector< std::pair< size_t, Index > > > nodeParticles ( m ) ;
+			coeffs .resize( DualShape::NI, np) ;
+			nodeIds.resize( DualShape::NI, np) ;
+
+			std::vector< std::vector< std::pair< size_t, Index > > > nodeParticles ( n ) ;
+
+			typedef typename PrimalShape::Location P_Loc ;
+			typedef typename   DualShape::Location D_Loc ;
 
 
-			Loc loc ;
-			Itp itp ;
-			Dcdx dc_dx ;
-
-#pragma omp parallel private( loc, itp )
-			for ( size_t i = 0 ; i < n ; ++i )
+#pragma omp parallel
+			for ( size_t i = 0 ; i < np ; ++i )
 			{
-				mesh.locate( particles.centers().col(i), loc );
-				mesh.shaped<Linear>().interpolate( loc, itp );
+				D_Itp itp ; D_Loc loc ;
+
+				dShape.locate_by_pos_or_id( particles.centers().col(i), i, loc );
+				dShape.interpolate( loc, itp );
+
 				nodeIds.col(i) = itp.nodes ;
 				coeffs .col(i) = itp.coeffs ;
 			}
 
-			for ( size_t i = 0 ; i < n ; ++i ) {
-				for( Index k = 0 ; k < MeshType::NV ; ++k ) {
-					nodeParticles[ nodes.indices[nodeIds(k,i)] ].push_back( std::make_pair(i,k) ) ;
+			for ( size_t i = 0 ; i < np ; ++i ) {
+				for( Index k = 0 ; k <   DualShape::NI ; ++k ) {
+					nodeParticles[ dualNodes.indices[nodeIds(k,i)] ].push_back( std::make_pair(i,k) ) ;
 				}
 			}
 
-#pragma omp parallel for private( loc, itp, dc_dx )
-			for( Index nidx = 0 ; nidx < m ; ++ nidx )
+
+#pragma omp parallel for
+			for( Index nidx = 0 ; nidx < n ; ++ nidx )
 			{
+				P_Itp r_itp ; P_Dcdx r_dcdx ; P_Loc r_loc ;
+				D_Itp l_itp ; D_Dcdx l_dcdx ; D_Loc l_loc ;
+
 				for( unsigned i = 0 ; i < nodeParticles[nidx].size() ; ++i ) {
 					const size_t pid = nodeParticles[nidx][i].first ;
 					const Index k0   = nodeParticles[nidx][i].second ;
-					mesh.locate( particles.centers().col(pid), loc );
-					mesh.shaped<Linear>().get_derivatives( loc, dc_dx );
-					itp.nodes  = nodeIds.col(pid) ;
-					itp.coeffs = coeffs.col(pid) ;
+
+					const auto& pos = particles.centers().col(pid) ;
+					dShape.locate_by_pos_or_id( pos, pid, l_loc );
+					dShape.get_derivatives( l_loc, l_dcdx );
+					l_itp.nodes  = nodeIds.col(pid) ;
+					l_itp.coeffs = coeffs.col(pid) ;
+
+					pShape.locate_by_pos_or_id( pos, pid, r_loc );
+					pShape.interpolate( r_loc, r_itp );
+					pShape.get_derivatives( r_loc, r_dcdx );
 
 					const Scalar w = particles.volumes()[pid] ;
-					const Scalar m = itp.coeffs[k0] * w ;
-					const Dcdx& const_dcdx = dc_dx ;
+					const Scalar m = l_itp.coeffs[k0] * w ;
+					const D_Dcdx& const_dcdx = l_dcdx ;
 
-					FormBuilder::addTauDu( forms.B, m, nidx, itp, dc_dx, nodes.indices ) ;
-					FormBuilder::addTauWu( forms.J, m, nidx, itp, dc_dx, nodes.indices ) ;
-					FormBuilder:: addDuDv( forms.A, w, nidx, const_dcdx.row(k0), itp, dc_dx, nodes.indices ) ;
+					Builder::addTauDu( forms.B, m, nidx, r_itp, r_dcdx, primalNodes.indices ) ;
+					Builder::addTauWu( forms.J, m, nidx, r_itp, r_dcdx, primalNodes.indices ) ;
+
 					if( config.enforceMaxFrac ) {
-						FormBuilder::addVDp  ( forms.C, m, nidx, itp, dc_dx, nodes.indices ) ;
+						Builder::addDpV( forms.C, w, nidx, const_dcdx.row(k0), r_itp, primalNodes.indices ) ;
 					}
 
 				}

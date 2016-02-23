@@ -96,8 +96,8 @@ void FormBuilder<LhsShape, RhsShape>::addDpV( FormMat<1,WD>::Type& A, Scalar w,
 											  LhsItp lhs_itp, LhsDcdx dc_dx, RhsItp rhs_itp,
 											  Indices rowIndices, Indices colIndices )
 {
-	for( int k = 0 ; k < rhs_itp.nodes.rows() ; ++k ) {
-		addDpV( A, w * rhs_itp.coeffs[k], colIndices[rhs_itp.nodes[k]], lhs_itp, dc_dx, rowIndices );
+	for( int k = 0 ; k < lhs_itp.nodes.rows() ; ++k ) {
+		addDpV( A, w, rowIndices[lhs_itp.nodes[k]], dc_dx.row(k), rhs_itp, colIndices );
 	}
 }
 
@@ -138,15 +138,15 @@ void FormBuilder<LhsShape, RhsShape>::addTauDu( FormMat<SD,WD>::Type& A, Scalar 
 }
 
 template < typename LhsShape, typename RhsShape >
-void FormBuilder<LhsShape, RhsShape>::addDpV ( FormMat<1,WD>::Type& A, Scalar m, Index colIndex,
-											   LhsItp itp, LhsDcdx dc_dx, Indices rowIndices )
+void FormBuilder<LhsShape, RhsShape>:: addDpV  ( FormMat< 1,WD>::Type& A, Scalar w, Index rowIndex, LhsDcdxRow row_dx,
+												 RhsItp itp, Indices colIndices )
 {
 	typedef FormMat<1,WD>::Type::BlockType Block ;
 
 	for( int j = 0 ; j < itp.nodes.rows() ; ++j ) {
-		assert( A.blockPtr( rowIndices[itp.nodes[j]], colIndex ) != A.InvalidBlockPtr ) ;
-		Block &b = A.block( rowIndices[itp.nodes[j]], colIndex ) ;
-		FormBlocks::addDpV( b, m, dc_dx.row(j) ) ;
+		assert( A.blockPtr( rowIndex, colIndices[itp.nodes[j]] ) != A.InvalidBlockPtr ) ;
+		Block &b = A.block( rowIndex, colIndices[itp.nodes[j]] ) ;
+		FormBlocks::addDpV( b, w*itp.coeffs[j], row_dx ) ;
 	}
 }
 
@@ -190,9 +190,7 @@ void FormBuilder<LhsShape, RhsShape>::addUTaunGphi( FormMat<SD,WD>::Type& A, Sca
 
 	for( int k = 0 ; k < lhs_itp.nodes.rows() ; ++k ) {
 		for( int j = 0 ; j < rhs_itp.nodes.rows() ; ++j ) {
-			//TODO fix RBData so we can assert( A.blockPtr( rowIndices[lhs_itp.nodes[k]], colIndices[rhs_itp.nodes[j]] ) != A.InvalidBlockPtr ) ;
-			if( A.blockPtr( rowIndices[lhs_itp.nodes[k]], colIndices[rhs_itp.nodes[j]] ) == A.InvalidBlockPtr )
-				continue ;
+			assert( A.blockPtr( rowIndices[lhs_itp.nodes[k]], colIndices[rhs_itp.nodes[j]] ) != A.InvalidBlockPtr ) ;
 
 			Block &b = A.block( rowIndices[lhs_itp.nodes[k]], colIndices[rhs_itp.nodes[j]] ) ;
 			const Scalar m = w * lhs_itp.coeffs[k] * rhs_itp.coeffs[j] ;

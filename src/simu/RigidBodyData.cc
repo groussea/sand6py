@@ -107,36 +107,35 @@ void RigidBodyData::integrate(const PrimalShape& primalShape, const DualShape& d
 		jacobian.cloneIndex( builder.index() ) ;
 		jacobian.setBlocksToZero() ;
 
+		// Fraction
+		intFraction.resize( dualNodes.count() ) ;
+		intFraction.setZero() ;
+
 		builder.integrate_qp( [&]( Scalar w, const Vec& pos, D_Itp l_itp, D_Dcdx, P_Itp r_itp, P_Dcdx )
 		{
-			if( phi( pos ) > 0 ) {
-				Vec dphi_dx ;
-				grad_phi( pos, dphi_dx ) ;
+			const Scalar phiRb = phi(pos) ;
+			if( phiRb <= 0 ) return ;
 
+			Vec dphi_dx ;
+			grad_phi( pos, dphi_dx ) ;
+
+			bool active = true ;
+
+			for( Index k = 0 ; k < l_itp.nodes.rows() ; ++ k ) {
+				const Index idx = dualNodes.indices[ l_itp.nodes[k] ] ;
+				if( idx == Active::s_Inactive ) {
+					active = false ;
+				} else {
+					intFraction[ idx ] += w * l_itp.coeffs[k] * phiRb ;
+				}
+			}
+
+			if( active ) {
 				Builder:: addUTaunGphi( jacobian, w, l_itp, r_itp, dphi_dx, dualNodes.indices, primalNodes.indices ) ;
 			}
 		}
 		);
 
-		// Fraction
-		intFraction.resize( dualNodes.count() ) ;
-		intFraction.setZero() ;
-		// TODO do not process all cells -- or factorize for all rbs
-		for( auto qpIt = dualShape.qpBegin() ; qpIt != dualShape.qpEnd() ; ++qpIt  ) {
-			typename DualShape::Location loc ;
-			typename DualShape::Interpolation itp ;
-			qpIt.locate( loc ) ;
-			dualShape.interpolate( loc, itp ) ;
-
-			const Scalar phiRb = std::max( 0., std::min(1., rb.levelSet().eval_at( qpIt.pos() ) ) ) ;
-
-			for( Index k = 0 ; k < itp.nodes.rows() ; ++ k ) {
-				const Index idx = dualNodes.indices[ itp.nodes[k] ] ;
-				if( idx != Active::s_Inactive ) {
-					intFraction[ idx ] += qpIt.weight() * itp.coeffs[k] * phiRb ;
-				}
-			}
-		}
 	}
 
 	{

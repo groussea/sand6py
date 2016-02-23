@@ -32,7 +32,7 @@ class FormBuilder {
 
 	typedef const typename LhsShape::Interpolation& LhsItp ;
 	typedef const typename LhsShape::Derivatives& LhsDcdx ;
-	typedef const typename LhsShape::Derivatives::ConstRowXpr& LhsDcdxRow ;
+	typedef const typename LhsShape::Derivatives::ConstRowXpr LhsDcdxRow ;
 
 	typedef const typename RhsShape::Interpolation& RhsItp ;
 	typedef const typename RhsShape::Derivatives& RhsDcdx ;
@@ -87,7 +87,7 @@ public:
 
 	static void addDuDv     ( FormMat<WD,WD>::Type& A, Scalar w, Index rowIndex, LhsDcdxRow row_dx,
 							  RhsItp itp, RhsDcdx dc_dx, Indices colIndices ) ;
-	static void addDpV      ( FormMat< 1,WD>::Type& A, Scalar w, Index colIndex, LhsItp itp, LhsDcdx dc_dx, Indices rowIndices ) ;
+	static void addDpV      ( FormMat< 1,WD>::Type& A, Scalar w, Index rowIndex, LhsDcdxRow row_dx, RhsItp itp, Indices colIndices ) ;
 	static void addTauDu    ( FormMat<SD,WD>::Type& A, Scalar w, Index rowIndex, RhsItp itp, RhsDcdx dc_dx, Indices colIndices ) ;
 	static void addTauWu    ( FormMat<RD,WD>::Type& A, Scalar w, Index rowIndex, RhsItp itp, RhsDcdx dc_dx, Indices colIndices ) ;
 
