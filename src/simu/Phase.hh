@@ -44,11 +44,12 @@ struct Phase
 		ar & m_serializeAllFields ;
 		ar & fraction ;
 		ar & velocity ;
+		ar & grad_phi ;
+
 		if (m_serializeAllFields) {
 			ar & stresses ;
 			ar & sym_grad ;
 			ar & spi_grad ;
-			ar & grad_phi ;
 			ar & fcontact ;
 			ar & geo_proj ;
 		}
