@@ -17,7 +17,8 @@ struct UnstructuredDOFs {
 	Weights weights ;
 
 	explicit UnstructuredDOFs( const Vertices& v )
-		: vertices(v), m_count(0), m_box( Vec::Ones() ), m_res( VecWi::Ones() )
+		: vertices(v), m_count(0), m_box( Vec::Ones() ), m_res( VecWi::Ones() ),
+		  m_particles( nullptr )
 	{}
 	UnstructuredDOFs( const Vec& box, const VecWi &res, const Particles * particles ) ;
 
@@ -25,10 +26,10 @@ struct UnstructuredDOFs {
 
 	void resize( Index n ) {
 		m_count = n ;
-		compute_weights_from_vertices( ) ;
+		rebuild();
 	}
 
-	void compute_weights_from_vertices() ;
+	void rebuild() ;
 
 	template < typename Archive >
 	void save( Archive &ar, unsigned int ) const ;
@@ -38,10 +39,16 @@ struct UnstructuredDOFs {
 	void serialize( Archive &ar, unsigned int ) ;
 
 private:
+
+	void compute_weights_from_particles() ;
+	void compute_weights_from_vertices() ;
+
 	Index m_count ;
 	// Useful for computing weigths
 	Vec   m_box ;
 	VecWi m_res ;
+
+	const Particles *m_particles ;
 };
 
 struct UnstructuredDOFIterator

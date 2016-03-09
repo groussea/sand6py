@@ -3,13 +3,25 @@
 #include "Grid.hh"
 #include "Particles.hh"
 
+#include "Tensor.hh"
+
+#include <Eigen/Eigenvalues>
+
 namespace d6 {
 
 UnstructuredDOFs::UnstructuredDOFs(const Vec &box, const VecWi &res, const Particles *particles)
 	: vertices( particles->centers() ), m_count( particles->count() ),
-	  m_box(box), m_res(res)
+	  m_box(box), m_res(res), m_particles( particles )
 {
-	compute_weights_from_vertices();
+	rebuild();
+}
+
+void UnstructuredDOFs::rebuild()
+{
+	if( m_particles )
+		compute_weights_from_particles();
+	else
+		compute_weights_from_vertices();
 }
 
 void UnstructuredDOFs::compute_weights_from_vertices()
@@ -53,6 +65,25 @@ void UnstructuredDOFs::compute_weights_from_vertices()
 
 	}
 
+
+}
+
+void UnstructuredDOFs::compute_weights_from_particles()
+{
+	assert( m_particles ) ;
+
+	const Index n = count() ;
+	weights.resize( n ) ;
+
+#pragma omp parallel for
+	for( Index i = 0 ; i < n ; ++i ) {
+
+		auto  frame_view( tensor_view( m_particles->frames().col(i) ) ) ;
+		Mat frame ;
+		frame_view.get( frame ) ;
+
+		weights[i] = std::sqrt( std::max(0., frame.determinant() ) ) ;
+	}
 
 }
 

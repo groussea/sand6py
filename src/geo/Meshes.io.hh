@@ -51,7 +51,7 @@ void UnstructuredDOFs::load( Archive &ar, unsigned int )
 	ar >> m_box ;
 	ar >> m_res ;
 
-	compute_weights_from_vertices();
+	rebuild();
 }
 
 
