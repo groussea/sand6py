@@ -90,7 +90,10 @@ void AbstractStressMassMatrix<DGLinear<MeshT>>::compute( const Shape& shape, con
 }
 
 
-template struct AbstractStressMassMatrix< DualShape > ;
+template struct AbstractStressMassMatrix<     Linear< MeshImpl > > ;
+template struct AbstractStressMassMatrix<   DGLinear< MeshImpl > > ;
+template struct AbstractStressMassMatrix< DGConstant< MeshImpl > > ;
+template struct AbstractStressMassMatrix<  UnstructuredShapeFunc > ;
 
 } //d6
 

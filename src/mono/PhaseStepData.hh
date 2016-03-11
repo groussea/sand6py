@@ -4,10 +4,10 @@
 #include "PhaseFields.hh"
 #include "RigidBodyData.hh"
 
-#include "StressMassMatrix.hh"
 
 #include "simu/ActiveIndices.hh"
 #include "simu/FormBuilder.hh"
+#include "simu/StressMassMatrix.hh"
 
 #include "geo/BoundaryInfo.hh"
 
@@ -47,6 +47,8 @@ struct PhaseStepData {
 
 		typename FormMat<1 ,WD>::Type C ; //!< \phi v.grad(p)
 
+
+		typedef AbstractStressMassMatrix< DualShape > StressMassMatrix ;
 		StressMassMatrix S ;
 
 	} forms ;
