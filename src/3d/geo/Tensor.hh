@@ -162,6 +162,7 @@ void compute_convection_matrix( const Mat& A, const Scalar dt, MatS & Aexp ) ;
 
 template <typename Derived>
 void convect( const Scalar dt, const Mat&A, TensorView< Derived > tau ) {
+	MatS Aexp ;
 	compute_convection_matrix( A, dt, Aexp );
 	tau.vec() = Aexp * tau.vec() ;
 }
