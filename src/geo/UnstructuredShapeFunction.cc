@@ -82,7 +82,7 @@ void UnstructuredDOFs::compute_weights_from_particles()
 		Mat frame ;
 		frame_view.get( frame ) ;
 
-		weights[i] = std::sqrt( std::max(0., frame.determinant() ) ) ;
+		weights[i] = std::sqrt( std::max(0., frame.determinant() ) ) * (1<<WD) ;
 	}
 
 }
