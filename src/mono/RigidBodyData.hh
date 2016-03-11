@@ -1,8 +1,8 @@
 #ifndef D6_RIGID_BODY_DATA_HH
 #define D6_RIGID_BODY_DATA_HH
 
-#include "ActiveIndices.hh"
 #include "PhaseFields.hh"
+#include "simu/ActiveIndices.hh"
 
 #include "geo/BoundaryInfo.hh"
 

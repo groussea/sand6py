@@ -2,7 +2,8 @@
 #define D6_PHASE_SOLVE_HH
 
 #include "PhaseFields.hh"
-#include "ActiveIndices.hh"
+
+#include "simu/ActiveIndices.hh"
 
 #include "geo/BoundaryInfo.hh"
 #include "geo/MeshBase.hh"

@@ -5,7 +5,7 @@
 #include "visu/VTKParticlesWriter.hh"
 #include "visu/VTKFieldWriter.hh"
 
-#include "simu/Phase.hh"
+#include "mono/Phase.hh"
 
 #include "geo/FieldBase.impl.hh"
 #include "geo/ScalarField.hh"

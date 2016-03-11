@@ -1,12 +1,13 @@
 #ifndef D6_PHASE_STEP_DATA_HH
 #define D6_PHASE_STEP_DATA_HH
 
-#include "ActiveIndices.hh"
-#include "FormBuilder.hh"
+#include "PhaseFields.hh"
 #include "RigidBodyData.hh"
 
-#include "PhaseFields.hh"
 #include "StressMassMatrix.hh"
+
+#include "simu/ActiveIndices.hh"
+#include "simu/FormBuilder.hh"
 
 #include "geo/BoundaryInfo.hh"
 

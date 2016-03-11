@@ -3,7 +3,7 @@
 
 #include "instanciations.hh"
 
-#include "DynParticles.hh"
+#include "simu/DynParticles.hh"
 
 #include "geo/FieldBase.impl.hh" //interpolate
 

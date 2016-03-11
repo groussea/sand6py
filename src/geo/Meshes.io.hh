@@ -4,6 +4,7 @@
 #include "Octree.hh"
 #include "UnstructuredShapeFunction.hh"
 
+#include <boost/serialization/vector.hpp>
 #include <boost/serialization/split_member.hpp>
 
 namespace d6 {

@@ -1,7 +1,5 @@
 #include "ActiveIndices.hh"
 
-#include "PhaseFields.hh"
-
 #include "geo/ScalarField.hh"
 #include "geo/VectorField.hh"
 #include "geo/TensorField.hh"

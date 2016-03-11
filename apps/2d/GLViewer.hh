@@ -1,7 +1,7 @@
 #ifndef D6_GLVIEWER_HH
 #define D6_GLVIEWER_HH
 
-#include "simu/PhaseFields.hh"
+#include "mono/PhaseFields.hh"
 
 #include "gl/VertexBuffer.hh"
 #include "gl/Shader.hh"

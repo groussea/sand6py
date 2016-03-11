@@ -1,7 +1,7 @@
 #ifndef D6_DYN_PARTICLES_HH
 #define D6_DYN_PARTICLES_HH
 
-#include "simu/PhaseFields.hh"
+#include "mono/PhaseFields.hh"
 
 #include "geo/Particles.hh"
 

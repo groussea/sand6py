@@ -1,5 +1,4 @@
 #include "Simu.hh"
-#include "Phase.hh"
 
 #include "Scenario.hh"
 #include "RigidBody.hh"
@@ -8,12 +7,8 @@
 #include "utils/File.hh"
 #include "utils/Config.hh"
 
-#include "geo/MeshImpl.hh"
-#include "geo/LevelSet.hh"
-
 #include "geo/LevelSet.io.hh"
 #include "geo/Particles.io.hh"
-#include "geo/Meshes.io.hh"
 
 #include "utils/serialization.hh"
 
@@ -27,24 +22,11 @@ namespace d6 {
 Simu::Simu(const Config &config, const char *base_dir)
 	: m_config(config), m_base_dir( base_dir ),
 	  m_stats( m_base_dir ),
-	  m_scenario( Scenario::parse( config ) ),
-	  m_meshes{ std::unique_ptr<PrimalMesh>(new PrimalMesh( config.box, config.res, &m_particles.geo() )),
-				std::unique_ptr<  DualMesh>(new   DualMesh( config.box, config.res, &m_particles.geo() ))
-			   },
-	  m_grains( new Phase( meshes() ) ),
-	  m_solver( m_particles )
+	  m_scenario( Scenario::parse( config ) )
 {
-	m_particles.generate( config, meshes().primal(), *m_scenario );
 
 	// Rigid bodies
 	m_scenario->add_rigid_bodies( m_rigidBodies ) ;
-
-	for( unsigned i = 0 ; i < m_rigidBodies.size() ; ++i ) {
-		m_rbStresses.emplace_back( meshes().primal() );
-		m_rbStresses.back().set_zero() ;
-	}
-
-	m_grains->serializeAllFields( config.exportAllFields ) ;
 }
 
 Simu::~Simu()
@@ -53,12 +35,6 @@ Simu::~Simu()
 
 void Simu::run()
 {
-	m_grains->fraction.set_zero();
-	m_grains->stresses.set_zero();
-	m_grains->velocity.set_zero();
-	m_grains->sym_grad.set_zero();
-	m_grains->spi_grad.set_zero();
-	m_grains->geo_proj.set_zero();
 
 	if( m_config.output ) {
 		dump_particles( 0 ) ;
@@ -117,24 +93,19 @@ void Simu::run()
 
 }
 
-void Simu::adapt_meshes()
-{
-	m_meshes.adapt( m_particles, m_grains );
-}
-
 void Simu::step(const Scalar dt)
 {
 	bogus::Timer timer ;
 
 	m_stats.nParticles = m_particles.count() ;
-	m_stats.nNodes = meshes().primal().nNodes() ;
 
 	//! Compute new grid velocities
-	m_solver.step( m_config, dt, *m_grains, m_stats, m_rigidBodies, m_rbStresses ) ;
+	update_fields( dt ) ;
+
 	const Scalar solverTime = timer.elapsed() ;
 
 	//! Advance particles
-	m_particles.update( m_config, dt, *m_grains ) ;
+	move_particles( dt ) ;
 
 	for( RigidBody& rb: m_rigidBodies ) {
 		rb.move( dt );
@@ -145,6 +116,7 @@ void Simu::step(const Scalar dt)
 
 	Log::Verbose() << arg( "Step done in %1 s", m_stats.totalTime ) << std::endl ;
 }
+
 
 void Simu::dump_particles( unsigned frame ) const
 {
@@ -179,28 +151,6 @@ void Simu::dump_particles( unsigned frame ) const
 		std::ofstream ofs( dir.filePath("log") );
 		boost::archive::binary_oarchive oa(ofs);
 		oa << m_particles.events() ;
-	}
-}
-
-
-void Simu::dump_fields( unsigned frame ) const
-{
-	FileInfo dir( FileInfo(m_base_dir).filePath( arg("frame-%1", frame ) ) ) ;
-	dir.makePath() ;
-	if( ! dir.exists() )
-		dir.makeDir() ;
-
-	// Grid
-	{
-		std::ofstream ofs( dir.filePath("meshes") );
-		boost::archive::binary_oarchive oa(ofs);
-		oa << meshes() ;
-	}
-	// Velocity, Stress, Phi
-	{
-		std::ofstream ofs( dir.filePath("fields") );
-		boost::archive::binary_oarchive oa(ofs);
-		oa << *m_grains ;
 	}
 }
 

@@ -1,10 +1,7 @@
 #ifndef D6_SIMU_HH
 #define D6_SIMU_HH
 
-#include "simu/PhaseMeshes.hh"
-
 #include "simu/DynParticles.hh"
-#include "simu/PhaseSolver.hh"
 
 #include "utils/Stats.hh"
 
@@ -22,12 +19,10 @@ class Simu {
 public:
 
 	explicit Simu( const Config& config, const char* base_dir ) ;
-	~Simu() ;
+	virtual ~Simu() ;
 
 	//! Runs the simulation
 	void run() ;
-
-	const PhaseMeshes& meshes() const { return m_meshes ;  }
 
 	std::vector< RigidBody > &rigidBodies ()
 	{
@@ -45,15 +40,18 @@ private:
 	//! Advances the simulation with time step \p dt
 	void step( const Scalar dt ) ;
 
-	void adapt_meshes() ;
+	virtual void adapt_meshes() = 0 ;
+	virtual void update_fields( const Scalar dt ) = 0 ;
+	virtual void move_particles( const Scalar dt ) = 0 ;
 
 	// Output
-	void dump_fields(unsigned frame) const ;
+	virtual void dump_fields(unsigned frame) const = 0 ;
 	void dump_particles(unsigned frame) const ;
 
 	Simu( const Simu& ) = delete ;
 	Simu& operator=( const Simu& ) = delete ;
 
+protected:
 
 	const Config& m_config ;
 	const char* m_base_dir ;
@@ -64,12 +62,6 @@ private:
 
 	std::vector< RigidBody   > m_rigidBodies ;
 
-	PhaseMeshes  m_meshes ;
-	std::unique_ptr<Phase>     m_grains ;
-	// Useful for warm-starting stresses at frictional boundary conditions
-	std::vector< RBStresses > m_rbStresses  ;
-
-	PhaseSolver m_solver ;
 };
 
 } //d6

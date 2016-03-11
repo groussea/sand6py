@@ -1,9 +1,9 @@
 #include "RigidBodyData.hh"
 
-#include "RigidBody.hh"
+#include "simu/RigidBody.hh"
 
-#include "FormBuilder.hh"
-#include "FormBuilder.impl.hh"
+#include "simu/FormBuilder.hh"
+#include "simu/FormBuilder.impl.hh"
 
 #include "geo/LevelSet.hh"
 

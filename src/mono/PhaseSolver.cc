@@ -1,13 +1,13 @@
 #include "PhaseSolver.hh"
 
 #include "Phase.hh"
-#include "RigidBody.hh"
-#include "RigidBodyData.hh"
 #include "PhaseStepData.hh"
+#include "RigidBodyData.hh"
 
-#include "FormBuilder.hh"
+#include "simu/RigidBody.hh"
 
-#include "LinearSolver.hh"
+#include "simu/FormBuilder.hh"
+#include "simu/LinearSolver.hh"
 
 #include "solve/PrimalData.hh"
 #include "solve/Primal.hh"

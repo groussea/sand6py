@@ -1,5 +1,5 @@
 #include "utils/Config.hh"
-#include "simu/Simu.hh"
+#include "mono/MonoSimu.hh"
 
 #include "utils/Log.hh"
 #include "utils/File.hh"
@@ -74,7 +74,7 @@ int main( int argc, const char* argv[] )
 	d6::Log::Debug() << "1/Re = " << config.viscosity << std::endl ;
 
 	// Run simulation
-	d6::Simu( config, base_dir ).run() ;
+	d6::MonoSimu( config, base_dir ).run() ;
 
 	return 0 ;
 }
