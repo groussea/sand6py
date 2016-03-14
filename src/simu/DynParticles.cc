@@ -308,6 +308,8 @@ void DynParticles::splitMerge( const MeshType & mesh )
 		const Scalar evMin = ev.minCoeff(&kMin) ;
 		const Scalar evMax = ev.maxCoeff(&kMax) ;
 
+		ev = ev.array().min( defLength * 8 ).max( defLength / 8 ) ;
+
 		if(  	   evMax > evMin * 4.     // Eigenvalues ratio
 				&& evMax > defLength      // Avoid splitting too small particles
 				&& m_geo.volumes()[i] > m_meanVolume / 64 // Avoid splitting too ligth particles
@@ -325,7 +327,6 @@ void DynParticles::splitMerge( const MeshType & mesh )
 					m_geo.m_volumes[j] = m_geo.m_volumes[i] ;
 
 					ev[kMax] *= .5 ;
-					ev[kMin] = std::max( defLength / 8, ev[kMin] ) ;
 
 					m_geo.m_centers.col(j) = m_geo.m_centers.col(i) - ev[kMax] * es.eigenvectors().col(kMax).normalized() ;
 					m_geo.m_centers.col(i) = m_geo.m_centers.col(i) + ev[kMax] * es.eigenvectors().col(kMax).normalized() ;
@@ -352,8 +353,6 @@ void DynParticles::splitMerge( const MeshType & mesh )
 		} else {
 
 			//Repair flat frames
-			ev[kMin] = std::max( defLength / 8, ev[kMin] ) ;
-			ev[kMax] = std::min( defLength * 8, ev[kMax] ) ;
 			frame = es.eigenvectors() * ev.asDiagonal() * ev.asDiagonal() * es.eigenvectors().transpose() ;
 			tensor_view( m_geo.m_frames.col(i) ).set( frame ) ;
 
