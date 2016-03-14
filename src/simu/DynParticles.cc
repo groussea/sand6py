@@ -19,6 +19,7 @@
 #define MERGE
 
 //#define GRAD_FROM_VEL
+#define ANALYTIC_FRAME_CONVECTION
 
 namespace d6 {
 
@@ -145,10 +146,18 @@ void DynParticles::update(const Config &config, const Scalar dt, const Phase &ph
 		{
 
 			auto  frame_view( tensor_view( m_geo.m_frames.col(i) ) ) ;
+
+#ifdef ANALYTIC_FRAME_CONVECTION
+			convect( dt, grad, frame_view ) ;
+#else
 			Mat frame ;
 			frame_view.get( frame ) ;
 			frame += dt * ( grad * frame + frame * grad.transpose() ) ;
+
+			frame += dt * ( grad * frame + frame * grad.transpose() ) ;
 			frame_view.set( frame ) ;
+#endif
+
 		}
 
 		//Orientation

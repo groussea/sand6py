@@ -91,6 +91,13 @@ struct TensorView
 		return mat ;
 	}
 
+	const Derived& vec() const {
+		return m_map ;
+	}
+	Derived& vec() {
+		return m_map ;
+	}
+
 private:
 
 	Derived m_map ;
@@ -149,6 +156,15 @@ inline void make_cross_mat( const Vec& x, Mat& mat ) {
 
 // such that Abar bar(tau) = (tauN ; bar( A Dev(tau) A ) )
 void compute_anisotropy_matrix( const Mat& A, Mat66 & Abar ) ;
+
+// exp(dt * Abar)such that Abar bar(tau) = A tau + tau A'
+void compute_convection_matrix( const Mat& A, const Scalar dt, MatS & Aexp ) ;
+
+template <typename Derived>
+void convect( const Scalar dt, const Mat&A, TensorView< Derived > tau ) {
+	compute_convection_matrix( A, dt, Aexp );
+	tau.vec() = Aexp * tau.vec() ;
+}
 
 } //d6
 
