@@ -32,7 +32,8 @@ Config::Config() :
 	cohesion(0), cohesion_decay(0),
 	anisotropy( 0 ), elongation( 1 ), brownian( 0 ),
 	initialOri( Vec::Constant(1./3) ),
-	enforceMaxFrac( false ), weakStressBC( false ), usePG( false ),
+	enforceMaxFrac( false ), weakStressBC( false ),
+	usePG( false ), useInfNorm( D6_DIM == 2 ),
 	boundary("cuve"),
 	output( true ), exportAllFields( bool(3-D6_DIM) ), dumpPrimalData( 0 )
 {
