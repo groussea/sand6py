@@ -86,6 +86,22 @@ struct SplittingScenar : public Scenario {
 	}
 };
 
+struct CylinderScenar : public Scenario {
+	Vec center ;
+	Scalar radius ;
+
+	Scalar particle_density( const Vec &x ) const override {
+
+		return (x.head<2>() - center.head<2>()).squaredNorm() < radius*radius ? 1 : 0 ;
+	}
+
+	virtual void init( const Params& params ) override {
+		center = Vec( .5*m_config->box[0], .5*m_config->box[1], .5*m_config->box[2] ) ;
+		Scalar r = scalar_param( params, "r", Units::None   , .125 ) ;
+		radius = r * m_config->box[0] ;
+	}
+};
+
 struct TowerScenar : public Scenario {
 	Vec center ;
 	Scalar radius ;
@@ -98,6 +114,7 @@ struct TowerScenar : public Scenario {
 	Scalar avel ;
 
 	Scalar particle_density( const Vec &x ) const override {
+
 		return (
 					( std::fabs( x[0] - center[0] ) < radius/2
 				&& std::fabs( x[1] - center[1] ) < radius )
@@ -566,6 +583,8 @@ struct DefaultScenarioFactory : public ScenarioFactory
 			return std::unique_ptr< Scenario >( new DiggingScenar() ) ;
 		if( str == "splitting")
 			return std::unique_ptr< Scenario >( new SplittingScenar() ) ;
+		if( str == "cylinder")
+			return std::unique_ptr< Scenario >( new CylinderScenar() ) ;
 
 		return std::unique_ptr< Scenario >( new BedScenar() ) ;
 	}
