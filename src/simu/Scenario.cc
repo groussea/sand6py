@@ -52,6 +52,40 @@ struct BridsonScenar : public Scenario {
 	}
 };
 
+struct SplittingScenar : public Scenario {
+	Vec center ;
+	Scalar radius ;
+
+	Scalar volMass ;
+
+	Scalar h0   ;
+	Scalar hvel ;
+	Scalar zvel ;
+	Scalar avel ;
+
+	Scalar particle_density( const Vec &x ) const override {
+		return
+					( std::fabs( x[0] - center[0] ) < radius
+					&& x[2] > center[2]+radius  )
+				? 1 : 0;
+	}
+
+	virtual void init( const Params& ) override {
+		center = Vec( .5*m_config->box[0], .5*m_config->box[1], .5*m_config->box[2] ) ;
+		radius = .125 * m_config->box[0] ;
+	}
+
+	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
+	{
+		LevelSet::Ptr ls = LevelSet::make_cylinder(m_config->box[1]/radius) ;
+
+		Vec pos = center ;
+		ls->scale(radius).set_origin( pos ).rotate( Vec(1,0,0), M_PI_2 ) ;
+
+		rbs.emplace_back( ls, 1.e99 );
+	}
+};
+
 struct TowerScenar : public Scenario {
 	Vec center ;
 	Scalar radius ;
@@ -530,6 +564,8 @@ struct DefaultScenarioFactory : public ScenarioFactory
 			return std::unique_ptr< Scenario >( new WheelScenar() ) ;
 		if( str == "digging")
 			return std::unique_ptr< Scenario >( new DiggingScenar() ) ;
+		if( str == "splitting")
+			return std::unique_ptr< Scenario >( new SplittingScenar() ) ;
 
 		return std::unique_ptr< Scenario >( new BedScenar() ) ;
 	}
