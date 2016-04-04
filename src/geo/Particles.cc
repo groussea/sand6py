@@ -3,6 +3,7 @@
 #include "MeshImpl.hh"
 
 #include "Tensor.hh"
+#include "Voxel.hh"
 
 #include "utils/Log.hh"
 
@@ -27,15 +28,17 @@ void Particles::generate(const ScalarExpr &expr, const unsigned nSamples,
 	m_count = 0 ;
 
 	// Uniform gen
-	typename MeshType::CellGeo cellGeo ;
 
-	for( typename MeshType::CellIterator it = mesh.cellBegin() ; it != mesh.cellEnd() ; ++it ) {
-		mesh.get_geo( *it, cellGeo ) ;
+	if( nSamples > 10 )
+	{
+		// nSamples is to be understood globally (w.r.t dim domain)
 
-		if( alignOnCells && expr( cellGeo.center() ) == 0. )
-			continue ;
+		Voxel cellGeo ;
+		cellGeo.origin.setZero() ;
+		cellGeo.box = mesh.box() ;
 
-		Index n = cellGeo.sample_uniform( nSamples, m_count, m_centers, m_frames ) ;
+		Index nPerSide = nSamples / ( std::pow( cellGeo.box.prod(), 1./3 ) /  cellGeo.box.minCoeff() )  ;
+		Index n = cellGeo.sample_uniform( nPerSide, m_count, m_centers, m_frames ) ;
 		const Scalar volume = cellGeo.volume() / n ;
 
 		for( size_t i = m_count ; i < m_count+n ; ) {
@@ -49,6 +52,34 @@ void Particles::generate(const ScalarExpr &expr, const unsigned nSamples,
 		m_volumes.segment( m_count, n ).setConstant( volume ) ;
 
 		m_count += n ;
+
+	} else {
+		//sNamples to be understood w.r.t mesh cell
+
+		typename MeshType::CellGeo cellGeo ;
+
+		for( typename MeshType::CellIterator it = mesh.cellBegin() ; it != mesh.cellEnd() ; ++it ) {
+			mesh.get_geo( *it, cellGeo ) ;
+
+			if( alignOnCells && expr( cellGeo.center() ) == 0. )
+				continue ;
+
+			Index n = cellGeo.sample_uniform( nSamples, m_count, m_centers, m_frames ) ;
+			const Scalar volume = cellGeo.volume() / n ;
+
+			for( size_t i = m_count ; i < m_count+n ; ) {
+				if( !alignOnCells && expr( m_centers.col(i) ) == 0. ) {
+					-- n ;
+					m_centers.col(i) = m_centers.col(m_count+n) ;
+					m_frames .col(i) = m_frames .col(m_count+n) ;
+				} else ++i ;
+			}
+
+			m_volumes.segment( m_count, n ).setConstant( volume ) ;
+
+			m_count += n ;
+		}
+
 	}
 
 	m_velocities.leftCols( count() ).setZero() ;

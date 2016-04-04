@@ -179,7 +179,7 @@ struct RbPlaneTestScenar : public Scenario {
 struct ImpactScenar : public Scenario {
 
 	Scalar particle_density( const Vec &x ) const override {
-		return ( x[2] <  1./3.*m_config->box[2] ) ? 1. : 0. ;
+		return ( x[2] <  h*m_config->box[2] ) ? 1. : 0. ;
 	}
 
 	virtual void init( const Params& params ) {
@@ -187,6 +187,7 @@ struct ImpactScenar : public Scenario {
 		zvel = scalar_param( params, "zvel", Units::Velocity, 0. ) ;
 		avel = scalar_param( params, "avel", Units::Frequency, 0. ) ;
 		d = scalar_param( params, "d", Units::None, 0.25 ) ;
+		h = scalar_param( params, "h", Units::None, 1./3 ) ;
 	}
 
 	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
@@ -218,6 +219,7 @@ private:
 	Scalar zvel ;
 	Scalar avel ;
 	Scalar d ;
+	Scalar h ;
 };
 
 struct WheelScenar : public Scenario {
