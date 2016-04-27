@@ -46,7 +46,8 @@ public:
 			GaussSeidel,
 			Cadoux_GS,
 			Cadoux_PG,
-			Cadoux_PG_NoAssembly
+			Cadoux_PG_NoAssembly,
+			PG_NoAssembly
 		};
 
 		Algorithm algorithm ;

@@ -94,7 +94,8 @@ Scalar Primal::solve( const SolverOptions& options, DynVec &lambda, SolverStats 
 	bogus::Timer timer ;
 	Scalar res = -1 ;
 
-	if( options.algorithm == SolverOptions::Cadoux_PG_NoAssembly ) {
+	if( options.algorithm == SolverOptions::PG_NoAssembly ||
+			options.algorithm == SolverOptions::PG_NoAssembly  ) {
 
 		// Keep W as an expression
 		typedef bogus::Product< PrimalData::JacobianType,
@@ -113,11 +114,9 @@ Scalar Primal::solve( const SolverOptions& options, DynVec &lambda, SolverStats 
 
 		const Wexpr W = m_data.H * m_data.H.transpose() + rbSum ;
 
-		bogus::Signal<unsigned, Scalar> callback ;
 		CallbackProxy< Wexpr > callbackProxy( stats, timer, W, m_data.mu, m_data.w, lambda ) ;
-		callback.connect( callbackProxy, &CallbackProxy<Wexpr>::ackResidual );
 
-		bogus::ProjectedGradient< Wexpr > pg ;
+		bogus::ProjectedGradient< Wexpr > pg( W ) ;
 
 		if( options.projectedGradientVariant < 0 ) {
 			pg.setDefaultVariant( bogus::projected_gradient::SPG );
@@ -129,8 +128,19 @@ Scalar Primal::solve( const SolverOptions& options, DynVec &lambda, SolverStats 
 		pg.setMaxIters( options.maxIterations );
 		pg.useInfinityNorm( options.useInfinityNorm );
 
-		res = bogus::solveCadoux<SD>( W, m_data.w.data(), m_data.mu.data(), pg,
-									 lambda.data(), options.maxOuterIterations, &callback ) ;
+		if( options.algorithm == SolverOptions::PG_NoAssembly ) {
+
+			bogus::SOCLaw< SD, Scalar, true > law( m_data.n(), m_data.mu.data() ) ;
+			pg.callback().connect( callbackProxy, &CallbackProxy<Wexpr>::ackResidual );
+			res = pg.solve( law, m_data.w, lambda ) ;
+
+		} else {
+
+			bogus::Signal<unsigned, Scalar> callback ;
+			callback.connect( callbackProxy, &CallbackProxy<Wexpr>::ackResidual );
+			res = bogus::solveCadoux<SD>( W, m_data.w.data(), m_data.mu.data(), pg,
+										  lambda.data(), options.maxOuterIterations, &callback ) ;
+		}
 
 	} else {
 
@@ -174,7 +184,7 @@ Scalar Primal::solve( const SolverOptions& options, DynVec &lambda, SolverStats 
 
 				// Gauss-Seidel inner solver
 
-				bogus::GaussSeidel< WType > gs ;
+				bogus::GaussSeidel< WType > gs( W ) ;
 				gs.setTol( options.tolerance );
 				gs.setMaxIters( options.maxIterations );
 				gs.useInfinityNorm( options.useInfinityNorm );
@@ -185,7 +195,7 @@ Scalar Primal::solve( const SolverOptions& options, DynVec &lambda, SolverStats 
 
 				// Projected Gradient inner solver
 
-				bogus::ProjectedGradient< WType > pg ;
+				bogus::ProjectedGradient< WType > pg( W ) ;
 
 				if( options.projectedGradientVariant < 0 ) {
 					pg.setDefaultVariant( bogus::projected_gradient::SPG );

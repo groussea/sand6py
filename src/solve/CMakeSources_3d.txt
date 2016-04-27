@@ -1,6 +1,8 @@
 solve/LCP.cc
 solve/LCP.hh
 solve/Primal.cc
+solve/Primal.cc
+solve/Primal.cc
 solve/Primal.hh
 solve/PrimalData.cc
 solve/PrimalData.hh

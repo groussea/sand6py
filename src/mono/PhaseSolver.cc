@@ -236,14 +236,14 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	// Proper solving
 	Primal::SolverOptions options ;
 	if( c.usePG ) {
-		options.algorithm = Primal::SolverOptions::Cadoux_PG_NoAssembly ;
-		options.projectedGradientVariant = 4 ;
+		options.algorithm = Primal::SolverOptions::PG_NoAssembly ;
+		options.projectedGradientVariant = 2 ;
 	}
 	if( c.useInfNorm ) {
 		// PG without infinity norm leads to creeping at end of simulation
 		options.useInfinityNorm = true ;
 		options.tolerance = 1.e-5 ;
-		options.maxIterations = 500 ;
+		options.maxIterations = 10000 ;
 	}
 
 	Primal::SolverStats stats ;
@@ -254,6 +254,9 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	simuStats.frictionError      = stats.residual() ;
 	simuStats.frictionTime       = stats.time() ;
 	simuStats.frictionIterations = stats.nIterations() ;
+
+	if (simuStats.frictionError < 1.e-16)
+		std::exit(1) ;
 
 	// Update velocity
 	u += stepData.forms.M_lumped_inv_sqrt * pbData.H.transpose() * x  ;
