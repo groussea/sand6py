@@ -1,4 +1,4 @@
-#include "Primal.hh"
+#include "FrictionSolver.hh"
 #include "PrimalData.hh"
 
 #include "utils/Log.hh"
@@ -17,7 +17,7 @@ namespace d6 {
 template <typename MatrixT >
 struct CallbackProxy {
 
-	CallbackProxy( Primal::SolverStats& stats, bogus::Timer &timer,
+	CallbackProxy( FrictionSolver::Stats& stats, bogus::Timer &timer,
 				   const MatrixT& W, const DynVec& mu, const DynVec &b, const DynVec &x )
 		: m_stats( stats ), m_timer( timer ),
 		  m_W(W), m_mu(mu), m_b(b), m_x(x)
@@ -55,7 +55,7 @@ struct CallbackProxy {
 	}
 
 private:
-	Primal::SolverStats& m_stats ;
+	FrictionSolver::Stats& m_stats ;
 	bogus::Timer& m_timer ;
 	bool m_evalAC ;
 
@@ -66,16 +66,16 @@ private:
 
 };
 
-void Primal::SolverStats::log( unsigned iter, Scalar res, Scalar time )
+void FrictionSolver::Stats::log( unsigned iter, Scalar res, Scalar time )
 {
-	m_log.emplace_back(Primal::SolverStats::Entry{res,time,iter})  ;
+	m_log.emplace_back(FrictionSolver::Stats::Entry{res,time,iter})  ;
 	d6::Log::Debug() << "Primal " << iter << " =\t " << res << std::endl ;
 	if( time > timeOut ) throw TimeOutException() ;
 }
 
 
 
-Primal::SolverOptions::SolverOptions()
+FrictionSolver::Options::Options()
 	: algorithm( GaussSeidel ),
 	  maxIterations(250), maxOuterIterations( 15 ),
 	  projectedGradientVariant( -1  ),
@@ -83,19 +83,24 @@ Primal::SolverOptions::SolverOptions()
 {}
 
 
-Primal::Primal(const PrimalData &data)
+FrictionSolver::FrictionSolver(const PrimalData &data)
 	: m_data( data )
 {}
 
-Scalar Primal::solve( const SolverOptions& options, DynVec &lambda, SolverStats &stats) const
+Scalar FrictionSolver::solve( const Options& options, DynVec &lambda, Stats &stats) const
 {
 //	m_data.dump("last.d6") ;
+
+	if( m_data.mass_matrix_mode != PrimalData::Lumped ) {
+		Log::Error() << " FrictionSolver::solve implemented only for lumped mass matrix " << std::endl ;
+		return -1 ;
+	}
 
 	bogus::Timer timer ;
 	Scalar res = -1 ;
 
-	if( options.algorithm == SolverOptions::PG_NoAssembly ||
-			options.algorithm == SolverOptions::PG_NoAssembly  ) {
+	if( options.algorithm == Options::PG_NoAssembly ||
+			options.algorithm == Options::PG_NoAssembly  ) {
 
 		// Keep W as an expression
 		typedef bogus::Product< PrimalData::JacobianType,
@@ -128,7 +133,7 @@ Scalar Primal::solve( const SolverOptions& options, DynVec &lambda, SolverStats 
 		pg.setMaxIters( options.maxIterations );
 		pg.useInfinityNorm( options.useInfinityNorm );
 
-		if( options.algorithm == SolverOptions::PG_NoAssembly ) {
+		if( options.algorithm == Options::PG_NoAssembly ) {
 
 			bogus::SOCLaw< SD, Scalar, true > law( m_data.n(), m_data.mu.data() ) ;
 			pg.callback().connect( callbackProxy, &CallbackProxy<Wexpr>::ackResidual );
@@ -160,7 +165,7 @@ Scalar Primal::solve( const SolverOptions& options, DynVec &lambda, SolverStats 
 
 		CallbackProxy< WType > callbackProxy( stats, timer, W, m_data.mu, m_data.w, lambda ) ;
 
-		if( options.algorithm == SolverOptions::GaussSeidel ) {
+		if( options.algorithm == Options::GaussSeidel ) {
 			// Direct Gauss-Seidel solver
 
 			bogus::SOCLaw< SD, Scalar, true > law( m_data.n(), m_data.mu.data() ) ;
@@ -180,7 +185,7 @@ Scalar Primal::solve( const SolverOptions& options, DynVec &lambda, SolverStats 
 			bogus::Signal<unsigned, Scalar> callback ;
 			callback.connect( callbackProxy, &CallbackProxy<WType>::ackResidual );
 
-			if( options.algorithm == SolverOptions::Cadoux_GS ) {
+			if( options.algorithm == Options::Cadoux_GS ) {
 
 				// Gauss-Seidel inner solver
 

@@ -10,7 +10,7 @@
 #include "simu/LinearSolver.hh"
 
 #include "solve/PrimalData.hh"
-#include "solve/Primal.hh"
+#include "solve/FrictionSolver.hh"
 #include "solve/LCP.hh"
 
 #include "utils/Log.hh"
@@ -169,6 +169,8 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	static unsigned s_stepId = 0 ;
 
 	PrimalData	pbData ;
+	pbData.mass_matrix_mode = PrimalData::Lumped ;
+
 	pbData.H = stepData.forms.S.inv_sqrt * stepData.Aniso *
 			( stepData.proj.stress * ( stepData.forms.B * stepData.forms.M_lumped_inv_sqrt ) ) ;
 	pbData.w = stepData.forms.S.inv_sqrt * stepData.Aniso *
@@ -234,9 +236,9 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	}
 
 	// Proper solving
-	Primal::SolverOptions options ;
+	FrictionSolver::Options options ;
 	if( c.usePG ) {
-		options.algorithm = Primal::SolverOptions::PG_NoAssembly ;
+		options.algorithm = FrictionSolver::Options::PG_NoAssembly ;
 		options.projectedGradientVariant = 2 ;
 	}
 	if( c.useInfNorm ) {
@@ -246,8 +248,8 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 		options.maxIterations = 10000 ;
 	}
 
-	Primal::SolverStats stats ;
-	Primal( pbData ).solve( options, x, stats ) ;
+	FrictionSolver::Stats stats ;
+	FrictionSolver( pbData ).solve( options, x, stats ) ;
 
 	Log::Verbose() << arg3( "Primal: %1 iterations,\t err= %2,\t time= %3 ",
 						   stats.nIterations(), stats.residual(), stats.time() ) << std::endl ;

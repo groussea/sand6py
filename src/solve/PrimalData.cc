@@ -8,6 +8,7 @@
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/serialization/vector.hpp>
+#include <boost/serialization/version.hpp>
 
 #include <fstream>
 
@@ -15,7 +16,7 @@ namespace d6 {
 
 
 template <class Archive>
-void PrimalData::serialize(Archive &ar, const unsigned int )
+void PrimalData::serialize(Archive &ar, const unsigned int version )
 {
 	ar & H ;
 	ar & w ;
@@ -24,6 +25,12 @@ void PrimalData::serialize(Archive &ar, const unsigned int )
 
 	ar & jacobians ;
 	ar & inv_inertia_matrices ;
+
+	if( version > 0 ) {
+		ar & mass_matrix_mode ;
+		ar & M ;
+		ar & f ;
+	}
 }
 
 bool PrimalData::load(const char *file)
@@ -36,7 +43,10 @@ bool PrimalData::load(const char *file)
 	}
 
 	boost::archive::binary_iarchive ia(ifs);
+
+	mass_matrix_mode = Lumped ;
 	ia >> (*this) ;
+
 	return true ;
 }
 
@@ -55,5 +65,6 @@ bool PrimalData::dump(const char *file) const
 }
 
 
-
 } //d6
+
+BOOST_CLASS_VERSION(d6::PrimalData, 1)

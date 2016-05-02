@@ -1,5 +1,5 @@
-#ifndef D6_PRIMAL_HH
-#define D6_PRIMAL_HH
+#ifndef D6_FRICTION_SOLVER_HH
+#define D6_FRICTION_SOLVER_HH
 
 #include "utils/alg.hh"
 #include <vector>
@@ -8,10 +8,10 @@ namespace  d6 {
 
 struct PrimalData ;
 
-class Primal {
+class FrictionSolver {
 public:
 
-	struct SolverStats
+	struct Stats
 	{
 		struct Entry {
 			Scalar   residual ;
@@ -21,7 +21,7 @@ public:
 		struct TimeOutException {} ;
 		typedef std::vector< Entry > Log ;
 
-		SolverStats() : shouldLogAC( false ), timeOut( std::numeric_limits<Scalar>::infinity() )
+		Stats() : shouldLogAC( false ), timeOut( std::numeric_limits<Scalar>::infinity() )
 		{}
 
 		Scalar   residual()    const { return m_log.back().residual ; }
@@ -40,7 +40,7 @@ public:
 		Log m_log ;
 	} ;
 
-	struct SolverOptions
+	struct Options
 	{
 		enum Algorithm {
 			GaussSeidel,
@@ -60,12 +60,12 @@ public:
 		bool useInfinityNorm ;
 		Scalar tolerance ;
 
-		SolverOptions() ;
+		Options() ;
 	};
 
-	Primal( const PrimalData &data ) ;
+	FrictionSolver( const PrimalData &data ) ;
 
-	Scalar solve( const SolverOptions &options, DynVec& lambda, SolverStats &stats ) const ;
+	Scalar solve( const Options &options, DynVec& lambda, Stats &stats ) const ;
 
 private:
 

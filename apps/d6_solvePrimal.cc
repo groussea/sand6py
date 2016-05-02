@@ -2,7 +2,7 @@
 #include "utils/string.hh"
 #include "utils/Log.hh"
 
-#include "solve/Primal.hh"
+#include "solve/FrictionSolver.hh"
 #include "solve/PrimalData.hh"
 
 #include <bogus/Core/Block.impl.hpp>
@@ -35,8 +35,8 @@ int main( int argc, char* argv[] ) {
 
 	const char * problem = nullptr ;
 
-	Primal::SolverStats stats ;
-	Primal::SolverOptions options ;
+	FrictionSolver::Stats stats ;
+	FrictionSolver::Options options ;
 
 	for( int i = 1 ; i < argc ; ++i )
 	{
@@ -55,7 +55,7 @@ int main( int argc, char* argv[] ) {
 				break ;
 			case 'a':
 				if( ++i == argc ) break ;
-				options.algorithm = (Primal::SolverOptions::Algorithm) to_uint( argv[i] ) ;
+				options.algorithm = (FrictionSolver::Options::Algorithm) to_uint( argv[i] ) ;
 				break ;
 			case 'g':
 				if( ++i == argc ) break ;
@@ -86,16 +86,16 @@ int main( int argc, char* argv[] ) {
 
 	Log::Verbose() << "Using algorithm: " ;
 	switch( options.algorithm ) {
-	case Primal::SolverOptions::GaussSeidel:
+	case FrictionSolver::Options::Cadoux_GS:
+		Log::Verbose() << "Cadoux / " ;
+	case FrictionSolver::Options::GaussSeidel:
 		Log::Verbose() << "Gauss-Seidel " ;
 		break ;
-	case Primal::SolverOptions::Cadoux_GS:
-		Log::Verbose() << "Cadoux / Gauss-Seidel " ;
-		break ;
-	case Primal::SolverOptions::Cadoux_PG_NoAssembly:
-		Log::Verbose() << "[No Assembly] " ;
+	case FrictionSolver::Options::Cadoux_PG:
+	case FrictionSolver::Options::Cadoux_PG_NoAssembly:
+		Log::Verbose() << "Cadoux / " ;
 	default:
-		Log::Verbose() << "Cadoux / Projected Gradient -- " ;
+		Log::Verbose() << " Projected Gradient -- " ;
 
 		switch( (bogus::projected_gradient::Variant) options.projectedGradientVariant ) {
 		case bogus::projected_gradient::Descent:
@@ -118,6 +118,12 @@ int main( int argc, char* argv[] ) {
 		break ;
 
 	}
+	if ( options.algorithm == FrictionSolver::Options::Cadoux_PG_NoAssembly ||
+		 options.algorithm == FrictionSolver::Options::PG_NoAssembly )
+	{
+		Log::Verbose() << " [Matrix-free]" ;
+	}
+
 	Log::Verbose() << std::endl ;
 
 
@@ -129,18 +135,18 @@ int main( int argc, char* argv[] ) {
 		DynVec r ( data.n() * 6 ) ;
 		r.setZero() ;
 
-		Primal solver( data ) ;
+		FrictionSolver solver( data ) ;
 		try {
 			solver.solve( options, r, stats ) ;
-		} catch ( Primal::SolverStats::TimeOutException& ){
+		} catch ( FrictionSolver::Stats::TimeOutException& ){
 			Log::Warning() << "Solver exceeded allowed time" << std::endl ;
 		}
 
-		Log::Info() << arg3( "Primal: %1 iterations,\t err= %2,\t time= %3 ",
+		Log::Info() << arg3( "Friction: %1 iterations,\t err= %2,\t time= %3 ",
 							 stats.nIterations(), stats.residual(), stats.time() ) << std::endl ;
 
 
-		for( const Primal::SolverStats::Entry& e : stats.log() ) {
+		for( const FrictionSolver::Stats::Entry& e : stats.log() ) {
 			std::cout << e.nIterations << "\t" << e.time << "\t" << e.residual << "\n" ;
 		}
 

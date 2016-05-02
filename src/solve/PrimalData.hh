@@ -14,6 +14,12 @@ namespace  d6 {
  *  (u_i, r_i) \in C(mu[i])
  */
 struct PrimalData {
+
+	enum MassMatrixMode {
+		Lumped,
+		General
+	} ;
+
 	typedef typename FormMat<SD,WD>::Type HType ;
 	typedef typename FormMat<SD,SD>::Type JacobianType ;
 	typedef typename FormMat<SD,SD>::SymType InvInertiaType ;
@@ -25,6 +31,16 @@ struct PrimalData {
 
 	std::vector< JacobianType > jacobians ;
 	std::vector< InvInertiaType > inv_inertia_matrices ;
+
+	// Mass matrix
+
+	typedef typename FormMat<WD,WD>::SymType MType ;
+	MassMatrixMode mass_matrix_mode ;
+
+	// For massMatrixMode != Lumped
+	MType  M ;
+	DynVec f ;
+
 
 	Index n() const { return H.rowsOfBlocks() ; }
 
