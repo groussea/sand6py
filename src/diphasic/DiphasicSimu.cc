@@ -1,6 +1,16 @@
 #include "DiphasicSimu.hh"
 
+#include "mono/Phase.hh"
+
+#include "DiphasicSolver.hh"
+
 #include "utils/Config.hh"
+#include "utils/File.hh"
+#include "utils/string.hh"
+
+#include "utils/serialization.hh"
+
+#include <boost/archive/binary_oarchive.hpp>
 
 namespace d6 {
 
@@ -10,7 +20,8 @@ DiphasicSimu::DiphasicSimu(const Config &config, const char *base_dir)
 	  m_meshes{ std::unique_ptr<PrimalMesh>(new PrimalMesh( m_config.box, m_config.res, &m_particles.geo() )),
 				std::unique_ptr<  DualMesh>(new   DualMesh( m_config.box, m_config.res, &m_particles.geo() ))
 			   },
-	  m_grains( new Phase( meshes() ) )
+	  m_grains( new Phase( meshes() ) ),
+	  m_solver( m_particles )
 {
 	m_particles.generate( config, meshes().primal(), *m_scenario );
 
@@ -39,7 +50,7 @@ void DiphasicSimu::update_fields(const Scalar dt)
 	m_stats.nNodes = meshes().primal().nNodes() ;
 
 	//! Compute new grid velocities
-	m_solver.step( m_config, dt, *m_grains, m_stats, m_rigidBodies, m_rbStresses ) ;
+	m_solver.step( m_config, dt, *m_grains ) ;
 }
 
 void DiphasicSimu::move_particles(const Scalar dt)

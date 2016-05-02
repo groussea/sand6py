@@ -9,8 +9,6 @@
 #include "simu/FormBuilder.hh"
 #include "simu/StressMassMatrix.hh"
 
-#include "geo/BoundaryInfo.hh"
-
 namespace d6 {
 
 struct Config ;
@@ -91,21 +89,33 @@ struct PhaseStepData {
 			std::vector< RBStresses > &rbStresses,
 			std::vector< RigidBodyData > &rbData  ) ;
 
+
+	// Re-used for diphasic
+
+	static void computeActiveNodes(const std::vector< bool >& activeCells,
+								   const PrimalShape &pShape , const DualShape &dShape,
+								   Active& primalNodes, Active& dualNodes
+								   ) ;
+
+	static void computePhiAndGradPhi(const PrimalScalarField& intPhi, PrimalScalarField&phi, PrimalVectorField &grad_phi ) ;
+
+	static void computeProjectors(const Config &config, const PrimalShape &pShape, const DualShape &dShape,
+						   const PrimalScalarField& lumped_mass,
+						   const Active& primalNodes, const Active& dualNodes, const Index nSuppNodes,
+						   Projectors& mats ) ;
+
+	static void computeRbProjectors(const Config& config, const PrimalShape &pShape,
+						   const std::vector< RigidBodyData > &rbData, Projectors& mats ) ;
+
 private:
-	void computeActiveNodes(const std::vector< bool >& activeCells,
-							const PrimalShape &pShape , const DualShape &dShape) ;
+
 	void computeActiveBodies( std::vector<RigidBody> &rigidBodies,
 							  std::vector<RBStresses> &rbStresses,
 							  std::vector< RigidBodyData > &rbData ) ;
 
-	void computeProjectors(const Config &config, const PrimalShape &pShape, const DualShape &dShape,
-						   const std::vector<RigidBodyData> & rbData, const PrimalScalarField& lumped_mass,
-						   Projectors& mats ) const ;
-
 	void computeAnisotropy(const DynVec& orientation,  const Config &config,
 						   typename FormMat<SD,SD>::SymType &Aniso ) const ;
 
-	void computePhiAndGradPhi(const PrimalScalarField& intPhi, PrimalScalarField&phi, PrimalVectorField &grad_phi ) const ;
 
 	void assembleMatrices(const Particles& particles, const Config& c, const Scalar dt,
 						   const DualShape &dShape, const PrimalScalarField &phiInt,
