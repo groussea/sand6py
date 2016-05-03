@@ -64,8 +64,6 @@ void DiphasicStepData::assembleMatrices(const Particles &particles,
 {
 	const Scalar mass_regul = 1.e-8 ;
 
-	(void) particles ;
-
 	bogus::Timer timer ;
 
 	const PrimalShape& pShape = intPhi.shape() ;
@@ -80,27 +78,21 @@ void DiphasicStepData::assembleMatrices(const Particles &particles,
 	   PhaseStepData::computeProjectors( config, pShape, dShape, intPhi, primalNodes, dualNodes, 0, activeProj ) ;
 	DiphasicStepData::computeProjectors( config, pShape, fullGridProj ) ;
 
+	const Index m  = pShape.nDOF() ;
 
-	const Index m = pShape.nDOF() ;
 
-	// Lumped mass matrix
+	PrimalScalarField beta( pShape ) ;
+
+	std::vector<Index> fullIndices( m );
+	std::iota( fullIndices.begin(), fullIndices.end(), 0);
+
+	// I - Full grid forms (A,B)
 	{
-		forms.M_lumped.setRows( m );
-		forms.M_lumped.setIdentity() ;
-		forms.M_lumped_inv.setRows( m );
-		forms.M_lumped_inv.setIdentity() ;
-	}
 
 
-
-	// I - Full grid forms
-	{
 		typedef FormBuilder< PrimalShape, PrimalShape > Builder ;
 		Builder builder( pShape, pShape ) ;
 		builder.reset( m );
-
-		std::vector<Index> fullIndices( m );
-		std::iota( fullIndices.begin(), fullIndices.end(), 0);
 
 		builder.addToIndex( fullIndices, fullIndices );
 		builder.makeCompressed();
@@ -129,7 +121,6 @@ void DiphasicStepData::assembleMatrices(const Particles &particles,
 		// Linear forms
 		{
 
-			PrimalScalarField beta( pShape ) ;
 			PrimalVectorField linearMomentum( pShape ) ;
 
 			linearMomentum.flatten() = config.alpha() * intPhiVel.flatten() ;
@@ -164,30 +155,98 @@ void DiphasicStepData::assembleMatrices(const Particles &particles,
 
 			forms.externalForces = gravity.flatten() ;
 
+
+
+			// Lumped mass matrix
+			{
+				forms.M_lumped.setRows( m );
+				forms.M_lumped.setIdentity() ;
+				forms.M_lumped_inv.setRows( m );
+				forms.M_lumped_inv.setIdentity() ;
+	#pragma omp parallel for
+				for( Index i = 0 ; i < m ; ++i ) {
+					forms.M_lumped.block( i ) *= beta[ i ] * config.volMass / ( dt * ( config.alpha() + 1 ) ) ;
+				}
+			}
+		}
+
+#ifndef FULL_FEM
+		forms.A += forms.M_lumped ;
+#endif
+
+		// Projections
+		const typename FormMat<WD,WD>::SymType IP = fullGridProj.vel.Identity() - fullGridProj.vel ;
+		forms.A = fullGridProj.vel * forms.A * fullGridProj.vel  + IP ;
+
 #pragma omp parallel for
-			for( Index i = 0 ; i < m ; ++i ) {
-				forms.M_lumped.block( i ) *= beta[ i ] * config.volMass / ( dt * ( config.alpha() + 1 ) ) ;
+		for( Index i = 0 ; i < m ; ++i ) {
+			const Scalar mass = forms.M_lumped.block(i).trace() / WD ;
+			forms.M_lumped         .block(i) = fullGridProj.vel.block(i) * mass
+					+ Mat::Identity() - fullGridProj.vel.block(i) ;
+			forms.M_lumped_inv     .block(i) = fullGridProj.vel.block(i) * 1./(mass + mass_regul )
+					+ Mat::Identity() - fullGridProj.vel.block(i) ;
+		}
+
+	}
+
+
+	// II Active forms -- R, C
+
+	{
+		const Index ma = primalNodes.count() ;
+
+		typedef FormBuilder< PrimalShape, PrimalShape > Builder ;
+		Builder builder( pShape, pShape ) ;
+		builder.reset( m );
+
+		builder.addToIndex( fullIndices, primalNodes.indices );
+		builder.makeCompressed();
+
+		forms.R.clear();
+		forms.R.setRows( ma );
+		forms.R.setCols( ma );
+		forms.R.setIdentity() ;
+
+		forms.C.clear();
+		forms.C.setRows( m );
+		forms.C.setCols( ma );
+		forms.C.cloneIndex( builder.index() ) ;
+		forms.C.setBlocksToZero() ;
+
+		DynVec Rcoeffs ( ma ) ;
+		Rcoeffs.setZero() ;
+
+		builder.integrate_particle( particles, [&]( Index i, Scalar w, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& )
+		{
+			Builder:: addDpV ( forms.C, w*config.alpha(), l_itp, l_dc_dx, r_itp, fullIndices, primalNodes.indices ) ;
+
+			const Vec& pos = particles.centers().col(i) ;
+			const Scalar phi = phase.fraction( pos ) ;
+
+			// TODO: evaluate other funcs
+			const Scalar vR = w*config.fluidFriction*config.alpha()*beta(pos)/(1-phi) ;
+
+			for( Index k = 0 ; k < l_itp.nodes.size() ; ++k ) {
+				const Index idx = primalNodes.indices[ l_itp.nodes[k]] ;
+				Rcoeffs[ idx ] += w * vR ;
+			}
+
+		}
+		);
+		Log::Debug() << "C Integrate particle: " << timer.elapsed() << std::endl ;
+
+		{
+#pragma omp parallel for
+			for( Index i = 0 ; i < ma ; ++i ) {
+				forms.R.block(i) = activeProj.vel.block(i) * Rcoeffs[i]
+						+ Mat::Identity() - activeProj.vel.block(i) ;
 			}
 		}
 
 	}
 
-#ifndef FULL_FEM
-	forms.A += forms.M_lumped ;
-#endif
 
-	// Projections
-	const typename FormMat<WD,WD>::SymType IP = fullGridProj.vel.Identity() - fullGridProj.vel ;
-	forms.A = fullGridProj.vel * forms.A * fullGridProj.vel  + IP ;
-
-#pragma omp parallel for
-	for( Index i = 0 ; i < m ; ++i ) {
-		const Scalar mass = forms.M_lumped.block(i).trace() / WD ;
-		forms.M_lumped         .block(i) = fullGridProj.vel.block(i) * mass
-				+ Mat::Identity() - fullGridProj.vel.block(i) ;
-		forms.M_lumped_inv     .block(i) = fullGridProj.vel.block(i) * 1./(mass + mass_regul )
-				+ Mat::Identity() - fullGridProj.vel.block(i) ;
-	}
+	// III Compositions
 
 }
 
