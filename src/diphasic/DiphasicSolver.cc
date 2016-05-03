@@ -11,8 +11,70 @@
 
 #include <bogus/Core/Utils/Timer.hpp>
 #include <bogus/Core/Block.impl.hpp>
+#include <bogus/Core/Block.io.hpp>
+
+
+#include <Eigen/Sparse>
 
 namespace d6 {
+
+
+static void makePenalizedEigenStokesMatrix(
+		const DiphasicStepData& stepData, Eigen::SparseMatrix<Scalar> & M,
+		const Scalar pen = 1.e-8
+		)
+{
+	// Assemble Eigen mat for
+	// (  A   -B^T     )
+	// ( -B   -pen Id  )
+
+	const Index m = stepData.forms.A.rows() ;
+	const Index n = stepData.forms.B.rows() ;
+	const Index r = m + n ;
+
+	typedef Eigen::SparseMatrix< Scalar > SM ;
+	SM A, B ;
+	bogus::convert( stepData.forms.A, A ) ;
+
+	//FIXME bogus single-line assignment
+	typename FormMat<1,WD>::Type Bproj ;
+	Bproj = stepData.forms.B * stepData.fullGridProj.vel ;
+
+	bogus::convert( Bproj, B ) ;
+
+	A.prune(1.) ;
+	B.prune(1.) ;
+
+	M.resize( r, r ) ;
+
+	typedef Eigen::Triplet<Scalar> Tpl ;
+	std::vector< Tpl > tpl ;
+	tpl.reserve( A.nonZeros() + /*C.nonZeros() +*/ n + 2*B.nonZeros()  );
+
+	for( Index i = 0 ; i < m ; ++i ) {
+		for( SM::InnerIterator it (A, i) ; it ; ++it )
+		{
+			tpl.push_back( Tpl( it.row(), i, it.value() ) );
+		}
+		for( SM::InnerIterator it (B, i) ; it ; ++it )
+		{
+			tpl.push_back( Tpl( m + it.row(), i, -it.value() ) );
+			tpl.push_back( Tpl( i, m + it.row(), -it.value() ) );
+		}
+	}
+	for( Index i = 0 ; i < n ; ++i ) {
+		//			for( SM::InnerIterator it (C, i) ; it ; ++it )
+		//			{
+		//				tpl.push_back( Tpl( m + it.row(), m + i, -it.value() ) );
+		//			}
+		tpl.push_back( Tpl( m + i, m + i, - pen ) );
+	}
+
+	M.setFromTriplets( tpl.begin(), tpl.end() ) ;
+
+}
+
+
 
 DiphasicSolver::DiphasicSolver(const DynParticles &particles)
 	: m_particles(particles)
@@ -34,7 +96,7 @@ void DiphasicSolver::solve(
 	const Config& config, const Scalar dt, const DiphasicStepData& stepData ,
 	Phase& phase ) const
 {
-	bogus::Timer timer ;
+	typedef Eigen::SparseMatrix< Scalar > SM ;
 
 	(void) dt ;
 
@@ -52,11 +114,23 @@ void DiphasicSolver::solve(
 	}
 
 	// Solve unconstrained momentum equation
-	DynVec u = stepData.forms.M_lumped_inv * rhs ;
-	solveSDP( stepData.forms.A, stepData.forms.M_lumped_inv, rhs, u ) ;
+	const Index m = stepData.forms.A.rows() ;
+	const Index n = stepData.forms.B.rows() ;
 
-	Log::Debug() << "Linear solve: " << timer.elapsed() << std::endl ;
+	DynVec x ( m+n ) ;
+	x.head( m ) = stepData.forms.M_lumped_inv * rhs ;
+	x.tail(n).setZero();
 
+	DynVec l ( m+n ) ;
+	l.head(m) = rhs ;
+	l.tail(n).setZero();
+
+	SM M ;
+	makePenalizedEigenStokesMatrix( stepData, M );
+	Eigen::SparseLU< SM > M_fac ( M ) ;
+	Log::Verbose() << "LU factorization : " << M_fac.info() << std::endl ;
+
+	x = M_fac.solve( l ) ;
 
 	DynVec wvh ( WD * stepData.nPrimalNodes() ) ;
 	wvh.setZero() ;
@@ -66,14 +140,14 @@ void DiphasicSolver::solve(
 	stepData.primalNodes.var2field( wvh, w ) ;
 
 	// U_1
-	phase.velocity.flatten() = u + w.flatten() ;
+	phase.velocity.flatten() = x.head(m) + w.flatten() ;
 
 	// U_2
 	PrimalScalarField ratio( phase.fraction.shape() ) ;
 	ratio.flatten() = phase.fraction.flatten().array() / (1. - phase.fraction.flatten().array() ) ;
 	w.multiply_by( ratio ) ;
 
-	phase.geo_proj.flatten() = u - (config.alpha()+1)*w.flatten() ;
+	phase.geo_proj.flatten() = x.head(m) - (config.alpha()+1)*w.flatten() ;
 }
 
 

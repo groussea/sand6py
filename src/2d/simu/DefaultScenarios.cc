@@ -15,7 +15,8 @@ namespace d6 {
 
 struct RayleighScenar : public Scenario {
 	Scalar particle_density( const Vec &x ) const override {
-		return ( x[1] >  .5*m_config->box[1] ) ? 1. : 0. ;
+		return ( x[1] >  .5*m_config->box[1] &&
+				(x - .5*m_config->box).squaredNorm() > std::pow(m_config->box[0]/64,2) ) ? 1. : 0. ;
 	}
 };
 

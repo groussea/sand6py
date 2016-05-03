@@ -1,7 +1,7 @@
 #ifndef D6_DIPHASIC_SOLVER_HH
 #define D6_DIPHASIC_SOLVER_HH
 
-#include "utils/scalar.hh"
+#include "utils/alg.hh"
 
 namespace d6 {
 
@@ -31,6 +31,10 @@ private:
 	void solve(
 			const Config& config, const Scalar dt, const DiphasicStepData& stepData ,
 			Phase& phase ) const ;
+
+	void solveStokes( const DiphasicStepData& stepData, const DynVec &l, DynVec &u, DynVec &p ) const ;
+
+
 };
 
 

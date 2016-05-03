@@ -37,9 +37,9 @@ bool adaptPrimal( const DynParticles &, const Phase &grains, Octree& primal )
 
 	bool adapted = false ;
 
+	// Test: splitting an arbitrary cell
 	Octree::Location loc ;
 	primal.locate( Vec::Ones(), loc ) ;
-
 	adapted = primal.split( loc.cell ) ;
 
 	if( adapted ) {
