@@ -18,7 +18,7 @@
 #define SPLIT
 #define MERGE
 
-//#define GRAD_FROM_VEL
+#define GRAD_FROM_VEL
 #define ANALYTIC_FRAME_CONVECTION
 
 namespace d6 {
@@ -38,6 +38,7 @@ void DynParticles::generate(const Config &c, const MeshType &mesh, const Scenari
 	 m_inertia.leftCols( count() ).setZero() ;
 	m_cohesion.leftCols( count() ).setConstant( 1. ) ;
 
+	m_geo.m_volumes.head( count() ) *= c.phiMax ;
 	m_meanVolume = m_geo.volumes().segment( 0, m_geo.count() ).sum() / m_geo.count() ;
 
 	// Randomize particle positions
