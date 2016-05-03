@@ -23,10 +23,10 @@ Config::Config() :
 	fps(240), substeps(1), nFrames( 1 ),
 	box( Vec::Ones() ), res( VecWi::Constant(10) ),
 	nSamples(2), randomize( 0 ),
-	volMass( 1.5e3 ),
+	volMass( 2.5e3 ),
 	viscosity( 1.e-3 ),
 	gravity( Vec::Zero() ),
-	phiMax(1), mu(0),
+	phiMax(0.6), mu(0),
 	delta_mu( 0 ), I0( 0.4 ), grainDiameter( 1.e-3 ),
 	muRigid( 0.5 ),
 	cohesion(0), cohesion_decay(0),
@@ -35,7 +35,8 @@ Config::Config() :
 	enforceMaxFrac( false ), weakStressBC( false ),
 	usePG( false ), useInfNorm( D6_DIM == 2 ),
 	boundary("cuve"),
-	output( true ), exportAllFields( bool(3-D6_DIM) ), dumpPrimalData( 0 )
+	output( true ), exportAllFields( bool(3-D6_DIM) ), dumpPrimalData( 0 ),
+	fluidVolMass( 1 ), fluidFriction( 1.e4 )
 {
 	gravity[WD-1] = -9.81 ;
 }

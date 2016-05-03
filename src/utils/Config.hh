@@ -49,6 +49,9 @@ namespace d6 {
 	CONFIG_FIELD( output			, bool			,	Units::None			) \
 	CONFIG_FIELD( exportAllFields	, bool			,	Units::None			) \
 	CONFIG_FIELD( dumpPrimalData	, unsigned		,	Units::None			) \
+	\
+	CONFIG_FIELD( fluidVolMass		, Scalar		,	Units::VolumicMass	) \
+	CONFIG_FIELD( fluidFriction		, Scalar		,	Units::LinearFriction) \
 
 
 struct Config
@@ -69,6 +72,10 @@ struct Config
 
 	Scalar time( unsigned frame_nb ) const {
 		return (frame_nb / fps ) ;
+	}
+
+	Scalar alpha() const {
+		return ( volMass - fluidVolMass ) / fluidVolMass ;
 	}
 
 #define CONFIG_FIELD( name, type, u ) \

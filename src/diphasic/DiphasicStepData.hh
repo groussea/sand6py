@@ -23,7 +23,8 @@ struct DiphasicStepData {
 	struct Forms {
 		// Linear form vectors
 
-		DynVec phiu ;           //!< integral of fraction times velocity
+		DynVec linearMomentum ;  //!< integral of fraction times velocity
+
 		DynVec externalForces ; //!< integral of external forces
 		DynArr volumes  ;	    //!< Volume aossciated to each node = int(1)
 
@@ -37,8 +38,11 @@ struct DiphasicStepData {
 
 		typename FormMat<WD,WD>::Type A ; //!< Mass + Visco ; Could be Symmetric when FormBuilder has sym index
 
-		typename FormMat<SD,WD>::Type H ; //!< \phi Tau:D(u)
+		typename FormMat< 1,WD>::Type B ; //!< p div v
+		typename FormMat< 1,WD>::Type C ; //!< grad(p) w alpha phi
+
 		typename FormMat<SD,WD>::Type G ; //!< \phi Tau:D(u)
+		typename FormMat<SD,WD>::Type H ; //!< \phi Tau:D(w)
 
 
 		typedef AbstractStressMassMatrix< DualShape > StressMassMatrix ;
@@ -65,11 +69,15 @@ struct DiphasicStepData {
 			const DynParticles& particles, const Config &config, const Scalar dt,
 			Phase &phase  ) ;
 
+
 private:
 
-	void assembleMatrices(const Particles& particles, const Config& c, const Scalar dt,
-						   const DualShape &dShape, const PrimalScalarField &phiInt ) ;
+	void assembleMatrices(const Particles& particles,
+		const Config &config, const Scalar dt, const DualShape &dShape, const Phase& phase,
+		const PrimalScalarField &intPhi, const PrimalVectorField &intPhiVel ) ;
 
+	static void computeProjectors(const Config &config, const PrimalShape &pShape,
+						   Projectors& mats ) ;
 };
 
 } //d6

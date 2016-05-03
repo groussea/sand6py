@@ -2,14 +2,6 @@
 
 namespace d6 {
 
-	static const Scalar s_L = 1.e-1 ;  //!< Typical length (m)
-	static const Scalar s_G = 9.81  ;  //!< Typical acceleration (m.s^{-2})
-	static const Scalar s_R = 1.5e3 ;  //!< Typical density (kg.m^{-3})
-
-	static const Scalar s_U = std::sqrt(s_G*s_L) ;  //!< Typical velocity (m.s^{-1})
-	static const Scalar s_T = (s_L/s_U) ;  //!< Typical time (s)
-
-
 	Units::Units()
 		: L(1), G(9.81), R(1.5e3)
 	{
@@ -24,6 +16,7 @@ namespace d6 {
 		T = L/U ;
 		P = R*G*L ;
 		M = P*T ;
+		X = R/T ;
 	}
 
 	Scalar Units::fromSI(Unit u) const {
@@ -52,6 +45,8 @@ namespace d6 {
 			return 1 * P ;
 		case Torque:
 			return std::pow( L, 3 ) * P ;
+		case LinearFriction:
+			return 1 * X ;
 		case None:
 			return 1;
 		}

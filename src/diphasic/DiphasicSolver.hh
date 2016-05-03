@@ -9,6 +9,7 @@ class DynParticles ;
 
 struct Phase ;
 struct Config ;
+struct DiphasicStepData ; ;
 
 class DiphasicSolver {
 
@@ -27,6 +28,9 @@ public:
 private:
 	const DynParticles& m_particles ;
 
+	void solve(
+			const Config& config, const Scalar dt, const DiphasicStepData& stepData ,
+			Phase& phase ) const ;
 };
 
 

@@ -20,7 +20,8 @@ struct Units {
 		Frequency,
 		Viscosity,
 		Stress,
-		Torque
+		Torque,
+		LinearFriction
 	} ;
 
 	Scalar L ;  //!< Typical length (m)
@@ -31,6 +32,7 @@ struct Units {
 	Scalar T ;  //!< Typical time (s)
 	Scalar P ;  //!< Typical stress (Pa)
 	Scalar M ;  //!< Typical viscosity (Pa.s)
+	Scalar X ;  //!< Typical fluid linear firction (N.s.m^{-4})
 
 	Units() ;
 
