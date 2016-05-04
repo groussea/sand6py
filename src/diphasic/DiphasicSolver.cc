@@ -36,9 +36,10 @@ static void makePenalizedEigenStokesMatrix(
 	const Index r = m + n + ma;
 
 	typedef Eigen::SparseMatrix< Scalar > SM ;
-	SM A, B, C, R ;
+	SM A, B, C, R, Q ;
 	bogus::convert( stepData.forms.A, A ) ;
 	bogus::convert( stepData.forms.R, R ) ;
+	bogus::convert( stepData.fullGridProj.pressure, Q ) ;
 
 	//FIXME bogus single-line assignment
 	{
@@ -55,6 +56,7 @@ static void makePenalizedEigenStokesMatrix(
 	B.prune(1.) ;
 	C.prune(1.) ;
 	R.prune(1.) ;
+	Q.prune(1.) ;
 
 	M.resize( r, r ) ;
 
@@ -85,7 +87,11 @@ static void makePenalizedEigenStokesMatrix(
 		}
 	}
 	for( Index i = 0 ; i < n ; ++i ) {
-		tpl.push_back( Tpl( m+ma + i, m+ma + i, - pen ) );
+		for( SM::InnerIterator it (Q, i) ; it ; ++it )
+		{
+			tpl.push_back( Tpl( m+ma+it.row(), m+ma+i, -pen * it.value() ) );
+		}
+//		tpl.push_back( Tpl( m+ma + i, m+ma + i, - pen ) );
 	}
 
 	M.setFromTriplets( tpl.begin(), tpl.end() ) ;
@@ -100,13 +106,42 @@ DiphasicSolver::DiphasicSolver(const DynParticles &particles)
 
 }
 
+static void printEnergies( const Config &config, Phase &phase, FluidPhase &fluid  )
+{
+
+	 ////// STATS
+
+
+	PrimalScalarField mphi = phase.fraction ;
+	mphi.flatten().array() = 1 - phase.fraction.flatten().array() ;
+
+	PrimalVectorField phiu1 = phase.velocity ;
+	phiu1.multiply_by( phase.fraction ) ;
+	PrimalVectorField phiu2 = fluid.velocity ;
+	phiu2.multiply_by( mphi ) ;
+
+	const Scalar Ec1 = (config.alpha()+1)*phase.velocity.flatten().dot(phiu1.flatten()) ;
+	const Scalar Ec2 =                    fluid.velocity.flatten().dot(phiu2.flatten()) ;
+
+
+	std::cout << "Ec1 \t " << 	Ec1 << "\n"
+			  << "Ec2 \t " << 	Ec2 << "\n"
+			  << "Ect \t " << 	Ec1 + Ec2
+			  << std::endl ;
+
+
+
+}
+
 void DiphasicSolver::step(const Config &config, const Scalar dt, Phase &phase, FluidPhase &fluid ) const
 {
 
 	DiphasicStepData stepData ;
 	stepData.compute( m_particles, config, dt, fluid, phase );
 
+	printEnergies( config, phase, fluid);
 	solve( config, dt, stepData, phase, fluid ) ;
+	printEnergies( config, phase, fluid);
 }
 
 
@@ -135,7 +170,6 @@ void DiphasicSolver::solve(
 	const Index m  = stepData.forms.A.rows() ;
 	const Index ma = stepData.forms.R.rows() ;
 	const Index n  = stepData.forms.B.rows() ;
-
 
 	DynVec x ( m+ma+n ) ;
 	x.head(m) = phase.velocity.flatten() ; // = stepData.forms.M_lumped_inv * rhs ;
@@ -172,6 +206,18 @@ void DiphasicSolver::solve(
 
 	std::cout << "U " << x.head(m).lpNorm< Eigen::Infinity >() << std::endl ;
 	std::cout << "W " << ( fluid.velocity.flatten() - phase.velocity.flatten()).lpNorm< Eigen::Infinity >() << std::endl ;
+
+
+	Eigen::VectorXd red = (stepData.forms.A * x.head(m) - stepData.fullGridProj.vel * stepData.forms.B.transpose() * stepData.fullGridProj.pressure * x.tail(n) - rhs)  ;
+	std::cout << "REEE  " << red.lpNorm<Eigen::Infinity>() << std::endl ;
+
+	std::cout << "UMU: " <<   (stepData.forms.M_lumped * x.head(m)).dot( x.head(m) ) << std::endl ;
+	std::cout << "UAU: " <<   (stepData.forms.A * x.head(m)).dot( x.head(m) ) << std::endl ;
+//	std::cout << "U-grad-p: " <<   -( stepData.fullGridProj.vel * stepData.forms.B.transpose() * stepData.fullGridProj.pressure * x.tail(n) ).dot(x.head(m)) << std::endl ;
+	std::cout << "U-grad-p: " <<   -( stepData.fullGridProj.vel * stepData.forms.B.transpose() * x.tail(n) ).dot(x.head(m)) << std::endl ;
+	std::cout << "U-dot-g: " <<  x.head(m).dot( stepData.fullGridProj.vel * stepData.forms.externalForces)  << std::endl ;
+	std::cout << "U-dot-lm: " <<  x.head(m).dot(stepData.forms.linearMomentum)  << std::endl ;
+
 }
 
 

@@ -16,6 +16,8 @@
 #include <bogus/Core/Block.impl.hpp>
 #include <bogus/Core/Utils/Timer.hpp>
 
+#define KINEMATIC_VISC
+
 namespace d6 {
 
 void DiphasicStepData::computeProjectors(const Config&config,
@@ -136,24 +138,20 @@ void DiphasicStepData::assembleMatrices(
 			typename PrimalShape::Interpolation itp ;
 			typename PrimalShape::Location loc ;
 
-			for( auto qpIt = pShape.qpBegin() ; qpIt != pShape.qpEnd() ; ++qpIt ) {
+//			builder.integrate_node( pShape.mesh().cellBegin(), pShape.mesh().cellEnd(),
+//									[&]( Scalar w, const Vec&pos, const P_Itp& itp, const P_Itp& ) {
+			builder.integrate_qp( [&]( Scalar w, const Vec&pos, const P_Itp& itp, const P_Dcdx&, const P_Itp&, const P_Dcdx&) {
 
-				const Scalar w = qpIt.weight() ;
-				qpIt.locate( loc ) ;
-
-				const Scalar phi = std::min( config.phiMax, phase.fraction( loc ) ) ;
-				const Vec u2 = fluid.velocity( loc ) ;
-//				const Vec pos_prev = pShape.mesh().pos( loc ) ;
-				Vec pos_prev = pShape.mesh().clamp_point( pShape.mesh().pos( loc ) - dt*u2 ) ;
+				const Scalar phi = std::min( config.phiMax, phase.fraction( pos ) ) ;
+				const Vec u2 = fluid.velocity( pos ) ;
+				Vec pos_prev = pShape.mesh().clamp_point( pos - dt*u2 ) ;
 				const Vec u2_adv = fluid.velocity( pos_prev ) ;
-
-				pShape.interpolate( loc, itp );
 
 				for( Index k = 0 ; k < itp.nodes.size() ; ++k ) {
 					beta[ itp.nodes[k] ]           += w * itp.coeffs[k] * (1 - phi) ;
 					linearMomentum[ itp.nodes[k] ] += w * itp.coeffs[k] * (1 - phi) * u2_adv ;
 				}
-			}
+			} ) ;
 
 			forms.linearMomentum = linearMomentum.flatten() * config.fluidVolMass / dt ;
 
@@ -226,10 +224,13 @@ void DiphasicStepData::assembleMatrices(
 		Rcoeffs.setZero() ;
 
 
-		builder.integrate_particle( particles, [&]( Index i, Scalar w, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& )
+		builder.integrate_particle( particles, [&]( Index i, Scalar w, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& r_dc_dx)
 		{
 			Builder:: addDpV ( forms.C, w*config.alpha(), l_itp, l_dc_dx, r_itp, fullIndices, primalNodes.indices ) ;
 
+#ifdef KINEMATIC_VISC
+			Builder:: addDuDv( forms.A, w*config.alpha()*2*config.viscosity, l_itp, l_dc_dx, r_itp, r_dc_dx, fullIndices, fullIndices ) ;
+#endif
 
 			// TODO: test w/ other funcs
 			const Vec& pos = particles.centers().col(i) ;
@@ -299,6 +300,9 @@ void DiphasicStepData::compute(const DynParticles& particles,
 	// Compute phi and grad_phi (for visualization purposes )
 	PhaseStepData::computePhiAndGradPhi( intPhiPrimal, phase.fraction, phase.grad_phi ) ;
 	std::cout << "MAX phi " << phase.fraction.max_abs() << std::endl ;
+
+	phase.velocity = intPhiVel  ;
+	phase.velocity.divide_by_positive( intPhiPrimal ) ;
 
 	// Active nodes
 	PhaseStepData::computeActiveNodes( activeCells, pShape, dShape, primalNodes, dualNodes ) ;
