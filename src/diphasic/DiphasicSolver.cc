@@ -43,11 +43,11 @@ static void makePenalizedEigenStokesMatrix(
 	//FIXME bogus single-line assignment
 	{
 		typename FormMat<1,WD>::Type Bproj ;
-		Bproj = stepData.forms.B * stepData.fullGridProj.vel ;
+		Bproj = stepData.fullGridProj.pressure * ( stepData.forms.B * stepData.fullGridProj.vel ) ;
 		bogus::convert( Bproj, B ) ;
 
 		typename FormMat<1,WD>::Type Cproj ;
-		Cproj = stepData.forms.C * stepData.activeProj.vel ;
+		Cproj = stepData.fullGridProj.pressure * ( stepData.forms.C * stepData.activeProj.vel ) ;
 		bogus::convert( Cproj, C ) ;
 	}
 
@@ -165,10 +165,13 @@ void DiphasicSolver::solve(
 
 	// U_2 = u - (alpha+1) phi/(1-phi) wh
 	PrimalScalarField ratio( phase.fraction.shape() ) ;
-	ratio.flatten() = phase.fraction.flatten().array() / (1. - phase.fraction.flatten().array() ) ;
+	ratio.flatten() = phase.fraction.flatten().array() / (1. - phase.fraction.flatten().array().min(config.phiMax) ) ;
 	fluid.velocity.multiply_by( ratio ) ;
 
 	fluid.velocity.flatten() = x.head(m) - (config.alpha()+1)*fluid.velocity.flatten() ;
+
+	std::cout << "U " << x.head(m).lpNorm< Eigen::Infinity >() << std::endl ;
+	std::cout << "W " << ( fluid.velocity.flatten() - phase.velocity.flatten()).lpNorm< Eigen::Infinity >() << std::endl ;
 }
 
 

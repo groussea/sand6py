@@ -42,14 +42,17 @@ void Particles::generate(const ScalarExpr &expr, const unsigned nSamples,
 		const Scalar volume = cellGeo.volume() / n ;
 
 		for( size_t i = m_count ; i < m_count+n ; ) {
-			if( !alignOnCells && expr( m_centers.col(i) ) == 0. ) {
+			const Scalar phi = expr( m_centers.col(i) ) ;
+			if( !alignOnCells && phi == 0. ) {
 				-- n ;
 				m_centers.col(i) = m_centers.col(m_count+n) ;
 				m_frames .col(i) = m_frames .col(m_count+n) ;
-			} else ++i ;
+			} else {
+				m_volumes[i] = volume * phi ;
+				++i ;
+			}
 		}
 
-		m_volumes.segment( m_count, n ).setConstant( volume ) ;
 
 		m_count += n ;
 	}

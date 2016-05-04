@@ -56,7 +56,11 @@ struct DiphasicStepData {
 	//! Projectors enforcing boundary conditions
 	typedef PhaseStepData::Projectors Projectors ;
 	Projectors activeProj ;
-	Projectors fullGridProj ;
+	struct FullProjectors {
+		typename FormMat<WD,WD>::SymType vel ;
+		typename FormMat< 1, 1>::SymType pressure ;
+	} proj ;
+	FullProjectors fullGridProj ;
 
 	Index nPrimalNodes() const
 	{
@@ -81,7 +85,7 @@ private:
 						  const PrimalScalarField &intPhi, const PrimalVectorField &intPhiVel ) ;
 
 	static void computeProjectors(const Config &config, const PrimalShape &pShape,
-						   Projectors& mats ) ;
+						   FullProjectors& mats ) ;
 };
 
 } //d6

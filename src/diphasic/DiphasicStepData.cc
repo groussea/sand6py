@@ -19,7 +19,7 @@
 namespace d6 {
 
 void DiphasicStepData::computeProjectors(const Config&config,
-									  const PrimalShape& pShape, Projectors& mats )
+									  const PrimalShape& pShape, FullProjectors& mats )
 {
 	//Full grid projectors
 
@@ -28,10 +28,12 @@ void DiphasicStepData::computeProjectors(const Config&config,
 	mats.vel.setRows( m );
 	mats.vel.setIdentity() ;
 
-	mats.stress.setRows( m );
-	mats.stress.setIdentity() ;
+	mats.pressure.setRows( m );
+	mats.pressure.setIdentity() ;
 
 	StrBoundaryMapper bdMapper ( config.boundary ) ;
+
+	MatS stressProj ;
 
 	for( auto cellIt = pShape.mesh().cellBegin() ;
 		 cellIt != pShape.mesh().cellEnd() ; ++cellIt )
@@ -52,7 +54,8 @@ void DiphasicStepData::computeProjectors(const Config&config,
 			info.velProj( mats.vel.block( i ) ) ;
 
 			if( !config.weakStressBC ) {
-				info.stressProj( mats.stress.block( i ) ) ;
+				info.stressProj( stressProj ) ;
+				mats.pressure.block( i ) = stressProj.block<1,1>(0,0) ;
 			}
 		}
 
@@ -84,8 +87,6 @@ void DiphasicStepData::assembleMatrices(
 
 	const Index m  = pShape.nDOF() ;
 
-
-	PrimalScalarField beta( pShape ) ;
 
 	std::vector<Index> fullIndices( m );
 	std::iota( fullIndices.begin(), fullIndices.end(), 0);
@@ -125,9 +126,11 @@ void DiphasicStepData::assembleMatrices(
 		// Linear forms
 		{
 
+			// Integrated quantities
 			PrimalVectorField linearMomentum( pShape ) ;
+			PrimalScalarField beta( pShape ) ;
 
-			linearMomentum.flatten() = config.alpha() * intPhiVel.flatten() ;
+			linearMomentum.flatten() = (1+config.alpha()) * intPhiVel.flatten() ;
 			beta.flatten()           = config.alpha() * intPhi.flatten() ;
 
 			typename PrimalShape::Interpolation itp ;
@@ -138,9 +141,10 @@ void DiphasicStepData::assembleMatrices(
 				const Scalar w = qpIt.weight() ;
 				qpIt.locate( loc ) ;
 
-				const Scalar phi = phase.fraction( loc ) ;
+				const Scalar phi = std::min( config.phiMax, phase.fraction( loc ) ) ;
 				const Vec u2 = fluid.velocity( loc ) ;
-				const Vec pos_prev = pShape.mesh().clamp_point( pShape.mesh().pos( loc ) - dt*u2 ) ;
+//				const Vec pos_prev = pShape.mesh().pos( loc ) ;
+				Vec pos_prev = pShape.mesh().clamp_point( pShape.mesh().pos( loc ) - dt*u2 ) ;
 				const Vec u2_adv = fluid.velocity( pos_prev ) ;
 
 				pShape.interpolate( loc, itp );
@@ -151,12 +155,12 @@ void DiphasicStepData::assembleMatrices(
 				}
 			}
 
-			forms.linearMomentum = linearMomentum.flatten() * config.volMass / ( dt * ( config.alpha() + 1 ) ) ;
+			forms.linearMomentum = linearMomentum.flatten() * config.fluidVolMass / dt ;
 
 			PrimalVectorField gravity ( pShape ) ;
 			gravity.set_constant( config.gravity );
 			gravity.multiply_by( beta ) ;
-			gravity.flatten() *= config.volMass / ( config.alpha() + 1 ) ;
+			gravity.flatten() *= config.fluidVolMass  ;
 
 			forms.externalForces = gravity.flatten() ;
 
@@ -170,7 +174,7 @@ void DiphasicStepData::assembleMatrices(
 				forms.M_lumped_inv.setIdentity() ;
 	#pragma omp parallel for
 				for( Index i = 0 ; i < m ; ++i ) {
-					forms.M_lumped.block( i ) *= beta[ i ] * config.volMass / ( dt * ( config.alpha() + 1 ) ) ;
+					forms.M_lumped.block( i ) *= beta[ i ] * config.fluidVolMass /  dt ;
 				}
 			}
 		}
@@ -221,20 +225,21 @@ void DiphasicStepData::assembleMatrices(
 		DynVec Rcoeffs ( ma ) ;
 		Rcoeffs.setZero() ;
 
+
 		builder.integrate_particle( particles, [&]( Index i, Scalar w, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& )
 		{
 			Builder:: addDpV ( forms.C, w*config.alpha(), l_itp, l_dc_dx, r_itp, fullIndices, primalNodes.indices ) ;
 
 
 			// TODO: test w/ other funcs
-//			const Vec& pos = particles.centers().col(i) ;
-//			const Scalar phi = std::min( config.phiMax, phase.fraction( pos ) ) ;
-//			const Scalar vR = w*config.fluidFriction*config.alpha()*beta(pos)/(1-phi) ;
-			const Scalar vR = w*config.fluidFriction*config.alpha();
+			const Vec& pos = particles.centers().col(i) ;
+			const Scalar phi = std::min( config.phiMax, phase.fraction( pos ) ) ;
+			const Scalar vR = (1 + config.alpha() * phi )/(1-phi) ;
+//			const Scalar vR = 1;
 
 			for( Index k = 0 ; k < l_itp.nodes.size() ; ++k ) {
 				const Index idx = primalNodes.indices[ l_itp.nodes[k]] ;
-				Rcoeffs[ idx ] += w * vR ;
+				Rcoeffs[ idx ] += w * l_itp.coeffs[k] * config.fluidFriction*config.alpha()* vR ;
 			}
 
 		}
