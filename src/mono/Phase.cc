@@ -1,11 +1,11 @@
 #include "Phase.hh"
 #include "PhaseMeshes.hh"
 
-#include "instanciations.hh"
-
 #include "simu/DynParticles.hh"
 
 #include "geo/FieldBase.impl.hh" //interpolate
+
+#include "geo/Octree.hh"
 
 namespace d6 {
 
@@ -94,4 +94,4 @@ void AbstractPhaseMeshes<PMeshT, PMeshT>::adapt( const DynParticles& particles, 
 
 template struct AbstractPhaseMeshes<PrimalMesh, DualMesh> ;
 
-}
+} //d6

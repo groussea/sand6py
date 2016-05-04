@@ -5,6 +5,7 @@
 #include "geo/LevelSet.hh"
 
 #include "mono/Phase.hh"
+#include "diphasic/FluidPhase.hh"
 #include "visu/Offline.hh"
 
 #include "utils/Log.hh"
@@ -542,6 +543,8 @@ const typename GLViewer::VectorField& GLViewer::getVectorEntity() const
 		return m_offline.grains().fcontact ;
 	case veProj :
 		return m_offline.grains().geo_proj ;
+	case veFluidVel :
+		return m_offline.fluid() .velocity ;
 	default:
 		return m_offline.grains().grad_phi ;
 	}
@@ -555,6 +558,8 @@ typename GLViewer::ScalarField GLViewer::getScalarEntity() const
 		return m_offline.grains().stresses.trace().interpolate< Shape >( m_offline.meshes().primal() ) ;
 	case seDivergence :
 		return m_offline.grains().sym_grad.trace().interpolate< Shape >( m_offline.meshes().primal() ) ;
+	case sePorePressure :
+		return m_offline.fluid().pressure ;
 	default:
 		return m_offline.grains().spi_grad.interpolate< Shape >( m_offline.meshes().primal() );
 	}

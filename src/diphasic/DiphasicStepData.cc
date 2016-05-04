@@ -1,5 +1,7 @@
 #include "DiphasicStepData.hh"
 
+#include "FluidPhase.hh"
+
 #include "mono/Phase.hh"
 #include "mono/PhaseStepData.hh"
 
@@ -58,8 +60,10 @@ void DiphasicStepData::computeProjectors(const Config&config,
 
 }
 
-void DiphasicStepData::assembleMatrices(const Particles &particles,
-		const Config &config, const Scalar dt, const DualShape &dShape, const Phase& phase,
+void DiphasicStepData::assembleMatrices(
+		const Particles &particles,
+		const Config &config, const Scalar dt, const DualShape &dShape,
+		const FluidPhase& fluid, const Phase& phase,
 		const PrimalScalarField &intPhi, const PrimalVectorField& intPhiVel )
 {
 	const Scalar mass_regul = 1.e-8 ;
@@ -135,8 +139,9 @@ void DiphasicStepData::assembleMatrices(const Particles &particles,
 				qpIt.locate( loc ) ;
 
 				const Scalar phi = phase.fraction( loc ) ;
-				const Vec u2 = phase.geo_proj( loc ) ;
-				const Vec u2_adv = phase.geo_proj( pShape.mesh().pos( loc ) - dt*u2 ) ;
+				const Vec u2 = fluid.velocity( loc ) ;
+				const Vec pos_prev = pShape.mesh().clamp_point( pShape.mesh().pos( loc ) - dt*u2 ) ;
+				const Vec u2_adv = fluid.velocity( pos_prev ) ;
 
 				pShape.interpolate( loc, itp );
 
@@ -220,11 +225,12 @@ void DiphasicStepData::assembleMatrices(const Particles &particles,
 		{
 			Builder:: addDpV ( forms.C, w*config.alpha(), l_itp, l_dc_dx, r_itp, fullIndices, primalNodes.indices ) ;
 
-			const Vec& pos = particles.centers().col(i) ;
-			const Scalar phi = phase.fraction( pos ) ;
 
-			// TODO: evaluate other funcs
-			const Scalar vR = w*config.fluidFriction*config.alpha()*beta(pos)/(1-phi) ;
+			// TODO: test w/ other funcs
+//			const Vec& pos = particles.centers().col(i) ;
+//			const Scalar phi = std::min( config.phiMax, phase.fraction( pos ) ) ;
+//			const Scalar vR = w*config.fluidFriction*config.alpha()*beta(pos)/(1-phi) ;
+			const Scalar vR = w*config.fluidFriction*config.alpha();
 
 			for( Index k = 0 ; k < l_itp.nodes.size() ; ++k ) {
 				const Index idx = primalNodes.indices[ l_itp.nodes[k]] ;
@@ -254,7 +260,7 @@ void DiphasicStepData::assembleMatrices(const Particles &particles,
 
 
 void DiphasicStepData::compute(const DynParticles& particles,
-		const Config &config, const Scalar dt, Phase &phase )
+		const Config &config, const Scalar dt, const FluidPhase& fluid, Phase &phase )
 {
 
 	const PrimalShape& pShape = phase.velocity.shape() ;
@@ -287,7 +293,6 @@ void DiphasicStepData::compute(const DynParticles& particles,
 
 	// Compute phi and grad_phi (for visualization purposes )
 	PhaseStepData::computePhiAndGradPhi( intPhiPrimal, phase.fraction, phase.grad_phi ) ;
-
 	std::cout << "MAX phi " << phase.fraction.max_abs() << std::endl ;
 
 	// Active nodes
@@ -296,7 +301,7 @@ void DiphasicStepData::compute(const DynParticles& particles,
 	Log::Verbose() << "  Dual nodes: " <<   nDualNodes() << " / " << dShape.nDOF() << std::endl;
 
 	// Bilinear forms matrices
-	assembleMatrices( particles.geo(), config, dt, dShape, phase, intPhiPrimal, intPhiVel );
+	assembleMatrices( particles.geo(), config, dt, dShape, fluid, phase, intPhiPrimal, intPhiVel );
 
 	dualNodes  .field2var( intPhiDual, forms.fraction ) ;
 

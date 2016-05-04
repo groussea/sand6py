@@ -13,6 +13,7 @@ namespace d6 {
 struct Config ;
 class DynParticles ;
 struct Phase ;
+struct FluidPhase ;
 
 struct DiphasicStepData {
 
@@ -69,14 +70,15 @@ struct DiphasicStepData {
 
 	void compute(
 			const DynParticles& particles, const Config &config, const Scalar dt,
-			Phase &phase  ) ;
+			const FluidPhase& fluid, Phase &phase  ) ;
 
 
 private:
 
 	void assembleMatrices(const Particles& particles,
-		const Config &config, const Scalar dt, const DualShape &dShape, const Phase& phase,
-		const PrimalScalarField &intPhi, const PrimalVectorField &intPhiVel ) ;
+						  const Config &config, const Scalar dt, const DualShape &dShape,
+						  const FluidPhase& fluid, const Phase& phase,
+						  const PrimalScalarField &intPhi, const PrimalVectorField &intPhiVel ) ;
 
 	static void computeProjectors(const Config &config, const PrimalShape &pShape,
 						   Projectors& mats ) ;

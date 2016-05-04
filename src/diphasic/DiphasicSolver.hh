@@ -8,8 +8,9 @@ namespace d6 {
 class DynParticles ;
 
 struct Phase ;
+struct FluidPhase ;
 struct Config ;
-struct DiphasicStepData ; ;
+struct DiphasicStepData ;
 
 class DiphasicSolver {
 
@@ -22,15 +23,14 @@ public:
 
 	//! Solve for end-of-steps velocities, reading initial quantities from the particles
 	void step(const Config &config, const Scalar dt,
-			  Phase& phase  ) const ;
+			  Phase& phase, FluidPhase &fluid) const ;
 
 
 private:
 	const DynParticles& m_particles ;
 
-	void solve(
-			const Config& config, const Scalar dt, const DiphasicStepData& stepData ,
-			Phase& phase ) const ;
+	void solve(const Config& config, const Scalar dt, const DiphasicStepData& stepData ,
+			Phase& phase , FluidPhase &fluid) const ;
 
 	void solveStokes( const DiphasicStepData& stepData, const DynVec &l, DynVec &u, DynVec &p ) const ;
 

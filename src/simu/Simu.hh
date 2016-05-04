@@ -10,7 +10,6 @@
 namespace d6 {
 
 struct Config ;
-struct Phase ;
 class RigidBody ;
 class Scenario ;
 

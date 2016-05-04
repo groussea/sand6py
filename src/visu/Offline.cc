@@ -2,6 +2,7 @@
 #include "Offline.hh"
 
 #include "mono/Phase.hh"
+#include "diphasic/FluidPhase.hh"
 
 #include "geo/MeshImpl.hh"
 
@@ -23,7 +24,8 @@ Offline::Offline(const char *base_dir)
 	  m_meshes{ std::unique_ptr<PrimalMesh>(new PrimalMesh( Vec::Ones(), VecWi::Ones(), &m_particles )),
 				std::unique_ptr<  DualMesh>(new   DualMesh( Vec::Ones(), VecWi::Ones(), &m_particles ))
 			   },
-	  m_grains( new Phase( m_meshes ) )
+	  m_grains( new Phase( m_meshes ) ),
+	  m_fluid ( new FluidPhase( m_meshes ) )
 {
 	m_config.from_file( FileInfo( base_dir ).filePath( "config" ) ) ;
 	m_config.internalize() ;
@@ -61,6 +63,13 @@ bool Offline::load_frame(unsigned frame )
 			boost::archive::binary_iarchive ia(ifs);
 			ia >> *m_grains ;
 		}
+		// Fluid
+		 {
+			std::ifstream ifs( dir.filePath("fluid") );
+			boost::archive::binary_iarchive ia(ifs);
+			ia >> *m_fluid ;
+		}
+
 		// Log
 		{
 			m_events.clear() ;
@@ -86,13 +95,14 @@ bool Offline::load_frame(unsigned frame )
 				ia >> ptr ;
 				m_levelSets.emplace_back( ptr ) ;
 			}
-
 		}
 
 	} catch (boost::archive::archive_exception &e) {
 		Log::Error() << "Error reading frame data: " << e.what() << std::endl ;
 		return false ;
 	}
+
+
 
 	Log::Info() << "Loaded frame " << frame << std::endl ;
 

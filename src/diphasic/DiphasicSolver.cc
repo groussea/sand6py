@@ -2,6 +2,7 @@
 
 #include "DiphasicStepData.hh"
 
+#include "FluidPhase.hh"
 #include "mono/Phase.hh"
 
 #include "simu/LinearSolver.hh"
@@ -99,19 +100,19 @@ DiphasicSolver::DiphasicSolver(const DynParticles &particles)
 
 }
 
-void DiphasicSolver::step(const Config &config, const Scalar dt, Phase &phase ) const
+void DiphasicSolver::step(const Config &config, const Scalar dt, Phase &phase, FluidPhase &fluid ) const
 {
 
 	DiphasicStepData stepData ;
-	stepData.compute( m_particles, config, dt, phase );
+	stepData.compute( m_particles, config, dt, fluid, phase );
 
-	solve( config, dt, stepData, phase) ;
+	solve( config, dt, stepData, phase, fluid ) ;
 }
 
 
 void DiphasicSolver::solve(
 	const Config& config, const Scalar dt, const DiphasicStepData& stepData ,
-	Phase& phase ) const
+	Phase& phase, FluidPhase &fluid ) const
 {
 	typedef Eigen::SparseMatrix< Scalar > SM ;
 
@@ -135,10 +136,13 @@ void DiphasicSolver::solve(
 	const Index ma = stepData.forms.R.rows() ;
 	const Index n  = stepData.forms.B.rows() ;
 
+
 	DynVec x ( m+ma+n ) ;
-	x.head( m ).setZero() ; // = stepData.forms.M_lumped_inv * rhs ;
-	x.segment( m, ma ).setZero() ;
-	x.tail(n).setZero();
+	x.head(m) = phase.velocity.flatten() ; // = stepData.forms.M_lumped_inv * rhs ;
+	x.tail(n) = fluid.pressure.flatten() ;
+
+	auto w = x.segment( m, ma ) ;
+	stepData.primalNodes.field2var( fluid.velocity, w ) ;
 
 	DynVec l ( m+ma+n ) ;
 	l.head(m) = rhs ;
@@ -152,22 +156,19 @@ void DiphasicSolver::solve(
 
 	x = M_fac.solve( l ) ;
 
-	DynVec wvh ( WD * stepData.nPrimalNodes() ) ;
-	wvh.setZero() ;
-
 	// Output
-	PrimalVectorField w( phase.velocity.shape() ) ;
-	stepData.primalNodes.var2field( wvh, w ) ;
+	fluid.pressure.flatten() = x.tail(n) ;
 
-	// U_1
-	phase.velocity.flatten() = x.head(m) + w.flatten() ;
+	// U_1 = u + wh
+	stepData.primalNodes.var2field( w, fluid.velocity ) ;
+	phase.velocity.flatten() = x.head(m) + fluid.velocity.flatten() ;
 
-	// U_2
+	// U_2 = u - (alpha+1) phi/(1-phi) wh
 	PrimalScalarField ratio( phase.fraction.shape() ) ;
 	ratio.flatten() = phase.fraction.flatten().array() / (1. - phase.fraction.flatten().array() ) ;
-	w.multiply_by( ratio ) ;
+	fluid.velocity.multiply_by( ratio ) ;
 
-	phase.geo_proj.flatten() = x.head(m) - (config.alpha()+1)*w.flatten() ;
+	fluid.velocity.flatten() = x.head(m) - (config.alpha()+1)*fluid.velocity.flatten() ;
 }
 
 

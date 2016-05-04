@@ -1,6 +1,7 @@
 #include "DiphasicSimu.hh"
 
 #include "mono/Phase.hh"
+#include "FluidPhase.hh"
 
 #include "DiphasicSolver.hh"
 
@@ -21,6 +22,7 @@ DiphasicSimu::DiphasicSimu(const Config &config, const char *base_dir)
 				std::unique_ptr<  DualMesh>(new   DualMesh( m_config.box, m_config.res, &m_particles.geo() ))
 			   },
 	  m_grains( new Phase( meshes() ) ),
+	  m_fluid ( new FluidPhase( meshes() ) ),
 	  m_solver( m_particles )
 {
 	m_particles.generate( config, meshes().primal(), *m_scenario );
@@ -33,6 +35,9 @@ DiphasicSimu::DiphasicSimu(const Config &config, const char *base_dir)
 	m_grains->sym_grad.set_zero();
 	m_grains->spi_grad.set_zero();
 	m_grains->geo_proj.set_zero();
+
+	m_fluid->pressure.set_zero() ;
+	m_fluid->velocity.set_zero() ;
 }
 
 DiphasicSimu::~DiphasicSimu()
@@ -50,7 +55,7 @@ void DiphasicSimu::update_fields(const Scalar dt)
 	m_stats.nNodes = meshes().primal().nNodes() ;
 
 	//! Compute new grid velocities
-	m_solver.step( m_config, dt, *m_grains ) ;
+	m_solver.step( m_config, dt, *m_grains, *m_fluid ) ;
 }
 
 void DiphasicSimu::move_particles(const Scalar dt)
@@ -76,6 +81,12 @@ void DiphasicSimu::dump_fields( unsigned frame ) const
 		std::ofstream ofs( dir.filePath("fields") );
 		boost::archive::binary_oarchive oa(ofs);
 		oa << *m_grains ;
+	}
+	// Pressure, Relative vel
+	{
+		std::ofstream ofs( dir.filePath("fluid") );
+		boost::archive::binary_oarchive oa(ofs);
+		oa << *m_fluid ;
 	}
 }
 

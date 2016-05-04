@@ -13,6 +13,7 @@
 namespace d6 {
 
 struct Phase ;
+struct FluidPhase ;
 class LevelSet ;
 
 class Offline
@@ -28,6 +29,7 @@ public:
 
 	const PhaseMeshes &meshes() const { return m_meshes ; }
 	const Phase &grains() const { return *m_grains ; }
+	const FluidPhase  &fluid() const { return *m_fluid ; }
 
 	const char* base_dir() const
 	{
@@ -61,7 +63,8 @@ private:
 	Particles::EventLog  m_events ;
 
 	PhaseMeshes  m_meshes ;
-	std::unique_ptr< Phase >     m_grains ;
+	std::unique_ptr< Phase >      m_grains ;
+	std::unique_ptr< FluidPhase > m_fluid  ;
 
 	std::vector< std::unique_ptr< LevelSet > > m_levelSets ;
 } ;

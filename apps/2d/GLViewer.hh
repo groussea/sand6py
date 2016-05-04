@@ -33,6 +33,7 @@ public:
 		seFraction,
 		seSpin,
 		seDivergence,
+		sePorePressure,
 		nSE
 	} ;
 
@@ -41,6 +42,7 @@ public:
 		veGradPhi,
 		veProj,
 		veForce,
+		veFluidVel,
 		nVE
 	} ;
 

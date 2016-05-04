@@ -9,6 +9,9 @@
 
 namespace d6 {
 
+struct Phase ;
+struct FluidPhase ;
+
 class DiphasicSimu : public Simu {
 
 public:
@@ -29,7 +32,8 @@ protected:
 
 private:
 	PhaseMeshes  m_meshes ;
-	std::unique_ptr<Phase>     m_grains ;
+	std::unique_ptr<Phase>      m_grains ;
+	std::unique_ptr<FluidPhase> m_fluid ;
 
 	DiphasicSolver m_solver ;
 
