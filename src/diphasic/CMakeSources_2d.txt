@@ -4,3 +4,5 @@ diphasic/DiphasicSolver.cc
 diphasic/DiphasicSolver.hh
 diphasic/DiphasicStepData.cc
 diphasic/DiphasicStepData.hh
+diphasic/FluidPhase.cc
+diphasic/FluidPhase.hh

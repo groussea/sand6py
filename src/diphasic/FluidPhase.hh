@@ -16,9 +16,11 @@ struct FluidPhase
 {
 	PrimalScalarField pressure ;
 	PrimalVectorField velocity ;
+	PrimalVectorField mavg_vel ;
 
 	FluidPhase( const PhaseMeshes & meshes )
-		: pressure(meshes.primal()), velocity(meshes.primal())
+		: pressure(meshes.primal()), velocity(meshes.primal()),
+		  mavg_vel(meshes.primal())
 	{}
 
 	FluidPhase( const PhaseMeshes & meshes, const FluidPhase& src ) ;
@@ -27,6 +29,7 @@ struct FluidPhase
 	void serialize( Archive &ar, unsigned int ) {
 		ar & pressure ;
 		ar & velocity ;
+		ar & mavg_vel ;
 	}
 
 };

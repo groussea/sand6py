@@ -16,7 +16,8 @@
 #include <bogus/Core/Block.impl.hpp>
 #include <bogus/Core/Utils/Timer.hpp>
 
-#define KINEMATIC_VISC
+//#define KINEMATIC_VISC
+//#define U_MOMENTUM
 
 namespace d6 {
 
@@ -135,6 +136,10 @@ void DiphasicStepData::assembleMatrices(
 			linearMomentum.flatten() = (1+config.alpha()) * intPhiVel.flatten() ;
 			beta.flatten()           = config.alpha() * intPhi.flatten() ;
 
+#ifdef U_MOMENTUM
+			linearMomentum.set_zero() ;
+#endif
+
 			typename PrimalShape::Interpolation itp ;
 			typename PrimalShape::Location loc ;
 
@@ -143,15 +148,37 @@ void DiphasicStepData::assembleMatrices(
 			builder.integrate_qp( [&]( Scalar w, const Vec&pos, const P_Itp& itp, const P_Dcdx&, const P_Itp&, const P_Dcdx&) {
 
 				const Scalar phi = std::min( config.phiMax, phase.fraction( pos ) ) ;
+#ifdef U_MOMENTUM
+				const Vec u = fluid.mavg_vel( pos ) ;
+				Vec pos_prev = pShape.mesh().clamp_point( pos - dt*u ) ;
+				const Vec u_adv = fluid.mavg_vel( pos_prev ) ;
+#else
 				const Vec u2 = fluid.velocity( pos ) ;
 				Vec pos_prev = pShape.mesh().clamp_point( pos - dt*u2 ) ;
 				const Vec u2_adv = fluid.velocity( pos_prev ) ;
-
+#endif
 				for( Index k = 0 ; k < itp.nodes.size() ; ++k ) {
-					beta[ itp.nodes[k] ]           += w * itp.coeffs[k] * (1 - phi) ;
+					beta[ itp.nodes[k] ]           += w * itp.coeffs[k] ;
+#ifdef U_MOMENTUM
+					linearMomentum[ itp.nodes[k] ] += w * itp.coeffs[k] * u_adv ;
+#else
 					linearMomentum[ itp.nodes[k] ] += w * itp.coeffs[k] * (1 - phi) * u2_adv ;
+#endif
 				}
 			} ) ;
+
+#ifdef U_MOMENTUM
+			builder.integrate_particle( particles, [&]( Index i, Scalar w, const P_Itp& itp, const P_Dcdx& , const P_Itp& , const P_Dcdx& )
+			{
+				const Vec& pos = particles.centers().col(i) ;
+				const Vec u = fluid.mavg_vel( pos ) ;
+				Vec pos_prev = pShape.mesh().clamp_point( pos - dt*u ) ;
+				const Vec u_adv = fluid.mavg_vel( pos_prev ) ;
+				for( Index k = 0 ; k < itp.nodes.size() ; ++k ) {
+					linearMomentum[ itp.nodes[k] ] += w * itp.coeffs[k] * config.alpha() * u_adv ;
+				}
+			} ) ;
+#endif
 
 			forms.linearMomentum = linearMomentum.flatten() * config.fluidVolMass / dt ;
 
