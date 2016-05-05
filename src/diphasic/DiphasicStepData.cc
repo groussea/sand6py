@@ -80,8 +80,8 @@ void DiphasicStepData::assembleMatrices(
 
 	typedef typename PrimalShape::Interpolation P_Itp ;
 	typedef typename PrimalShape::Derivatives   P_Dcdx ;
-//	typedef typename DualShape::Interpolation   D_Itp ;
-//	typedef typename DualShape::Derivatives     D_Dcdx ;
+	typedef typename DualShape::Interpolation   D_Itp ;
+	typedef typename DualShape::Derivatives     D_Dcdx ;
 
 
 	// Projectors
@@ -257,6 +257,8 @@ void DiphasicStepData::assembleMatrices(
 
 #ifdef KINEMATIC_VISC
 			Builder:: addDuDv( forms.A, w*config.alpha()*2*config.viscosity, l_itp, l_dc_dx, r_itp, r_dc_dx, fullIndices, fullIndices ) ;
+#else
+			(void) r_dc_dx ;
 #endif
 
 			// TODO: test w/ other funcs
@@ -285,7 +287,52 @@ void DiphasicStepData::assembleMatrices(
 	}
 
 
-	// III Compositions
+	const Index n = dualNodes.count() ;
+	forms.S.compute( dShape, dualNodes, n );
+
+	// III. G
+	{
+		typedef FormBuilder< DualShape, PrimalShape > Builder ;
+		Builder builder( dShape, pShape ) ;
+		builder.reset( n );
+
+		builder.addToIndex( dualNodes.indices, fullIndices );
+		builder.makeCompressed();
+
+		forms.G.clear();
+		forms.G.setRows( n );
+		forms.G.setCols( m );
+		forms.G.cloneIndex( builder.index() ) ;
+		forms.G.setBlocksToZero() ;
+
+		builder.integrate_particle( particles, [&]( Index, Scalar w, const D_Itp& l_itp, const D_Dcdx& , const P_Itp& r_itp, const P_Dcdx& r_dc_dx )
+		{
+			Builder::addTauDu( forms.G, w, l_itp, r_itp, r_dc_dx, dualNodes.indices, fullIndices ) ;
+		} ) ;
+	}
+
+	// IV. H
+	{
+		const Index ma = primalNodes.count() ;
+
+		typedef FormBuilder< DualShape, PrimalShape > Builder ;
+		Builder builder( dShape, pShape ) ;
+		builder.reset( n );
+
+		builder.addToIndex( dualNodes.indices, primalNodes.indices );
+		builder.makeCompressed();
+
+		forms.H.clear();
+		forms.H.setRows( n );
+		forms.H.setCols( ma );
+		forms.H.cloneIndex( builder.index() ) ;
+		forms.H.setBlocksToZero() ;
+
+		builder.integrate_particle( particles, [&]( Index, Scalar w, const D_Itp& l_itp, const D_Dcdx& , const P_Itp& r_itp, const P_Dcdx& r_dc_dx )
+		{
+			Builder::addTauDu( forms.H, w, l_itp, r_itp, r_dc_dx, dualNodes.indices, primalNodes.indices ) ;
+		} ) ;
+	}
 
 }
 

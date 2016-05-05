@@ -1,6 +1,7 @@
 #include "DiphasicSolver.hh"
 
 #include "DiphasicStepData.hh"
+#include "DiphasicFriction.hh"
 
 #include "FluidPhase.hh"
 #include "mono/Phase.hh"
@@ -106,7 +107,7 @@ DiphasicSolver::DiphasicSolver(const DynParticles &particles)
 
 }
 
-static void printEnergies( const Config &config, Phase &phase, FluidPhase &fluid  )
+void printEnergies( const Config &config, Phase &phase, FluidPhase &fluid  )
 {
 
 	 ////// STATS
@@ -153,9 +154,9 @@ void DiphasicSolver::step(const Config &config, const Scalar dt, Phase &phase, F
 	DiphasicStepData stepData ;
 	stepData.compute( m_particles, config, dt, fluid, phase );
 
-	printEnergies( config, phase, fluid);
+//	printEnergies( config, phase, fluid);
 	solve( config, dt, stepData, phase, fluid ) ;
-	printEnergies( config, phase, fluid);
+//	printEnergies( config, phase, fluid);
 }
 
 
@@ -166,6 +167,8 @@ void DiphasicSolver::solve(
 	typedef Eigen::SparseMatrix< Scalar > SM ;
 
 	(void) dt ;
+
+	// I Setup
 
 	// Compute rhs of momentum conservation -- gravity + u(t)
 	DynVec rhs ;
@@ -200,6 +203,8 @@ void DiphasicSolver::solve(
 	l.segment( m, ma ).setZero() ;
 	l.tail(n).setZero();
 
+	// II Solve Linear
+
 	SM M ;
 	makePenalizedEigenStokesMatrix( stepData, M );
 	Eigen::SimplicialLDLT< SM > M_fac ( M ) ;
@@ -207,7 +212,43 @@ void DiphasicSolver::solve(
 
 	x = M_fac.solve( l ) ;
 
-	// Output
+	// III Friction
+
+	// M d(x,w,p) = (H G)' lambda
+	// gamma = H(u+du) + G(w+dw) + q
+
+
+	const Index nc = stepData.dualNodes.count() ;
+
+	DiphasicPrimalData primal ;
+	primal.mu = DynVec::Constant( nc, config.mu ) ;
+
+	primal.H = stepData.forms.S.inv_sqrt *
+			( stepData.activeProj.stress * ( stepData.forms.H * stepData.fullGridProj.vel ) ) ;
+	primal.G = stepData.forms.S.inv_sqrt *
+			( stepData.activeProj.stress * ( stepData.forms.H * stepData.fullGridProj.vel ) ) ;
+
+	primal.k = primal.G * x.head(m) + primal.H * x.segment( m, ma ) ;
+
+	// Compressability beta(phi)
+	{
+		const DynArr intBeta = ( config.phiMax*stepData.forms.volumes
+								 - stepData.forms.fraction );
+
+		DynVec intBeta_s ( DynVec::Zero( nc * SD ) ) ;
+		component< SD >( intBeta_s, 0 ).array() = intBeta  * s_sqrt_2_d / dt  ;
+
+		primal.k += ( stepData.forms.S.inv_sqrt * intBeta_s ).cwiseMax(0) ;
+	}
+
+	DynVec lambda ;
+	stepData.dualNodes.field2var( phase.stresses, lambda ) ;
+
+	DiphasicFrictionSolver().solve( M_fac, primal, x, lambda ) ;
+
+	// IV  Output
+	stepData.dualNodes.var2field( lambda, phase.stresses ) ;
+
 	fluid.pressure.flatten() = x.tail(n) ;
 	fluid.mavg_vel.flatten() = x.head(m) ;
 
@@ -225,18 +266,14 @@ void DiphasicSolver::solve(
 	std::cout << "U " << x.head(m).lpNorm< Eigen::Infinity >() << std::endl ;
 	std::cout << "W " << ( fluid.velocity.flatten() - phase.velocity.flatten()).lpNorm< Eigen::Infinity >() << std::endl ;
 
-
-	Eigen::VectorXd red = (stepData.forms.A * x.head(m) - stepData.fullGridProj.vel * stepData.forms.B.transpose() * stepData.fullGridProj.pressure * x.tail(n) - rhs)  ;
-	std::cout << "REEE  " << red.lpNorm<Eigen::Infinity>() << std::endl ;
-
-
+/*
 	std::cout << "UMU: " <<   (stepData.forms.M_lumped * x.head(m)).dot( x.head(m) )/s << std::endl ;
 	std::cout << "UAU: " <<   (stepData.forms.A * x.head(m)).dot( x.head(m) )/s << std::endl ;
 //	std::cout << "U-grad-p: " <<   -( stepData.fullGridProj.vel * stepData.forms.B.transpose() * stepData.fullGridProj.pressure * x.tail(n) ).dot(x.head(m)) << std::endl ;
 	std::cout << "U-grad-p: " <<   -( stepData.fullGridProj.vel * stepData.forms.B.transpose() * x.tail(n) ).dot(x.head(m))/s << std::endl ;
 	std::cout << "U-dot-g: " <<  x.head(m).dot( stepData.fullGridProj.vel * stepData.forms.externalForces)/s  << std::endl ;
 	std::cout << "U-dot-lm: " <<  x.head(m).dot(stepData.forms.linearMomentum)/s  << std::endl ;
-
+*/
 }
 
 
