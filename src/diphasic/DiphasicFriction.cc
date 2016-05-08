@@ -1,13 +1,42 @@
 #include "DiphasicFriction.hh"
 
+#include "utils/Log.hh"
 
 #include <bogus/Core/Block.impl.hpp>
 #include <bogus/Core/BlockSolvers.impl.hpp>
 
 #include <bogus/Extra/SecondOrder.impl.hpp>
+#include <bogus/Core/Utils/Timer.hpp>
+
+#include <bogus/Interfaces/Cadoux.hpp>
 
 namespace d6 {
 
+DiphasicFrictionSolver::Options::Options()
+	: algorithm( PG_Fac_Stokes ), useCadoux( true ) ,
+	  maxIterations(250), maxOuterIterations( 15 ),
+	  projectedGradientVariant( -1  ),
+	  useInfinityNorm( true ), tolerance( 1.e-6 )
+{
+}
+
+struct CallbackProxy {
+
+	CallbackProxy( FrictionSolver::Stats& stats, bogus::Timer &timer )
+		: m_stats( stats ), m_timer( timer )
+	{
+	}
+
+	void ackResidual( unsigned iter, Scalar err )
+	{
+		m_stats.log( iter, err, m_timer.elapsed() );
+	}
+
+private:
+	FrictionSolver::Stats& m_stats ;
+	bogus::Timer& m_timer ;
+
+} ;
 
 typedef bogus::SparseBlockMatrix<DynMatS> BType ;
 
@@ -42,15 +71,31 @@ static void combine( const DiphasicPrimalData::HType& G,
 	B.finalize();
 }
 
-static void ack( unsigned k, Scalar res ) {
-	std::cout << "PG " << k << "\t" << res << std::endl ;
+Scalar DiphasicFrictionSolver::solve(const Options &options,
+		DynVec &x, DynVec &lambda, FrictionSolver::Stats &stats )
+{
+	ESM M ;
+	DiphasicPrimalData::MInvType Minv ;
+
+	if( options.algorithm == Options::PG_Fac_Stokes) {
+		m_data.makePenalizedEigenStokesMatrix( M, 1.e-8 );
+		DiphasicPrimalData::factorize( M, Minv ) ;
+	}
+
+	return solve( options, M, Minv, x, lambda, stats ) ;
+
 }
 
-
-Scalar DiphasicFrictionSolver::solve(
+Scalar DiphasicFrictionSolver::solve(const Options &options,
 		const ESM &M, const DiphasicPrimalData::MInvType& Minv,
-		DynVec &x, DynVec &lambda)
+		DynVec &x, DynVec &lambda, FrictionSolver::Stats &stats )
 {
+	if( options.algorithm != Options::PG_Fac_Stokes ) {
+		Log::Error() << "Not impl" << std::endl ;
+		std::exit(1) ;
+	}
+
+	bogus::Timer timer ;
 
 	typedef DiphasicPrimalData::MInvType MInvType ;
 
@@ -64,13 +109,31 @@ Scalar DiphasicFrictionSolver::solve(
 
 	bogus::SOCLaw< SD, Scalar, true > law( m_data.mu.rows(), m_data.mu.data() ) ;
 
-	bogus::ProjectedGradient< WExpr > pg(W) ;
-	pg.callback().connect( &ack );
-	pg.useInfinityNorm( true );
-	pg.setTol(1.e-12);
-	pg.setDefaultVariant( bogus::projected_gradient::SPG );
+	CallbackProxy callbackProxy( stats, timer ) ;
 
-	const Scalar res = pg.solve( law, m_data.k, lambda) ;
+	bogus::ProjectedGradient< WExpr > pg(W) ;
+	pg.useInfinityNorm( options.useInfinityNorm );
+	pg.setMaxIters( options.maxIterations );
+	pg.setTol( options.tolerance );
+
+	if( options.projectedGradientVariant < 0 ) {
+		pg.setDefaultVariant( bogus::projected_gradient::Conjugated );
+	} else {
+		pg.setDefaultVariant( (bogus::projected_gradient::Variant) options.projectedGradientVariant );
+	}
+
+	Scalar res = -1 ;
+
+	if( options.useCadoux ) {
+		bogus::Signal<unsigned, Scalar> callback ;
+		callback.connect( callbackProxy, &CallbackProxy::ackResidual );
+		res = bogus::solveCadoux<SD>( W, m_data.k.data(), m_data.mu.data(), pg,
+									  lambda.data(), options.maxOuterIterations, &callback ) ;
+	} else {
+		pg.callback().connect( callbackProxy, &CallbackProxy::ackResidual );
+		res = pg.solve( law, m_data.k, lambda) ;
+	}
+
 	std::cout << "Res " << res << std::endl ;
 	std::cout << "LLLL " << lambda.lpNorm<Eigen::Infinity>() << std::endl ;
 

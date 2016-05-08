@@ -1,7 +1,6 @@
 #ifndef D6_DIPHASIC_PRIMAL_HH
 #define D6_DIPHASIC_PRIMAL_HH
 
-#include "utils/alg.hh"
 #include "utils/block_mat.hh"
 
 #include <Eigen/Sparse>
@@ -26,14 +25,18 @@ struct DiphasicPrimalData {
 
 	typedef FormMat< SD, WD >::Type HType ;
 
-	HType H ;
 	HType G ;
+	HType H ;
 
 	DynVec k ;
 
 	DynVec mu ;
 
 	Index n() const { return H.rowsOfBlocks() ; }
+	Index m() const { return A.rows() ; }
+	Index r() const { return R.rows() ; }
+	Index p() const { return B.rows() ; }
+	Index s() const { return m()+r()+p() ; }
 
 
 	template <typename Archive>

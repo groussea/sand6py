@@ -30,6 +30,9 @@ target_link_libraries ( d62vtk d6_visu )
 add_executable ( d6_solvePrimal d6_solvePrimal.cc )
 target_link_libraries ( d6_solvePrimal d6_utils d6_solve )
 
+add_executable ( dd6_solvePrimal dd6_solvePrimal.cc )
+target_link_libraries ( dd6_solvePrimal d6_utils d6_diphasic )
+
 if(DIM2)
 
 	if( OPENGL_FOUND )

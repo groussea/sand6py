@@ -169,7 +169,14 @@ void DiphasicSolver::solve(
 	DynVec lambda ;
 	stepData.dualNodes.field2var( phase.stresses, lambda ) ;
 
-	DiphasicFrictionSolver( primal ).solve( M, M_fac, x, lambda ) ;
+	primal.dump( "primal.dd6" ) ;
+
+	DiphasicFrictionSolver::Options options ;
+	FrictionSolver::Stats stats ;
+	DiphasicFrictionSolver( primal ).solve( options, M, M_fac, x, lambda, stats ) ;
+
+	Log::Verbose() << arg3( "Friction: %1 iterations,\t err= %2,\t time= %3 ",
+						   stats.nIterations(), stats.residual(), stats.time() ) << std::endl ;
 
 	// IV  Output
 	stepData.dualNodes.var2field( lambda, phase.stresses ) ;
