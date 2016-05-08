@@ -32,7 +32,7 @@ struct DiphasicFrictionSolver {
 	// gamma = Gu + Hw + k
 	// (lambda, gamma) \in DPmu
 
-	Scalar solve( const ELDLT& Minv,
+	Scalar solve(const ESM &M,
 				  const DiphasicPrimalData& data,
 				  DynVec &x, DynVec &lambda
 				) ;

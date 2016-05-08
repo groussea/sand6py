@@ -224,9 +224,9 @@ void DiphasicSolver::solve(
 	primal.mu = DynVec::Constant( nc, config.mu ) ;
 
 	primal.H = stepData.forms.S.inv_sqrt *
-			( stepData.activeProj.stress * ( stepData.forms.H * stepData.fullGridProj.vel ) ) ;
+			( stepData.activeProj.stress * ( stepData.forms.H * stepData.activeProj.vel ) ) ;
 	primal.G = stepData.forms.S.inv_sqrt *
-			( stepData.activeProj.stress * ( stepData.forms.H * stepData.fullGridProj.vel ) ) ;
+			( stepData.activeProj.stress * ( stepData.forms.G * stepData.fullGridProj.vel ) ) ;
 
 	primal.k = primal.G * x.head(m) + primal.H * x.segment( m, ma ) ;
 
@@ -244,7 +244,7 @@ void DiphasicSolver::solve(
 	DynVec lambda ;
 	stepData.dualNodes.field2var( phase.stresses, lambda ) ;
 
-	DiphasicFrictionSolver().solve( M_fac, primal, x, lambda ) ;
+	DiphasicFrictionSolver().solve( M, primal, x, lambda ) ;
 
 	// IV  Output
 	stepData.dualNodes.var2field( lambda, phase.stresses ) ;
