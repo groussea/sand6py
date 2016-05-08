@@ -1,5 +1,7 @@
 diphasic/DiphasicFriction.cc
 diphasic/DiphasicFriction.hh
+diphasic/DiphasicPrimal.cc
+diphasic/DiphasicPrimal.hh
 diphasic/DiphasicSimu.cc
 diphasic/DiphasicSimu.hh
 diphasic/DiphasicSolver.cc

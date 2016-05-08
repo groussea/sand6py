@@ -8,22 +8,6 @@
 
 namespace d6 {
 
-static bogus::SparseBlockMatrix< bogus::SparseLDLT<Scalar> > bogusInv(
-		const Eigen::SparseMatrix< Scalar >& mat )
-{
-	bogus::SparseBlockMatrix< bogus::SparseLDLT<Scalar> > sbm ;
-
-	std::vector< unsigned > rpb {(unsigned)  mat.rows()} ;
-	std::vector< unsigned > cpb {(unsigned)  mat.cols()} ;
-
-	sbm.setRows( rpb );
-	sbm.setCols( cpb );
-
-	sbm.insertBack(0,0).compute( mat ) ;
-	sbm.finalize();
-
-	return sbm ;
-}
 
 typedef bogus::SparseBlockMatrix<DynMatS> BType ;
 
@@ -64,22 +48,21 @@ static void ack( unsigned k, Scalar res ) {
 
 
 Scalar DiphasicFrictionSolver::solve(
-		const ESM &M, const DiphasicPrimalData& data,
+		const ESM &M, const DiphasicPrimalData::MInvType& Minv,
 		DynVec &x, DynVec &lambda)
 {
 
-	typedef decltype(bogusInv( M ) ) MInvType ;
-	MInvType Minv = bogusInv( M ) ;
+	typedef DiphasicPrimalData::MInvType MInvType ;
 
 	BType B ;
-	combine( data.G, data.H,  x.rows(), B ) ;
+	combine( m_data.G, m_data.H,  x.rows(), B ) ;
 
 
 	typedef bogus::Product< BType, bogus::Product< MInvType, bogus::Transpose< BType > > >
 			WExpr ;
 	WExpr W = B * ( Minv * B.transpose() ) ;
 
-	bogus::SOCLaw< SD, Scalar, true > law( data.mu.rows(), data.mu.data() ) ;
+	bogus::SOCLaw< SD, Scalar, true > law( m_data.mu.rows(), m_data.mu.data() ) ;
 
 	bogus::ProjectedGradient< WExpr > pg(W) ;
 	pg.callback().connect( &ack );
@@ -87,14 +70,12 @@ Scalar DiphasicFrictionSolver::solve(
 	pg.setTol(1.e-12);
 	pg.setDefaultVariant( bogus::projected_gradient::SPG );
 
-	const Scalar res = pg.solve( law, data.k, lambda) ;
+	const Scalar res = pg.solve( law, m_data.k, lambda) ;
 	std::cout << "Res " << res << std::endl ;
 	std::cout << "LLLL " << lambda.lpNorm<Eigen::Infinity>() << std::endl ;
-	std::cout << "LLLL " << lambda.head(data.G.rowsOfBlocks()).minCoeff() << std::endl ;
-	std::cout << "k " << data.k.minCoeff() << std::endl ;
 
 
-	DynVec GHx  = data.G*x.head( data.G.cols() ) + data.H*x.segment(data.G.cols(),data.H.cols()) ;
+	DynVec GHx  = m_data.G*x.head( m_data.G.cols() ) + m_data.H*x.segment( m_data.G.cols(),m_data.H.cols()) ;
 	DynVec   Bx  = B*x ;
 	std::cout << "TESTB " << (GHx - Bx).squaredNorm() << std::endl ;
 	DynVec Bl  = B.transpose()*lambda ;

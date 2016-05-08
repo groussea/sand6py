@@ -1,6 +1,12 @@
+diphasic/DiphasicFriction.cc
+diphasic/DiphasicFriction.hh
+diphasic/DiphasicPrimal.cc
+diphasic/DiphasicPrimal.hh
 diphasic/DiphasicSimu.cc
 diphasic/DiphasicSimu.hh
 diphasic/DiphasicSolver.cc
 diphasic/DiphasicSolver.hh
 diphasic/DiphasicStepData.cc
 diphasic/DiphasicStepData.hh
+diphasic/FluidPhase.cc
+diphasic/FluidPhase.hh

@@ -13,91 +13,9 @@
 
 #include <bogus/Core/Utils/Timer.hpp>
 #include <bogus/Core/Block.impl.hpp>
-#include <bogus/Core/Block.io.hpp>
 
-
-#include <Eigen/Sparse>
 
 namespace d6 {
-
-
-static void makePenalizedEigenStokesMatrix(
-		const DiphasicStepData& stepData, Eigen::SparseMatrix<Scalar> & M,
-		const Scalar pen = 1.e-8
-		)
-{
-	// Assemble Eigen mat for
-	// (  A    0     -B^T  )
-	// (  0    R     -C^T  )
-	// ( -B   -C  -pen Id  )
-
-	const Index m  = stepData.forms.A.rows() ;
-	const Index ma = stepData.forms.R.rows() ;
-	const Index n  = stepData.forms.B.rows() ;
-	const Index r = m + n + ma;
-
-	typedef Eigen::SparseMatrix< Scalar > SM ;
-	SM A, B, C, R, Q ;
-	bogus::convert( stepData.forms.A, A ) ;
-	bogus::convert( stepData.forms.R, R ) ;
-	bogus::convert( stepData.fullGridProj.pressure, Q ) ;
-
-	//FIXME bogus single-line assignment
-	{
-		typename FormMat<1,WD>::Type Bproj ;
-		Bproj = stepData.fullGridProj.pressure * ( stepData.forms.B * stepData.fullGridProj.vel ) ;
-		bogus::convert( Bproj, B ) ;
-
-		typename FormMat<1,WD>::Type Cproj ;
-		Cproj = stepData.fullGridProj.pressure * ( stepData.forms.C * stepData.activeProj.vel ) ;
-		bogus::convert( Cproj, C ) ;
-	}
-
-	A.prune(1.) ;
-	B.prune(1.) ;
-	C.prune(1.) ;
-	R.prune(1.) ;
-	Q.prune(1.) ;
-
-	M.resize( r, r ) ;
-
-	typedef Eigen::Triplet<Scalar> Tpl ;
-	std::vector< Tpl > tpl ;
-	tpl.reserve( A.nonZeros() + R.nonZeros() + n + 2*C.nonZeros() + 2*B.nonZeros()  );
-
-	for( Index i = 0 ; i < m ; ++i ) {
-		for( SM::InnerIterator it (A, i) ; it ; ++it )
-		{
-			tpl.push_back( Tpl( it.row(), i, it.value() ) );
-		}
-		for( SM::InnerIterator it (B, i) ; it ; ++it )
-		{
-			tpl.push_back( Tpl( m+ma + it.row(), i, -it.value() ) );
-			tpl.push_back( Tpl( i, m+ma + it.row(), -it.value() ) );
-		}
-	}
-	for( Index i = 0 ; i < ma ; ++i ) {
-		for( SM::InnerIterator it (R, i) ; it ; ++it )
-		{
-			tpl.push_back( Tpl( m+it.row(), m+i, it.value() ) );
-		}
-		for( SM::InnerIterator it (C, i) ; it ; ++it )
-		{
-			tpl.push_back( Tpl( m+ma + it.row(), m+i, -it.value() ) );
-			tpl.push_back( Tpl( m+i, m+ma + it.row(), -it.value() ) );
-		}
-	}
-	for( Index i = 0 ; i < n ; ++i ) {
-		for( SM::InnerIterator it (Q, i) ; it ; ++it )
-		{
-			tpl.push_back( Tpl( m+ma+it.row(), m+ma+i, -pen * it.value() ) );
-		}
-//		tpl.push_back( Tpl( m+ma + i, m+ma + i, - pen ) );
-	}
-
-	M.setFromTriplets( tpl.begin(), tpl.end() ) ;
-
-}
 
 
 
@@ -205,12 +123,20 @@ void DiphasicSolver::solve(
 
 	// II Solve Linear
 
-	SM M ;
-	makePenalizedEigenStokesMatrix( stepData, M );
-	Eigen::SimplicialLDLT< SM > M_fac ( M ) ;
-	Log::Verbose() << "LU factorization : " << M_fac.info() << std::endl ;
+	// FIXME avoid copies
+	DiphasicPrimalData primal ;
+	primal.A = stepData.forms.A ;
+	primal.R = stepData.forms.R ;
+	primal.M_lumped_inv = stepData.forms.M_lumped_inv ;
+	primal.B = stepData.fullGridProj.pressure * ( stepData.forms.B * stepData.fullGridProj.vel ) ;
+	primal.C = stepData.fullGridProj.pressure * ( stepData.forms.C * stepData.activeProj.vel ) ;
 
-	x = M_fac.solve( l ) ;
+	SM M ;
+	primal.makePenalizedEigenStokesMatrix( M, 1.e-8 );
+	DiphasicPrimalData::MInvType M_fac ;
+	DiphasicPrimalData::factorize( M, M_fac ) ;
+
+	x = M_fac * l  ;
 
 	// III Friction
 
@@ -220,7 +146,6 @@ void DiphasicSolver::solve(
 
 	const Index nc = stepData.dualNodes.count() ;
 
-	DiphasicPrimalData primal ;
 	primal.mu = DynVec::Constant( nc, config.mu ) ;
 
 	primal.H = stepData.forms.S.inv_sqrt *
@@ -244,7 +169,7 @@ void DiphasicSolver::solve(
 	DynVec lambda ;
 	stepData.dualNodes.field2var( phase.stresses, lambda ) ;
 
-	DiphasicFrictionSolver().solve( M, primal, x, lambda ) ;
+	DiphasicFrictionSolver( primal ).solve( M, M_fac, x, lambda ) ;
 
 	// IV  Output
 	stepData.dualNodes.var2field( lambda, phase.stresses ) ;
