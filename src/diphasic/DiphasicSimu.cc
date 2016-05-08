@@ -9,6 +9,8 @@
 #include "utils/File.hh"
 #include "utils/string.hh"
 
+#include "geo/Meshes.io.hh"
+
 #include "utils/serialization.hh"
 
 #include <boost/archive/binary_oarchive.hpp>
