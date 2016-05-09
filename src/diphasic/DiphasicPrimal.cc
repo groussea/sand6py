@@ -23,10 +23,12 @@ void DiphasicPrimalData::makePenalizedEigenStokesMatrix(
 	// (  0    R     -C^T  )
 	// ( -B   -C  -pen Id  )
 
-	const Index m  = A.rows() ;
-	const Index ma = R.rows() ;
-	const Index n  = B.rows() ;
-	const Index r = m + n + ma;
+	const Index m = this->m() ;
+	const Index r = this->r() ;
+	const Index p = this->p() ;
+	const Index s = this->s() ;
+
+	const Index padding = this->padding() ;
 
 	typedef Eigen::SparseMatrix< Scalar > SM ;
 	SM A, B, C, R, Q ;
@@ -42,11 +44,11 @@ void DiphasicPrimalData::makePenalizedEigenStokesMatrix(
 	C.prune(1.) ;
 	R.prune(1.) ;
 
-	M.resize( r, r ) ;
+	M.resize( s, s ) ;
 
 	typedef Eigen::Triplet<Scalar> Tpl ;
 	std::vector< Tpl > tpl ;
-	tpl.reserve( A.nonZeros() + R.nonZeros() + n + 2*C.nonZeros() + 2*B.nonZeros()  );
+	tpl.reserve( A.nonZeros() + R.nonZeros() + p + 2*C.nonZeros() + 2*B.nonZeros()  );
 
 	for( Index i = 0 ; i < m ; ++i ) {
 		for( SM::InnerIterator it (A, i) ; it ; ++it )
@@ -55,27 +57,31 @@ void DiphasicPrimalData::makePenalizedEigenStokesMatrix(
 		}
 		for( SM::InnerIterator it (B, i) ; it ; ++it )
 		{
-			tpl.push_back( Tpl( m+ma + it.row(), i, -it.value() ) );
-			tpl.push_back( Tpl( i, m+ma + it.row(), -it.value() ) );
+			tpl.push_back( Tpl( m+r + it.row(), i, -it.value() ) );
+			tpl.push_back( Tpl( i, m+r + it.row(), -it.value() ) );
 		}
 	}
-	for( Index i = 0 ; i < ma ; ++i ) {
+	for( Index i = 0 ; i < r ; ++i ) {
 		for( SM::InnerIterator it (R, i) ; it ; ++it )
 		{
 			tpl.push_back( Tpl( m+it.row(), m+i, it.value() ) );
 		}
 		for( SM::InnerIterator it (C, i) ; it ; ++it )
 		{
-			tpl.push_back( Tpl( m+ma + it.row(), m+i, -it.value() ) );
-			tpl.push_back( Tpl( m+i, m+ma + it.row(), -it.value() ) );
+			tpl.push_back( Tpl( m+r + it.row(), m+i, -it.value() ) );
+			tpl.push_back( Tpl( m+i, m+r + it.row(), -it.value() ) );
 		}
 	}
-	for( Index i = 0 ; i < n ; ++i ) {
+	for( Index i = 0 ; i < p ; ++i ) {
 //		for( SM::InnerIterator it (Q, i) ; it ; ++it )
 //		{
-//			tpl.push_back( Tpl( m+ma+it.row(), m+ma+i, -pen * it.value() ) );
+//			tpl.push_back( Tpl( m+r+it.row(), m+r+i, -pen * it.value() ) );
 //		}
-		tpl.push_back( Tpl( m+ma + i, m+ma + i, - pen ) );
+		tpl.push_back( Tpl( m+r + i, m+r + i, - pen ) );
+	}
+
+	for( Index i = 0 ; i < padding ; ++i ) {
+		tpl.push_back( Tpl( m+r+p+i, m+r+p+i, 1 ) );
 	}
 
 	M.setFromTriplets( tpl.begin(), tpl.end() ) ;

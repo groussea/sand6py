@@ -101,27 +101,6 @@ void DiphasicSolver::solve(
 		rhs = stepData.fullGridProj.vel * forces ;
 	}
 
-	// Solve unconstrained momentum equation
-	const Index m  = stepData.forms.A.rows() ;
-	const Index ma = stepData.forms.R.rows() ;
-	const Index n  = stepData.forms.B.rows() ;
-
-	DynVec x ( m+ma+n ) ;
-	x.head(m) = fluid.mavg_vel.flatten() ; // = stepData.forms.M_lumped_inv * rhs ;
-	x.tail(n) = fluid.pressure.flatten() ;
-
-	const Scalar s = config.fluidVolMass / dt ;
-	std::cout << "UMU: " <<   (stepData.forms.M_lumped * x.head(m)).dot( x.head(m) )/s << std::endl ;
-
-	auto w = x.segment( m, ma ) ;
-	stepData.primalNodes.field2var( fluid.velocity, w ) ;
-
-	DynVec l ( m+ma+n ) ;
-	l.head(m) = rhs ;
-	l.segment( m, ma ).setZero() ;
-	l.tail(n).setZero();
-
-	// II Solve Linear
 
 	// FIXME avoid copies
 	DiphasicPrimalData primal ;
@@ -130,6 +109,23 @@ void DiphasicSolver::solve(
 	primal.M_lumped_inv = stepData.forms.M_lumped_inv ;
 	primal.B = stepData.fullGridProj.pressure * ( stepData.forms.B * stepData.fullGridProj.vel ) ;
 	primal.C = stepData.fullGridProj.pressure * ( stepData.forms.C * stepData.activeProj.vel ) ;
+
+	const Index m  = primal.m() ;
+	const Index r  = primal.r() ;
+	const Index p  = primal.p() ;
+
+	DynVec x ( primal.s() ) ;
+	x.head(m) = fluid.mavg_vel.flatten() ; // = stepData.forms.M_lumped_inv * rhs ;
+	auto w = x.segment( m, r ) ;
+	x.segment(m+r,p) = fluid.pressure.flatten() ;
+
+	stepData.primalNodes.field2var( fluid.velocity, w ) ;
+
+	// II Solve unconstrained momentum equation
+
+	DynVec l ( primal.s() ) ;
+	l.setZero() ;
+	l.head(m) = rhs ;
 
 	SM M ;
 	primal.makePenalizedEigenStokesMatrix( M, 1.e-8 );
@@ -144,23 +140,23 @@ void DiphasicSolver::solve(
 	// gamma = H(u+du) + G(w+dw) + q
 
 
-	const Index nc = stepData.dualNodes.count() ;
+	const Index n = stepData.dualNodes.count() ;
 
-	primal.mu = DynVec::Constant( nc, config.mu ) ;
+	primal.mu = DynVec::Constant( n, config.mu ) ;
 
 	primal.H = stepData.forms.S.inv_sqrt *
 			( stepData.activeProj.stress * ( stepData.forms.H * stepData.activeProj.vel ) ) ;
 	primal.G = stepData.forms.S.inv_sqrt *
 			( stepData.activeProj.stress * ( stepData.forms.G * stepData.fullGridProj.vel ) ) ;
 
-	primal.k = primal.G * x.head(m) + primal.H * x.segment( m, ma ) ;
+	primal.k = primal.G * x.head(m) + primal.H * x.segment( m, r ) ;
 
 	// Compressability beta(phi)
 	{
 		const DynArr intBeta = ( config.phiMax*stepData.forms.volumes
 								 - stepData.forms.fraction );
 
-		DynVec intBeta_s ( DynVec::Zero( nc * SD ) ) ;
+		DynVec intBeta_s ( DynVec::Zero( n * SD ) ) ;
 		component< SD >( intBeta_s, 0 ).array() = intBeta  * s_sqrt_2_d / dt  ;
 
 		primal.k += ( stepData.forms.S.inv_sqrt * intBeta_s ).cwiseMax(0) ;
@@ -169,7 +165,7 @@ void DiphasicSolver::solve(
 	DynVec lambda ;
 	stepData.dualNodes.field2var( phase.stresses, lambda ) ;
 
-	primal.dump( "primal.dd6" ) ;
+//	primal.dump( "primal.dd6" ) ;
 
 	DiphasicFrictionSolver::Options options ;
 	FrictionSolver::Stats stats ;
@@ -181,7 +177,7 @@ void DiphasicSolver::solve(
 	// IV  Output
 	stepData.dualNodes.var2field( lambda, phase.stresses ) ;
 
-	fluid.pressure.flatten() = x.tail(n) ;
+	fluid.pressure.flatten() = x.segment(m+r, p) ;
 	fluid.mavg_vel.flatten() = x.head(m) ;
 
 	// U_1 = u + wh
@@ -190,7 +186,7 @@ void DiphasicSolver::solve(
 
 	// U_2 = u - (alpha+1) phi/(1-phi) wh
 	PrimalScalarField ratio( phase.fraction.shape() ) ;
-	ratio.flatten() = phase.fraction.flatten().array() / (1. - phase.fraction.flatten().array().min(config.phiMax) ) ;
+	ratio.flatten() = phase.fraction.flatten().array() / (1. - phase.fraction.flatten().array().min(DiphasicStepData::s_maxPhi) ) ;
 	fluid.velocity.multiply_by( ratio ) ;
 
 	fluid.velocity.flatten() = x.head(m) - (config.alpha()+1)*fluid.velocity.flatten() ;
@@ -199,6 +195,8 @@ void DiphasicSolver::solve(
 	std::cout << "W " << ( fluid.velocity.flatten() - phase.velocity.flatten()).lpNorm< Eigen::Infinity >() << std::endl ;
 
 /*
+
+	const Scalar s = config.fluidVolMass / dt ;
 	std::cout << "UMU: " <<   (stepData.forms.M_lumped * x.head(m)).dot( x.head(m) )/s << std::endl ;
 	std::cout << "UAU: " <<   (stepData.forms.A * x.head(m)).dot( x.head(m) )/s << std::endl ;
 //	std::cout << "U-grad-p: " <<   -( stepData.fullGridProj.vel * stepData.forms.B.transpose() * stepData.fullGridProj.pressure * x.tail(n) ).dot(x.head(m)) << std::endl ;

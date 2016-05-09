@@ -36,8 +36,11 @@ struct DiphasicPrimalData {
 	Index m() const { return A.rows() ; }
 	Index r() const { return R.rows() ; }
 	Index p() const { return B.rows() ; }
-	Index s() const { return m()+r()+p() ; }
+	Index s() const { return m()+r()+p()+padding() ; }
 
+	Index padding() const {
+		return (WD - (p()%WD))%WD ;
+	}
 
 	template <typename Archive>
 	void serialize(Archive &ar, const unsigned int ) ;

@@ -147,7 +147,7 @@ void DiphasicStepData::assembleMatrices(
 //									[&]( Scalar w, const Vec&pos, const P_Itp& itp, const P_Itp& ) {
 			builder.integrate_qp( [&]( Scalar w, const Vec&pos, const P_Itp& itp, const P_Dcdx&, const P_Itp&, const P_Dcdx&) {
 
-				const Scalar phi = std::min( config.phiMax, phase.fraction( pos ) ) ;
+				const Scalar phi = std::min( s_maxPhi, phase.fraction( pos ) ) ;
 #ifdef U_MOMENTUM
 				const Vec u = fluid.mavg_vel( pos ) ;
 				Vec pos_prev = pShape.mesh().clamp_point( pos - dt*u ) ;
@@ -263,7 +263,7 @@ void DiphasicStepData::assembleMatrices(
 
 			// TODO: test w/ other funcs
 			const Vec& pos = particles.centers().col(i) ;
-			const Scalar phi = std::min( config.phiMax, phase.fraction( pos ) ) ;
+			const Scalar phi = std::min( s_maxPhi, phase.fraction( pos ) ) ;
 			const Scalar vR = (1 + config.alpha() * phi )/(1-phi) ;
 //			const Scalar vR = 1;
 

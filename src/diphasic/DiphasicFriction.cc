@@ -38,27 +38,16 @@ private:
 
 } ;
 
-typedef bogus::SparseBlockMatrix<DynMatS> BType ;
-
 static void combine( const DiphasicPrimalData::HType& G,
 					 const DiphasicPrimalData::HType& H,
-					 const unsigned p,
-					 BType& B )
+					 const unsigned s,
+					 DiphasicPrimalData::HType& B )
 {
 	const Index m  = G.colsOfBlocks() ;
-	const Index ma = H.colsOfBlocks() ;
 	const Index n  = G.rowsOfBlocks() ;
 
-	std::vector< unsigned > cpb ( m+ma+1, WD ) ;
-	cpb.back() = p - G.cols() - H.cols()  ;
-
-//	B.setRows( std::vector<unsigned>{ (unsigned)G.rows() } );
-//	B.setCols( std::vector<unsigned>{ (unsigned)G.cols(), (unsigned)H.cols(),
-//									  (unsigned)(p - G.cols() - H.cols() ) } );
-	B.setRows( G.rowsOfBlocks() );
-	B.setCols( cpb ) ;
-
-	std::cout << p << " vs " << B.rows() << std::endl ;
+	B.setRows( n );
+	B.setCols( s/WD ) ;
 
 	for( Index i = 0 ; i < n ; ++i ) {
 		for( DiphasicPrimalData::HType::InnerIterator it ( G.majorIndex(), i ) ; it ; ++it  ) {
@@ -98,6 +87,7 @@ Scalar DiphasicFrictionSolver::solve(const Options &options,
 	bogus::Timer timer ;
 
 	typedef DiphasicPrimalData::MInvType MInvType ;
+	typedef DiphasicPrimalData::HType    BType ;
 
 	BType B ;
 	combine( m_data.G, m_data.H,  x.rows(), B ) ;
