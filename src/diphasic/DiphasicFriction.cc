@@ -62,10 +62,11 @@ static void combine( const DiphasicPrimalData::HType& G,
 }
 
 template <typename WExpr>
-Scalar DiphasicFrictionSolver::solvePG( const Options& options, const WExpr& W, DynVec &lambda,
-				FrictionSolver::Stats& stats, bogus::Timer& timer	) const
+static Scalar solvePG(
+		const DiphasicFrictionSolver::Options& options, const DiphasicPrimalData &data,
+		const WExpr& W, DynVec &lambda,
+		FrictionSolver::Stats& stats, bogus::Timer& timer	)
 {
-	bogus::SOCLaw< SD, Scalar, true > law( m_data.mu.rows(), m_data.mu.data() ) ;
 
 	CallbackProxy callbackProxy( stats, timer ) ;
 
@@ -75,7 +76,7 @@ Scalar DiphasicFrictionSolver::solvePG( const Options& options, const WExpr& W, 
 	pg.setTol( options.tolerance );
 
 	if( options.projectedGradientVariant < 0 ) {
-		pg.setDefaultVariant( bogus::projected_gradient::Conjugated );
+		pg.setDefaultVariant( bogus::projected_gradient::SPG );
 	} else {
 		pg.setDefaultVariant( (bogus::projected_gradient::Variant) options.projectedGradientVariant );
 	}
@@ -85,11 +86,12 @@ Scalar DiphasicFrictionSolver::solvePG( const Options& options, const WExpr& W, 
 	if( options.useCadoux ) {
 		bogus::Signal<unsigned, Scalar> callback ;
 		callback.connect( callbackProxy, &CallbackProxy::ackResidual );
-		res = bogus::solveCadoux<SD>( W, m_data.k.data(), m_data.mu.data(), pg,
+		res = bogus::solveCadoux<SD>( W, data.k.data(), data.mu.data(), pg,
 									  lambda.data(), options.maxOuterIterations, &callback ) ;
 	} else {
+		bogus::SOCLaw< SD, Scalar, true > law( data.mu.rows(), data.mu.data() ) ;
 		pg.callback().connect( callbackProxy, &CallbackProxy::ackResidual );
-		res = pg.solve( law, m_data.k, lambda) ;
+		res = pg.solve( law, data.k, lambda) ;
 	}
 
 	return res ;
@@ -110,10 +112,10 @@ Scalar DiphasicFrictionSolver::solve(const Options &options,
 		m_data.makePenalizedEigenStokesMatrix( M, pen );
 		DiphasicPrimalData::factorize( M, Minv ) ;
 
-		solveStokes( options, Minv, x, lambda, stats ) ;
+		res = solveStokes( options, Minv, x, lambda, stats ) ;
 	}
-	if( options.algorithm == Options::PG_Fac_Red) {
-		solveRed( options, pen, x, lambda, stats) ;
+	if( options.algorithm == Options::PG_Fac_Red || options.algorithm == Options::PG_CG_Red ) {
+		res = solveRed( options, pen, x, lambda, stats) ;
 	}
 
 
@@ -155,7 +157,7 @@ Scalar DiphasicFrictionSolver::solveStokes(const Options &options,
 	WExpr W = B * ( Minv * B.transpose() ) ;
 
 
-	Scalar res = solvePG( options, W, lambda, stats, timer ) ;
+	Scalar res = solvePG( options, m_data, W, lambda, stats, timer ) ;
 
 	x += Minv * B.transpose() * lambda ;
 
@@ -163,11 +165,39 @@ Scalar DiphasicFrictionSolver::solveStokes(const Options &options,
 
 }
 
+template< typename PInvType, typename KType, typename GAGExpr >
+static Scalar solvePGRed(const DiphasicFrictionSolver::Options &options,
+					   const DiphasicPrimalData& data,
+					   const PInvType& P_inv, const KType &K,
+					   const GAGExpr &gag, const GAGExpr& hrh,
+					   DynVec &lambda, DynVec& delta_p,
+					   FrictionSolver::Stats &stats, bogus::Timer &timer )
+{
+
+
+	typedef bogus::Product< KType, bogus::Product< PInvType, bogus::Transpose< KType > > >
+			BPBExpr ;
+
+	BPBExpr kpk = K * ( P_inv * K.transpose() ) ;
+
+	typedef bogus::Addition< bogus::Addition< GAGExpr, GAGExpr >, BPBExpr > WExpr ;
+//	typedef bogus::Addition< GAGExpr, GAGExpr > WExpr ;
+	WExpr W = (gag+hrh) - kpk ;
+
+	const Scalar res = solvePG( options, data, W, lambda, stats, timer ) ;
+
+	delta_p = - P_inv * K.transpose() * lambda ;
+
+	return res ;
+}
+
+
 Scalar DiphasicFrictionSolver::solveRed(const Options &options, const Scalar pen,
 		DynVec &x, DynVec &lambda, FrictionSolver::Stats &stats ) const
 {
 
 	bogus::Timer timer ;
+	Scalar res = -1 ;
 
 	// R_inv
 	DiphasicPrimalData::DType R_inv = m_data.R.Identity() ;
@@ -183,38 +213,44 @@ Scalar DiphasicFrictionSolver::solveRed(const Options &options, const Scalar pen
 
 
 	typedef FormMat< SD, 1>::Type        BType ;
-	typedef DiphasicPrimalData::MInvType MInvType ;
 
-	BType K  = m_data.G * ( m_data.M_lumped_inv * m_data.B.transpose() ) ;
-		  K += m_data.H * (        R_inv        * m_data.C.transpose() ) ;
+	BType K  = m_data.G * ( m_data.M_lumped_inv * m_data.B.transpose() ) +
+			   m_data.H * (        R_inv        * m_data.C.transpose() ) ;
 
-	DiphasicPrimalData::ESM P ;
-	{
-		// TODO use SymType and SelfAdjointView
-		FormMat<1,1>::Type P_bsr =  m_data.B * ( m_data.M_lumped_inv * m_data.B.transpose() ) +
-									m_data.C * (        R_inv        * m_data.C.transpose() ) ;
-		P_bsr += pen * P_bsr.Identity() ;
-		bogus::convert( P_bsr, P ) ;
+	// TODO use SymType and SelfAdjointView
+	typedef FormMat<1,1>::Type PType ;
+	PType P =  m_data.B * ( m_data.M_lumped_inv * m_data.B.transpose() ) +
+			   m_data.C * (        R_inv        * m_data.C.transpose() ) ;
+	P  += pen * P.Identity() ;
+
+	DynVec delta_p ;
+
+	if( options.algorithm == Options::PG_Fac_Red ) {
+		typedef DiphasicPrimalData::MInvType PInvType ;
+
+		DiphasicPrimalData::ESM P_csr ;
+		bogus::convert( P, P_csr ) ;
+		PInvType P_inv ;
+		DiphasicPrimalData::factorize( P_csr, P_inv ) ;
+
+		res = solvePGRed( options, m_data, P_inv, K, gag, hrh, lambda, delta_p, stats, timer ) ;
+	} else if( options.algorithm == Options::PG_CG_Red ) {
+		typedef bogus::Krylov< PType >::CGType CGType ;
+		typedef bogus::SparseBlockMatrix< CGType > PInvType ;
+
+		bogus::Krylov< PType > cg( P ) ;
+		cg.setTol( 1.e-8 );
+		cg.setMaxIters( 100 );
+
+		PInvType P_inv ;
+		P_inv.setRows(std::vector<unsigned>{(unsigned)P.rows()});
+		P_inv.setCols(std::vector<unsigned>{(unsigned)P.rows()});
+		P_inv.insertBack(0,0) = cg.asCG().enableResCaching() ;
+		P_inv.finalize();
+
+		res = solvePGRed( options, m_data, P_inv, K, gag, hrh, lambda, delta_p, stats, timer ) ;
 	}
 
-
-	MInvType P_inv ;
-	DiphasicPrimalData::factorize( P, P_inv ) ;
-
-	typedef bogus::Product< BType, bogus::Product< MInvType, bogus::Transpose< BType > > >
-			BPBExpr ;
-
-	BPBExpr kpk = K * ( P_inv * K.transpose() ) ;
-
-	typedef bogus::Addition< bogus::Addition< GAGExpr, GAGExpr >, BPBExpr > WExpr ;
-//	typedef bogus::Addition< GAGExpr, GAGExpr > WExpr ;
-	WExpr W = (gag+hrh) - kpk ;
-
-
-	Scalar res = solvePG( options, W, lambda, stats, timer ) ;
-
-
-	const DynVec delta_p = - P_inv * K.transpose() * lambda ;
 
 	x.segment( m_data.m() + m_data.r(), m_data.p() ) += delta_p ;
 	x.head( m_data.m() ) += m_data.M_lumped_inv *

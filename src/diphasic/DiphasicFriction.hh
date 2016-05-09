@@ -67,10 +67,6 @@ private:
 				  DynVec &x, DynVec &lambda, FrictionSolver::Stats& stats
 				) const ;
 
-	template <typename WExpr>
-	Scalar solvePG( const Options& options, const WExpr& w, DynVec &lambda,
-				  FrictionSolver::Stats& stats, bogus::Timer& timer	) const ;
-
 
 	const DiphasicPrimalData& m_data ;
 
