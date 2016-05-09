@@ -64,6 +64,9 @@ struct DiphasicStepData {
 	} proj ;
 	FullProjectors fullGridProj ;
 
+	DynArr cohesion ;   //!< interpolated cohesivity
+	DynArr inertia  ;   //!< interpolated inertial number
+
 	Index nPrimalNodes() const
 	{
 		return primalNodes.count() ;

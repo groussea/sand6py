@@ -11,6 +11,7 @@ struct Phase ;
 struct FluidPhase ;
 struct Config ;
 struct DiphasicStepData ;
+struct DiphasicPrimalData ;
 
 class DiphasicSolver {
 
@@ -34,6 +35,8 @@ private:
 
 	void solveStokes( const DiphasicStepData& stepData, const DynVec &l, DynVec &u, DynVec &p ) const ;
 
+	void addCohesionContrib (const Config&c, const DiphasicStepData &stepData,
+							DiphasicPrimalData& pbData, DynVec &l ) const ;
 
 };
 

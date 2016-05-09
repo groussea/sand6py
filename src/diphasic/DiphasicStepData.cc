@@ -390,6 +390,12 @@ void DiphasicStepData::compute(const DynParticles& particles,
 
 	dualNodes  .field2var( intPhiDual, forms.fraction ) ;
 
+	// Cohesion inertia
+	intPhiCohesion.divide_by_positive( intPhiDual ) ;
+	intPhiInertia .divide_by_positive( intPhiDual ) ;
+	dualNodes.field2var( intPhiCohesion, cohesion ) ;
+	dualNodes.field2var( intPhiInertia , inertia  ) ;
+
 	// Volumes
 	{
 		DualScalarField volumes ( dShape ) ;

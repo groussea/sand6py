@@ -39,6 +39,10 @@ public:
 			  std::vector<RBStresses> &rbStresses
 			  ) const ;
 
+	static void getCohesiveStress(
+			const Config &config, const DynArr& cohesion,  const DynArr& fraction,
+			DynVec& cohe_stress ) ;
+
 private:
 	//! Two-steps solve of the momentum balance w/ frictional rheology
 	void solve(const Config& config, const Scalar dt,

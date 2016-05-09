@@ -5,6 +5,7 @@
 
 #include "FluidPhase.hh"
 #include "mono/Phase.hh"
+#include "mono/PhaseSolver.hh"
 
 #include "simu/LinearSolver.hh"
 
@@ -77,6 +78,19 @@ void DiphasicSolver::step(const Config &config, const Scalar dt, Phase &phase, F
 //	printEnergies( config, phase, fluid);
 }
 
+void DiphasicSolver::addCohesionContrib (const Config&c, const DiphasicStepData &stepData,
+									  DiphasicPrimalData& pbData, DynVec &l ) const
+{
+	//Cohesion : add \grad{ c phi } to rhs
+
+	DynVec cohe_stress( pbData.H.rows() ) ;
+	PhaseSolver::getCohesiveStress( c, stepData.cohesion,
+					   stepData.forms.fraction/stepData.forms.volumes,
+					   cohe_stress ) ;
+	l.head(pbData.m()) -= pbData.G.transpose() * cohe_stress ;
+	l.segment(pbData.m(),pbData.r()) -= pbData.H.transpose() * cohe_stress ;
+
+}
 
 void DiphasicSolver::solve(
 	const Config& config, const Scalar dt, const DiphasicStepData& stepData ,
@@ -121,11 +135,20 @@ void DiphasicSolver::solve(
 
 	stepData.primalNodes.field2var( fluid.velocity, w ) ;
 
-	// II Solve unconstrained momentum equation
-
 	DynVec l ( primal.s() ) ;
 	l.setZero() ;
 	l.head(m) = rhs ;
+
+	//  Add cohesion forces to rhs
+	primal.H = stepData.forms.S.inv_sqrt *
+			( stepData.activeProj.stress * ( stepData.forms.H * stepData.activeProj.vel ) ) ;
+	primal.G = stepData.forms.S.inv_sqrt *
+			( stepData.activeProj.stress * ( stepData.forms.G * stepData.fullGridProj.vel ) ) ;
+
+
+	addCohesionContrib( config, stepData, primal, l );
+
+	// II Solve unconstrained momentum equation
 
 	SM M ;
 	primal.makePenalizedEigenStokesMatrix( M, 1.e-8 );
@@ -142,12 +165,10 @@ void DiphasicSolver::solve(
 
 	const Index n = stepData.dualNodes.count() ;
 
-	primal.mu = DynVec::Constant( n, config.mu ) ;
-
-	primal.H = stepData.forms.S.inv_sqrt *
-			( stepData.activeProj.stress * ( stepData.forms.H * stepData.activeProj.vel ) ) ;
-	primal.G = stepData.forms.S.inv_sqrt *
-			( stepData.activeProj.stress * ( stepData.forms.G * stepData.fullGridProj.vel ) ) ;
+	// Inertia, mu(I) = \delta_mu * (1./ (1 + I0/I) ), I = dp * sqrt( rho ) * inertia, inertia = |D(U)|/sqrt(p)
+	const Scalar I0bar = config.I0 / ( config.grainDiameter * std::sqrt( config.volMass )) ;
+	primal.mu = DynArr::Constant( n, config.mu ) +
+			config.delta_mu / ( 1. + I0bar / stepData.inertia.max(1.e-12) ) ;
 
 	primal.k = primal.G * x.head(m) + primal.H * x.segment( m, r ) ;
 
