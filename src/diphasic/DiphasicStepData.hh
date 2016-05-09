@@ -17,7 +17,7 @@ struct FluidPhase ;
 
 struct DiphasicStepData {
 
-	static constexpr Scalar s_maxPhi = 0.999 ;
+	static const Scalar s_maxPhi ;
 
 	//! Active nodes: nodes under the influence of at least one particle
 	Active primalNodes ;

@@ -15,8 +15,11 @@ struct DiphasicPrimalData {
 
 	typedef FormMat< WD, WD >::Type AType ;
 	AType A ;
-	AType R ;
-	AType M_lumped_inv ;
+
+	// Symmetric
+	typedef FormMat< WD, WD >::SymType DType ;
+	DType R ;
+	DType M_lumped_inv ;
 
 	typedef FormMat<  1, WD >::Type CType ;
 

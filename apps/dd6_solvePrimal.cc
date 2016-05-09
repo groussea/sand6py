@@ -158,6 +158,24 @@ int main( int argc, char* argv[] ) {
 			std::cout << e.nIterations << "\t" << e.time << "\t" << e.residual << "\n" ;
 		}
 
+//		std::cout << x.head( data.m() ).minCoeff()  << "\n"
+//				  << x.head( data.m() ).maxCoeff()  << "\n"
+//				  << x.head( data.m() ).norm()  << "\n"
+//				  << " --- \n "
+//				  << x.segment( data.m(), data.r() ).minCoeff()  << "\n"
+//				  << x.segment( data.m(), data.r() ).maxCoeff()  << "\n"
+//				  << x.segment( data.m(), data.r() ).norm()  << "\n"
+//				  << " --- \n "
+//				  << x.segment( data.m()+data.r(), data.p() ).minCoeff()  << "\n"
+//				  << x.segment( data.m()+data.r(), data.p() ).maxCoeff()  << "\n"
+//				  << x.segment( data.m()+data.r(), data.p() ).norm()  << "\n"
+//				  << " --- \n "
+//				  << r.minCoeff()  << "\n"
+//				  << r.maxCoeff()  << "\n"
+//				  << r.norm()  << "\n"
+//				  << std::endl ;
+
+
 		return 0 ;
 	}
 

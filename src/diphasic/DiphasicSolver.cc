@@ -168,6 +168,7 @@ void DiphasicSolver::solve(
 //	primal.dump( "primal.dd6" ) ;
 
 	DiphasicFrictionSolver::Options options ;
+	options.algorithm = DiphasicFrictionSolver::Options::PG_Fac_Red ;
 	FrictionSolver::Stats stats ;
 	DiphasicFrictionSolver( primal ).solve( options, M, M_fac, x, lambda, stats ) ;
 

@@ -21,6 +21,8 @@
 
 namespace d6 {
 
+const Scalar DiphasicStepData::s_maxPhi = 0.999 ;
+
 void DiphasicStepData::computeProjectors(const Config&config,
 									  const PrimalShape& pShape, FullProjectors& mats )
 {

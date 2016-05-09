@@ -5,6 +5,8 @@
 
 #include "solve/FrictionSolver.hh"
 
+#include <bogus/Core/Utils/Timer.hpp>
+
 namespace d6 {
 
 
@@ -43,7 +45,7 @@ struct DiphasicFrictionSolver {
 
 
 	Scalar solve( const Options& options, DynVec &x, DynVec &lambda,
-				  FrictionSolver::Stats& stats	) ;
+				  FrictionSolver::Stats& stats	) const ;
 	// x = u w p
 	// M (u w) = l + (G H)' lambda
 	// gamma = Gu + Hw + k
@@ -51,9 +53,25 @@ struct DiphasicFrictionSolver {
 
 	Scalar solve( const Options& options, const ESM &M, const DiphasicPrimalData::MInvType& M_inv,
 				  DynVec &x, DynVec &lambda, FrictionSolver::Stats& stats
-				) ;
+				) const ;
+
+
+
 
 private:
+
+	Scalar solveRed(const Options &options, const Scalar pen,
+		DynVec &x, DynVec &lambda, FrictionSolver::Stats &stats ) const ;
+
+	Scalar solveStokes( const Options& options, const DiphasicPrimalData::MInvType& M_inv,
+				  DynVec &x, DynVec &lambda, FrictionSolver::Stats& stats
+				) const ;
+
+	template <typename WExpr>
+	Scalar solvePG( const Options& options, const WExpr& w, DynVec &lambda,
+				  FrictionSolver::Stats& stats, bogus::Timer& timer	) const ;
+
+
 	const DiphasicPrimalData& m_data ;
 
 };
