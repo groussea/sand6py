@@ -375,7 +375,7 @@ void DiphasicStepData::compute(const DynParticles& particles,
 
 	// Compute phi and grad_phi (for visualization purposes )
 	PhaseStepData::computePhiAndGradPhi( intPhiPrimal, phase.fraction, phase.grad_phi ) ;
-	std::cout << "MAX phi " << phase.fraction.max_abs() << std::endl ;
+	Log::Debug() << "MAX phi " << phase.fraction.max_abs() << std::endl ;
 
 	phase.velocity = intPhiVel  ;
 	phase.velocity.divide_by_positive( intPhiPrimal ) ;

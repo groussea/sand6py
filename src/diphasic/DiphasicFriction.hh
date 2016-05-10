@@ -15,15 +15,15 @@ struct DiphasicFrictionSolver {
 	struct Options
 	{
 		enum Algorithm {
-			PG_Fac_Stokes,
-			PG_Fac_Red,
-			PG_CG_Stokes,
-			PG_CG_Red,
+			PG,
+			GS,
 			ADMM
 		};
 
 		Algorithm algorithm ;
 
+		bool reduced   ;
+		bool direct    ;
 		bool useCadoux ;
 
 		unsigned maxIterations ;	  //Inner

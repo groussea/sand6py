@@ -24,9 +24,9 @@ public:
 		Stats() : shouldLogAC( false ), timeOut( std::numeric_limits<Scalar>::infinity() )
 		{}
 
-		Scalar   residual()    const { return m_log.back().residual ; }
-		Scalar   time()        const { return m_log.back().time ; }
-		unsigned nIterations() const { return m_log.back().nIterations ; }
+		Scalar   residual()    const { return m_log.empty()? -1. : m_log.back().residual ; }
+		Scalar   time()        const { return m_log.empty()?  0. : m_log.back().time ; }
+		unsigned nIterations() const { return m_log.empty()?  0u : m_log.back().nIterations ; }
 
 		void log( unsigned iter, Scalar err, Scalar time ) ;
 		const Log& log( )  { return m_log ; }

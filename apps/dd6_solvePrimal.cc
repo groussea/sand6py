@@ -49,6 +49,14 @@ int main( int argc, char* argv[] ) {
 				if( ++i == argc ) break ;
 				options.useCadoux = to_bool( argv[i] ) ;
 				break ;
+			case 'd':
+				if( ++i == argc ) break ;
+				options.direct  = to_bool( argv[i] ) ;
+				break ;
+			case 'r':
+				if( ++i == argc ) break ;
+				options.reduced = to_bool( argv[i] ) ;
+				break ;
 			case 'n':
 				if( ++i == argc ) break ;
 				options.maxIterations = to_uint( argv[i] ) ;
@@ -90,27 +98,19 @@ int main( int argc, char* argv[] ) {
 
 	Log::Verbose() << "Using algorithm: " ;
 	if( options.useCadoux)
-		Log::Verbose() << "Cadoux / " ;
+		Log::Verbose() << "[Cadoux] " ;
+	if( options.direct)
+		Log::Verbose() << "/Direct/ " ;
+	if( options.reduced)
+		Log::Verbose() << "{Reduced} " ;
 
 	switch( options.algorithm ) {
 	case DiphasicFrictionSolver::Options::ADMM:
 		Log::Verbose() << "ADMM" ;
-	case DiphasicFrictionSolver::Options::PG_CG_Red:
-		Log::Verbose() << "[CG/Red]" ;
+	case DiphasicFrictionSolver::Options::GS:
+		Log::Verbose() << "Gauss Seidel" ;
 		break ;
-	case DiphasicFrictionSolver::Options::PG_CG_Stokes:
-		Log::Verbose() << "[CG/Stk]" ;
-		break ;
-	case DiphasicFrictionSolver::Options::PG_Fac_Red:
-		Log::Verbose() << "[Fac/Red]" ;
-		break ;
-	case DiphasicFrictionSolver::Options::PG_Fac_Stokes:
-		Log::Verbose() << "[Fac/Stk]" ;
-		break ;
-	}
-
-	if(options.algorithm != DiphasicFrictionSolver::Options::ADMM)
-	{
+	case DiphasicFrictionSolver::Options::PG:
 		Log::Verbose() << " Projected Gradient -- " ;
 		switch( (bogus::projected_gradient::Variant) options.projectedGradientVariant ) {
 		case bogus::projected_gradient::Descent:

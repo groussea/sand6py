@@ -98,7 +98,7 @@ void DiphasicSolver::solve(
 {
 	typedef Eigen::SparseMatrix< Scalar > SM ;
 
-	(void) dt ;
+	bogus::Timer timer ;
 
 	// I Setup
 
@@ -150,12 +150,16 @@ void DiphasicSolver::solve(
 
 	// II Solve unconstrained momentum equation
 
+	timer.reset() ;
+
 	SM M ;
 	primal.makePenalizedEigenStokesMatrix( M, 1.e-8 );
 	DiphasicPrimalData::MInvType M_fac ;
 	DiphasicPrimalData::factorize( M, M_fac ) ;
 
 	x = M_fac * l  ;
+
+	Log::Debug() << "Stokes solver time: " << timer.elapsed() << std::endl ;
 
 	// III Friction
 
@@ -189,7 +193,9 @@ void DiphasicSolver::solve(
 //	primal.dump( "primal.dd6" ) ;
 
 	DiphasicFrictionSolver::Options options ;
-	options.algorithm = DiphasicFrictionSolver::Options::PG_Fac_Red ;
+	options.algorithm = DiphasicFrictionSolver::Options::GS ;
+	options.useCadoux = false ;
+
 	FrictionSolver::Stats stats ;
 	DiphasicFrictionSolver( primal ).solve( options, M, M_fac, x, lambda, stats ) ;
 
@@ -213,8 +219,8 @@ void DiphasicSolver::solve(
 
 	fluid.velocity.flatten() = x.head(m) - (config.alpha()+1)*fluid.velocity.flatten() ;
 
-	std::cout << "U " << x.head(m).lpNorm< Eigen::Infinity >() << std::endl ;
-	std::cout << "W " << ( fluid.velocity.flatten() - phase.velocity.flatten()).lpNorm< Eigen::Infinity >() << std::endl ;
+	Log::Debug() << "U " << x.head(m).lpNorm< Eigen::Infinity >() << std::endl ;
+	Log::Debug() << "W " << ( fluid.velocity.flatten() - phase.velocity.flatten()).lpNorm< Eigen::Infinity >() << std::endl ;
 
 /*
 

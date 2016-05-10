@@ -14,16 +14,17 @@
 namespace d6 {
 
 DiphasicFrictionSolver::Options::Options()
-	: algorithm( PG_Fac_Stokes ), useCadoux( true ) ,
+	: algorithm( PG ),
+	  reduced(true), direct(true), useCadoux( true ),
 	  maxIterations(250), maxOuterIterations( 15 ),
 	  projectedGradientVariant( -1  ),
 	  useInfinityNorm( true ), tolerance( 1.e-6 )
 {
 }
 
-struct CallbackProxy {
+struct DFCallbackProxy {
 
-	CallbackProxy( FrictionSolver::Stats& stats, bogus::Timer &timer )
+	DFCallbackProxy( FrictionSolver::Stats& stats, bogus::Timer &timer )
 		: m_stats( stats ), m_timer( timer )
 	{
 	}
@@ -68,7 +69,7 @@ static Scalar solvePG(
 		FrictionSolver::Stats& stats, bogus::Timer& timer	)
 {
 
-	CallbackProxy callbackProxy( stats, timer ) ;
+	DFCallbackProxy callbackProxy( stats, timer ) ;
 
 	bogus::ProjectedGradient< WExpr > pg(W) ;
 	pg.useInfinityNorm( options.useInfinityNorm );
@@ -85,13 +86,41 @@ static Scalar solvePG(
 
 	if( options.useCadoux ) {
 		bogus::Signal<unsigned, Scalar> callback ;
-		callback.connect( callbackProxy, &CallbackProxy::ackResidual );
+		callback.connect( callbackProxy, &DFCallbackProxy::ackResidual );
 		res = bogus::solveCadoux<SD>( W, data.k.data(), data.mu.data(), pg,
 									  lambda.data(), options.maxOuterIterations, &callback ) ;
 	} else {
 		bogus::SOCLaw< SD, Scalar, true > law( data.mu.rows(), data.mu.data() ) ;
-		pg.callback().connect( callbackProxy, &CallbackProxy::ackResidual );
+		pg.callback().connect( callbackProxy, &DFCallbackProxy::ackResidual );
 		res = pg.solve( law, data.k, lambda) ;
+	}
+
+	return res ;
+}
+
+template <typename WType, typename LSExpr, typename HExpr>
+static Scalar solveGS(
+		const DiphasicFrictionSolver::Options& options, const DiphasicPrimalData &data,
+		const WType& W, const LSExpr& Minv, const HExpr &H,
+		DynVec &lambda,
+		FrictionSolver::Stats& stats, bogus::Timer& timer	)
+{
+
+	DFCallbackProxy callbackProxy( stats, timer ) ;
+
+	bogus::GaussSeidel< WType > gs(W) ;
+	gs.useInfinityNorm( options.useInfinityNorm );
+	gs.setMaxIters( options.maxIterations );
+	gs.setTol( options.tolerance );
+
+	Scalar res = -1 ;
+
+	if( !options.useCadoux ) {
+		bogus::SOCLaw< SD, Scalar, true > law( data.mu.rows(), data.mu.data() ) ;
+		gs.callback().connect( callbackProxy, &DFCallbackProxy::ackResidual );
+
+		DynVec c = DynVec::Zero( Minv.rows() ) ;
+		res = gs.solveWithLinearConstraints( law, Minv, H, 1, data.k, c, lambda, false, 5) ;
 	}
 
 	return res ;
@@ -108,17 +137,17 @@ Scalar DiphasicFrictionSolver::solve(const Options &options,
 
 	Scalar res = -1 ;
 
-	if( options.algorithm == Options::PG_Fac_Stokes) {
-		m_data.makePenalizedEigenStokesMatrix( M, pen );
-		DiphasicPrimalData::factorize( M, Minv ) ;
-
-		res = solveStokes( options, Minv, x, lambda, stats ) ;
-	}
-	if( options.algorithm == Options::PG_Fac_Red || options.algorithm == Options::PG_CG_Red ) {
+	if( options.reduced ) {
 		res = solveRed( options, pen, x, lambda, stats) ;
+	} else {
+
+		if(options.direct) {
+			m_data.makePenalizedEigenStokesMatrix( M, pen );
+			DiphasicPrimalData::factorize( M, Minv ) ;
+
+			res = solveStokes( options, Minv, x, lambda, stats ) ;
+		}
 	}
-
-
 
 	return res ;
 }
@@ -128,7 +157,7 @@ Scalar DiphasicFrictionSolver::solve(const Options &options,
 		DynVec &x, DynVec &lambda, FrictionSolver::Stats &stats ) const
 {
 
-	if( options.algorithm == Options::PG_Fac_Stokes ) {
+	if( options.direct && !options.reduced ) {
 		return solveStokes( options, Minv, x, lambda, stats) ;
 	}
 
@@ -141,7 +170,7 @@ Scalar DiphasicFrictionSolver::solveStokes(const Options &options,
 		const DiphasicPrimalData::MInvType& Minv,
 		DynVec &x, DynVec &lambda, FrictionSolver::Stats &stats ) const
 {
-	assert( options.algorithm == Options::PG_Fac_Stokes ) ;
+	assert( options.algorithm == Options::PG && !options.reduced && options.direct ) ;
 
 	bogus::Timer timer ;
 
@@ -157,7 +186,10 @@ Scalar DiphasicFrictionSolver::solveStokes(const Options &options,
 	WExpr W = B * ( Minv * B.transpose() ) ;
 
 
-	Scalar res = solvePG( options, m_data, W, lambda, stats, timer ) ;
+	Scalar res =  -1 ;
+	if( options.algorithm == Options::PG ) {
+		solvePG( options, m_data, W, lambda, stats, timer ) ;
+	}
 
 	x += Minv * B.transpose() * lambda ;
 
@@ -191,6 +223,23 @@ static Scalar solvePGRed(const DiphasicFrictionSolver::Options &options,
 	return res ;
 }
 
+template< typename PInvType, typename KType, typename GAGExpr >
+static Scalar solveGSRed(const DiphasicFrictionSolver::Options &options,
+					   const DiphasicPrimalData& data,
+					   const PInvType& P_inv, const KType &K,
+					   const GAGExpr &gag, const GAGExpr& hrh,
+					   DynVec &lambda, DynVec& delta_p,
+					   FrictionSolver::Stats &stats, bogus::Timer &timer )
+{
+
+	typename FormMat<SD,SD>::SymType W = (gag+hrh) ;
+
+	const Scalar res = solveGS( options, data, W, P_inv, K, lambda, stats, timer ) ;
+
+	delta_p = - P_inv * K.transpose() * lambda ;
+
+	return res ;
+}
 
 Scalar DiphasicFrictionSolver::solveRed(const Options &options, const Scalar pen,
 		DynVec &x, DynVec &lambda, FrictionSolver::Stats &stats ) const
@@ -225,7 +274,7 @@ Scalar DiphasicFrictionSolver::solveRed(const Options &options, const Scalar pen
 
 	DynVec delta_p ;
 
-	if( options.algorithm == Options::PG_Fac_Red ) {
+	if( options.direct ) {
 		typedef DiphasicPrimalData::MInvType PInvType ;
 
 		DiphasicPrimalData::ESM P_csr ;
@@ -233,8 +282,12 @@ Scalar DiphasicFrictionSolver::solveRed(const Options &options, const Scalar pen
 		PInvType P_inv ;
 		DiphasicPrimalData::factorize( P_csr, P_inv ) ;
 
-		res = solvePGRed( options, m_data, P_inv, K, gag, hrh, lambda, delta_p, stats, timer ) ;
-	} else if( options.algorithm == Options::PG_CG_Red ) {
+		if( options.algorithm == Options::PG ) {
+			res = solvePGRed( options, m_data, P_inv, K, gag, hrh, lambda, delta_p, stats, timer ) ;
+		} else if( options.algorithm == Options::GS ) {
+			res = solveGSRed( options, m_data, P_inv, K, gag, hrh, lambda, delta_p, stats, timer ) ;
+		}
+	} else {
 		typedef bogus::Krylov< PType >::CGType CGType ;
 		typedef bogus::SparseBlockMatrix< CGType > PInvType ;
 
@@ -248,7 +301,11 @@ Scalar DiphasicFrictionSolver::solveRed(const Options &options, const Scalar pen
 		P_inv.insertBack(0,0) = cg.asCG().enableResCaching() ;
 		P_inv.finalize();
 
-		res = solvePGRed( options, m_data, P_inv, K, gag, hrh, lambda, delta_p, stats, timer ) ;
+		if( options.algorithm == Options::PG ) {
+			res = solvePGRed( options, m_data, P_inv, K, gag, hrh, lambda, delta_p, stats, timer ) ;
+		} else if( options.algorithm == Options::GS ) {
+			res = solveGSRed( options, m_data, P_inv, K, gag, hrh, lambda, delta_p, stats, timer ) ;
+		}
 	}
 
 
