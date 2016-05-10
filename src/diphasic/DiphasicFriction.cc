@@ -401,15 +401,15 @@ Scalar DiphasicFrictionSolver::solveADMM(const Options &options,
 
 	/////////////////////
 
-	Scalar max_R = 0 ;
-	for( Index i = 0 ;  i < m_data.R.nBlocks() ; ++i ) {
-		max_R = std::max( max_R, m_data.R.block(i).lpNorm<Eigen::Infinity>() ) ;
-	}
-	Scalar max_A = 0 ;
-	for( Index i = 0 ;  i < m_data.A.nBlocks() ; ++i ) {
-		max_A = std::max( max_A, m_data.A.block(i).lpNorm<Eigen::Infinity>() ) ;
-	}
-	std::cout << "R " << max_R << "  A " << max_A << std::endl ;
+//	Scalar max_R = 0 ;
+//	for( Index i = 0 ;  i < m_data.R.nBlocks() ; ++i ) {
+//		max_R = std::max( max_R, m_data.R.block(i).lpNorm<Eigen::Infinity>() ) ;
+//	}
+//	Scalar max_A = 0 ;
+//	for( Index i = 0 ;  i < m_data.A.nBlocks() ; ++i ) {
+//		max_A = std::max( max_A, m_data.A.block(i).lpNorm<Eigen::Infinity>() ) ;
+//	}
+//	std::cout << "R " << max_R << "  A " << max_A << std::endl ;
 
 	/////////////////////
 
@@ -425,16 +425,16 @@ Scalar DiphasicFrictionSolver::solveADMM(const Options &options,
 	dama.setMaxIters( options.maxIterations );
 	dama.setTol( options.tolerance );
 
-	bogus::SOCLaw< SD, Scalar, false > law( m_data.mu.rows(), m_data.mu.data() ) ;
+	bogus::SOCLaw< SD, Scalar, true > law( m_data.mu.rows(), m_data.mu.data() ) ;
 	dama.callback().connect( callbackProxy, &DFCallbackProxy::ackResidual );
 
 //	dama.setDefaultVariant( bogus::admm::Accelerated );
 	dama.setLineSearchIterations( 0 );
-	dama.setFpStepSize( 2.e-6 );
-	dama.setProjStepSize( 1.e-2 );
+	dama.setFpStepSize( 3.e-1 );
+	dama.setProjStepSize( 2. );
 
 	res = dama.solveWithLinearConstraints< bogus::admm::Standard>
-			( law, A, B, H, f, m_data.k, b, v, lambda, p, 1 ) ;
+			( law, A, B, H, f, b, m_data.k, v, p, lambda, 1 ) ;
 
 	x.head( A.rows() ) += v ;
 	x.segment( A.rows(), B.rows() ) += p ;
