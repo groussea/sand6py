@@ -129,7 +129,7 @@ static Scalar solveGS(
 Scalar DiphasicFrictionSolver::solve(const Options &options,
 		DynVec &x, DynVec &lambda, FrictionSolver::Stats &stats ) const
 {
-	const Scalar pen = 1.e-8 ;
+	const Scalar pen = 0.e-8 ;
 
 	ESM M ;
 	DiphasicPrimalData::MInvType Minv ;
@@ -137,7 +137,10 @@ Scalar DiphasicFrictionSolver::solve(const Options &options,
 
 	Scalar res = -1 ;
 
-	if( options.reduced ) {
+	if( options.algorithm == Options::ADMM ) {
+		m_data.makePenalizedEigenStokesMatrix( M, pen );
+		res = solveADMM( options, M, x, lambda, stats ) ;
+	} else if( options.reduced ) {
 		res = solveRed( options, pen, x, lambda, stats) ;
 	} else {
 
@@ -153,10 +156,13 @@ Scalar DiphasicFrictionSolver::solve(const Options &options,
 }
 
 Scalar DiphasicFrictionSolver::solve(const Options &options,
-		const ESM &, const DiphasicPrimalData::MInvType& Minv,
+		const ESM &M, const DiphasicPrimalData::MInvType& Minv,
 		DynVec &x, DynVec &lambda, FrictionSolver::Stats &stats ) const
 {
 
+	if( options.algorithm == Options::ADMM ) {
+		return solveADMM( options, M, x, lambda, stats ) ;
+	}
 	if( options.direct && !options.reduced ) {
 		return solveStokes( options, Minv, x, lambda, stats) ;
 	}
@@ -315,6 +321,49 @@ Scalar DiphasicFrictionSolver::solveRed(const Options &options, const Scalar pen
 	x.segment( m_data.m(), m_data.r() ) += R_inv *
 			( m_data.C.transpose() * delta_p + m_data.H.transpose() * lambda) ;
 
+
+	return res ;
+}
+
+Scalar DiphasicFrictionSolver::solveADMM(const Options &options,
+		const ESM &M, DynVec &x, DynVec &lambda, FrictionSolver::Stats &stats ) const
+{
+	bogus::Timer timer ;
+	DFCallbackProxy callbackProxy( stats, timer ) ;
+
+	Scalar res = -1 ;
+
+	typedef DiphasicPrimalData::HType    BType ;
+
+	BType B ;
+	combine( m_data.G, m_data.H,  x.rows(), B ) ;
+
+	const DynVec f = DynVec::Zero( m_data.s() ) ;
+	DynVec dx = DynVec::Zero( m_data.s() ) ; //FIXME warm start
+
+
+	bogus::SparseBlockMatrix< ESM > M_bsr ;
+	M_bsr.setRows(std::vector<unsigned>{(unsigned)M.rows()}) ;
+	M_bsr.setCols(std::vector<unsigned>{(unsigned)M.rows()}) ;
+	M_bsr.insertBack(0,0) = M ;
+	M_bsr.finalize();
+
+	bogus::DualAMA< BType > dama( B ) ;
+	dama.useInfinityNorm( options.useInfinityNorm );
+	dama.setMaxIters( options.maxIterations );
+	dama.setTol( options.tolerance );
+
+	bogus::SOCLaw< SD, Scalar, false > law( m_data.mu.rows(), m_data.mu.data() ) ;
+	dama.callback().connect( callbackProxy, &DFCallbackProxy::ackResidual );
+
+	dama.setDefaultVariant( bogus::admm::Accelerated );
+	dama.setLineSearchIterations( 0 );
+	dama.setFpStepSize( 3.e-6 );
+	dama.setProjStepSize( 3.e-3 );
+
+	res = dama.solve( law, M_bsr, f, m_data.k, dx, lambda ) ;
+
+	x += dx ;
 
 	return res ;
 }

@@ -66,6 +66,8 @@ private:
 	Scalar solveStokes( const Options& options, const DiphasicPrimalData::MInvType& M_inv,
 				  DynVec &x, DynVec &lambda, FrictionSolver::Stats& stats
 				) const ;
+	Scalar solveADMM(const Options &options,
+		const ESM &M, DynVec &x, DynVec &lambda, FrictionSolver::Stats &stats ) const ;
 
 
 	const DiphasicPrimalData& m_data ;
