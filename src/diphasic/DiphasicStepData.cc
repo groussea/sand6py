@@ -19,6 +19,18 @@
 //#define KINEMATIC_VISC
 //#define U_MOMENTUM
 
+
+// a C' p  = a wh / Stk
+// a C  wh + Bu = 0
+
+// C'Stk p  = Stk (wh/Stk)
+// C Stk wh/Stk + Bu = 0
+
+// C'sStk p  = sStk/a (a wh/Stk) = 1/a (a wh/sStk)
+// C sStk (a wh/sStk) + Bu = 0
+
+//u1 = u + wh = u + sStk/a (1 wh/sStk)
+
 namespace d6 {
 
 const Scalar DiphasicStepData::s_maxPhi = 0.999 ;
@@ -75,6 +87,7 @@ void DiphasicStepData::assembleMatrices(
 		const PrimalScalarField &intPhi, const PrimalVectorField& intPhiVel )
 {
 	const Scalar mass_regul = 1.e-8 ;
+	const Scalar sStk = 1./std::sqrt( config.fluidFriction ) ;
 
 	bogus::Timer timer ;
 
@@ -255,7 +268,7 @@ void DiphasicStepData::assembleMatrices(
 
 		builder.integrate_particle( particles, [&]( Index i, Scalar w, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& r_dc_dx)
 		{
-			Builder:: addDpV ( forms.C, w*config.alpha(), l_itp, l_dc_dx, r_itp, fullIndices, primalNodes.indices ) ;
+			Builder:: addDpV ( forms.C, w*sStk, l_itp, l_dc_dx, r_itp, fullIndices, primalNodes.indices ) ;
 
 #ifdef KINEMATIC_VISC
 			Builder:: addDuDv( forms.A, w*config.alpha()*2*config.viscosity, l_itp, l_dc_dx, r_itp, r_dc_dx, fullIndices, fullIndices ) ;
@@ -271,7 +284,7 @@ void DiphasicStepData::assembleMatrices(
 
 			for( Index k = 0 ; k < l_itp.nodes.size() ; ++k ) {
 				const Index idx = primalNodes.indices[ l_itp.nodes[k]] ;
-				Rcoeffs[ idx ] += w * l_itp.coeffs[k] * config.fluidFriction*config.alpha()* vR ;
+				Rcoeffs[ idx ] += w * l_itp.coeffs[k] / config.alpha() * vR ;
 			}
 
 		}
@@ -332,7 +345,7 @@ void DiphasicStepData::assembleMatrices(
 
 		builder.integrate_particle( particles, [&]( Index, Scalar w, const D_Itp& l_itp, const D_Dcdx& , const P_Itp& r_itp, const P_Dcdx& r_dc_dx )
 		{
-			Builder::addTauDu( forms.H, w, l_itp, r_itp, r_dc_dx, dualNodes.indices, primalNodes.indices ) ;
+			Builder::addTauDu( forms.H, w*sStk/config.alpha(), l_itp, r_itp, r_dc_dx, dualNodes.indices, primalNodes.indices ) ;
 		} ) ;
 	}
 

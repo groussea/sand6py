@@ -96,6 +96,9 @@ void DiphasicSolver::solve(
 	const Config& config, const Scalar dt, const DiphasicStepData& stepData ,
 	Phase& phase, FluidPhase &fluid ) const
 {
+	// Step counter, only useful for dumping friction problem pbData
+	static unsigned s_stepId = 0 ;
+
 	typedef Eigen::SparseMatrix< Scalar > SM ;
 
 	bogus::Timer timer ;
@@ -133,7 +136,7 @@ void DiphasicSolver::solve(
 	auto w = x.segment( m, r ) ;
 	x.segment(m+r,p) = fluid.pressure.flatten() ;
 
-	stepData.primalNodes.field2var( fluid.velocity, w ) ;
+	stepData.primalNodes.field2var( fluid.velocity, w ) ; //FIXME wrong warm start
 
 	DynVec l ( primal.s() ) ;
 	l.setZero() ;
@@ -190,7 +193,10 @@ void DiphasicSolver::solve(
 	DynVec lambda ;
 	stepData.dualNodes.field2var( phase.stresses, lambda ) ;
 
-//	primal.dump( "primal.dd6" ) ;
+	// Dump problem data if requested
+	if( config.dumpPrimalData > 0 && (++s_stepId % config.dumpPrimalData) == 0 ) {
+		primal.dump( arg("primal-%1.dd6", s_stepId).c_str() ) ;
+	}
 
 	DiphasicFrictionSolver::Options options ;
 	options.algorithm = DiphasicFrictionSolver::Options::GS ;
@@ -203,13 +209,15 @@ void DiphasicSolver::solve(
 						   stats.nIterations(), stats.residual(), stats.time() ) << std::endl ;
 
 	// IV  Output
+	const Scalar sStk = 1./std::sqrt( config.fluidFriction ) ;
+
 	stepData.dualNodes.var2field( lambda, phase.stresses ) ;
 
 	fluid.pressure.flatten() = x.segment(m+r, p) ;
 	fluid.mavg_vel.flatten() = x.head(m) ;
 
 	// U_1 = u + wh
-	stepData.primalNodes.var2field( w, fluid.velocity ) ;
+	stepData.primalNodes.var2field( w*sStk/config.alpha(), fluid.velocity ) ;
 	phase.velocity.flatten() = x.head(m) + fluid.velocity.flatten() ;
 
 	// U_2 = u - (alpha+1) phi/(1-phi) wh
