@@ -325,6 +325,7 @@ Scalar DiphasicFrictionSolver::solveRed(const Options &options, const Scalar pen
 	return res ;
 }
 
+/*
 Scalar DiphasicFrictionSolver::solveADMM(const Options &options,
 		const ESM &M, DynVec &x, DynVec &lambda, FrictionSolver::Stats &stats ) const
 {
@@ -364,6 +365,79 @@ Scalar DiphasicFrictionSolver::solveADMM(const Options &options,
 	res = dama.solve( law, M_bsr, f, m_data.k, dx, lambda ) ;
 
 	x += dx ;
+
+	return res ;
+} */
+
+Scalar DiphasicFrictionSolver::solveADMM(const Options &options,
+		const ESM &M, DynVec &x, DynVec &lambda, FrictionSolver::Stats &stats ) const
+{
+	bogus::Timer timer ;
+	DFCallbackProxy callbackProxy( stats, timer ) ;
+
+	Scalar res = -1 ;
+
+	//// Combinations ////
+	bogus::SparseBlockMatrix< DiphasicPrimalData::AType > A ;
+	A.setRows( std::vector<unsigned>{ (unsigned)m_data.m(), (unsigned)m_data.r() });
+	A.setCols( std::vector<unsigned>{ (unsigned)m_data.m(), (unsigned)m_data.r() });
+	A.insertBack(0,0) = m_data.A ;
+	A.insertBack(1,1) = m_data.R ;
+	A.finalize();
+
+	bogus::SparseBlockMatrix< DiphasicPrimalData::CType > B ;
+	B.setRows( std::vector<unsigned>{ (unsigned)m_data.B.rows() });
+	B.setCols( std::vector<unsigned>{ (unsigned)m_data.m(), (unsigned)m_data.r() });
+	B.insertBack(0,0) = m_data.B ;
+	B.insertBack(0,1) = m_data.C ;
+	B.finalize();
+
+	bogus::SparseBlockMatrix< DiphasicPrimalData::HType > H ;
+	H.setRows( std::vector<unsigned>{ (unsigned)m_data.G.rows() });
+	H.setCols( std::vector<unsigned>{ (unsigned)m_data.m(), (unsigned)m_data.r() });
+	H.insertBack(0,0) = m_data.G ;
+	H.insertBack(0,1) = m_data.H ;
+	H.finalize();
+
+	/////////////////////
+
+	Scalar max_R = 0 ;
+	for( Index i = 0 ;  i < m_data.R.nBlocks() ; ++i ) {
+		max_R = std::max( max_R, m_data.R.block(i).lpNorm<Eigen::Infinity>() ) ;
+	}
+	Scalar max_A = 0 ;
+	for( Index i = 0 ;  i < m_data.A.nBlocks() ; ++i ) {
+		max_A = std::max( max_A, m_data.A.block(i).lpNorm<Eigen::Infinity>() ) ;
+	}
+	std::cout << "R " << max_R << "  A " << max_A << std::endl ;
+
+	/////////////////////
+
+	const DynVec f = DynVec::Zero( A.rows() ) ;
+	const DynVec b = DynVec::Zero( B.rows() ) ;
+
+	DynVec v = DynVec::Zero( A.rows() ) ; //FIXME warm start
+	DynVec p = DynVec::Zero( B.rows() ) ;
+
+
+	bogus::DualAMA< DiphasicPrimalData::HType > dama( m_data.G ) ;
+//	dama.useInfinityNorm( options.useInfinityNorm );
+	dama.setMaxIters( options.maxIterations );
+	dama.setTol( options.tolerance );
+
+	bogus::SOCLaw< SD, Scalar, false > law( m_data.mu.rows(), m_data.mu.data() ) ;
+	dama.callback().connect( callbackProxy, &DFCallbackProxy::ackResidual );
+
+//	dama.setDefaultVariant( bogus::admm::Accelerated );
+	dama.setLineSearchIterations( 0 );
+	dama.setFpStepSize( 2.e-6 );
+	dama.setProjStepSize( 1.e-2 );
+
+	res = dama.solveWithLinearConstraints< bogus::admm::Standard>
+			( law, A, B, H, f, m_data.k, b, v, lambda, p, 1 ) ;
+
+	x.head( A.rows() ) += v ;
+	x.segment( A.rows(), B.rows() ) += p ;
 
 	return res ;
 }
