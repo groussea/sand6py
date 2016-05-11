@@ -9,8 +9,6 @@
 
 #include "simu/LinearSolver.hh"
 
-#include "geo/FieldBase.impl.hh"
-
 #include "utils/Config.hh"
 #include "utils/Log.hh"
 
@@ -79,20 +77,32 @@ void DiphasicSolver::step(const Config &config, const Scalar dt, Phase &phase, F
 	solve( config, dt, stepData, phase, fluid ) ;
 //	printEnergies( config, phase, fluid);
 
-	PrimalScalarField volumes(phase.fraction.shape()) ;
-	phase.fraction.shape().compute_lumped_mass( volumes.flatten() );
 
-	AbstractTensorField<PrimalShape> Du ( phase.fraction.shape() ) ;
-	AbstractSkewTsField<PrimalShape> Wu ( phase.fraction.shape() ) ;
+	// D(U_g), W(u_g)
 
-	Du.flatten() = stepData.forms.D * phase.velocity.flatten() ;
-	Wu.flatten() = stepData.forms.W * phase.velocity.flatten() ;
+	{
+		// Velocities gradient D(u) and W(u)
 
-	Du.divide_by_positive( volumes ) ;
-	Wu.divide_by_positive( volumes ) ;
+		DynVec int_phiDu = .5 * ( stepData.activeProj.stress * stepData.forms.G * phase.velocity.flatten() ).head( SD * stepData.nDualNodes() ) ;
+		DynVec int_phiWu = .5 * stepData.forms.J *  phase.velocity.flatten() ;
+		const DynVec int_phi = stepData.forms.fraction.max( 1.e-16 ) ;
 
-	phase.sym_grad = Du.interpolate< DualShape >( phase.sym_grad.shape().dofDefinition() ) ;
-	phase.spi_grad = Wu.interpolate< DualShape >( phase.spi_grad.shape().dofDefinition() ) ;
+		div_compwise<SD>( int_phiDu, int_phi ) ;
+		div_compwise<RD>( int_phiWu, int_phi ) ;
+
+		stepData.dualNodes.var2field( int_phiWu, phase.spi_grad ) ;
+		stepData.dualNodes.var2field( int_phiDu, phase.sym_grad ) ;
+	}
+
+	// D(U_fluid)
+
+	{
+		PrimalScalarField volumes(phase.fraction.shape()) ;
+		phase.fraction.shape().compute_lumped_mass( volumes.flatten() );
+
+		fluid.sym_grad.flatten() = stepData.forms.D * fluid.velocity.flatten() ;
+		fluid.sym_grad.divide_by_positive( volumes ) ;
+	}
 }
 
 void DiphasicSolver::addCohesionContrib (const Config&c, const DiphasicStepData &stepData,

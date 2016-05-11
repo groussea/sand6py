@@ -17,10 +17,11 @@ struct FluidPhase
 	PrimalScalarField pressure ;
 	PrimalVectorField velocity ;
 	PrimalVectorField mavg_vel ;
+	PrimalVectorField sym_grad ;
 
 	FluidPhase( const PhaseMeshes & meshes )
 		: pressure(meshes.primal()), velocity(meshes.primal()),
-		  mavg_vel(meshes.primal())
+		  mavg_vel(meshes.primal()), sym_grad(meshes.primal())
 	{}
 
 	FluidPhase( const PhaseMeshes & meshes, const FluidPhase& src ) ;
@@ -30,6 +31,7 @@ struct FluidPhase
 		ar & pressure ;
 		ar & velocity ;
 		ar & mavg_vel ;
+		ar & sym_grad ;
 	}
 
 };

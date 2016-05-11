@@ -41,6 +41,7 @@ DiphasicSimu::DiphasicSimu(const Config &config, const char *base_dir)
 	m_fluid->pressure.set_zero() ;
 	m_fluid->velocity.set_zero() ;
 	m_fluid->mavg_vel.set_zero() ;
+	m_fluid->sym_grad.set_zero() ;
 }
 
 DiphasicSimu::~DiphasicSimu()

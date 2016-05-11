@@ -138,18 +138,11 @@ void DiphasicStepData::assembleMatrices(
 		forms.D.cloneIndex( builder.index() ) ;
 		forms.D.setBlocksToZero() ;
 
-		forms.W.clear();
-		forms.W.setRows( m );
-		forms.W.setCols( m );
-		forms.W.cloneIndex( builder.index() ) ;
-		forms.W.setBlocksToZero() ;
-
 		builder.integrate_qp( [&]( Scalar w, const Vec&, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& r_dc_dx )
 		{
 			Builder:: addDuDv ( forms.A, w*2*config.viscosity, l_itp, l_dc_dx, r_itp, r_dc_dx, fullIndices, fullIndices ) ;
 			Builder:: addDpV  ( forms.B, -w, l_itp, l_dc_dx, r_itp, fullIndices, fullIndices ) ;
 			Builder:: addTauDu( forms.D,  w, l_itp, r_itp, r_dc_dx, fullIndices, fullIndices ) ;
-			Builder:: addTauWu( forms.W,  w, l_itp, r_itp, r_dc_dx, fullIndices, fullIndices ) ;
 		}
 		);
 		Log::Debug() << "A Integrate grid: " << timer.elapsed() << std::endl ;
@@ -334,9 +327,16 @@ void DiphasicStepData::assembleMatrices(
 		forms.G.cloneIndex( builder.index() ) ;
 		forms.G.setBlocksToZero() ;
 
+		forms.J.clear();
+		forms.J.setRows( n );
+		forms.J.setCols( m );
+		forms.J.cloneIndex( builder.index() ) ;
+		forms.J.setBlocksToZero() ;
+
 		builder.integrate_particle( particles, [&]( Index, Scalar w, const D_Itp& l_itp, const D_Dcdx& , const P_Itp& r_itp, const P_Dcdx& r_dc_dx )
 		{
 			Builder::addTauDu( forms.G, w, l_itp, r_itp, r_dc_dx, dualNodes.indices, fullIndices ) ;
+			Builder::addTauWu( forms.J, w, l_itp, r_itp, r_dc_dx, dualNodes.indices, fullIndices ) ;
 		} ) ;
 	}
 

@@ -50,8 +50,8 @@ struct DiphasicStepData {
 		typename FormMat<SD,WD>::Type H ; //!< \phi Tau:D(w)
 
 		// Output
+		typename FormMat<RD,WD>::Type J ; //!< \phi Tau:W(u)
 		typename FormMat<SD,WD>::Type D ; //!< Tau:D(u)
-		typename FormMat<RD,WD>::Type W ; //!< Tau:W(u)
 
 		typedef AbstractStressMassMatrix< DualShape > StressMassMatrix ;
 		StressMassMatrix S ;
@@ -64,8 +64,7 @@ struct DiphasicStepData {
 	struct FullProjectors {
 		typename FormMat<WD,WD>::SymType vel ;
 		typename FormMat< 1, 1>::SymType pressure ;
-	} proj ;
-	FullProjectors fullGridProj ;
+	}  fullGridProj ;
 
 	DynArr cohesion ;   //!< interpolated cohesivity
 	DynArr inertia  ;   //!< interpolated inertial number
