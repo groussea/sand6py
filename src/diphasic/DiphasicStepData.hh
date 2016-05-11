@@ -49,6 +49,9 @@ struct DiphasicStepData {
 		typename FormMat<SD,WD>::Type G ; //!< \phi Tau:D(u)
 		typename FormMat<SD,WD>::Type H ; //!< \phi Tau:D(w)
 
+		// Output
+		typename FormMat<SD,WD>::Type D ; //!< Tau:D(u)
+		typename FormMat<RD,WD>::Type W ; //!< Tau:W(u)
 
 		typedef AbstractStressMassMatrix< DualShape > StressMassMatrix ;
 		StressMassMatrix S ;

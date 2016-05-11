@@ -9,6 +9,8 @@
 
 #include "simu/LinearSolver.hh"
 
+#include "geo/FieldBase.impl.hh"
+
 #include "utils/Config.hh"
 #include "utils/Log.hh"
 
@@ -76,6 +78,21 @@ void DiphasicSolver::step(const Config &config, const Scalar dt, Phase &phase, F
 //	printEnergies( config, phase, fluid);
 	solve( config, dt, stepData, phase, fluid ) ;
 //	printEnergies( config, phase, fluid);
+
+	PrimalScalarField volumes(phase.fraction.shape()) ;
+	phase.fraction.shape().compute_lumped_mass( volumes.flatten() );
+
+	AbstractTensorField<PrimalShape> Du ( phase.fraction.shape() ) ;
+	AbstractSkewTsField<PrimalShape> Wu ( phase.fraction.shape() ) ;
+
+	Du.flatten() = stepData.forms.D * phase.velocity.flatten() ;
+	Wu.flatten() = stepData.forms.W * phase.velocity.flatten() ;
+
+	Du.divide_by_positive( volumes ) ;
+	Wu.divide_by_positive( volumes ) ;
+
+	phase.sym_grad = Du.interpolate< DualShape >( phase.sym_grad.shape().dofDefinition() ) ;
+	phase.spi_grad = Wu.interpolate< DualShape >( phase.spi_grad.shape().dofDefinition() ) ;
 }
 
 void DiphasicSolver::addCohesionContrib (const Config&c, const DiphasicStepData &stepData,
