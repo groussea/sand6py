@@ -200,10 +200,13 @@ void DiphasicSolver::solve(
 
 	DiphasicFrictionSolver::Options options ;
 	options.algorithm = DiphasicFrictionSolver::Options::GS ;
+//	options.algorithm = DiphasicFrictionSolver::Options::ADMM ;
+//	options.useInfinityNorm = false ;
+//	options.maxIterations = 1000 ;
 	options.useCadoux = false ;
 
 	FrictionSolver::Stats stats ;
-	DiphasicFrictionSolver( primal ).solve( options, M, M_fac, x, lambda, stats ) ;
+	DiphasicFrictionSolver( primal ).solve( options, M_fac, x, lambda, stats ) ;
 
 	Log::Verbose() << arg3( "Friction: %1 iterations,\t err= %2,\t time= %3 ",
 						   stats.nIterations(), stats.residual(), stats.time() ) << std::endl ;

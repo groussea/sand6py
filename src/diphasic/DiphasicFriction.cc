@@ -138,8 +138,7 @@ Scalar DiphasicFrictionSolver::solve(const Options &options,
 	Scalar res = -1 ;
 
 	if( options.algorithm == Options::ADMM ) {
-		m_data.makePenalizedEigenStokesMatrix( M, pen );
-		res = solveADMM( options, M, x, lambda, stats ) ;
+		res = solveADMM( options, x, lambda, stats ) ;
 	} else if( options.reduced ) {
 		res = solveRed( options, pen, x, lambda, stats) ;
 	} else {
@@ -156,12 +155,12 @@ Scalar DiphasicFrictionSolver::solve(const Options &options,
 }
 
 Scalar DiphasicFrictionSolver::solve(const Options &options,
-		const ESM &M, const DiphasicPrimalData::MInvType& Minv,
+		const DiphasicPrimalData::MInvType& Minv,
 		DynVec &x, DynVec &lambda, FrictionSolver::Stats &stats ) const
 {
 
 	if( options.algorithm == Options::ADMM ) {
-		return solveADMM( options, M, x, lambda, stats ) ;
+		return solveADMM( options, x, lambda, stats ) ;
 	}
 	if( options.direct && !options.reduced ) {
 		return solveStokes( options, Minv, x, lambda, stats) ;
@@ -325,52 +324,9 @@ Scalar DiphasicFrictionSolver::solveRed(const Options &options, const Scalar pen
 	return res ;
 }
 
-/*
-Scalar DiphasicFrictionSolver::solveADMM(const Options &options,
-		const ESM &M, DynVec &x, DynVec &lambda, FrictionSolver::Stats &stats ) const
-{
-	bogus::Timer timer ;
-	DFCallbackProxy callbackProxy( stats, timer ) ;
-
-	Scalar res = -1 ;
-
-	typedef DiphasicPrimalData::HType    BType ;
-
-	BType B ;
-	combine( m_data.G, m_data.H,  x.rows(), B ) ;
-
-	const DynVec f = DynVec::Zero( m_data.s() ) ;
-	DynVec dx = DynVec::Zero( m_data.s() ) ; //FIXME warm start
-
-
-	bogus::SparseBlockMatrix< ESM > M_bsr ;
-	M_bsr.setRows(std::vector<unsigned>{(unsigned)M.rows()}) ;
-	M_bsr.setCols(std::vector<unsigned>{(unsigned)M.rows()}) ;
-	M_bsr.insertBack(0,0) = M ;
-	M_bsr.finalize();
-
-	bogus::DualAMA< BType > dama( B ) ;
-	dama.useInfinityNorm( options.useInfinityNorm );
-	dama.setMaxIters( options.maxIterations );
-	dama.setTol( options.tolerance );
-
-	bogus::SOCLaw< SD, Scalar, false > law( m_data.mu.rows(), m_data.mu.data() ) ;
-	dama.callback().connect( callbackProxy, &DFCallbackProxy::ackResidual );
-
-	dama.setDefaultVariant( bogus::admm::Accelerated );
-	dama.setLineSearchIterations( 0 );
-	dama.setFpStepSize( 3.e-6 );
-	dama.setProjStepSize( 3.e-3 );
-
-	res = dama.solve( law, M_bsr, f, m_data.k, dx, lambda ) ;
-
-	x += dx ;
-
-	return res ;
-} */
 
 Scalar DiphasicFrictionSolver::solveADMM(const Options &options,
-		const ESM &M, DynVec &x, DynVec &lambda, FrictionSolver::Stats &stats ) const
+		DynVec &x, DynVec &lambda, FrictionSolver::Stats &stats ) const
 {
 	bogus::Timer timer ;
 	DFCallbackProxy callbackProxy( stats, timer ) ;
@@ -435,7 +391,7 @@ Scalar DiphasicFrictionSolver::solveADMM(const Options &options,
 
 
 	bogus::DualAMA< DiphasicPrimalData::HType > dama( m_data.G ) ;
-//	dama.useInfinityNorm( options.useInfinityNorm );
+	dama.useInfinityNorm( options.useInfinityNorm );
 	dama.setMaxIters( options.maxIterations );
 	dama.setTol( options.tolerance );
 
@@ -447,8 +403,8 @@ Scalar DiphasicFrictionSolver::solveADMM(const Options &options,
 	dama.setLineSearchIterations( 0 );
 //	dama.setFpStepSize( 0.3 );
 //	dama.setProjStepSize( 2 );
-	dama.setFpStepSize( 1.e-3 );
-	dama.setProjStepSize( 1.e-4 );
+	dama.setFpStepSize( 5.e-2 );
+	dama.setProjStepSize( 30. );
 
 	typedef bogus::MatrixPreconditioner< DiphasicPrimalData::DType >
 			::Type < bogus::BlockObjectBase<bogus::SparseBlockMatrix< DiphasicPrimalData::AType >> >
@@ -466,7 +422,7 @@ Scalar DiphasicFrictionSolver::solveADMM(const Options &options,
 	std::cout << "C " << test_1.minCoeff() << "  " << test_1.maxCoeff() << std::endl ;
 
 	res = dama.solveWithLinearConstraints< bogus::admm::Standard>
-			( law, A, B, H, precond, f, b, m_data.k, v, p, lambda, 1. ) ;
+			( law, A, B, H, precond, f, b, m_data.k, v, p, lambda, .003 ) ;
 
 	x.head( A.rows() ) += v ;
 	x.segment( A.rows(), B.rows() ) += p ;
