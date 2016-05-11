@@ -399,6 +399,20 @@ Scalar DiphasicFrictionSolver::solveADMM(const Options &options,
 	H.insertBack(0,1) = m_data.H ;
 	H.finalize();
 
+
+	DiphasicPrimalData::DType P ;
+	P.setRows( m_data.A.rowsOfBlocks() + m_data.R.rowsOfBlocks() ) ;
+	P.setIdentity() ;
+
+	for( Index i = 0 ; i < P.rowsOfBlocks() ; ++i ) {
+		Index j = i - m_data.A.rowsOfBlocks();
+		if( j < 0 ) {
+			P.diagonal(i).diagonal() = m_data.M_lumped_inv.diagonal(i).diagonal() ;
+		} else {
+			P.block(j).diagonal() = 1./(1.e-8 + m_data.R.block(j).diagonal().array()) ;
+		}
+	}
+
 	/////////////////////
 
 //	Scalar max_R = 0 ;
@@ -428,13 +442,31 @@ Scalar DiphasicFrictionSolver::solveADMM(const Options &options,
 	bogus::SOCLaw< SD, Scalar, true > law( m_data.mu.rows(), m_data.mu.data() ) ;
 	dama.callback().connect( callbackProxy, &DFCallbackProxy::ackResidual );
 
+
 //	dama.setDefaultVariant( bogus::admm::Accelerated );
 	dama.setLineSearchIterations( 0 );
-	dama.setFpStepSize( 3.e-1 );
-	dama.setProjStepSize( 2. );
+//	dama.setFpStepSize( 0.3 );
+//	dama.setProjStepSize( 2 );
+	dama.setFpStepSize( 1.e-3 );
+	dama.setProjStepSize( 1.e-4 );
+
+	typedef bogus::MatrixPreconditioner< DiphasicPrimalData::DType >
+			::Type < bogus::BlockObjectBase<bogus::SparseBlockMatrix< DiphasicPrimalData::AType >> >
+			PrecondType ;
+	PrecondType precond ;
+	precond.setPreconditionerMatrix( P );
+//	typedef bogus::TrivialPreconditioner<
+//			bogus::BlockObjectBase<bogus::SparseBlockMatrix< DiphasicPrimalData::AType >> >
+//			PrecondType ;
+//	PrecondType precond ;
+
+	DynVec test_0 ( A.rows() ), test_1( A.rows() ) ;
+	test_0.setOnes() ;
+	precond.apply< false >( test_0, test_1 ) ;
+	std::cout << "C " << test_1.minCoeff() << "  " << test_1.maxCoeff() << std::endl ;
 
 	res = dama.solveWithLinearConstraints< bogus::admm::Standard>
-			( law, A, B, H, f, b, m_data.k, v, p, lambda, 1 ) ;
+			( law, A, B, H, precond, f, b, m_data.k, v, p, lambda, 1. ) ;
 
 	x.head( A.rows() ) += v ;
 	x.segment( A.rows(), B.rows() ) += p ;

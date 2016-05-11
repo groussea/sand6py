@@ -107,6 +107,7 @@ int main( int argc, char* argv[] ) {
 	switch( options.algorithm ) {
 	case DiphasicFrictionSolver::Options::ADMM:
 		Log::Verbose() << "ADMM" ;
+		break ;
 	case DiphasicFrictionSolver::Options::GS:
 		Log::Verbose() << "Gauss Seidel" ;
 		break ;
