@@ -89,6 +89,7 @@ int main( int argc, char* argv[] ) {
 	case FrictionSolver::Options::Cadoux_GS:
 		Log::Verbose() << "Cadoux / " ;
 	case FrictionSolver::Options::GaussSeidel:
+	case FrictionSolver::Options::GaussSeidel_NoAssembly:
 		Log::Verbose() << "Gauss-Seidel " ;
 		break ;
 	case FrictionSolver::Options::Cadoux_PG:
@@ -118,7 +119,8 @@ int main( int argc, char* argv[] ) {
 		break ;
 
 	}
-	if ( options.algorithm == FrictionSolver::Options::Cadoux_PG_NoAssembly ||
+	if ( options.algorithm == FrictionSolver::Options::GaussSeidel_NoAssembly ||
+		 options.algorithm == FrictionSolver::Options::Cadoux_PG_NoAssembly ||
 		 options.algorithm == FrictionSolver::Options::PG_NoAssembly )
 	{
 		Log::Verbose() << " [Matrix-free]" ;

@@ -10,6 +10,9 @@
 #include <bogus/Core/Utils/Timer.hpp>
 #include <bogus/Interfaces/Cadoux.hpp>
 
+#include <bogus/Core/BlockSolvers/ProductGaussSeidel.hpp>
+#include <bogus/Core/BlockSolvers/ProductGaussSeidel.impl.hpp>
+
 namespace d6 {
 
 //! Either log directly residual, or re-evaluate it using another complemntarity func
@@ -96,30 +99,48 @@ Scalar FrictionSolver::solve( const Options& options, DynVec &lambda, Stats &sta
 		return -1 ;
 	}
 
+
+	// Build W expression
+	typedef bogus::Product< PrimalData::JacobianType,
+			bogus::Product< PrimalData::InvInertiaType, bogus::Transpose< PrimalData::JacobianType > > >
+			JMJtProd ;
+
+	bogus::NarySum< JMJtProd > rbSum( m_data.n() * SD, m_data.n() * SD ) ;
+	// Add rigid bodies jacobians
+	for( unsigned i = 0 ; i < m_data.jacobians.size() ; ++i ) {
+		const PrimalData::JacobianType &JM = m_data.jacobians[i] ;
+		rbSum +=  JM * ( m_data.inv_inertia_matrices[i] * JM.transpose() ) ;
+	}
+
+	typedef bogus::Product< PrimalData::HType, bogus::Transpose< PrimalData::HType > > HHtProd ;
+	typedef bogus::Addition< HHtProd, bogus::NarySum< JMJtProd > > Wexpr ;
+
+	const Wexpr W = m_data.H * m_data.H.transpose() + rbSum ;
+
+
 	bogus::Timer timer ;
+	CallbackProxy< Wexpr > callbackProxy( stats, timer, W, m_data.mu, m_data.w, lambda ) ;
+
 	Scalar res = -1 ;
 
+	if(  options.algorithm == Options::GaussSeidel_NoAssembly ) {
+
+		// FIXME rigid bodies
+
+		// Direct Gauss-Seidel solver
+		bogus::SOCLaw< SD, Scalar, true > law( m_data.n(), m_data.mu.data() ) ;
+
+		bogus::ProductGaussSeidel< PrimalData::HType > gs( m_data.H ) ;
+		gs.setTol( options.tolerance );
+		gs.setMaxIters( options.maxIterations );
+		gs.useInfinityNorm( options.useInfinityNorm );
+		gs.callback().connect( callbackProxy, &CallbackProxy<Wexpr>::ackResidual );
+
+		res = gs.solve( law, m_data.w, lambda, false ) ;
+
+	} else
 	if( options.algorithm == Options::PG_NoAssembly ||
 			options.algorithm == Options::PG_NoAssembly  ) {
-
-		// Keep W as an expression
-		typedef bogus::Product< PrimalData::JacobianType,
-				bogus::Product< PrimalData::InvInertiaType, bogus::Transpose< PrimalData::JacobianType > > >
-				JMJtProd ;
-
-		bogus::NarySum< JMJtProd > rbSum( m_data.n() * SD, m_data.n() * SD ) ;
-		// Add rigid bodies jacobians
-		for( unsigned i = 0 ; i < m_data.jacobians.size() ; ++i ) {
-			const PrimalData::JacobianType &JM = m_data.jacobians[i] ;
-			rbSum +=  JM * ( m_data.inv_inertia_matrices[i] * JM.transpose() ) ;
-		}
-
-		typedef bogus::Product< PrimalData::HType, bogus::Transpose< PrimalData::HType > > HHtProd ;
-		typedef bogus::Addition< HHtProd, bogus::NarySum< JMJtProd > > Wexpr ;
-
-		const Wexpr W = m_data.H * m_data.H.transpose() + rbSum ;
-
-		CallbackProxy< Wexpr > callbackProxy( stats, timer, W, m_data.mu, m_data.w, lambda ) ;
 
 		bogus::ProjectedGradient< Wexpr > pg( W ) ;
 
@@ -154,27 +175,18 @@ Scalar FrictionSolver::solve( const Options& options, DynVec &lambda, Stats &sta
 		typedef typename FormMat<SD,SD>::SymType WType ;
 		//typedef bogus::SparseBlockMatrix< Eigen::Matrix< Scalar, 6, 6, Eigen::RowMajor >,
 	//										bogus::SYMMETRIC > WType ;
-		WType W = m_data.H * m_data.H.transpose() ;
-
-		// Add rigid bodies jacobians
-		for( unsigned i = 0 ; i < m_data.jacobians.size() ; ++i ) {
-			const PrimalData::JacobianType &JM = m_data.jacobians[i] ;
-
-			W +=  JM * m_data.inv_inertia_matrices[i] * JM.transpose() ;
-		}
-
-		CallbackProxy< WType > callbackProxy( stats, timer, W, m_data.mu, m_data.w, lambda ) ;
+		WType Wmat = W ;
 
 		if( options.algorithm == Options::GaussSeidel ) {
 			// Direct Gauss-Seidel solver
 
 			bogus::SOCLaw< SD, Scalar, true > law( m_data.n(), m_data.mu.data() ) ;
 
-			bogus::GaussSeidel< WType > gs( W ) ;
+			bogus::GaussSeidel< WType > gs( Wmat ) ;
 			gs.setTol( options.tolerance );
 			gs.setMaxIters( options.maxIterations );
 			gs.useInfinityNorm( options.useInfinityNorm );
-			gs.callback().connect( callbackProxy, &CallbackProxy<WType>::ackResidual );
+			gs.callback().connect( callbackProxy, &CallbackProxy<Wexpr>::ackResidual );
 
 			res = gs.solve( law, m_data.w, lambda, false ) ;
 
@@ -183,24 +195,24 @@ Scalar FrictionSolver::solve( const Options& options, DynVec &lambda, Stats &sta
 			// Cadoux fixed-point algorithm
 
 			bogus::Signal<unsigned, Scalar> callback ;
-			callback.connect( callbackProxy, &CallbackProxy<WType>::ackResidual );
+			callback.connect( callbackProxy, &CallbackProxy<Wexpr>::ackResidual );
 
 			if( options.algorithm == Options::Cadoux_GS ) {
 
 				// Gauss-Seidel inner solver
 
-				bogus::GaussSeidel< WType > gs( W ) ;
+				bogus::GaussSeidel< WType > gs( Wmat ) ;
 				gs.setTol( options.tolerance );
 				gs.setMaxIters( options.maxIterations );
 				gs.useInfinityNorm( options.useInfinityNorm );
 
-				res = bogus::solveCadoux<SD>( W, m_data.w.data(), m_data.mu.data(), gs,
+				res = bogus::solveCadoux<SD>( Wmat, m_data.w.data(), m_data.mu.data(), gs,
 											  lambda.data(), options.maxOuterIterations, &callback ) ;
 			} else {
 
 				// Projected Gradient inner solver
 
-				bogus::ProjectedGradient< WType > pg( W ) ;
+				bogus::ProjectedGradient< WType > pg( Wmat ) ;
 
 				if( options.projectedGradientVariant < 0 ) {
 					pg.setDefaultVariant( bogus::projected_gradient::SPG );
@@ -212,7 +224,7 @@ Scalar FrictionSolver::solve( const Options& options, DynVec &lambda, Stats &sta
 				pg.setMaxIters( options.maxIterations );
 				pg.useInfinityNorm( options.useInfinityNorm );
 
-				res = bogus::solveCadoux<SD>( W, m_data.w.data(), m_data.mu.data(), pg,
+				res = bogus::solveCadoux<SD>( Wmat, m_data.w.data(), m_data.mu.data(), pg,
 											  lambda.data(), options.maxOuterIterations, &callback ) ;
 			}
 		}
