@@ -10,6 +10,7 @@
 #include <bogus/Core/Utils/Timer.hpp>
 
 #include <bogus/Interfaces/Cadoux.hpp>
+#include <bogus/Core/BlockSolvers/ProductGaussSeidel.impl.hpp>
 
 namespace d6 {
 
@@ -57,6 +58,29 @@ static void combine( const DiphasicPrimalData::HType& G,
 		}
 		for( DiphasicPrimalData::HType::InnerIterator it ( H.majorIndex(), i ) ; it ; ++it  ) {
 			B.insertBack( i, m+it.inner() ) = H.block( it.ptr() ) ;
+		}
+	}
+	B.finalize();
+}
+static void combineDiag( const DiphasicPrimalData::DType& G,
+						 const DiphasicPrimalData::DType& H,
+						 const unsigned s,
+						 DiphasicPrimalData::DType& B )
+{
+	const Index m  = G.colsOfBlocks() ;
+	const Index n  = H.rowsOfBlocks() ;
+
+	B.setRows( s/WD );
+	B.setCols( s/WD ) ;
+
+	for( Index i = 0 ; i < m ; ++i ) {
+		for( DiphasicPrimalData::HType::InnerIterator it ( G.majorIndex(), i ) ; it ; ++it  ) {
+			B.insertBack( i, it.inner() ) = G.block( it.ptr() ) ;
+		}
+	}
+	for( Index i = 0 ; i < n ; ++i ) {
+		for( DiphasicPrimalData::HType::InnerIterator it ( H.majorIndex(), i ) ; it ; ++it  ) {
+			B.insertBack( m+i, m+it.inner() ) = H.block( it.ptr() ) ;
 		}
 	}
 	B.finalize();
@@ -228,6 +252,50 @@ static Scalar solvePGRed(const DiphasicFrictionSolver::Options &options,
 	return res ;
 }
 
+template< typename PInvType, typename KType >
+static Scalar solveProdGSRed(const DiphasicFrictionSolver::Options &options,
+					   const DiphasicPrimalData& data,
+					   const DiphasicPrimalData::DType& R_inv,
+					   const PInvType& P_inv, const KType &K,
+					   DynVec &lambda, DynVec& delta_p,
+					   FrictionSolver::Stats &stats, bogus::Timer &timer )
+{
+	typedef DiphasicPrimalData::HType HType ;
+	typedef DiphasicPrimalData::DType DType ;
+
+	HType H ;
+	DType D ;
+	combine( data.G, data.H, data.m() + data.r(), H );
+	combineDiag( data.M_lumped_inv, R_inv, data.m() + data.r(), D );
+
+	DFCallbackProxy callbackProxy( stats, timer ) ;
+
+	for( Index i = 0 ; i < D.rowsOfBlocks() ; ++i )
+		D.block(i).diagonal() = D.block(i).diagonal().array().sqrt() ;
+	HType Hsqrt = H * D ;
+	bogus::ProductGaussSeidel< HType > gs(Hsqrt) ;
+
+//	bogus::ProductGaussSeidel< HType, DType > gs(H,D) ;
+
+	gs.useInfinityNorm( options.useInfinityNorm );
+	gs.setMaxIters( options.maxIterations );
+	gs.setTol( options.tolerance );
+
+	Scalar res = -1 ;
+
+	if( !options.useCadoux ) {
+		bogus::SOCLaw< SD, Scalar, true > law( data.mu.rows(), data.mu.data() ) ;
+		gs.callback().connect( callbackProxy, &DFCallbackProxy::ackResidual );
+
+		DynVec c = DynVec::Zero( P_inv.rows() ) ;
+		res = gs.solveWithLinearConstraints( law, P_inv, K, 1, data.k, c, lambda, false, 5) ;
+	}
+
+	delta_p = - P_inv * K.transpose() * lambda ;
+
+	return res ;
+}
+
 template< typename PInvType, typename KType, typename GAGExpr >
 static Scalar solveGSRed(const DiphasicFrictionSolver::Options &options,
 					   const DiphasicPrimalData& data,
@@ -290,7 +358,8 @@ Scalar DiphasicFrictionSolver::solveRed(const Options &options, const Scalar pen
 		if( options.algorithm == Options::PG ) {
 			res = solvePGRed( options, m_data, P_inv, K, gag, hrh, lambda, delta_p, stats, timer ) ;
 		} else if( options.algorithm == Options::GS ) {
-			res = solveGSRed( options, m_data, P_inv, K, gag, hrh, lambda, delta_p, stats, timer ) ;
+//			res = solveGSRed( options, m_data, P_inv, K, gag, hrh, lambda, delta_p, stats, timer ) ;
+			res = solveProdGSRed( options, m_data, R_inv, P_inv, K, lambda, delta_p, stats, timer ) ;
 		}
 	} else {
 		typedef bogus::Krylov< PType >::CGType CGType ;
