@@ -250,6 +250,8 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	if( c.usePG ) {
 		options.algorithm = FrictionSolver::Options::PG_NoAssembly ;
 		options.projectedGradientVariant = 2 ;
+	} else {
+		options.algorithm = FrictionSolver::Options::GaussSeidel_NoAssembly ;
 	}
 	if( c.useInfNorm ) {
 		// PG without infinity norm leads to creeping at end of simulation
