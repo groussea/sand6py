@@ -10,9 +10,6 @@
 #include <bogus/Core/Utils/Timer.hpp>
 #include <bogus/Interfaces/Cadoux.hpp>
 
-#include <bogus/Core/BlockSolvers/ProductGaussSeidel.hpp>
-#include <bogus/Core/BlockSolvers/ProductGaussSeidel.impl.hpp>
-
 namespace d6 {
 
 //! Either log directly residual, or re-evaluate it using another complemntarity func
@@ -125,12 +122,42 @@ Scalar FrictionSolver::solve( const Options& options, DynVec &lambda, Stats &sta
 
 	if(  options.algorithm == Options::GaussSeidel_NoAssembly ) {
 
-		// FIXME rigid bodies
+		// Put all rigid body jacobian inside a single matrix
+		typedef bogus::SparseBlockMatrix< MatS, bogus::UNCOMPRESSED > JType ;
+		JType J ;
+		J.setRows( m_data.n() ) ;
+		J.setCols( m_data.jacobians.size() );
+
+		Index Jnnz = 0 ; // Compute non-zeros so we can avoid resizing, and insert blocks in parallel
+		for( unsigned i = 0 ; i < m_data.jacobians.size() ; ++i ) {
+			Jnnz += m_data.jacobians[i].nBlocks() ;
+		}
+		J.reserve( Jnnz );
+
+		for( unsigned i = 0 ; i < m_data.jacobians.size() ; ++i ) {
+			const PrimalData::JacobianType &JM = m_data.jacobians[i] ;
+			Eigen::SelfAdjointEigenSolver<MatS>
+					es( m_data.inv_inertia_matrices[i].block(0) ) ;
+			const MatS MiSqrt
+					= es.eigenvectors().transpose() * es.eigenvalues().cwiseSqrt().asDiagonal()
+					* es.eigenvectors() ;
+
+#pragma omp parallel for
+			for (Index row = 0 ; row < m_data.n() ; ++row ) {
+				typename PrimalData::JacobianType::InnerIterator it( JM.majorIndex(), row ) ;
+				if( it ) J.insert( row, i ) = JM.block(it.ptr()) * MiSqrt ;
+			}
+
+		}
+		J.finalize();
+
+		typedef bogus::CompoundBlockMatrix< true, PrimalData::HType, JType > HType ;
+		const HType H ( m_data.H, J ) ;
 
 		// Direct Gauss-Seidel solver
 		bogus::SOCLaw< SD, Scalar, true > law( m_data.n(), m_data.mu.data() ) ;
 
-		bogus::ProductGaussSeidel< PrimalData::HType > gs( m_data.H ) ;
+		bogus::ProductGaussSeidel< HType > gs( H ) ;
 		gs.setTol( options.tolerance );
 		gs.setMaxIters( options.maxIterations );
 		gs.useInfinityNorm( options.useInfinityNorm );
