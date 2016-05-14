@@ -27,6 +27,7 @@ struct DiphasicStepData {
 		// Linear form vectors
 
 		DynVec linearMomentum ;  //!< integral of fraction times velocity
+		DynVec dirichletTerm ;   //!< boundary term in A equation
 
 		DynVec externalForces ; //!< integral of external forces
 		DynArr volumes  ;	    //!< Volume aossciated to each node = int(1)
@@ -65,6 +66,8 @@ struct DiphasicStepData {
 		typename FormMat<WD,WD>::SymType vel ;
 		typename FormMat< 1, 1>::SymType pressure ;
 	}  fullGridProj ;
+
+	DynVec dirichletVel ;    //!< boundary velocity
 
 	DynArr cohesion ;   //!< interpolated cohesivity
 	DynArr inertia  ;   //!< interpolated inertial number

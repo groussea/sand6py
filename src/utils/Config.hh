@@ -52,6 +52,7 @@ namespace d6 {
 	\
 	CONFIG_FIELD( fluidVolMass		, Scalar		,	Units::VolumicMass	) \
 	CONFIG_FIELD( fluidFriction		, Scalar		,	Units::LinearFriction) \
+	CONFIG_FIELD( windSpeed			, Vec			,	Units::Velocity) \
 
 
 struct Config

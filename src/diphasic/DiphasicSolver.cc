@@ -143,7 +143,7 @@ void DiphasicSolver::solve(
 		forces += stepData.forms.linearMomentum  ;
 #endif
 
-		rhs = stepData.fullGridProj.vel * forces ;
+		rhs = stepData.fullGridProj.vel * forces + stepData.forms.dirichletTerm ;
 	}
 
 
@@ -169,6 +169,8 @@ void DiphasicSolver::solve(
 	DynVec l ( primal.s() ) ;
 	l.setZero() ;
 	l.head(m) = rhs ;
+	l.segment(m+r,p) = stepData.fullGridProj.pressure *
+			stepData.forms.B * stepData.dirichletVel ;
 
 	//  Add cohesion forces to rhs
 	primal.H = stepData.forms.S.inv_sqrt *
@@ -211,7 +213,9 @@ void DiphasicSolver::solve(
 	primal.mu = DynArr::Constant( n, config.mu ) +
 			config.delta_mu / ( 1. + I0bar / stepData.inertia.max(1.e-12) ) ;
 
-	primal.k = primal.G * x.head(m) + primal.H * x.segment( m, r ) ;
+	primal.k = primal.G * x.head(m) + primal.H * x.segment( m, r )
+			+ stepData.forms.S.inv_sqrt * stepData.activeProj.stress *
+			  stepData.forms.G * stepData.dirichletVel ;
 
 	// Compressability beta(phi)
 	{
@@ -266,7 +270,6 @@ void DiphasicSolver::solve(
 
 	Log::Debug() << "U " << x.head(m).lpNorm< Eigen::Infinity >() << std::endl ;
 	Log::Debug() << "W " << ( fluid.velocity.flatten() - phase.velocity.flatten()).lpNorm< Eigen::Infinity >() << std::endl ;
-
 /*
 
 	const Scalar s = config.fluidVolMass / dt ;

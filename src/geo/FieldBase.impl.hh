@@ -56,6 +56,58 @@ Derived& FieldBase< Derived >::divide_by_positive(const ScalarField &field, Scal
 	return derived() ;
 }
 
+template< typename Derived >
+template< typename WorldFunc >
+void FieldBase< Derived >::set_free( const WorldFunc&f )
+{
+	typedef typename ShapeFuncImpl::MeshType MeshType ;
+	const MeshType& mesh = shape().mesh() ;
+
+	Location dst_loc ;
+	typename ShapeFuncType::NodeList cellNodes ;
+
+	for( typename MeshType::CellIterator it = mesh.cellBegin() ;
+		 it != mesh.cellEnd() ; ++it )
+	{
+		dst_loc.cell = *it ;
+		shape().list_nodes( dst_loc, cellNodes );
+
+		for( Index k = 0 ; k < ShapeFuncType::NI ; ++k ) {
+			shape().locate_dof( dst_loc, k ) ;
+			segment( cellNodes[k] ) = f( mesh.pos( dst_loc ) )  ;
+
+		}
+	}
+}
+
+// TODO fix reduduncy with/ non-free
+
+template< typename Derived >
+template< typename WorldFunc >
+void FieldBase< Derived >::integrate_free( const WorldFunc&f )
+{
+	Location dst_loc ;
+
+	for( auto qpIt = m_shape.qpBegin() ; qpIt != m_shape.qpEnd() ; ++qpIt ) {
+		qpIt.locate( dst_loc ) ;
+		add_at( dst_loc, qpIt.weight() * f( qpIt.pos() ) ) ;
+	}
+}
+
+template< typename Derived >
+template< typename WorldFunc >
+void FieldBase< Derived >::interpolate_free( const WorldFunc&f )
+{
+	ScalarField volumes( shape() );
+	shape().compute_lumped_mass( volumes.flatten() );
+
+	set_zero() ;
+
+	integrate_free( f ) ;
+
+	// TODO : solve with consistent mass matrix ?
+	divide_by_positive( volumes ) ;
+}
 
 template< typename Derived >
 template< typename Func, typename OtherShape >

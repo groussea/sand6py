@@ -112,6 +112,16 @@ void FormBuilder<LhsShape, RhsShape>::addTauWu( FormMat<RD,WD>::Type& A, Scalar 
 }
 
 template < typename LhsShape, typename RhsShape >
+void FormBuilder<LhsShape, RhsShape>::addQDivu( FormMat< 1,WD>::Type& A, Scalar w,
+												LhsItp lhs_itp, RhsItp rhs_itp, RhsDcdx dc_dx,
+												Indices rowIndices, Indices colIndices )
+{
+	for( int k = 0 ; k < lhs_itp.nodes.rows() ; ++k ) {
+		addQDivu( A, w * lhs_itp.coeffs[k], rowIndices[lhs_itp.nodes[k]], rhs_itp, dc_dx, colIndices );
+	}
+}
+
+template < typename LhsShape, typename RhsShape >
 void FormBuilder<LhsShape, RhsShape>::addDuDv( FormMat<WD,WD>::Type& A, Scalar w, Index rowIndex,
 											   LhsDcdxRow row_dx, RhsItp itp, RhsDcdx dc_dx, Indices colIndices )
 {
@@ -160,6 +170,19 @@ void FormBuilder<LhsShape, RhsShape>::addTauWu( FormMat<RD,WD>::Type& A, Scalar 
 		assert( A.blockPtr( rowIndex, colIndices[itp.nodes[j]] ) != A.InvalidBlockPtr ) ;
 		Block &b = A.block( rowIndex, colIndices[itp.nodes[j]] ) ;
 		FormBlocks::addTauWu( b, m, dc_dx.row(j) ) ;
+	}
+}
+
+template < typename LhsShape, typename RhsShape >
+void FormBuilder<LhsShape, RhsShape>::addQDivu( FormMat< 1,WD>::Type& A, Scalar m, Index rowIndex,
+												RhsItp itp, RhsDcdx dc_dx, Indices colIndices )
+{
+	typedef FormMat<RD,WD>::Type::BlockType Block ;
+
+	for( int j = 0 ; j < itp.nodes.rows() ; ++j ) {
+		assert( A.blockPtr( rowIndex, colIndices[itp.nodes[j]] ) != A.InvalidBlockPtr ) ;
+		Block &b = A.block( rowIndex, colIndices[itp.nodes[j]] ) ;
+		FormBlocks::addQDivu( b, m, dc_dx.row(j) ) ;
 	}
 }
 

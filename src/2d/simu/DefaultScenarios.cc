@@ -40,7 +40,7 @@ struct BedScenar : public Scenario {
 
 struct CollapseScenar : public Scenario {
 	Scalar particle_density( const Vec &x ) const override {
-		return ( x[0] > .75*m_config->box[0] &&  x[1] < .75*m_config->box[1] ) ? 1. : 0. ;
+		return ( x[0] > (1-l0)*m_config->box[0] &&  x[1] < .75*m_config->box[1] ) ? 1. : 0. ;
 	}
 
 	virtual void init( const Params& params ) override {
@@ -49,6 +49,13 @@ struct CollapseScenar : public Scenario {
 
 private:
 	Scalar l0 ;
+};
+
+struct HeapScenar : public Scenario {
+	Scalar particle_density( const Vec &x ) const override {
+		return ( x[0] > (.375-.175/2)*box()[0] &&  x[0] < (.375+.175/2)*box()[0]
+				&& x[1] < .75*box()[1]) ? 1. : 0. ;
+	}
 };
 
 struct PlaneTestScenar : public Scenario {
@@ -195,6 +202,8 @@ std::unique_ptr< Scenario > DefaultScenarioFactory::make( const std::string & st
 		return std::unique_ptr< Scenario >( new TowerScenar() ) ;
 	if( str == "sedim")
 		return std::unique_ptr< Scenario >( new Sedimentation() ) ;
+	if( str == "heap")
+		return std::unique_ptr< Scenario >( new HeapScenar() ) ;
 
 	return std::unique_ptr< Scenario >( new BedScenar() ) ;
 }

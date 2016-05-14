@@ -106,6 +106,14 @@ public:
 		return derived() = f.derived() ;
 	}
 
+	// Arbitrary function pos -> val
+	template< typename WorldFunc >
+	void set_free( const WorldFunc&f ) ;
+	template< typename WorldFunc >
+	void integrate_free( const WorldFunc&f ) ;
+	template< typename WorldFunc >
+	void interpolate_free( const WorldFunc&f ) ;
+
 	// Value at node
 	Seg      segment( const Index i ) { return Segmenter< D >::segment( m_data, i) ; }
 	ConstSeg segment( const Index i ) const { return Segmenter< D >::segment(m_data, i) ; }

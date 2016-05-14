@@ -9,6 +9,7 @@
 #include "simu/DynParticles.hh"
 
 #include "geo/BoundaryInfo.hh"
+#include "geo/FieldBase.impl.hh"
 
 #include "utils/Config.hh"
 #include "utils/Log.hh"
@@ -141,8 +142,8 @@ void DiphasicStepData::assembleMatrices(
 		builder.integrate_qp( [&]( Scalar w, const Vec&, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& r_dc_dx )
 		{
 			Builder:: addDuDv ( forms.A, w*2*config.viscosity, l_itp, l_dc_dx, r_itp, r_dc_dx, fullIndices, fullIndices ) ;
-			Builder:: addDpV  ( forms.B, -w, l_itp, l_dc_dx, r_itp, fullIndices, fullIndices ) ;
-			Builder:: addTauDu( forms.D,  w, l_itp, r_itp, r_dc_dx, fullIndices, fullIndices ) ;
+			Builder:: addQDivu( forms.B, w, l_itp, r_itp, r_dc_dx, fullIndices, fullIndices ) ;
+			Builder:: addTauDu( forms.D, w, l_itp, r_itp, r_dc_dx, fullIndices, fullIndices ) ;
 		}
 		);
 		Log::Debug() << "A Integrate grid: " << timer.elapsed() << std::endl ;
@@ -230,12 +231,23 @@ void DiphasicStepData::assembleMatrices(
 		forms.A += forms.M_lumped ;
 #endif
 
+		PrimalVectorField bdVel( pShape ) ;
+		bdVel.set_free( [&config] (const Vec &x){
+//			return config.windSpeed * ( 2 - x[WD-1]/config.box[WD-1])*(x[WD-1]/config.box[WD-1]) ;
+			return config.windSpeed * (1. -  std::exp( - 10 * x[WD-1]/config.box[WD-1] ) ) ;
+		} ) ;
+
 		// Projections
 		const typename FormMat<WD,WD>::SymType IP = fullGridProj.vel.Identity() - fullGridProj.vel ;
+
+		dirichletVel = IP * bdVel.flatten() ;
+		forms.dirichletTerm = dirichletVel + fullGridProj.vel * forms.A * dirichletVel;
+
 		forms.A = fullGridProj.vel * forms.A * fullGridProj.vel  + IP ;
 
 #pragma omp parallel for
 		for( Index i = 0 ; i < m ; ++i ) {
+
 			const Scalar mass = forms.M_lumped.block(i).trace() / WD ;
 			forms.M_lumped         .block(i) = fullGridProj.vel.block(i) * mass
 					+ Mat::Identity() - fullGridProj.vel.block(i) ;
