@@ -324,7 +324,7 @@ Scalar DiphasicFrictionSolver::solveRed(const Options &options, const Scalar pen
 	// R_inv
 	DiphasicPrimalData::DType R_inv = m_data.R.Identity() ;
 	for( unsigned i = 0 ; i < R_inv.nBlocks() ; ++i )	{
-		R_inv.block(i).diagonal().array() = 1./( m_data.R.diagonal(i).diagonal().array() + pen ) ;
+		R_inv.block(i).diagonal().array() = 1./( m_data.R.diagonal(i).diagonal().array() ) ;
 	}
 
 	typedef DiphasicPrimalData::HType    HType ;

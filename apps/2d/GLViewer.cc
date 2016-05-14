@@ -249,7 +249,7 @@ void GLViewer::update_particle_buffers()
 			const Vec ev = es.eigenvalues().array().max(0).sqrt().max( 1.e-1 ) ;
 
 			mat = ( es.eigenvectors() * ev.asDiagonal() ).cast< GLfloat >()
-					* .5 * std::pow( p.volumes()[i], 1./2 )  ;
+					* std::pow( p.volumes()[i], 1./2 )  ;
 
 			densities[i] = p.volumes()[i]  ;
 

@@ -17,7 +17,7 @@ struct FluidPhase
 	PrimalScalarField pressure ;
 	PrimalVectorField velocity ;
 	PrimalVectorField mavg_vel ;
-	PrimalVectorField sym_grad ;
+	PrimalTensorField sym_grad ;
 
 	FluidPhase( const PhaseMeshes & meshes )
 		: pressure(meshes.primal()), velocity(meshes.primal()),

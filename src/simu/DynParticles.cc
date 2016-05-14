@@ -32,7 +32,13 @@ void DynParticles::generate(const Config &c, const MeshType &mesh, const Scenari
 {
 	//Generate particles according to grid
 
-	m_geo.generate( scenario.generator(), c.nSamples, mesh, c.cohesion > 0, c.initialOri );
+	bool alignOnCells = false ;
+#ifndef D6_UNSTRUCTURED_DUAL
+	alignOnCells = c.cohesion > 0 ;
+#endif
+
+	m_geo.generate( scenario.generator(), c.nSamples, mesh,
+					alignOnCells, c.initialOri );
 
 	  m_affine.leftCols( count() ).setZero() ;
 	 m_inertia.leftCols( count() ).setZero() ;

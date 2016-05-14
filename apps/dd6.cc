@@ -6,6 +6,8 @@
 
 #include <cstring>
 
+#include <fenv.h>
+
 namespace d6 {
 	extern const char* g_git_branch ;
 	extern const char* g_git_commit ;
@@ -76,6 +78,8 @@ int main( int argc, const char* argv[] )
 	d6::Log::Debug() << "Alpha =\t " << config.alpha() << std::endl ;
 	d6::Log::Debug() << "Stk/Alpha =\t " << 1./( config.alpha() * config.fluidFriction )<< std::endl ;
 	d6::Log::Debug() << "(A+1)Stk/Re =\t " << (config.alpha()+1) * config.viscosity /config.fluidFriction << std::endl ;
+
+	feenableexcept( FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW ) ;
 
 	// Run simulation
 	d6::DiphasicSimu( config, base_dir ).run() ;

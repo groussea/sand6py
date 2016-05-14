@@ -35,15 +35,17 @@ void Particles::generate(const ScalarExpr &expr, const unsigned nSamples,
 	for( typename MeshType::CellIterator it = mesh.cellBegin() ; it != mesh.cellEnd() ; ++it ) {
 		mesh.get_geo( *it, cellGeo ) ;
 
-		if( alignOnCells && expr( cellGeo.center() ) == 0. )
+		Scalar phi = expr( cellGeo.center() ) ;
+		if( alignOnCells && phi < 1.e-8 )
 			continue ;
 
 		Index n = cellGeo.sample_uniform( nSamples, m_count, m_centers, m_frames ) ;
 		const Scalar volume = cellGeo.volume() / n ;
 
 		for( size_t i = m_count ; i < m_count+n ; ) {
-			const Scalar phi = expr( m_centers.col(i) ) ;
-			if( !alignOnCells && phi == 0. ) {
+			if(!alignOnCells)
+				phi = expr( m_centers.col(i) ) ;
+			if( phi < 1.e-8 ) {
 				-- n ;
 				m_centers.col(i) = m_centers.col(m_count+n) ;
 				m_frames .col(i) = m_frames .col(m_count+n) ;

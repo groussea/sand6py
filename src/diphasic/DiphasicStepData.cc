@@ -286,12 +286,12 @@ void DiphasicStepData::assembleMatrices(
 			// TODO: test w/ other funcs
 			const Vec& pos = particles.centers().col(i) ;
 			const Scalar phi = std::min( s_maxPhi, phase.fraction( pos ) ) ;
-			const Scalar vR = (1 + config.alpha() * phi )/(1-phi) ;
+			const Scalar vR = (1/config.alpha() + phi)/(1-phi) ;
 //			const Scalar vR = 1;
 
 			for( Index k = 0 ; k < l_itp.nodes.size() ; ++k ) {
 				const Index idx = primalNodes.indices[ l_itp.nodes[k]] ;
-				Rcoeffs[ idx ] += w * l_itp.coeffs[k] / config.alpha() * vR ;
+				Rcoeffs[ idx ] += w * l_itp.coeffs[k] * vR ;
 			}
 
 		}
@@ -301,7 +301,7 @@ void DiphasicStepData::assembleMatrices(
 		{
 #pragma omp parallel for
 			for( Index i = 0 ; i < ma ; ++i ) {
-				forms.R.block(i) = activeProj.vel.block(i) * Rcoeffs[i]
+				forms.R.block(i) = activeProj.vel.block(i) * ( Rcoeffs[i] + mass_regul )
 						+ Mat::Identity() - activeProj.vel.block(i) ;
 			}
 		}

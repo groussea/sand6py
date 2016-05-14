@@ -14,6 +14,7 @@
 
 #include <bogus/Core/Utils/Timer.hpp>
 #include <bogus/Core/Block.impl.hpp>
+#include <bogus/Core/Block.io.hpp>
 
 
 namespace d6 {
@@ -187,9 +188,15 @@ void DiphasicSolver::solve(
 	DiphasicPrimalData::MInvType M_fac ;
 	DiphasicPrimalData::factorize( M, M_fac ) ;
 
+	if( M_fac.block(0).factorization().info() != 0 ) {
+		Log::Error() << "Stokes fac failed! "  << std::endl ;
+		std::abort() ;
+	}
+
 	x = M_fac * l  ;
 
 	Log::Debug() << "Stokes solver time: " << timer.elapsed() << std::endl ;
+
 
 	// III Friction
 
