@@ -169,6 +169,7 @@ void DiphasicSolver::solve(
 	DynVec l ( primal.s() ) ;
 	l.setZero() ;
 	l.head(m) = rhs ;
+	l.segment(m,r) = stepData.activeProj.vel * stepData.forms.fluctuMomentum ;
 	l.segment(m+r,p) = stepData.fullGridProj.pressure *
 			stepData.forms.B * stepData.dirichletVel ;
 

@@ -19,7 +19,7 @@
 
 //#define KINEMATIC_VISC
 //#define U_MOMENTUM
-
+#define W_MOMENTUM
 
 // a C' p  = a wh / Stk
 // a C  wh + Bu = 0
@@ -31,6 +31,29 @@
 // C sStk (a wh/sStk) + Bu = 0
 
 //u1 = u + wh = u + sStk/a (1 wh/sStk)
+
+// 1/(dt) (w) = a w / Stk
+// wh = a sStk
+
+
+// Stk (1-phi)/beta w = wh sStk /a
+// wh = a * sStk (1-phi)/beta
+// w  =  beta/a(1-phi)  wh/sStk
+
+// a phi C' p = phi Stk/dt dw
+// sStk C' p = sStk Stk phi/(a dt) dw
+//    = phi beta/(1-phi)  Stk /(dt a^2) dwh
+//    = phi beta/a(1-phi)  Stk/(dt a) wh  - \phi Stk sStk/(a dt) wk
+// R += phi(1-phi)/beta
+
+
+// 1/(dt) (w - wk) = a w / Stk
+// 1/(dt) (w - wk) = a w / Stk
+
+// 1/(dt) (wh - (1-phi)/beta wk) = a wh / Stk
+
+// phi/(a sStk dt) (dw) = a wh / Stk
+// (1-phi)/beta 1/(dt) (w - wk) = a wh / Stk
 
 namespace d6 {
 
@@ -284,6 +307,10 @@ void DiphasicStepData::assembleMatrices(
 		DynVec Rcoeffs ( ma ) ;
 		Rcoeffs.setZero() ;
 
+		PrimalVectorField fluctuMomentum( pShape ) ;
+		fluctuMomentum.set_zero() ;
+
+		std::cout << "Delta t" << dt << std::endl ;
 
 		builder.integrate_particle( particles, [&]( Index i, Scalar w, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& r_dc_dx)
 		{
@@ -298,17 +325,26 @@ void DiphasicStepData::assembleMatrices(
 			// TODO: test w/ other funcs
 			const Vec& pos = particles.centers().col(i) ;
 			const Scalar phi = std::min( s_maxPhi, phase.fraction( pos ) ) ;
-			const Scalar vR = (1/config.alpha() + phi)/(1-phi) ;
+			Scalar vR = (1/config.alpha() + phi)/(1-phi) ;
+			Vec vW = Vec::Zero() ;
 //			const Scalar vR = 1;
+#ifdef W_MOMENTUM
+			vR *= (1 + 1/(config.fluidFriction * config.alpha() * dt) ) ;
+			vW  = sStk/(config.fluidFriction * config.alpha() * dt) *
+					(phase.velocity(pos) - fluid.velocity(pos)) ;
+#endif
 
 			for( Index k = 0 ; k < l_itp.nodes.size() ; ++k ) {
 				const Index idx = primalNodes.indices[ l_itp.nodes[k]] ;
 				Rcoeffs[ idx ] += w * l_itp.coeffs[k] * vR ;
+				fluctuMomentum[ l_itp.nodes[k] ] += w * l_itp.coeffs[k] * vW;
 			}
 
 		}
 		);
 		Log::Debug() << "C Integrate particle: " << timer.elapsed() << std::endl ;
+
+		dualNodes.field2var( fluctuMomentum, forms.fluctuMomentum ) ;
 
 		{
 #pragma omp parallel for

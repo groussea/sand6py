@@ -28,6 +28,7 @@ struct DiphasicStepData {
 
 		DynVec linearMomentum ;  //!< integral of fraction times velocity
 		DynVec dirichletTerm ;   //!< boundary term in A equation
+		DynVec fluctuMomentum ;  //!< momentum of flutuation
 
 		DynVec externalForces ; //!< integral of external forces
 		DynArr volumes  ;	    //!< Volume aossciated to each node = int(1)
