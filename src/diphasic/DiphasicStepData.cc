@@ -353,9 +353,10 @@ void DiphasicStepData::assembleMatrices(
 		// F = D(v):D(phi w)
 		// left == v
 		// riht == phi w
+#ifdef WU_VISC
 		forms.F.cloneIndex( builder.index() ) ;
 		forms.F.setBlocksToZero() ;
-#ifdef WU_VISC
+
 		builder.integrate_cell<form::Left>( primalNodes.cells.begin(), primalNodes.cells.end(),
 								[&]( Scalar w, const Vec&, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& )
 			{
@@ -441,7 +442,7 @@ void DiphasicStepData::assembleMatrices(
 		);
 		Log::Debug() << "C Integrate particle: " << timer.elapsed() << std::endl ;
 
-		dualNodes.field2var( fluctuMomentum, forms.fluctuMomentum ) ;
+		primalNodes.field2var( fluctuMomentum, forms.fluctuMomentum ) ;
 
 		{
 #pragma omp parallel for

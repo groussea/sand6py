@@ -79,7 +79,7 @@ int main( int argc, const char* argv[] )
 	d6::Log::Debug() << "Stk/Alpha =\t " << 1./( config.alpha() * config.fluidFriction )<< std::endl ;
 	d6::Log::Debug() << "(A+1)Stk/Re =\t " << (config.alpha()+1) * config.viscosity /config.fluidFriction << std::endl ;
 
-	feenableexcept( FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW ) ;
+	feenableexcept( FE_INVALID | FE_DIVBYZERO ) ;
 
 	// Run simulation
 	d6::DiphasicSimu( config, base_dir ).run() ;
