@@ -116,6 +116,7 @@ void DiphasicStepData::assembleMatrices(
 		const PrimalScalarField &intPhi, const PrimalVectorField& intPhiVel )
 {
 	const Scalar mass_regul = 1.e-8 ;
+	const Scalar w_regul = 1.e-2 / config.alpha() ; // Small w.r.t phi max (1./alpha, phi)
 	const Scalar sStk = 1./std::sqrt( config.fluidFriction ) ;
 
 	bogus::Timer timer ;
@@ -402,7 +403,7 @@ void DiphasicStepData::assembleMatrices(
 		{
 #pragma omp parallel for
 			for( Index i = 0 ; i < ma ; ++i ) {
-				forms.R.block(i) = activeProj.vel.block(i) * ( Rcoeffs[i] + mass_regul )
+				forms.R.block(i) = activeProj.vel.block(i) * ( Rcoeffs[i] + w_regul )
 						+ Mat::Identity() - activeProj.vel.block(i) ;
 			}
 		}

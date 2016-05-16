@@ -18,7 +18,7 @@
 #define SPLIT
 #define MERGE
 
-#define GRAD_FROM_VEL
+//#define GRAD_FROM_VEL
 #define ANALYTIC_FRAME_CONVECTION
 
 namespace d6 {
