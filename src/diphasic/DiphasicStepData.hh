@@ -40,9 +40,10 @@ struct DiphasicStepData {
 		//! Lumped mass matrix and its inverse
 		typename FormMat<WD,WD>::SymType M_lumped ;
 		typename FormMat<WD,WD>::SymType M_lumped_inv ;
+		typename FormMat<WD,WD>::SymType R;    //!< Mass mat for W
 
 		typename FormMat<WD,WD>::Type A ; //!< Mass + Visco ; Could be Symmetric when FormBuilder has sym index
-		typename FormMat<WD,WD>::Type R ; //!< Mass mat for W
+		typename FormMat<WD,WD>::Type R_visc ; //!< Mass mat for W
 
 		typename FormMat< 1,WD>::Type B ; //!< p div v
 		typename FormMat< 1,WD>::Type C ; //!< grad(p) w alpha phi

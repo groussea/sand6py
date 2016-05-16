@@ -20,6 +20,7 @@
 //#define KINEMATIC_VISC
 //#define U_MOMENTUM
 #define W_MOMENTUM
+#define W_MOMENTUM_CROSS_TERMS
 
 // a C' p  = a wh / Stk
 // a C  wh + Bu = 0
@@ -44,8 +45,12 @@
 // sStk C' p = sStk Stk phi/(a dt) dw
 //    = phi beta/(1-phi)  Stk /(dt a^2) dwh
 //    = phi beta/a(1-phi)  Stk/(dt a) wh  - \phi Stk sStk/(a dt) wk
-// R += phi(1-phi)/beta
+// R += phi beta/a(1-phi) (Stk /dt a)
 
+
+// a Stk/Re \phi Div( D(a pi /beta w))
+// = a sStk/Re \phi Div( D(phi wh))
+// (* sStk/a) = Stk/Re \phi Div( D(phi wh))
 
 // 1/(dt) (w - wk) = a w / Stk
 // 1/(dt) (w - wk) = a w / Stk
@@ -196,11 +201,11 @@ void DiphasicStepData::assembleMatrices(
 				const Scalar phi = std::min( s_maxPhi, phase.fraction( pos ) ) ;
 #ifdef U_MOMENTUM
 				const Vec u = fluid.mavg_vel( pos ) ;
-				Vec pos_prev = pShape.mesh().clamp_point( pos - dt*u ) ;
+				onst Vec pos_prev = pShape.mesh().clamp_point( pos - dt*u ) ;
 				const Vec u_adv = fluid.mavg_vel( pos_prev ) ;
 #else
 				const Vec u2 = fluid.velocity( pos ) ;
-				Vec pos_prev = pShape.mesh().clamp_point( pos - dt*u2 ) ;
+				const Vec pos_prev = pShape.mesh().clamp_point( pos - dt*u2 ) ;
 				const Vec u2_adv = fluid.velocity( pos_prev ) ;
 #endif
 				for( Index k = 0 ; k < itp.nodes.size() ; ++k ) {
@@ -218,7 +223,7 @@ void DiphasicStepData::assembleMatrices(
 			{
 				const Vec& pos = particles.centers().col(i) ;
 				const Vec u = fluid.mavg_vel( pos ) ;
-				Vec pos_prev = pShape.mesh().clamp_point( pos - dt*u ) ;
+				const Vec pos_prev = pShape.mesh().clamp_point( pos - dt*u ) ;
 				const Vec u_adv = fluid.mavg_vel( pos_prev ) ;
 				for( Index k = 0 ; k < itp.nodes.size() ; ++k ) {
 					linearMomentum[ itp.nodes[k] ] += w * itp.coeffs[k] * config.alpha() * u_adv ;
@@ -280,6 +285,32 @@ void DiphasicStepData::assembleMatrices(
 
 	}
 
+	{
+		const Index ma = primalNodes.count() ;
+
+		typedef FormBuilder< PrimalShape, PrimalShape > Builder ;
+		Builder builder( pShape, pShape ) ;
+		builder.reset( ma );
+
+		builder.addToIndex( primalNodes.indices, primalNodes.indices );
+		builder.makeCompressed();
+
+		forms.R_visc.clear();
+		forms.R_visc.setRows( ma );
+		forms.R_visc.setCols( ma );
+		forms.R_visc.cloneIndex( builder.index() ) ;
+		forms.R_visc.setBlocksToZero() ;
+
+		builder.integrate_cell<form::Left>( primalNodes.cells.begin(), primalNodes.cells.end(),
+								[&]( Scalar w, const Vec& pos, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& r_dc_dx )
+			{
+				const Scalar phi = phase.fraction( pos ) ;
+				Builder:: addDuDv( forms.R_visc, w*phi*phi*2*config.viscosity/config.fluidFriction, l_itp, l_dc_dx, r_itp, r_dc_dx, primalNodes.indices, primalNodes.indices ) ;
+			}
+		);
+
+	}
+
 
 	// II Active forms -- R, C
 
@@ -310,7 +341,8 @@ void DiphasicStepData::assembleMatrices(
 		PrimalVectorField fluctuMomentum( pShape ) ;
 		fluctuMomentum.set_zero() ;
 
-		std::cout << "Delta t" << dt << std::endl ;
+		const Scalar St_adt  = config.volMass/(config.fluidFriction * config.alpha() * dt) ;
+		Log::Debug() << "Ratio inertia flutuation " << St_adt << std::endl ;
 
 		builder.integrate_particle( particles, [&]( Index i, Scalar w, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& r_dc_dx)
 		{
@@ -329,9 +361,22 @@ void DiphasicStepData::assembleMatrices(
 			Vec vW = Vec::Zero() ;
 //			const Scalar vR = 1;
 #ifdef W_MOMENTUM
-			vR *= (1 + 1/(config.fluidFriction * config.alpha() * dt) ) ;
-			vW  = sStk/(config.fluidFriction * config.alpha() * dt) *
-					(phase.velocity(pos) - fluid.velocity(pos)) ;
+#ifdef W_MOMENTUM_CROSS_TERMS
+			PrimalShape::Location ploc ;
+			pShape.locate( pos, ploc );
+			const Vec& u1 = phase.velocity(ploc) ;
+			const Vec& u2 = fluid.velocity(ploc) ;
+			const Vec& pos_prev = pShape.mesh().clamp_point( pos - .5*dt*(u1+u2) ) ;
+			const Mat& gu1 = phase.velocity.grad_at( ploc ) ;
+			const Mat& gu2 = fluid.velocity.grad_at( ploc ) ;
+			// ( grad(u1 + u2)/2 ) wv
+			const Vec& cross = .5 * dt * (gu1 + gu2)*(u1 - u2) ;
+#else
+			const Vec& pos_prev = prev;
+			const Vec& cross = Vec::Zero() ;
+#endif
+			vR *= (1 + St_adt ) ;
+			vW  = sStk * St_adt * ( cross + phase.velocity(pos_prev) - fluid.velocity(pos_prev) ) ;
 #endif
 
 			for( Index k = 0 ; k < l_itp.nodes.size() ; ++k ) {
@@ -353,6 +398,10 @@ void DiphasicStepData::assembleMatrices(
 						+ Mat::Identity() - activeProj.vel.block(i) ;
 			}
 		}
+
+		forms.R_visc += forms.R ;
+		const typename FormMat<WD,WD>::SymType IP = activeProj.vel.Identity() - activeProj.vel ;
+		forms.R_visc = activeProj.vel * forms.R_visc * activeProj.vel  + IP ;
 
 	}
 

@@ -33,7 +33,7 @@ void DiphasicPrimalData::makePenalizedEigenStokesMatrix(
 	typedef Eigen::SparseMatrix< Scalar > SM ;
 	SM A, B, C, R, Q ;
 	bogus::convert( this->A, A ) ;
-	bogus::convert( this->R, R ) ;
+	bogus::convert( this->R_visc, R ) ;
 
 	bogus::convert( this->B, B ) ;
 	bogus::convert( this->C, C ) ;

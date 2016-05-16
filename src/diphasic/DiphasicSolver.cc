@@ -74,7 +74,7 @@ void DiphasicSolver::step(const Config &config, const Scalar dt, Phase &phase, F
 	DiphasicStepData stepData ;
 	stepData.compute( m_particles, config, dt, fluid, phase );
 
-//	printEnergies( config, phase, fluid);
+	//	printEnergies( config, phase, fluid);
 	solve( config, dt, stepData, phase, fluid ) ;
 //	printEnergies( config, phase, fluid);
 
@@ -151,6 +151,7 @@ void DiphasicSolver::solve(
 	DiphasicPrimalData primal ;
 	primal.A = stepData.forms.A ;
 	primal.R = stepData.forms.R ;
+	primal.R_visc = stepData.forms.R_visc ;
 	primal.M_lumped_inv = stepData.forms.M_lumped_inv ;
 	primal.B = stepData.fullGridProj.pressure * ( stepData.forms.B * stepData.fullGridProj.vel ) ;
 	primal.C = stepData.fullGridProj.pressure * ( stepData.forms.C * stepData.activeProj.vel ) ;
