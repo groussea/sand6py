@@ -302,10 +302,18 @@ void DiphasicStepData::assembleMatrices(
 		forms.R_visc.setBlocksToZero() ;
 
 		builder.integrate_cell<form::Left>( primalNodes.cells.begin(), primalNodes.cells.end(),
-								[&]( Scalar w, const Vec& pos, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& r_dc_dx )
+								[&]( Scalar w, const Vec&, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& )
 			{
-				const Scalar phi = phase.fraction( pos ) ;
-				Builder:: addDuDv( forms.R_visc, w*phi*phi*2*config.viscosity/config.fluidFriction, l_itp, l_dc_dx, r_itp, r_dc_dx, primalNodes.indices, primalNodes.indices ) ;
+				// u = sum_k ( c_k uK  )
+				// du_dx  = sum_k ( dcdx_k  uK  )
+				// phiu   = sum_k ( c_k phiK uK  )
+				// d_phiu = sum_k ( (dcdx_k phiK) uK  )
+				P_Dcdx phidc_dx ;
+				for( Index k = 0 ; k < l_itp.nodes.size() ; ++k ) {
+					phidc_dx.row(k) = l_dc_dx.row(k) * phase.fraction[ l_itp.nodes[k] ] ;
+				}
+
+				Builder:: addDuDv( forms.R_visc, w*2*config.viscosity/config.fluidFriction, l_itp, phidc_dx, r_itp, phidc_dx, primalNodes.indices, primalNodes.indices ) ;
 			}
 		);
 

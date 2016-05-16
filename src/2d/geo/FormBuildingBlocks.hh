@@ -8,12 +8,9 @@ struct FormBlocks {
 	/*
  *
  * D( u )
- * a = Tr D(u) / sqrt(6) = ( dux_dx + duy_dy + duz_dz ) / sqrt(6)
- * b = .5 ( dux_dx - duy_dy )
- * c = ( 2*duz_dz - duy_dy - dux_dx ) / (2 * s_sqrt_3)
- * d = .5 (dux_dy + duy_dx)
- * e = .5 (dux_dz + duz_dx)
- * f = .5 (duz_dy + duy_dz)
+ * a = Tr D(u) / sqrt(4) = ( dux_dx + duy_dy ) / 2
+ * b = .5  dux_dx - duy_dy )
+ * c = .5 (dux_dy + duy_dx)
  */
 
 	template < typename RowDerived, typename ColDerived >
