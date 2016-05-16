@@ -31,18 +31,19 @@ void DiphasicPrimalData::makePenalizedEigenStokesMatrix(
 	const Index padding = this->padding() ;
 
 	typedef Eigen::SparseMatrix< Scalar > SM ;
-	SM A, B, C, R, Q ;
+	SM A, B, C, R, Q, F ;
 	bogus::convert( this->A, A ) ;
 	bogus::convert( this->R_visc, R ) ;
 
 	bogus::convert( this->B, B ) ;
 	bogus::convert( this->C, C ) ;
-
+	bogus::convert( this->F, F ) ;
 
 	A.prune(1.) ;
 	B.prune(1.) ;
 	C.prune(1.) ;
 	R.prune(1.) ;
+	F.prune(1.) ;
 
 	M.resize( s, s ) ;
 
@@ -65,6 +66,11 @@ void DiphasicPrimalData::makePenalizedEigenStokesMatrix(
 		for( SM::InnerIterator it (R, i) ; it ; ++it )
 		{
 			tpl.push_back( Tpl( m+it.row(), m+i, it.value() ) );
+		}
+		for( SM::InnerIterator it (F, i) ; it ; ++it )
+		{
+			tpl.push_back( Tpl( it.row(), m+i, it.value() ) );
+			tpl.push_back( Tpl( m+i, it.row(), it.value() ) );
 		}
 		for( SM::InnerIterator it (C, i) ; it ; ++it )
 		{

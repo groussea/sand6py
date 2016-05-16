@@ -19,6 +19,8 @@
 
 //#define KINEMATIC_VISC
 //#define U_MOMENTUM
+#define  W_VISC
+#define WU_VISC
 #define W_MOMENTUM
 #define W_MOMENTUM_CROSS_TERMS
 
@@ -299,6 +301,9 @@ void DiphasicStepData::assembleMatrices(
 		forms.R_visc.clear();
 		forms.R_visc.setRows( ma );
 		forms.R_visc.setCols( ma );
+		forms.R_visc.finalize();
+
+#ifdef W_VISC
 		forms.R_visc.cloneIndex( builder.index() ) ;
 		forms.R_visc.setBlocksToZero() ;
 
@@ -317,6 +322,7 @@ void DiphasicStepData::assembleMatrices(
 				Builder:: addDuDv( forms.R_visc, w*2*config.viscosity/config.fluidFriction, l_itp, phidc_dx, r_itp, phidc_dx, primalNodes.indices, primalNodes.indices ) ;
 			}
 		);
+#endif
 
 	}
 
@@ -332,6 +338,40 @@ void DiphasicStepData::assembleMatrices(
 
 		builder.addToIndex( fullIndices, primalNodes.indices );
 		builder.makeCompressed();
+
+		forms.F.clear();
+		forms.F.setRows( m );
+		forms.F.setCols( ma );
+
+		// a phi/Re D(u)
+		// *(sStk/a) -> sStk phi/Re D(u)
+
+		// Stk/Re D( a pi/beta w )
+		// Stk/Re D( phi wh / sStk )
+		// sStk/Re D( phi wh )
+
+		// F = D(v):D(phi w)
+		// left == v
+		// riht == phi w
+		forms.F.cloneIndex( builder.index() ) ;
+		forms.F.setBlocksToZero() ;
+#ifdef WU_VISC
+		builder.integrate_cell<form::Left>( primalNodes.cells.begin(), primalNodes.cells.end(),
+								[&]( Scalar w, const Vec&, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& )
+			{
+				// u = sum_k ( c_k uK  )
+				// du_dx  = sum_k ( dcdx_k  uK  )
+				// phiu   = sum_k ( c_k phiK uK  )
+				// d_phiu = sum_k ( (dcdx_k phiK) uK  )
+				P_Dcdx phidc_dx ;
+				for( Index k = 0 ; k < l_itp.nodes.size() ; ++k ) {
+					phidc_dx.row(k) = l_dc_dx.row(k) * phase.fraction[ l_itp.nodes[k] ] ;
+				}
+
+				Builder:: addDuDv( forms.F, w*2*config.viscosity * sStk, l_itp, l_dc_dx, r_itp, phidc_dx, fullIndices, primalNodes.indices ) ;
+			}
+		);
+#endif
 
 		forms.R.clear();
 		forms.R.setRows( ma );
@@ -375,13 +415,16 @@ void DiphasicStepData::assembleMatrices(
 			pShape.locate( pos, ploc );
 			const Vec& u1 = phase.velocity(ploc) ;
 			const Vec& u2 = fluid.velocity(ploc) ;
-			const Vec& pos_prev = pShape.mesh().clamp_point( pos - .5*dt*(u1+u2) ) ;
+//			const Vec& pos_prev = pShape.mesh().clamp_point( pos - .5*dt*(u1+u2) ) ;
+			const Vec& pos_prev = pos;
+
 			const Mat& gu1 = phase.velocity.grad_at( ploc ) ;
 			const Mat& gu2 = fluid.velocity.grad_at( ploc ) ;
 			// ( grad(u1 + u2)/2 ) wv
-			const Vec& cross = .5 * dt * (gu1 + gu2)*(u1 - u2) ;
+			const Vec& cross = .5 * dt * (gu1 + gu2)*(u1 - u2)
+					+ .5 * dt * (gu1 - gu2)*(u1+u2) ;
 #else
-			const Vec& pos_prev = prev;
+			const Vec& pos_prev = pos;
 			const Vec& cross = Vec::Zero() ;
 #endif
 			vR *= (1 + St_adt ) ;

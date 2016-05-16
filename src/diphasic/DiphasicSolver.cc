@@ -152,6 +152,7 @@ void DiphasicSolver::solve(
 	primal.A = stepData.forms.A ;
 	primal.R = stepData.forms.R ;
 	primal.R_visc = stepData.forms.R_visc ;
+	primal.F = stepData.fullGridProj.vel * ( stepData.forms.F * stepData.activeProj.vel ) ;
 	primal.M_lumped_inv = stepData.forms.M_lumped_inv ;
 	primal.B = stepData.fullGridProj.pressure * ( stepData.forms.B * stepData.fullGridProj.vel ) ;
 	primal.C = stepData.fullGridProj.pressure * ( stepData.forms.C * stepData.activeProj.vel ) ;
@@ -171,6 +172,7 @@ void DiphasicSolver::solve(
 	l.setZero() ;
 	l.head(m) = rhs ;
 	l.segment(m,r) = stepData.activeProj.vel * stepData.forms.fluctuMomentum ;
+	l.segment(m,r) += stepData.activeProj.vel * stepData.forms.F.transpose() * stepData.dirichletVel ;
 	l.segment(m+r,p) = stepData.fullGridProj.pressure *
 			stepData.forms.B * stepData.dirichletVel ;
 

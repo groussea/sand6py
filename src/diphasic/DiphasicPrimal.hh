@@ -17,6 +17,8 @@ struct DiphasicPrimalData {
 	AType A ;
 	AType R_visc ;
 
+	AType F ;
+
 	// Symmetric
 	typedef FormMat< WD, WD >::SymType DType ;
 	DType R ;
