@@ -369,7 +369,7 @@ void DiphasicStepData::assembleMatrices(
 					phidc_dx.row(k) = l_dc_dx.row(k) * phase.fraction[ l_itp.nodes[k] ] ;
 				}
 
-				Builder:: addDuDv( forms.F, w*2*config.viscosity * sStk, l_itp, l_dc_dx, r_itp, phidc_dx, fullIndices, primalNodes.indices ) ;
+				Builder:: addDuDv( forms.F, -w*2*config.viscosity * sStk, l_itp, l_dc_dx, r_itp, phidc_dx, fullIndices, primalNodes.indices ) ;
 			}
 		);
 #endif
@@ -411,25 +411,14 @@ void DiphasicStepData::assembleMatrices(
 			Vec vW = Vec::Zero() ;
 //			const Scalar vR = 1;
 #ifdef W_MOMENTUM
-#ifdef W_MOMENTUM_CROSS_TERMS
-			PrimalShape::Location ploc ;
-			pShape.locate( pos, ploc );
-			const Vec& u1 = phase.velocity(ploc) ;
-			const Vec& u2 = fluid.velocity(ploc) ;
-//			const Vec& pos_prev = pShape.mesh().clamp_point( pos - .5*dt*(u1+u2) ) ;
-			const Vec& pos_prev = pos;
+			const Vec& u1_adv = particles.velocities().col(i) ;
 
-			const Mat& gu1 = phase.velocity.grad_at( ploc ) ;
-			const Mat& gu2 = fluid.velocity.grad_at( ploc ) ;
-			// ( grad(u1 + u2)/2 ) wv
-			const Vec& cross = .5 * dt * (gu1 + gu2)*(u1 - u2)
-					+ .5 * dt * (gu1 - gu2)*(u1+u2) ;
-#else
-			const Vec& pos_prev = pos;
-			const Vec& cross = Vec::Zero() ;
-#endif
+			const Vec& u2 = fluid.velocity(pos) ;
+			const Vec& pos_prev = pShape.mesh().clamp_point( pos - dt*u2 ) ;
+			const Vec& u2_adv = fluid.velocity( pos_prev ) ;
+
 			vR *= (1 + St_adt ) ;
-			vW  = sStk * St_adt * ( cross + phase.velocity(pos_prev) - fluid.velocity(pos_prev) ) ;
+			vW  = St_adt/sStk * ( u1_adv - u2_adv ) ;
 #endif
 
 			for( Index k = 0 ; k < l_itp.nodes.size() ; ++k ) {

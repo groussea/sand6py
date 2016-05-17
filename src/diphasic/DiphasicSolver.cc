@@ -194,10 +194,10 @@ void DiphasicSolver::solve(
 	DiphasicPrimalData::MInvType M_fac ;
 	DiphasicPrimalData::factorize( M, M_fac ) ;
 
-	if( M_fac.block(0).factorization().info() != 0 ) {
-		Log::Error() << "Stokes fac failed! "  << std::endl ;
-		std::abort() ;
-	}
+//	if( M_fac.block(0).factorization().info() != 0 ) {
+//		Log::Error() << "Stokes fac failed! "  << std::endl ;
+//		std::abort() ;
+//	}
 
 	x = M_fac * l  ;
 

@@ -22,7 +22,7 @@ struct RayleighScenar : public Scenario {
 
 struct Sedimentation : public Scenario {
 	Scalar particle_density( const Vec &x ) const override {
-		return 	( x[1] <  .9*box()[1] ) ? .5 : 0 ;
+		return 	( x[1] <  .9*box()[1] ) ? .3 : 0 ;
 	}
 };
 
