@@ -64,10 +64,12 @@ bool Offline::load_frame(unsigned frame )
 			ia >> *m_grains ;
 		}
 		// Fluid
-		 {
+		{
 			std::ifstream ifs( dir.filePath("fluid") );
-			boost::archive::binary_iarchive ia(ifs);
-			ia >> *m_fluid ;
+			if(ifs) {
+				boost::archive::binary_iarchive ia(ifs);
+				ia >> *m_fluid ;
+			}
 		}
 
 		// Log

@@ -293,6 +293,7 @@ static Scalar solveProdGSRed(const DiphasicFrictionSolver::Options &options,
 
 	delta_p = - P_inv * K.transpose() * lambda ;
 
+
 	return res ;
 }
 
@@ -385,10 +386,9 @@ Scalar DiphasicFrictionSolver::solveRed(const Options &options, const Scalar pen
 
 	x.segment( m_data.m() + m_data.r(), m_data.p() ) += delta_p ;
 	x.head( m_data.m() ) += m_data.M_lumped_inv *
-			( m_data.B.transpose() * delta_p + m_data.G.transpose() * lambda) ;
+		DynVec( m_data.B.transpose() * delta_p + m_data.G.transpose() * lambda) ;
 	x.segment( m_data.m(), m_data.r() ) += R_inv *
-			( m_data.C.transpose() * delta_p + m_data.H.transpose() * lambda) ;
-
+		DynVec( m_data.C.transpose() * delta_p + m_data.H.transpose() * lambda) ;
 
 	return res ;
 }

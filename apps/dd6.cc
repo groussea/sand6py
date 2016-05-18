@@ -67,6 +67,8 @@ int main( int argc, const char* argv[] )
 	std::string info = d6::arg( d6::arg3("%1 %3 on %2 [%4]", argv[0], d6::g_git_branch, d6::g_git_commit ), d6::g_timestamp ) ;
 	d6::Log::Info() << "This is " << info << std::endl ;
 
+	d6::Log::Debug() << "1/Stk (SI) =\t " << config.fluidFriction() << std::endl ;
+
 	// Save copy of final configuration and convert to interal units
 	d6::FileInfo outDir ( base_dir ) ;
 	if( !outDir.exists() ) outDir.makeDir() ;
@@ -74,12 +76,12 @@ int main( int argc, const char* argv[] )
 	config.internalize();
 
 	d6::Log::Debug() << "1/Re  =\t " << config.viscosity << std::endl ;
-	d6::Log::Debug() << "1/Stk =\t " << config.fluidFriction << std::endl ;
+	d6::Log::Debug() << "1/Stk =\t " << config.fluidFriction() << std::endl ;
 	d6::Log::Debug() << "Alpha =\t " << config.alpha() << std::endl ;
-	d6::Log::Debug() << "Stk/Alpha =\t " << 1./( config.alpha() * config.fluidFriction )<< std::endl ;
-	d6::Log::Debug() << "(A+1)Stk/Re =\t " << (config.alpha()+1) * config.viscosity /config.fluidFriction << std::endl ;
+	d6::Log::Debug() << "Stk/Alpha =\t " << 1./( config.alpha() * config.fluidFriction() )<< std::endl ;
+	d6::Log::Debug() << "(A+1)Stk/Re =\t " << (config.alpha()+1) * config.viscosity /config.fluidFriction() << std::endl ;
 
-	feenableexcept( FE_INVALID | FE_DIVBYZERO ) ;
+	feenableexcept( FE_DIVBYZERO ) ;
 
 	// Run simulation
 	d6::DiphasicSimu( config, base_dir ).run() ;

@@ -256,7 +256,6 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	if( c.useInfNorm ) {
 		// PG without infinity norm leads to creeping at end of simulation
 		options.useInfinityNorm = true ;
-		options.tolerance = 1.e-5 ;
 		options.maxIterations = 10000 ;
 	}
 

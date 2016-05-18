@@ -36,7 +36,7 @@ Config::Config() :
 	usePG( false ), useInfNorm( D6_DIM == 2 ),
 	boundary("cuve"),
 	output( true ), exportAllFields( bool(3-D6_DIM) ), dumpPrimalData( 0 ),
-	fluidVolMass( 1 ), fluidFriction( 1.e4 ),
+	fluidVolMass( 1 ), stokesFactor( 18 ),
 	windSpeed( Vec::Zero() )
 {
 	gravity[WD-1] = -9.81 ;

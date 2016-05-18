@@ -192,12 +192,14 @@ void DiphasicSolver::solve(
 	SM M ;
 	primal.makePenalizedEigenStokesMatrix( M, 1.e-8 );
 	DiphasicPrimalData::MInvType M_fac ;
+	Log::Debug() << "M assembly: " << timer.elapsed() << std::endl ;
 	DiphasicPrimalData::factorize( M, M_fac ) ;
+	Log::Debug() << "M factorization: " << timer.elapsed() << std::endl ;
 
-//	if( M_fac.block(0).factorization().info() != 0 ) {
-//		Log::Error() << "Stokes fac failed! "  << std::endl ;
-//		std::abort() ;
-//	}
+	if( M_fac.block(0).factorization().info() != 0 ) {
+		Log::Error() << "Stokes fac failed! "  << std::endl ;
+		std::abort() ;
+	}
 
 	x = M_fac * l  ;
 
@@ -254,7 +256,7 @@ void DiphasicSolver::solve(
 						   stats.nIterations(), stats.residual(), stats.time() ) << std::endl ;
 
 	// IV  Output
-	const Scalar sStk = 1./std::sqrt( config.fluidFriction ) ;
+	const Scalar sStk = 1./std::sqrt( config.fluidFriction() ) ;
 
 	stepData.dualNodes.var2field( lambda, phase.stresses ) ;
 

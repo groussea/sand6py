@@ -19,10 +19,10 @@
 
 //#define KINEMATIC_VISC
 //#define U_MOMENTUM
+
 #define  W_VISC
 #define WU_VISC
 #define W_MOMENTUM
-#define W_MOMENTUM_CROSS_TERMS
 
 // a C' p  = a wh / Stk
 // a C  wh + Bu = 0
@@ -119,7 +119,7 @@ void DiphasicStepData::assembleMatrices(
 {
 	const Scalar mass_regul = 1.e-8 ;
 	const Scalar w_regul = 1.e-2 / config.alpha() ; // Small w.r.t phi max (1./alpha, phi)
-	const Scalar sStk = 1./std::sqrt( config.fluidFriction ) ;
+	const Scalar sStk = 1./std::sqrt( config.fluidFriction() ) ;
 
 	bogus::Timer timer ;
 
@@ -319,7 +319,7 @@ void DiphasicStepData::assembleMatrices(
 					phidc_dx.row(k) = l_dc_dx.row(k) * phase.fraction[ l_itp.nodes[k] ] ;
 				}
 
-				Builder:: addDuDv( forms.R_visc, w*2*config.viscosity/config.fluidFriction, l_itp, phidc_dx, r_itp, phidc_dx, primalNodes.indices, primalNodes.indices ) ;
+				Builder:: addDuDv( forms.R_visc, w*2*config.viscosity/config.fluidFriction(), l_itp, phidc_dx, r_itp, phidc_dx, primalNodes.indices, primalNodes.indices ) ;
 			}
 		);
 #endif
@@ -391,7 +391,7 @@ void DiphasicStepData::assembleMatrices(
 		PrimalVectorField fluctuMomentum( pShape ) ;
 		fluctuMomentum.set_zero() ;
 
-		const Scalar St_adt  = config.volMass/(config.fluidFriction * config.alpha() * dt) ;
+		const Scalar St_adt  = config.volMass/(config.fluidFriction() * config.alpha() * dt) ;
 		Log::Debug() << "Ratio inertia flutuation " << St_adt << std::endl ;
 
 		builder.integrate_particle( particles, [&]( Index i, Scalar w, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& r_dc_dx)

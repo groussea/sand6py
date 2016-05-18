@@ -168,7 +168,7 @@ void DynParticles::update(const Config &config, const Scalar dt, const Phase &ph
 		}
 
 		//Orientation
-		{
+		if( config.elongation > 0 ){
 			const Scalar lambda = config.elongation ;
 
 			auto orient_view( tensor_view( m_geo.m_orient.col(i) ) ) ;

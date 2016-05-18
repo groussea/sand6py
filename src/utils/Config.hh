@@ -51,8 +51,8 @@ namespace d6 {
 	CONFIG_FIELD( dumpPrimalData	, unsigned		,	Units::None			) \
 	\
 	CONFIG_FIELD( fluidVolMass		, Scalar		,	Units::VolumicMass	) \
-	CONFIG_FIELD( fluidFriction		, Scalar		,	Units::LinearFriction) \
-	CONFIG_FIELD( windSpeed			, Vec			,	Units::Velocity) \
+	CONFIG_FIELD( stokesFactor		, Scalar		,	Units::None 		) \
+	CONFIG_FIELD( windSpeed			, Vec			,	Units::Velocity 	) \
 
 
 struct Config
@@ -77,6 +77,9 @@ struct Config
 
 	Scalar alpha() const {
 		return ( volMass - fluidVolMass ) / fluidVolMass ;
+	}
+	Scalar fluidFriction() const {
+		return stokesFactor * viscosity / (grainDiameter*grainDiameter)  ;
 	}
 
 #define CONFIG_FIELD( name, type, u ) \
