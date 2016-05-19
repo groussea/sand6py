@@ -79,6 +79,7 @@ int main( int argc, const char* argv[] )
 	d6::Log::Debug() << "1/Stk =\t " << config.fluidFriction() << std::endl ;
 	d6::Log::Debug() << "Alpha =\t " << config.alpha() << std::endl ;
 	d6::Log::Debug() << "Stk/Alpha =\t " << 1./( config.alpha() * config.fluidFriction() )<< std::endl ;
+	d6::Log::Debug() << "Stk^2/Alpha =\t " << 1./( config.alpha() * config.fluidFriction() * config.fluidFriction() )<< std::endl ;
 	d6::Log::Debug() << "(A+1)Stk/Re =\t " << (config.alpha()+1) * config.viscosity /config.fluidFriction() << std::endl ;
 
 	feenableexcept( FE_DIVBYZERO ) ;

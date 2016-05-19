@@ -139,9 +139,7 @@ void DiphasicSolver::solve(
 		DynVec forces = stepData.forms.externalForces ;
 
 		// Inertia
-#ifndef  FULL_FEM
 		forces += stepData.forms.linearMomentum  ;
-#endif
 
 		rhs = stepData.fullGridProj.vel * forces + stepData.forms.dirichletTerm ;
 	}

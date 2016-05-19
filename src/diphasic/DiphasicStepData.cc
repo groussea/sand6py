@@ -17,12 +17,18 @@
 #include <bogus/Core/Block.impl.hpp>
 #include <bogus/Core/Utils/Timer.hpp>
 
+#include <functional>
+
 //#define KINEMATIC_VISC
 //#define U_MOMENTUM
 
 #define  W_VISC
 #define WU_VISC
 #define W_MOMENTUM
+
+#define U2_LUMPING (.0)
+#define  W_LUMPING (1.)
+#define INTEGRATE_LOBATTO
 
 // a C' p  = a wh / Stk
 // a C  wh + Bu = 0
@@ -135,6 +141,27 @@ void DiphasicStepData::assembleMatrices(
 	   PhaseStepData::computeProjectors( config, pShape, dShape, intPhi, primalNodes, dualNodes, 0, activeProj ) ;
 	DiphasicStepData::computeProjectors( config, pShape, fullGridProj ) ;
 
+
+	const auto char_func = [dt,&pShape]( const PrimalVectorField &velocity, const Vec &pos ) {
+		const Vec u2 = velocity( pos ) ;
+		const Vec pos_prev = pShape.mesh().clamp_point( pos - dt*u2 ) ;
+		const Vec u2_prev  = velocity( pos_prev ) ;
+		const Vec trial = pos - .5*dt*(u2+u2_prev) ;
+		const Vec clamped =  pShape.mesh().clamp_point( trial ) ;
+		Vec u2_adv = velocity( clamped ) ;
+		const Scalar projn2 = (clamped - trial).squaredNorm() ;
+		if( projn2 > 1.e-6 ) {
+			u2_adv -= u2_adv.dot(clamped-trial)/projn2*(clamped-trial) ;
+		}
+		return u2_adv ;
+	} ;
+
+	const auto u2_adv_func = std::bind( char_func, fluid.velocity, std::placeholders::_1 ) ;
+
+	PrimalVectorField u2_adv_field ( pShape ) ;
+	u2_adv_field.set_free( u2_adv_func ) ;
+
+
 	const Index m  = pShape.nDOF() ;
 
 
@@ -188,7 +215,7 @@ void DiphasicStepData::assembleMatrices(
 			PrimalScalarField beta( pShape ) ;
 
 			linearMomentum.flatten() = (1+config.alpha()) * intPhiVel.flatten() ;
-			beta.flatten()           = config.alpha() * intPhi.flatten() ;
+			beta.flatten()           = (1+config.alpha()) * intPhi.flatten() ;
 
 #ifdef U_MOMENTUM
 			linearMomentum.set_zero() ;
@@ -197,29 +224,84 @@ void DiphasicStepData::assembleMatrices(
 			typename PrimalShape::Interpolation itp ;
 			typename PrimalShape::Location loc ;
 
-//			builder.integrate_node( pShape.mesh().cellBegin(), pShape.mesh().cellEnd(),
-//									[&]( Scalar w, const Vec&pos, const P_Itp& itp, const P_Itp& ) {
-			builder.integrate_qp( [&]( Scalar w, const Vec&pos, const P_Itp& itp, const P_Dcdx&, const P_Itp&, const P_Dcdx&) {
+#ifdef INTEGRATE_LOBATTO
+			builder.integrate_node( pShape.mesh().cellBegin(), pShape.mesh().cellEnd(),
+									[&]( Scalar w, const Vec&pos, const P_Itp& itp, const P_Itp& ) {
 
-				const Scalar phi = std::min( s_maxPhi, phase.fraction( pos ) ) ;
-#ifdef U_MOMENTUM
-				const Vec u = fluid.mavg_vel( pos ) ;
-				onst Vec pos_prev = pShape.mesh().clamp_point( pos - dt*u ) ;
-				const Vec u_adv = fluid.mavg_vel( pos_prev ) ;
+			w *= PrimalShape::NI * 1./36  ;
 #else
-				const Vec u2 = fluid.velocity( pos ) ;
-				const Vec pos_prev = pShape.mesh().clamp_point( pos - dt*u2 ) ;
-				const Vec u2_adv = fluid.velocity( pos_prev ) ;
-#endif
+			builder.integrate_qp( [&]( Scalar w, const Vec&pos, const P_Itp& itp, const P_Dcdx&, const P_Itp&, const P_Dcdx&) {
+#endif //LOBATTO
+
+				const Scalar phi = std::min(1., phase.fraction( pos ) ) ;
+#ifdef U_MOMENTUM
+				const Vec u_adv = char_func( fluid.mavg_vel, pos ) ;
+#else
+				const Vec u2_adv = u2_adv_func( pos ) ;
+#endif // U_MOMENTUM
 				for( Index k = 0 ; k < itp.nodes.size() ; ++k ) {
-					beta[ itp.nodes[k] ]           += w * itp.coeffs[k] ;
+					const Scalar weight =  w * itp.coeffs[k] * (1 - phi) ;
+					beta[ itp.nodes[k] ]           += weight ;
 #ifdef U_MOMENTUM
 					linearMomentum[ itp.nodes[k] ] += w * itp.coeffs[k] * u_adv ;
 #else
-					linearMomentum[ itp.nodes[k] ] += w * itp.coeffs[k] * (1 - phi) * u2_adv ;
-#endif
+					linearMomentum[ itp.nodes[k] ] += (1-U2_LUMPING) * weight * u2_adv ;
+					linearMomentum[ itp.nodes[k] ] += (  U2_LUMPING) * weight * u2_adv_field[ itp.nodes[k] ] ;
+
+					const Scalar base = (1-U2_LUMPING) * weight * config.fluidVolMass / dt ;
+					for( Index j = 0 ; j < itp.nodes.size() ; ++j ) {
+						forms.A.block( itp.nodes[k], itp.nodes[j] ).diagonal() += Vec::Constant(base * itp.coeffs[j]) ;
+					}
+#endif // U_MOMENTUM
+
 				}
+
 			} ) ;
+
+
+
+#ifdef INTEGRATE_LOBATTO
+
+			for( auto cellIt = pShape.mesh().cellBegin() ; cellIt != pShape.mesh().cellEnd() ; ++cellIt )
+			{
+				PrimalMesh::CellGeo geo ;
+				pShape.mesh().get_geo( *cellIt, geo );
+				PrimalMesh::Location loc ;
+				loc.cell = *cellIt ;
+
+				DynMatW clist( WD, 5 ) ;
+				clist <<  0,.5,.5,.5,1.,
+						 .5,0 ,.5, 1,0 ;
+				DynArr  wlist(5) ;
+				wlist <<  1./9,1./9,4./9,1./9, 1./9 ;
+
+				for(unsigned k = 0 ; k < clist.cols() ; ++k ) {
+				const Scalar w = geo.volume() * wlist[k] ;
+
+				loc.coords = clist.col(k) ; //FIXME TET
+				PrimalShape::Interpolation itp ;
+				pShape.interpolate( loc, itp );
+				const Vec& pos = pShape.mesh().pos( loc ) ;
+
+				const Scalar phi = std::min(1., phase.fraction( pos ) ) ;
+				const Vec u2_adv = u2_adv_func( pos ) ;
+
+				for( Index k = 0 ; k < itp.nodes.size() ; ++k ) {
+					const Scalar weight =  w * itp.coeffs[k] * (1 - phi) ;
+					beta[ itp.nodes[k] ]           += weight ;
+					linearMomentum[ itp.nodes[k] ] += (1-U2_LUMPING) * weight * u2_adv ;
+					linearMomentum[ itp.nodes[k] ] += (  U2_LUMPING) * weight * u2_adv_field[ itp.nodes[k] ] ;
+
+					const Scalar base = (1-U2_LUMPING) * weight * config.fluidVolMass / dt ;
+					for( Index j = 0 ; j < itp.nodes.size() ; ++j ) {
+						forms.A.block( itp.nodes[k], itp.nodes[j] ).diagonal() += Vec::Constant(base * itp.coeffs[j]) ;
+					}
+
+				}
+				}
+
+			}
+#endif
 
 #ifdef U_MOMENTUM
 			builder.integrate_particle( particles, [&]( Index i, Scalar w, const P_Itp& itp, const P_Dcdx& , const P_Itp& , const P_Dcdx& )
@@ -247,20 +329,22 @@ void DiphasicStepData::assembleMatrices(
 
 			// Lumped mass matrix
 			{
+	#pragma omp parallel for
+				for( Index i = 0 ; i < m ; ++i ) {
+					forms.A.block( i,i ).diagonal() += Vec::Constant( (1-U2_LUMPING)*( (config.alpha() + 1) * intPhi[i] * config.fluidVolMass /  dt + mass_regul ) );
+				}
+
 				forms.M_lumped.setRows( m );
 				forms.M_lumped.setIdentity() ;
 				forms.M_lumped_inv.setRows( m );
 				forms.M_lumped_inv.setIdentity() ;
 	#pragma omp parallel for
 				for( Index i = 0 ; i < m ; ++i ) {
-					forms.M_lumped.block( i ) *= beta[ i ] * config.fluidVolMass /  dt ;
+					forms.M_lumped.block( i ).diagonal() =  Vec::Constant( beta[ i ] * config.fluidVolMass /  dt );
 				}
+				forms.A += U2_LUMPING * forms.M_lumped ;
 			}
 		}
-
-#ifndef FULL_FEM
-		forms.A += forms.M_lumped ;
-#endif
 
 		PrimalVectorField bdVel( pShape ) ;
 		bdVel.set_free( [&config] (const Vec &x){
@@ -302,10 +386,10 @@ void DiphasicStepData::assembleMatrices(
 		forms.R_visc.setRows( ma );
 		forms.R_visc.setCols( ma );
 		forms.R_visc.finalize();
-
-#ifdef W_VISC
 		forms.R_visc.cloneIndex( builder.index() ) ;
 		forms.R_visc.setBlocksToZero() ;
+
+#ifdef W_VISC
 
 		builder.integrate_cell<form::Left>( primalNodes.cells.begin(), primalNodes.cells.end(),
 								[&]( Scalar w, const Vec&, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& )
@@ -406,25 +490,31 @@ void DiphasicStepData::assembleMatrices(
 
 			// TODO: test w/ other funcs
 			const Vec& pos = particles.centers().col(i) ;
-			const Scalar phi = std::min( s_maxPhi, phase.fraction( pos ) ) ;
-			Scalar vR = (1/config.alpha() + phi)/(1-phi) ;
+			const Scalar phi = phase.fraction( pos ) ;
+			Scalar vR = (1/config.alpha() + phi)/(1-std::min( s_maxPhi, phi )) ;
 			Vec vW = Vec::Zero() ;
 //			const Scalar vR = 1;
 #ifdef W_MOMENTUM
-			const Vec& u1_adv = particles.velocities().col(i) ;
+			if( phi < s_maxPhi ) {
+				const Vec& u1_adv = particles.velocities().col(i) ;
+				const Vec& u2_adv = u2_adv_func( pos ) ;
 
-			const Vec& u2 = fluid.velocity(pos) ;
-			const Vec& pos_prev = pShape.mesh().clamp_point( pos - dt*u2 ) ;
-			const Vec& u2_adv = fluid.velocity( pos_prev ) ;
+				vW  = St_adt/sStk * ( u1_adv - u2_adv ) ;
+			}
 
 			vR *= (1 + St_adt ) ;
-			vW  = St_adt/sStk * ( u1_adv - u2_adv ) ;
 #endif
 
 			for( Index k = 0 ; k < l_itp.nodes.size() ; ++k ) {
 				const Index idx = primalNodes.indices[ l_itp.nodes[k]] ;
-				Rcoeffs[ idx ] += w * l_itp.coeffs[k] * vR ;
 				fluctuMomentum[ l_itp.nodes[k] ] += w * l_itp.coeffs[k] * vW;
+
+				const Scalar base = w * l_itp.coeffs[k] * vR ;
+				Rcoeffs[ idx ] += base;
+
+				for( Index j = 0 ; j < l_itp.nodes.size() ; ++j ) {
+					forms.R_visc.block( idx, primalNodes.indices[l_itp.nodes[j]] ).diagonal() += Vec::Constant( (1 - W_LUMPING) * base * l_itp.coeffs[j]) ;
+				}
 			}
 
 		}
@@ -441,7 +531,8 @@ void DiphasicStepData::assembleMatrices(
 			}
 		}
 
-		forms.R_visc += forms.R ;
+		forms.R_visc += W_LUMPING * forms.R ;
+
 		const typename FormMat<WD,WD>::SymType IP = activeProj.vel.Identity() - activeProj.vel ;
 		forms.R_visc = activeProj.vel * forms.R_visc * activeProj.vel  + IP ;
 
@@ -526,18 +617,8 @@ void DiphasicStepData::compute(const DynParticles& particles,
 
 	std::vector< bool > activeCells ;
 
-#if defined(FULL_FEM)
-	pShape.compute_tpz_mass   ( intPhiPrimal.flatten() ) ;
-	dShape.compute_lumped_mass( intPhiDual  .flatten() ) ;
-	intPhiVel.set_zero() ;
-	intPhiInertia.set_zero() ;
-	intPhiCohesion.set_zero() ;
-	intPhiOrient.set_zero() ;
-	activeCells.assign( pShape.mesh().nCells(), true ) ;
-#else
 	particles.integratePrimal( activeCells, intPhiPrimal, intPhiVel ) ;
 	particles.integrateDual( intPhiDual, intPhiInertia, intPhiOrient, intPhiCohesion ) ;
-#endif
 
 	// Compute phi and grad_phi (for visualization purposes )
 	PhaseStepData::computePhiAndGradPhi( intPhiPrimal, phase.fraction, phase.grad_phi ) ;
