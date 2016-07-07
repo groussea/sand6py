@@ -177,7 +177,7 @@ template < typename LhsShape, typename RhsShape >
 void FormBuilder<LhsShape, RhsShape>::addQDivu( FormMat< 1,WD>::Type& A, Scalar m, Index rowIndex,
 												RhsItp itp, RhsDcdx dc_dx, Indices colIndices )
 {
-	typedef FormMat<RD,WD>::Type::BlockType Block ;
+	typedef FormMat<1,WD>::Type::BlockType Block ;
 
 	for( int j = 0 ; j < itp.nodes.rows() ; ++j ) {
 		assert( A.blockPtr( rowIndex, colIndices[itp.nodes[j]] ) != A.InvalidBlockPtr ) ;
