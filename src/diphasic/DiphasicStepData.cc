@@ -18,6 +18,7 @@
 #include <bogus/Core/Utils/Timer.hpp>
 
 #include <functional>
+#include <numeric>
 
 //#define KINEMATIC_VISC
 //#define U_MOMENTUM
