@@ -11,6 +11,8 @@ simu/LinearSolver.hh
 simu/RigidBody.cc
 simu/RigidBody.hh
 simu/Scenario.cc
+simu/Scenario.cc
+simu/Scenario.cc
 simu/Scenario.hh
 simu/Simu.cc
 simu/Simu.hh
