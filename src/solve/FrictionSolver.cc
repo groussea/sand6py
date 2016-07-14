@@ -18,9 +18,9 @@ template <typename MatrixT >
 struct CallbackProxy {
 
 	CallbackProxy( FrictionSolver::Stats& stats, bogus::Timer &timer,
-				   const MatrixT& W, const DynVec& mu, const DynVec &b, const DynVec &x )
-		: m_stats( stats ), m_timer( timer ),
-		  m_W(W), m_mu(mu), m_b(b), m_x(x)
+	               const MatrixT& W, const DynVec& mu, const DynVec &b, const DynVec &x )
+	    : m_stats( stats ), m_timer( timer ),
+	      m_W(W), m_mu(mu), m_b(b), m_x(x)
 	{
 	}
 
@@ -76,15 +76,15 @@ void FrictionSolver::Stats::log( unsigned iter, Scalar res, Scalar time )
 
 
 FrictionSolver::Options::Options()
-	: algorithm( GaussSeidel ),
-	  maxIterations(250), maxOuterIterations( 15 ),
-	  projectedGradientVariant( -1  ),
-	  useInfinityNorm( false ), tolerance( 1.e-6 )
+    : algorithm( GaussSeidel ),
+      maxIterations(250), maxOuterIterations( 15 ),
+      projectedGradientVariant( -1  ),
+      useInfinityNorm( false ), tolerance( 1.e-6 )
 {}
 
 
 FrictionSolver::FrictionSolver(const PrimalData &data)
-	: m_data( data )
+    : m_data( data )
 {}
 
 Scalar FrictionSolver::solve( const Options& options, DynVec &lambda, Stats &stats) const
@@ -99,8 +99,8 @@ Scalar FrictionSolver::solve( const Options& options, DynVec &lambda, Stats &sta
 
 	// Build W expression
 	typedef bogus::Product< PrimalData::JacobianType,
-			bogus::Product< PrimalData::InvInertiaType, bogus::Transpose< PrimalData::JacobianType > > >
-			JMJtProd ;
+	        bogus::Product< PrimalData::InvInertiaType, bogus::Transpose< PrimalData::JacobianType > > >
+	        JMJtProd ;
 
 	bogus::NarySum< JMJtProd > rbSum( m_data.n() * SD, m_data.n() * SD ) ;
 	// Add rigid bodies jacobians
@@ -137,10 +137,10 @@ Scalar FrictionSolver::solve( const Options& options, DynVec &lambda, Stats &sta
 		for( unsigned i = 0 ; i < m_data.jacobians.size() ; ++i ) {
 			const PrimalData::JacobianType &JM = m_data.jacobians[i] ;
 			Eigen::SelfAdjointEigenSolver<MatS>
-					es( m_data.inv_inertia_matrices[i].block(0) ) ;
+			        es( m_data.inv_inertia_matrices[i].block(0) ) ;
 			const MatS MiSqrt
-					= es.eigenvectors().transpose() * es.eigenvalues().cwiseSqrt().asDiagonal()
-					* es.eigenvectors() ;
+			        = es.eigenvectors().transpose() * es.eigenvalues().cwiseSqrt().asDiagonal()
+			        * es.eigenvectors() ;
 
 #pragma omp parallel for
 			for (Index row = 0 ; row < m_data.n() ; ++row ) {
@@ -167,7 +167,7 @@ Scalar FrictionSolver::solve( const Options& options, DynVec &lambda, Stats &sta
 
 	} else
 	if( options.algorithm == Options::PG_NoAssembly ||
-			options.algorithm == Options::PG_NoAssembly  ) {
+	        options.algorithm == Options::Cadoux_PG_NoAssembly  ) {
 
 		bogus::ProjectedGradient< Wexpr > pg( W ) ;
 
@@ -192,7 +192,7 @@ Scalar FrictionSolver::solve( const Options& options, DynVec &lambda, Stats &sta
 			bogus::Signal<unsigned, Scalar> callback ;
 			callback.connect( callbackProxy, &CallbackProxy<Wexpr>::ackResidual );
 			res = bogus::solveCadoux<SD>( W, m_data.w.data(), m_data.mu.data(), pg,
-										  lambda.data(), options.maxOuterIterations, &callback ) ;
+			                              lambda.data(), options.maxOuterIterations, &callback ) ;
 		}
 
 	} else {
@@ -234,7 +234,7 @@ Scalar FrictionSolver::solve( const Options& options, DynVec &lambda, Stats &sta
 				gs.useInfinityNorm( options.useInfinityNorm );
 
 				res = bogus::solveCadoux<SD>( Wmat, m_data.w.data(), m_data.mu.data(), gs,
-											  lambda.data(), options.maxOuterIterations, &callback ) ;
+				                              lambda.data(), options.maxOuterIterations, &callback ) ;
 			} else {
 
 				// Projected Gradient inner solver
@@ -252,7 +252,7 @@ Scalar FrictionSolver::solve( const Options& options, DynVec &lambda, Stats &sta
 				pg.useInfinityNorm( options.useInfinityNorm );
 
 				res = bogus::solveCadoux<SD>( Wmat, m_data.w.data(), m_data.mu.data(), pg,
-											  lambda.data(), options.maxOuterIterations, &callback ) ;
+				                              lambda.data(), options.maxOuterIterations, &callback ) ;
 			}
 		}
 	}
