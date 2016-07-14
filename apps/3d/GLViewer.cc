@@ -26,15 +26,15 @@
 namespace d6 {
 
 GLViewer::GLViewer(const QGLFormat &glFormat, Offline &offline,
-				   unsigned nSamples, unsigned width, unsigned height)
-	: QGLViewer( glFormat ),
-	  m_offline( offline ),
-	  m_vp_width( width ), m_vp_height( height ), m_lightDirection( Eigen::Vector3f::Zero() ),
-	  m_currentFrame(-1),
-	  m_drawParticles( 0 == nSamples ), m_enableBending( false ),
-	  m_fastDraw( true ), m_drawObjects( true ), m_drawOrientations( false ),
-	  m_snapshotting(false), m_lastSnapped( m_currentFrame ),
-	  m_grainsRenderer( offline, m_shapeRenderer, nSamples )
+                   unsigned nSamples, unsigned width, unsigned height)
+    : QGLViewer( glFormat ),
+      m_offline( offline ),
+      m_vp_width( width ), m_vp_height( height ), m_lightDirection( Eigen::Vector3f::Zero() ),
+      m_currentFrame(-1),
+      m_drawParticles( 0 == nSamples ), m_enableBending( false ),
+      m_fastDraw( true ), m_drawObjects( true ), m_drawOrientations( false ),
+      m_snapshotting(false), m_lastSnapped( m_currentFrame ),
+      m_grainsRenderer( offline, m_shapeRenderer, nSamples )
 {
 	setKeyDescription(Qt::Key_I, "Jumps to next frame");
 	setKeyDescription(Qt::Key_P, "Jumps to previous frame (particles mode only)");
@@ -172,8 +172,8 @@ void GLViewer::draw()
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 			const Scalar pixelSize = cam.type() == qglviewer::Camera::ORTHOGRAPHIC
-					? 0
-					: fb_height / std::tan(cam.horizontalFieldOfView() / 2)  ;
+			        ? 0
+			        : fb_height / std::tan(cam.horizontalFieldOfView() / 2)  ;
 
 			m_grainsRenderer.compute_shadow( pixelSize, depthMVP );
 
@@ -200,8 +200,8 @@ void GLViewer::draw()
 
 		if(1){
 			const Scalar pixelSize = cam.type() == qglviewer::Camera::ORTHOGRAPHIC
-					? 0
-					: height() / std::tan(camera()->horizontalFieldOfView() / 2) ;
+			        ? 0
+			        : height() / std::tan(camera()->horizontalFieldOfView() / 2) ;
 
 			m_grainsRenderer.draw( m_depthTexture, lightPosition(), pixelSize, depthMVP  );
 		}
@@ -366,7 +366,7 @@ void GLViewer::update_buffers()
 				const Vec ev = es.eigenvalues().array().max(0).sqrt() ;
 
 				mat.block<3,3>(0,0) = ( es.eigenvectors() * ev.asDiagonal() ).cast< GLfloat >()
-						* .5 * std::pow( p.volumes()[i], 1./3 )  ;
+				        * .5 * std::pow( p.volumes()[i], 1./3 )  ;
 				mat.block<3,1>(0,3) = p.centers().col(i).cast < GLfloat >() ;
 
 				m_densities[i] = p.volumes()[i]  ;
