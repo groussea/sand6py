@@ -1,7 +1,7 @@
 
 # About
 
-This software contains a minimalist C++ implementation of the algorithms described in the document
+This software contains a C++ implementation of the algorithms described in the document
 *A Semi-Implicit Material Point Method for the Continuum Simulation of Granular Materials*.
 
 ## Contents
@@ -12,25 +12,33 @@ This archive is organized as follow:
     - `utils`  Generic utilities (String and file manipulation, etc)
     - `geo`    Geometric tools (Meshes, fields, tensors)
     - `solve`  Tools for solving LCP and DCFP
-	- `simu`   Proper simulation 
+	- `simu`   Generic MPM simulation tools
+	- `mono`   Proper monophasic granular simulation implementation
 	- `visu`   Tools for visualizing simulation results
 	- `gl`     OpenGL drawing code
+	- `2d` and `3d` Specialized code for each dimension
   - `apps`   Source code of individual applications
   - `scenes` Sample configuration files
   - `tests`  Unit tests
   - `cmake`  CMake modules
-  - `vendor` Copies of external header-only libraries, [Eigen] [1] and [So-bogus] [2] 
+  - `vendor` (tarballs only) Copies of external header-only libraries, [Eigen] [1] and [So-bogus] [2] 
 
 
 ## Relevant files
 At this stage, the documentation is still very scarce; however, sections
-that are the most relevant to the article have been more densely annotated.
+that are the most relevant to the article have been more thoroughly annotated.
 
-The reader interested in the implementation of the main simulation loop should start with the method `Simulation::step()` defined in the file `src/simu/Simu.cc`. 
-Methods for reading data from particles, splitting, merging and moving them are can be found in `simu/DynParticles.cc`.
+The reader interested in the implementation of the main simulation loop should start with the method `Simulation::step()` defined in the file `src/simu/Simu.cc`, and the specialization of he corresponding virtual methods in `mono/MonoSimu.cc`. 
+Methods for reading data from particles, splitting, merging and moving them can be found in `simu/DynParticles.cc`.
 The code for computing the end-of-step velocities and stresses lies mostly inside
-the `PhaseSolver::solve()` function from the file `simu/PhaseSolver.cc`.
-Bindings for the external DFCP solver are in `solve/Primal.cc`.
+the `PhaseSolver::solve()` function from the file `mono/PhaseSolver.cc`.
+Bindings for the external DCFP solver are in `solve/FrictionSolver.cc`.
+
+Concerning the `geo` library, shape functions derive from the `ShapeFunctionBase` class
+and are used to define scalar, vector and tensor fields deriving from `FieldBase`. 
+The two main classes of shape functions are `UnstructuredShapeFunction`, which is particle-based,
+and the subclasses of `MeshShapeFunction` (e.g. `Linear`), which define Lagrange polynomials 
+on implementations of `MeshBase` (e.g. `Grid`).
 
 # Usage
 
@@ -42,7 +50,7 @@ only be tested on GNU/Linux with recent versions of `g++` and `clang++`.
 
 Other dependencies are:
 
-  - [Eigen][1] and [So-bogus][2], which are already included in this archive
+  - [Eigen][1] and [So-bogus][2] (which might already be included in distributed archives)
   - [boost\_serialization][3]
   - [libQGLViewer][4] (optional, required for the compilation of the OpenGL viewer)
 
@@ -56,6 +64,17 @@ commands from the archive's root directory
 	> cmake ..
 	> make
 	> ./tests/testd6
+
+### Configuration options
+
+A few configuration options may be defined at compile time as cmake arguments,
+using the syntax `cmake .. -D{NAME}={VALUE}`. Defaults are given in italics.
+
+ - DIM2=*off*         Compile 2d code
+ - DG=*off*           Use trilinear discontinuous stress shape functions
+ - UNSTRUCTURED=*off* Use particle-based stress shape functions
+
+(By default, the code is built for 3d and uses trilinear continuous stress shape functions)
 
 ## Applications
 
@@ -119,6 +138,8 @@ Here is a list of the various configuration options that can be passed to the `d
 ### Miscellaneous
 
   - `enforceMaxFrac`=*false*  Perform geometric volume correction projection
+  - `usePG`=*false*		  Use a Projected-Gradient algorithm instead of Gauss-Seidel
+  - `useInfNorm`=*false*  Use the infinity-norm to evaluate the DCFP residual
   - `output`=*true*       Output simulation states (field and particle data)
   - `dumpPrimalData`=*0*  If non-zero, dump every *n*th primal problems
   
