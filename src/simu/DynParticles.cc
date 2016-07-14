@@ -18,7 +18,7 @@
 #define SPLIT
 #define MERGE
 
-#define GRAD_FROM_VEL
+//#define GRAD_FROM_VEL
 #define ANALYTIC_FRAME_CONVECTION
 
 namespace d6 {
@@ -32,7 +32,13 @@ void DynParticles::generate(const Config &c, const MeshType &mesh, const Scenari
 {
 	//Generate particles according to grid
 
-	m_geo.generate( scenario.generator(), c.nSamples, mesh, c.cohesion > 0, c.initialOri );
+	bool alignOnCells = false ;
+#ifndef D6_UNSTRUCTURED_DUAL
+	alignOnCells = c.cohesion > 0 ;
+#endif
+
+	m_geo.generate( scenario.generator(), c.nSamples, mesh,
+					alignOnCells, c.initialOri );
 
 	  m_affine.leftCols( count() ).setZero() ;
 	 m_inertia.leftCols( count() ).setZero() ;
@@ -287,6 +293,7 @@ struct MergeInfo {
 void DynParticles::splitMerge( const MeshType & mesh )
 {
 
+#ifdef SPLIT
 	const std::size_t n = count() ;
 	const Scalar defLength = std::pow( m_meanVolume, 1./WD ) ;
 
@@ -310,7 +317,6 @@ void DynParticles::splitMerge( const MeshType & mesh )
 
 		ev = ev.array().min( defLength * 8 ).max( defLength / 8 ) ;
 
-#ifdef SPLIT
 		if(  	   evMax > evMin * 4.     // Eigenvalues ratio
 				&& evMax > defLength      // Avoid splitting too small particles
 				&& m_geo.volumes()[i] > m_meanVolume / 64 // Avoid splitting too ligth particles
@@ -351,9 +357,7 @@ void DynParticles::splitMerge( const MeshType & mesh )
 					m_events.log( Particles::Event::split( i, j, dx ) );
 
 			}
-		} else
-#endif
-		{
+		} else {
 
 			//Repair flat frames
 			frame = es.eigenvectors() * ev.asDiagonal() * ev.asDiagonal() * es.eigenvectors().transpose() ;
@@ -472,7 +476,7 @@ void DynParticles::splitMerge( const MeshType & mesh )
 
 #endif
 
-#ifndef SPLIT
+#else
 	(void) mesh ;
 #endif
 }

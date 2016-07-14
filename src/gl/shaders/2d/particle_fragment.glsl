@@ -9,23 +9,23 @@ out vec4 color ;
 void main (void)
 {
 
-    float mag = dot( coord, coord );
-    if (mag > 1.0) discard;   // kill pixels outside circle
+	float mag = dot( coord, coord );
+	if (mag > 1.0) discard;   // kill pixels outside circle
 
-    vec4 ambientMat  = vec4(0,0,0,0) ;
+	vec4 ambientMat  = vec4(0,0,0,0) ;
 
-    float mat_0 = clamp( 1 - 2*abs(val/5-1.0), 0.0, 1.0 ) ;
-    float mat_1 = clamp( 1 - 2*abs(val/5-0.5), 0.0, 1.0 ) ;
-    float mat_2 = clamp( 1 - 2*abs(val/5-0.0), 0.0, 1.0 ) ;
+	float mat_0 = clamp( 1 - 2*abs(val/5-1.0), 0.0, 1.0 ) ;
+	float mat_1 = clamp( 1 - 2*abs(val/5-0.5), 0.0, 1.0 ) ;
+	float mat_2 = clamp( 1 - 2*abs(val/5-0.0), 0.0, 1.0 ) ;
 
-    float mat_3 = clamp( 1 - 2*abs(min(val,10)/5-1.5), 0.0, 1.0 ) ;
+	float mat_3 = clamp( 1 + 2*   (val/5-1.5), 0.0, 1.0 ) ;
 
-    ambientMat += mat_0*vec4( vec3(1.0, 0.0, 0.0), 1. );
-    ambientMat += mat_1*vec4( vec3(0.0, 1.0, 0.0), 1. );
-    ambientMat += mat_2*vec4( vec3(0.0, 0.0, 1.0), 1. );
-    ambientMat += mat_3*vec4( vec3(1.0, 1.0, 1.0), 1. );
+	ambientMat += mat_0*vec4( vec3(1.0, 0.0, 0.0), 1. );
+	ambientMat += mat_1*vec4( vec3(0.0, 1.0, 0.0), 1. );
+	ambientMat += mat_2*vec4( vec3(0.0, 0.0, 1.0), 1. );
+	ambientMat += mat_3*vec4( vec3(1.0, 1.0, 1.0), 1. );
 
-    color = ambientMat ;
-    color.a = alpha ;
+	color = ambientMat ;
+	color.a = alpha ;
 
 }
