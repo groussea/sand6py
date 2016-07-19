@@ -18,6 +18,7 @@ tar -jxf eigen/*.tar.bz2
 tar -jxf bogus/*.tar.bz2
 cp -r gdaviet-*/src ../sand6/vendor/bogus
 cp -r gdaviet-*/LICENSE.md ../sand6/vendor/bogus/
+cp -r gdaviet-*/*-LICENSE-*.txt ../sand6/vendor/bogus/
 cp -r gdaviet-*/RELEASE.md ../sand6/vendor/bogus/
 rm ../sand6/vendor/bogus/CMake*
 rm ../sand6/vendor/bogus/Interfaces/*.cpp
@@ -32,10 +33,10 @@ cd ../sand6
 git_hash=`git log -1 --format=%h`
 git_branch=`git rev-parse --abbrev-ref HEAD`
 build_date=`date`
-rm gen.sh
+echo "${git_branch}\n${git_hash}\nPackaged ${build_date}" > VERSION
+rm gen-pkg.sh .gitignore 
 rm -Rf .git
 rm scenes/*.obj
-echo "${git_branch}\n${git_hash}\nPackaged ${build_date}" > VERSION
 # Make archive
 cd ..
 tar -czf sand6.tar.gz sand6
