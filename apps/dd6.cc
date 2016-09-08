@@ -9,7 +9,7 @@
 #include <fenv.h>
 
 namespace d6 {
-	extern const char* g_git_branch ;
+    extern const char* g_git_branch ;
 	extern const char* g_git_commit ;
 	extern const char* g_timestamp  ;
 }
@@ -17,17 +17,17 @@ namespace d6 {
 static void usage( const char *name )
 {
 	std::cout << "Usage: " << name
-			  << " [sim_dir=out] [options] "
-			  << "\nGranular material simulator. "
-			  << "\n Output files are created inside the directory specified by `sim_dir`, which defaults to 'out'. "
-			  << "\n\n" ;
+	          << " [sim_dir=out] [options] "
+	          << "\nGranular material simulator. "
+	          << "\n Output files are created inside the directory specified by `sim_dir`, which defaults to 'out'. "
+	          << "\n\n" ;
 
 	std::cout << "Options:\n"
-			  << "-? \t Display this help message and exit\n"
-			  << "-i file \t Load a configuration file  \n"
-			  << "-v level \t Specify the verbosity level \n"
-			  << "-key value \t Set the configuration parameter 'key' to 'value' ( see README.md )  \n"
-			  << std::endl ;
+	          << "-? \t Display this help message and exit\n"
+	          << "-i file \t Load a configuration file  \n"
+	          << "-v level \t Specify the verbosity level \n"
+	          << "-key value \t Set the configuration parameter 'key' to 'value' ( see README.md )  \n"
+	          << std::endl ;
 }
 
 int main( int argc, const char* argv[] )
@@ -67,7 +67,12 @@ int main( int argc, const char* argv[] )
 	std::string info = d6::arg( d6::arg3("%1 %3 on %2 [%4]", argv[0], d6::g_git_branch, d6::g_git_commit ), d6::g_timestamp ) ;
 	d6::Log::Info() << "This is " << info << std::endl ;
 
-	d6::Log::Debug() << "1/Stk (SI) =\t " << config.fluidFriction() << std::endl ;
+	if( config.phiMax >= 1 ) {
+		d6::Log::Error() << "phiMax must be strictly lower than 1 !" << std::endl ;
+		return 1 ;
+	}
+
+	d6::Log::Debug() << "Stk (SI) =\t " << config.Stokes() << std::endl ;
 
 	// Save copy of final configuration and convert to interal units
 	d6::FileInfo outDir ( base_dir ) ;
@@ -76,11 +81,11 @@ int main( int argc, const char* argv[] )
 	config.internalize();
 
 	d6::Log::Debug() << "1/Re  =\t " << config.viscosity << std::endl ;
-	d6::Log::Debug() << "1/Stk =\t " << config.fluidFriction() << std::endl ;
+	d6::Log::Debug() << "Stk =\t " << config.Stokes() << std::endl ;
 	d6::Log::Debug() << "Alpha =\t " << config.alpha() << std::endl ;
-	d6::Log::Debug() << "Stk/Alpha =\t " << 1./( config.alpha() * config.fluidFriction() )<< std::endl ;
-	d6::Log::Debug() << "Stk^2/Alpha =\t " << 1./( config.alpha() * config.fluidFriction() * config.fluidFriction() )<< std::endl ;
-	d6::Log::Debug() << "(A+1)Stk/Re =\t " << (config.alpha()+1) * config.viscosity /config.fluidFriction() << std::endl ;
+	d6::Log::Debug() << "Stk/Alpha =\t " << config.Stokes()/( config.alpha() )<< std::endl ;
+	d6::Log::Debug() << "Stk^2/Alpha =\t " << config.Stokes()*config.Stokes()/( config.alpha() )<< std::endl ;
+	d6::Log::Debug() << "(A+1)Stk/Re =\t " << (config.alpha()+1) * config.viscosity * config.Stokes() << std::endl ;
 
 	feenableexcept( FE_DIVBYZERO ) ;
 

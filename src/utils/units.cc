@@ -2,8 +2,8 @@
 
 namespace d6 {
 
-	Units::Units()
-		: L(1), G(9.81), R(1.5e3)
+    Units::Units()
+	    : L(1), G(9.81), R(1.5e3)
 	{
 		setTypical( L, G, R ) ;
 	}
@@ -16,7 +16,7 @@ namespace d6 {
 		T = L/U ;
 		P = R*G*L ;
 		M = P*T ;
-		X = R/T ;
+		X = R*G/L ;
 	}
 
 	Scalar Units::fromSI(Unit u) const {

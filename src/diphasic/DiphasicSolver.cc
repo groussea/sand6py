@@ -22,7 +22,7 @@ namespace d6 {
 
 
 DiphasicSolver::DiphasicSolver(const DynParticles &particles)
-	: m_particles(particles)
+    : m_particles(particles)
 {
 
 }
@@ -59,10 +59,10 @@ void printEnergies( const Config &config, Phase &phase, FluidPhase &fluid  )
 	const Scalar Ecu = fluid.mavg_vel.flatten().dot(betau.flatten()) ;
 
 	std::cout << "Ec1 \t " << 	Ec1 << "\n"
-			  << "Ec2 \t " << 	Ec2 << "\n"
-			  << "Ect \t " << 	Ec1 + Ec2 << "\n"
-			  << "Ecu \t " << 	Ecu
-			  << std::endl ;
+	          << "Ec2 \t " << 	Ec2 << "\n"
+	          << "Ect \t " << 	Ec1 + Ec2 << "\n"
+	          << "Ecu \t " << 	Ecu
+	          << std::endl ;
 
 
 
@@ -107,22 +107,22 @@ void DiphasicSolver::step(const Config &config, const Scalar dt, Phase &phase, F
 }
 
 void DiphasicSolver::addCohesionContrib (const Config&c, const DiphasicStepData &stepData,
-									  DiphasicPrimalData& pbData, DynVec &l ) const
+                                      DiphasicPrimalData& pbData, DynVec &l ) const
 {
 	//Cohesion : add \grad{ c phi } to rhs
 
 	DynVec cohe_stress( pbData.H.rows() ) ;
 	PhaseSolver::getCohesiveStress( c, stepData.cohesion,
-					   stepData.forms.fraction/stepData.forms.volumes,
-					   cohe_stress ) ;
+	                   stepData.forms.fraction/stepData.forms.volumes,
+	                   cohe_stress ) ;
 	l.head(pbData.m()) -= pbData.G.transpose() * cohe_stress ;
 	l.segment(pbData.m(),pbData.r()) -= pbData.H.transpose() * cohe_stress ;
 
 }
 
 void DiphasicSolver::solve(
-	const Config& config, const Scalar dt, const DiphasicStepData& stepData ,
-	Phase& phase, FluidPhase &fluid ) const
+    const Config& config, const Scalar dt, const DiphasicStepData& stepData ,
+    Phase& phase, FluidPhase &fluid ) const
 {
 	// Step counter, only useful for dumping friction problem pbData
 	static unsigned s_stepId = 0 ;
@@ -172,13 +172,13 @@ void DiphasicSolver::solve(
 	l.segment(m,r) = stepData.activeProj.vel * stepData.forms.fluctuMomentum ;
 	l.segment(m,r) += stepData.activeProj.vel * stepData.forms.F.transpose() * stepData.dirichletVel ;
 	l.segment(m+r,p) = stepData.fullGridProj.pressure *
-			stepData.forms.B * stepData.dirichletVel ;
+	        stepData.forms.B * stepData.dirichletVel ;
 
 	//  Add cohesion forces to rhs
 	primal.H = stepData.forms.S.inv_sqrt *
-			( stepData.activeProj.stress * ( stepData.forms.H * stepData.activeProj.vel ) ) ;
+	        ( stepData.activeProj.stress * ( stepData.forms.H * stepData.activeProj.vel ) ) ;
 	primal.G = stepData.forms.S.inv_sqrt *
-			( stepData.activeProj.stress * ( stepData.forms.G * stepData.fullGridProj.vel ) ) ;
+	        ( stepData.activeProj.stress * ( stepData.forms.G * stepData.fullGridProj.vel ) ) ;
 
 
 	addCohesionContrib( config, stepData, primal, l );
@@ -215,16 +215,16 @@ void DiphasicSolver::solve(
 	// Inertia, mu(I) = \delta_mu * (1./ (1 + I0/I) ), I = dp * sqrt( rho ) * inertia, inertia = |D(U)|/sqrt(p)
 	const Scalar I0bar = config.I0 / ( config.grainDiameter * std::sqrt( config.volMass )) ;
 	primal.mu = DynArr::Constant( n, config.mu ) +
-			config.delta_mu / ( 1. + I0bar / stepData.inertia.max(1.e-12) ) ;
+	        config.delta_mu / ( 1. + I0bar / stepData.inertia.max(1.e-12) ) ;
 
 	primal.k = primal.G * x.head(m) + primal.H * x.segment( m, r )
-			+ stepData.forms.S.inv_sqrt * stepData.activeProj.stress *
-			  stepData.forms.G * stepData.dirichletVel ;
+	        + stepData.forms.S.inv_sqrt * stepData.activeProj.stress *
+	          stepData.forms.G * stepData.dirichletVel ;
 
 	// Compressability beta(phi)
 	{
 		const DynArr intBeta = ( config.phiMax*stepData.forms.volumes
-								 - stepData.forms.fraction );
+		                         - stepData.forms.fraction );
 
 		DynVec intBeta_s ( DynVec::Zero( n * SD ) ) ;
 		component< SD >( intBeta_s, 0 ).array() = intBeta  * s_sqrt_2_d / dt  ;
@@ -251,21 +251,21 @@ void DiphasicSolver::solve(
 	DiphasicFrictionSolver( primal ).solve( options, M_fac, x, lambda, stats ) ;
 
 	Log::Verbose() << arg3( "Friction: %1 iterations,\t err= %2,\t time= %3 ",
-						   stats.nIterations(), stats.residual(), stats.time() ) << std::endl ;
+	                       stats.nIterations(), stats.residual(), stats.time() ) << std::endl ;
 
 	// IV  Output
-	const Scalar sStk = 1./std::sqrt( config.fluidFriction() ) ;
+	const Scalar sStk = std::sqrt( config.Stokes() ) ;
 
 	stepData.dualNodes.var2field( lambda, phase.stresses ) ;
 
 	fluid.pressure.flatten() = x.segment(m+r, p) ;
 	fluid.mavg_vel.flatten() = x.head(m) ;
 
-	// U_1 = u + wh
-	stepData.primalNodes.var2field( w*sStk/config.alpha(), fluid.velocity ) ;
+	// U_1 = u + sStk wh
+	stepData.primalNodes.var2field( w*sStk, fluid.velocity ) ;
 	phase.velocity.flatten() = x.head(m) + fluid.velocity.flatten() ;
 
-	// U_2 = u - (alpha+1) phi/(1-phi) wh
+	// U_2 = u - sStk (alpha+1) phi/(1-phi) wh
 	PrimalScalarField ratio( phase.fraction.shape() ) ;
 	ratio.flatten() = phase.fraction.flatten().array() / (1. - phase.fraction.flatten().array().min(DiphasicStepData::s_maxPhi) ) ;
 	fluid.velocity.multiply_by( ratio ) ;
