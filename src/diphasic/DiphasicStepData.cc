@@ -478,11 +478,12 @@ void DiphasicStepData::assembleMatrices(
 			// TODO: test w/ other funcs
 			const Vec& pos = particles.centers().col(i) ;
 			const Scalar phi = phase.fraction( pos ) ;
+			const Scalar mphi = (1-std::min( s_maxPhi, phi )) ;
 			const Scalar beta = (config.alpha()*phi + 1) ;
-			const Scalar beta_mphi = config.volMass * beta/(1-std::min( s_maxPhi, phi )) ;
+			const Scalar beta_mphi = config.volMass * beta/mphi ;
 			Vec vW = Vec::Zero() ;
 
-			const Scalar RZ_54 = std::pow(1 - phi, -config.RZExponent ) ; // Ridcharson-Zaki closure
+			const Scalar RZ_54 = std::pow(mphi, -config.RZExponent ) ; // Ridcharson-Zaki closure
 			Scalar vR = beta_mphi * beta * RZ_54;
 #ifdef W_MOMENTUM
 			if( phi < s_maxPhi ) {
