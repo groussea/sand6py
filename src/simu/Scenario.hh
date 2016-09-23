@@ -65,15 +65,19 @@ protected:
 	virtual void init( const Params& /*params*/ ) {}
 
 	Scalar      scalar_param( const Params& params, const std::string& key,
-						 Units::Unit unit = Units::None,
-						 Scalar def = 0. ) const ;
+	                     Units::Unit unit = Units::None,
+	                     Scalar def = 0. ) const ;
 	std::string string_param( const Params& params, const std::string& key,
-						 const std::string& def = "" ) const ;
+	                     const std::string& def = "" ) const ;
 
 	const Vec& box() const ;
 	Scalar box( Index i ) const { return box()[i] ; }
 
 	const Config* m_config ;
+
+private:
+	Scenario( const Scenario& ) = delete ;
+	Scenario& operator=( const Scenario& ) = delete ;
 
 };
 
