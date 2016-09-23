@@ -34,6 +34,8 @@ add_executable ( dd6_solvePrimal dd6_solvePrimal.cc )
 target_link_libraries ( dd6_solvePrimal d6_utils d6_diphasic )
 
 if(DIM2)
+	add_executable ( dd6_plot 2d/dd6_plot.cc )
+	target_link_libraries ( dd6_plot d6_visu )
 
 	if( OPENGL_FOUND )
 		## GL Viewer
@@ -45,9 +47,9 @@ if(DIM2)
 		endif()
 		if( GLFW_FOUND )
 		  add_definitions(-DGLFW3)
-		else()
+	    else()
 		  find_package(GLFW)
-		endif()
+	    endif()
 
 		if( GLFW_FOUND )
 			MESSAGE( STATUS "Found glfw" )
