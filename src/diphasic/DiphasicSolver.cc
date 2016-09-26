@@ -241,10 +241,16 @@ void DiphasicSolver::solve(
 	}
 
 	DiphasicFrictionSolver::Options options ;
-	options.algorithm = DiphasicFrictionSolver::Options::GS ;
+	if(config.usePG)
+		options.algorithm = DiphasicFrictionSolver::Options::PG ;
+	else
+		options.algorithm = DiphasicFrictionSolver::Options::GS ;
 //	options.algorithm = DiphasicFrictionSolver::Options::ADMM ;
-//	options.useInfinityNorm = false ;
-//	options.maxIterations = 1000 ;
+
+	options.tolerance = 1.e-8 ;
+	options.useInfinityNorm = config.useInfNorm ;
+	options.maxIterations = 1000 ;
+
 	options.useCadoux = false ;
 
 	FrictionSolver::Stats stats ;

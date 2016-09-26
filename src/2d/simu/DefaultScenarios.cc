@@ -16,14 +16,22 @@ namespace d6 {
 struct RayleighScenar : public Scenario {
 	Scalar particle_density( const Vec &x ) const override {
 		return ( x[1] >  .5*box()[1] &&
-				(x - .5*box()).squaredNorm() > std::pow(box()[0]/64,2) ) ? 1. : 0. ;
+		        (x - .5*box()).squaredNorm() > std::pow(box()[0]/64,2) ) ? 1. : 0. ;
 	}
 };
 
 struct Sedimentation : public Scenario {
 	Scalar particle_density( const Vec &x ) const override {
-		return 	( x[1] <  .9*box()[1] ) ? .3 : 0 ;
+		return 	( x[1] <  h0*box()[1] ) ? phi0 : 0 ;
 	}
+	virtual void init( const Params& params ) override {
+		h0 = scalar_param( params,     "h0", Units::None, .9 ) ;
+		phi0 = scalar_param( params, "phi0", Units::None, .3 ) ;
+	}
+
+private:
+	Scalar h0 ;
+	Scalar phi0 ;
 };
 
 struct FallingBallScenar : public Scenario {
@@ -56,7 +64,7 @@ private:
 struct HeapScenar : public Scenario {
 	Scalar particle_density( const Vec &x ) const override {
 		return ( x[0] > (.375-.175/2)*box()[0] &&  x[0] < (.375+.175/2)*box()[0]
-				&& x[1] < .75*box()[1]) ? 1. : 0. ;
+		        && x[1] < .75*box()[1]) ? 1. : 0. ;
 	}
 };
 

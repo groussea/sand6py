@@ -4,6 +4,8 @@
 #include "visu/Offline.hh"
 
 #include "utils/Log.hh"
+#include "utils/Config.hh"
+#include "utils/units.hh"
 
 #include <iostream>
 
@@ -27,25 +29,50 @@ bool plot( unsigned frame, unsigned res, Offline& offline, std::ostream& out ) {
 	if(!offline.load_frame(frame))
 		return false ;
 
+	double convol_width = 3. * offline.box()[1]/(res-1) ;
+	int convol_samp = 5 ;
+
+	const Config& c = offline.config() ;
+
 	for( unsigned i = 0 ; i < res ; ++i ) {
 		Vec x ;
-		x[1] = i * ( offline.box()[1]/(res-1)) ;
 
 		Scalar phi = 0, lambda = 0, p = 0 ;
+		const Scalar base =  i * ( offline.box()[1]/(res-1)) ;
 
-		for( unsigned j = 0 ; j < res ; ++j ) {
-			x[0] = j * ( offline.box()[0]/(res-1)) ;
+		for( int k = -convol_samp ; k <= convol_samp ; ++k ) {
+			const Scalar convol_x = k * convol_width / convol_samp ;
+			const Scalar convol_w = 1./(2*convol_samp + 1 ) ;
 
-			phi    += offline.grains().fraction( x ) ;
-			lambda += offline.grains().stresses.trace().eval_at( offline.meshes().dual().locate( x ) ) ;
-			p      += offline.fluid().pressure( x ) ;
+			x[1] = base + convol_x ;
+
+			for( unsigned j = 0 ; j < res ; ++j ) {
+				x[0] = j * ( offline.box()[0]/(res-1)) ;
+				const Vec& xc = offline.meshes().primal().clamp_point( x ) ;
+//				const Vec& xc = Vec::Constant(1.e-4).cwiseMax(x).cwiseMin(offline.box() - Vec::Constant(1.e-4) ) ;
+
+				phi    += convol_w * offline.grains().fraction( xc ) ;
+				lambda += convol_w * offline.grains().stresses.trace().eval_at( offline.meshes().dual().locate( xc ) ) ;
+				p      += convol_w * offline.fluid().pressure( xc ) ;
+			}
+
 		}
 		phi /= res ;
 		lambda /= res ;
 		p /= res ;
 
-		out << x[1] << "\t" << phi << "\t"
-		                  << lambda<< "\t" << p << "\n" ;
+
+
+		const Scalar sL = offline.box()[1] ;
+		const Scalar sP = c.units().fromSI(Units::Stress)
+		        * ( c.gravity.norm() * c.units().toSI(Units::Acceleration)  )
+		        * c.fluidVolMass * c.units().toSI(Units::VolumicMass)
+		        * c.box[1] * c.units().toSI(Units::Length);
+
+		out << base / sL  << "\t" << phi << "\t"
+		    << lambda / (sP * offline.config().alpha() * offline.config().phiMax ) << "\t"
+		    << p / ( sP  )
+		    << "\n" ;
 	}
 
 	return true ;
