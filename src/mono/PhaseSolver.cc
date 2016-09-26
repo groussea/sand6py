@@ -24,14 +24,14 @@ namespace d6 {
 
 
 PhaseSolver::PhaseSolver(const DynParticles &particles)
-	: m_particles(particles)
+    : m_particles(particles)
 {
 
 }
 
 void PhaseSolver::step(const Config &config, const Scalar dt, Phase &phase, Stats& stats,
-					   std::vector< RigidBody   >& rigidBodies,
-					   std::vector<RBStresses > &rbStresses) const
+                       std::vector< RigidBody   >& rigidBodies,
+                       std::vector<RBStresses > &rbStresses) const
 {
 	bogus::Timer timer ;
 
@@ -52,8 +52,8 @@ void PhaseSolver::step(const Config &config, const Scalar dt, Phase &phase, Stat
 }
 
 void PhaseSolver::solve(
-	const Config& config, const Scalar dt, const PhaseStepData& stepData ,
-	Phase& phase, std::vector< RigidBodyData > &rbData, Stats& stats ) const
+    const Config& config, const Scalar dt, const PhaseStepData& stepData ,
+    Phase& phase, std::vector< RigidBodyData > &rbData, Stats& stats ) const
 {
 	bogus::Timer timer ;
 
@@ -111,8 +111,8 @@ void PhaseSolver::solve(
 
 
 void PhaseSolver::addRigidBodyContrib( const Config &c, const Scalar dt, const PhaseStepData &stepData,
-									   const DynVec &u, const RigidBodyData &rb,
-									   PrimalData& pbData, DynArr &rbIntFraction ) const
+                                       const DynVec &u, const RigidBodyData &rb,
+                                       PrimalData& pbData, DynArr &rbIntFraction ) const
 {
 
 	typename FormMat<SD,WD>::Type J = stepData.forms.S.inv_sqrt * stepData.Aniso * ( stepData.proj.stress * ( rb.jacobian ) ) ;
@@ -140,29 +140,29 @@ void PhaseSolver::addRigidBodyContrib( const Config &c, const Scalar dt, const P
 }
 
 void PhaseSolver::getCohesiveStress(
-			const Config &config, const DynArr& cohesion,  const DynArr& fraction,
-			DynVec& cohe_stress )
+            const Config &config, const DynArr& cohesion,  const DynArr& fraction,
+            DynVec& cohe_stress )
 {
 	const Scalar cohe_start = .999 * config.phiMax ;
 	const DynArr contact_zone =
-			( ( fraction - cohe_start ) / (config.phiMax - cohe_start) )
-			.max(0).min(1) ;
+	        ( ( fraction - cohe_start ) / (config.phiMax - cohe_start) )
+	        .max(0).min(1) ;
 
 	cohe_stress.setZero() ;
 	component< SD >( cohe_stress, 0 ).head( cohesion.rows() ).array() =
-			config.cohesion * cohesion.array() * contact_zone ;
+	        config.cohesion * cohesion.array() * contact_zone ;
 }
 
 void PhaseSolver::addCohesionContrib (const Config&c, const PhaseStepData &stepData,
-									  PrimalData& pbData, DynVec &u ) const
+                                      PrimalData& pbData, DynVec &u ) const
 {
 	//Cohesion : add \grad{ c phi } to rhs
 	DynVec cohe_force ;
 	{
 		DynVec cohe_stress( pbData.H.rows() ) ;
 		getCohesiveStress( c, stepData.cohesion,
-						   stepData.forms.fraction/stepData.forms.volumes,
-						   cohe_stress ) ;
+		                   stepData.forms.fraction/stepData.forms.volumes,
+		                   cohe_stress ) ;
 		cohe_force = pbData.H.transpose() * cohe_stress ;
 	}
 
@@ -172,8 +172,8 @@ void PhaseSolver::addCohesionContrib (const Config&c, const PhaseStepData &stepD
 }
 
 void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const PhaseStepData& stepData,
-									   std::vector<RigidBodyData> &rbData,
-									   DynVec &u, Phase& phase, Stats &simuStats ) const
+                                       std::vector<RigidBodyData> &rbData,
+                                       DynVec &u, Phase& phase, Stats &simuStats ) const
 {
 	// Step counter, only useful for dumping friction problem pbData
 	static unsigned s_stepId = 0 ;
@@ -182,16 +182,16 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	pbData.mass_matrix_mode = PrimalData::Lumped ;
 
 	pbData.H = stepData.forms.S.inv_sqrt * stepData.Aniso *
-			( stepData.proj.stress * ( stepData.forms.B * stepData.forms.M_lumped_inv_sqrt ) ) ;
+	        ( stepData.proj.stress * ( stepData.forms.B * stepData.forms.M_lumped_inv_sqrt ) ) ;
 	pbData.w = stepData.forms.S.inv_sqrt * stepData.Aniso *
-			( stepData.proj.stress * ( stepData.forms.B * u ) ) ;
+	        ( stepData.proj.stress * ( stepData.forms.B * u ) ) ;
 
 	pbData.mu.resize( pbData.n() ) ;
 
 	// Inertia, mu(I) = \delta_mu * (1./ (1 + I0/I) ), I = dp * sqrt( rho ) * inertia, inertia = |D(U)|/sqrt(p)
 	const Scalar I0bar = c.I0 / ( c.grainDiameter * std::sqrt( c.volMass )) ;
 	pbData.mu.segment(0,stepData.nDualNodes()).array() = c.mu +
-			c.delta_mu / ( 1. + I0bar / stepData.inertia.max(1.e-12) ) ;
+	        c.delta_mu / ( 1. + I0bar / stepData.inertia.max(1.e-12) ) ;
 
 	DynArr rbIntFraction( stepData.nDualNodes() ) ;
 	rbIntFraction.setZero() ;
@@ -223,7 +223,7 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	// Compressability beta(phi)
 	{
 		const DynArr intBeta = ( c.phiMax*stepData.forms.volumes
-								 - stepData.forms.fraction - rbIntFraction );
+		                         - stepData.forms.fraction - rbIntFraction );
 
 		DynVec intBeta_s ( DynVec::Zero( pbData.n() * SD ) ) ;
 		component< SD >( intBeta_s, 0 ).head( stepData.nDualNodes() ).array() = intBeta  * s_sqrt_2_d / dt  ;
@@ -249,7 +249,7 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	FrictionSolver::Options options ;
 	if( c.usePG ) {
 		options.algorithm = FrictionSolver::Options::PG_NoAssembly ;
-		options.projectedGradientVariant = 2 ;
+		options.projectedGradientVariant = 4 ;
 	} else {
 		options.algorithm = FrictionSolver::Options::GaussSeidel_NoAssembly ;
 	}
@@ -263,7 +263,7 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	FrictionSolver( pbData ).solve( options, x, stats ) ;
 
 	Log::Verbose() << arg3( "Primal: %1 iterations,\t err= %2,\t time= %3 ",
-						   stats.nIterations(), stats.residual(), stats.time() ) << std::endl ;
+	                       stats.nIterations(), stats.residual(), stats.time() ) << std::endl ;
 	simuStats.frictionError      = stats.residual() ;
 	simuStats.frictionTime       = stats.time() ;
 	simuStats.frictionIterations = stats.nIterations() ;
@@ -277,7 +277,7 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	// Contact forces -- useless, debug only
 	{
 		const DynVec fcontact = stepData.proj.vel * stepData.forms.B.transpose() *
-								stepData.proj.stress * stepData.Aniso * stepData.forms.S.inv_sqrt * x ;
+		                        stepData.proj.stress * stepData.Aniso * stepData.forms.S.inv_sqrt * x ;
 		stepData.primalNodes.var2field( fcontact, phase.fcontact ) ;
 	}
 
@@ -298,8 +298,8 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 }
 
 void PhaseSolver::enforceMaxFrac(const Config &c, const PhaseStepData &stepData,
-								 const std::vector<RigidBodyData> &rbData,
-								 DynVec& depl ) const
+                                 const std::vector<RigidBodyData> &rbData,
+                                 DynVec& depl ) const
 {
 
 	LCPData pbData ;
@@ -321,7 +321,7 @@ void PhaseSolver::enforceMaxFrac(const Config &c, const PhaseStepData &stepData,
 	}
 
 	pbData.w.segment(0, stepData.nDualNodes() ) =
-			( c.phiMax*stepData.forms.volumes - stepData.forms.fraction - rbIntFraction ) ;
+	        ( c.phiMax*stepData.forms.volumes - stepData.forms.fraction - rbIntFraction ) ;
 
 	DynVec x = DynVec::Zero( pbData.n() ) ;
 	LCP lcp( pbData ) ;
