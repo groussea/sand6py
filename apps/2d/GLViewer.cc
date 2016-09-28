@@ -294,17 +294,36 @@ void GLViewer::update_color_buffers()
 	Eigen::Matrix<float, 3, Eigen::Dynamic > colors( 3, field.size() ) ;
 	colors.setZero() ;
 
-	const double max_val = field.flatten().maxCoeff() ;
-	const double min_val = field.flatten().minCoeff() ;
-	if( max_val - min_val > 1.e-12 )
-	{
-		colors.row(1) = ( (field.flatten().array() - min_val)/(max_val - min_val) ).cast<float>() ;
+	if( m_scalarEntity == seFluidVel ) {
+
+#pragma omp parallel for
+		for( Index i = 0 ; i < field.size() ; ++i ) {
+			const Scalar vis = std::log( 1. + 100 * field[i] ) ;
+
+			float mat_0 = clamp( 1 - 2*std::fabs(vis/5-1.0), 0.0, 1.0 ) ;
+			float mat_1 = clamp( 1 - 2*std::fabs(vis/5-0.5), 0.0, 1.0 ) ;
+			float mat_2 = clamp( 1 - 2*std::fabs(vis/5-0.0), 0.0, 1.0 ) ;
+			float mat_3 = clamp( 1 + 2*   (vis/5-1.5), 0.0, 1.0 ) ;
+
+			colors.col(i) += .5*mat_0*Eigen::Vector3f(1.0, 0.0, 0.0);
+			colors.col(i) += .5*mat_1*Eigen::Vector3f(0.0, 1.0, 0.0);
+			colors.col(i) += .5*mat_2*Eigen::Vector3f(0.0, 0.0, 1.0);
+			colors.col(i) += .5*mat_3*Eigen::Vector3f(1.0, 1.0, 1.0);
+		}
+
+	} else {
+		const double max_val = field.flatten().maxCoeff() ;
+		const double min_val = field.flatten().minCoeff() ;
+		if( max_val - min_val > 1.e-12 )
+		{
+			colors.row(1) = ( (field.flatten().array() - min_val)/(max_val - min_val) ).cast<float>() ;
+		}
+
+		Log::Verbose() << "Scalar range\t" << min_val << " ;\t" << max_val << std::endl ;
 	}
 
 	m_gridColors.reset( colors.cols(), colors.data() ) ;
 
-
-	Log::Verbose() << "Scalar range\t" << min_val << " ;\t" << max_val << std::endl ;
 }
 
 
