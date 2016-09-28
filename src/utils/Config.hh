@@ -85,7 +85,7 @@ struct Config
 	}
 
 	Scalar Stokes() const {
-		return  alpha()/(alpha()+1) *
+		return  //alpha()/(alpha()+1) *
 		        (std::sqrt( gravity.norm() * typicalLength() ) *volMass*grainDiameter*grainDiameter)
 		        / (typicalLength() * viscosity * stokesFactor) ;
 	}

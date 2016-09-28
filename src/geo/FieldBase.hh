@@ -16,8 +16,8 @@ struct FieldTraits
 
 template< typename Derived >
 class FieldBase : public FieldFuncBase< Derived,
-		FieldTraits< Derived >::Dimension,
-		typename FieldTraits< Derived >::ShapeFuncImpl >
+        FieldTraits< Derived >::Dimension,
+        typename FieldTraits< Derived >::ShapeFuncImpl >
 {
 
 public:
@@ -41,7 +41,7 @@ public:
 	typedef AbstractScalarField< ShapeFuncImpl > ScalarField ;
 
 	explicit FieldBase( const ShapeFuncType& shape, bool doFit = true )
-		: Base( shape )
+	    : Base( shape )
 	{
 		if(doFit) fit_shape() ;
 	}
@@ -83,7 +83,7 @@ public:
 	Derived& operator= ( const FieldFuncBase< Func, D, ShapeFuncImpl > & f )
 	{
 		assert( f.size() == size() ) ;
-		#pragma omp parallel for
+        #pragma omp parallel for
 		for( Index  i = 0 ; i < size() ; ++i ) {
 			f.template eval_at_node< DynVec >( i, segment(i) );
 		}
@@ -132,6 +132,12 @@ public:
 	Scalar max_abs() const { return m_data.lpNorm< Eigen::Infinity >() ; }
 
 	//Operations
+	Derived&  axpy( const Derived& x, Scalar alpha = 1 )
+	{
+		assert( size() == x.size() ) ;
+		flatten() += alpha * x.flatten() ;
+		return derived() ;
+	}
 
 	Derived& multiply_by( const ScalarField& field ) ;
 	Derived&   divide_by( const ScalarField& field ) ;
@@ -164,10 +170,10 @@ protected:
 #define D6_MAKE_FIELD_CONSTRUCTORS_AND_ASSIGNMENT_OPERATORS( FieldName ) \
 	explicit FieldName( const typename Base::ShapeFuncType& shape ) \
 	: Base( shape ) \
-	{} \
+    {} \
 	explicit FieldName( const typename Base::ShapeFuncType::DOFDefinition& mesh ) \
 	: Base( typename Base::ShapeFuncImpl( mesh ) ) \
-	{} \
+    {} \
 	/*! Copy constructor */\
 	FieldName( const FieldName& o ) : Base( o.shape() ) { Base::operator=( o ) ; } \
 	FieldName& operator=( const FieldName& o ) { return Base::operator=( o ) ; } \
@@ -177,21 +183,21 @@ protected:
 	/*! Assignment from field func */\
 	template <typename Func> \
 	FieldName( const FieldFuncBase< Func, Base::D, typename Base::ShapeFuncImpl > & func ) \
-		: Base( func.shape() ) \
-	{ Base::operator=( func ); } \
+	    : Base( func.shape() ) \
+    { Base::operator=( func ); } \
 	/*! Constructor from field func */\
 	template <typename Func> \
 	FieldName& operator= ( const FieldFuncBase< Func, Base::D, typename Base::ShapeFuncImpl> & func ) \
-	{ return Base::operator=( func ); } \
+    { return Base::operator=( func ); } \
 	/*! Assignment from non-trivial interpolation */\
 	template < typename Func, typename OtherShape > \
 	FieldName& operator= ( const NonTrivialInterpolation< Func, Base::D, OtherShape, typename Base::ShapeFuncImpl > & f ) \
-	{ return Base::from_interpolation ( f.src ) ; } \
+    { return Base::from_interpolation ( f.src ) ; } \
 	/*! Constructors from non-trivial interpolation */\
 	template < typename Func, typename OtherShape > \
 	FieldName ( const NonTrivialInterpolation< Func, Base::D, OtherShape, typename Base::ShapeFuncImpl > & f ) \
 	: Base( typename Base::ShapeFuncImpl( f.dest ) ) \
-	{ Base::from_interpolation ( f.src ) ; } \
+    { Base::from_interpolation ( f.src ) ; } \
 
 
 } //d6

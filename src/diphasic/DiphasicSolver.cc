@@ -273,7 +273,7 @@ void DiphasicSolver::solve(
 
 	// U_2 = u - sStk (alpha+1) phi/(1-phi) wh
 	PrimalScalarField ratio( phase.fraction.shape() ) ;
-	ratio.flatten() = phase.fraction.flatten().array() / (1. - phase.fraction.flatten().array().min(DiphasicStepData::s_maxPhi) ) ;
+	ratio.flatten() = phase.fraction.flatten().array() / (1. - phase.fraction.flatten().array().min(config.phiMax) ) ;
 	fluid.velocity.multiply_by( ratio ) ;
 
 	fluid.velocity.flatten() = x.head(m) - (config.alpha()+1)*fluid.velocity.flatten() ;

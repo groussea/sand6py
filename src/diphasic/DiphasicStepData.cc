@@ -32,6 +32,8 @@
 #define INTEGRATE_LOBATTO
 #endif
 
+#define EI_VISC( a )( 1 + 2.5*(a) )
+
 // a C' p  = a wh / Stk
 // a C  wh + Bu = 0
 
@@ -205,9 +207,10 @@ void DiphasicStepData::assembleMatrices(
 		forms.D.cloneIndex( builder.index() ) ;
 		forms.D.setBlocksToZero() ;
 
-		builder.integrate_qp( [&]( Scalar w, const Vec&, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& r_dc_dx )
+		builder.integrate_qp( [&]( Scalar w, const Vec& pos, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& r_dc_dx )
 		{
-			Builder:: addDuDv ( forms.A, w*2*config.viscosity, l_itp, l_dc_dx, r_itp, r_dc_dx, fullIndices, fullIndices ) ;
+			const Scalar visc = 2 * config.viscosity * EI_VISC( phase.fraction( pos ) ) ;
+			Builder:: addDuDv ( forms.A, w*visc, l_itp, l_dc_dx, r_itp, r_dc_dx, fullIndices, fullIndices ) ;
 			Builder:: addQDivu( forms.B, w, l_itp, r_itp, r_dc_dx, fullIndices, fullIndices ) ;
 			Builder:: addTauDu( forms.D, w, l_itp, r_itp, r_dc_dx, fullIndices, fullIndices ) ;
 		}
@@ -391,7 +394,7 @@ void DiphasicStepData::assembleMatrices(
 #ifdef W_VISC
 
 		builder.integrate_cell<form::Left>( primalNodes.cells.begin(), primalNodes.cells.end(),
-		                        [&]( Scalar w, const Vec&, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& )
+		                        [&]( Scalar w, const Vec& pos, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& )
 		    {
 			    // u = sum_k ( c_k uK  )
 			    // du_dx  = sum_k ( dcdx_k  uK  )
@@ -401,8 +404,8 @@ void DiphasicStepData::assembleMatrices(
 				for( Index k = 0 ; k < l_itp.nodes.size() ; ++k ) {
 					phidc_dx.row(k) = l_dc_dx.row(k) * phase.fraction[ l_itp.nodes[k] ] ;
 				}
-
-				const Scalar weight = w * 2 * config.viscosity * config.Stokes() * config.alpha() * config.alpha() ;
+				const Scalar visc = 2 * config.viscosity * EI_VISC( phase.fraction( pos ) ) ;
+				const Scalar weight = w * visc * config.Stokes() * config.alpha() * config.alpha() ;
 				Builder:: addDuDv( forms.R_visc, weight, l_itp, phidc_dx, r_itp, phidc_dx, primalNodes.indices, primalNodes.indices ) ;
 		    }
 		);
@@ -432,7 +435,7 @@ void DiphasicStepData::assembleMatrices(
 		forms.F.setBlocksToZero() ;
 
 		builder.integrate_cell<form::Left>( primalNodes.cells.begin(), primalNodes.cells.end(),
-		                        [&]( Scalar w, const Vec&, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& )
+		                        [&]( Scalar w, const Vec&pos, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& )
 		    {
 			    // u = sum_k ( c_k uK  )
 			    // du_dx  = sum_k ( dcdx_k  uK  )
@@ -443,7 +446,9 @@ void DiphasicStepData::assembleMatrices(
 					phidc_dx.row(k) = l_dc_dx.row(k) * phase.fraction[ l_itp.nodes[k] ] ;
 				}
 
-				const Scalar weight = - w * 2 * config.viscosity * sStk * config.alpha() ;
+				const Scalar visc = 2 * config.viscosity * EI_VISC( phase.fraction( pos ) ) ;
+
+				const Scalar weight = - w * visc * sStk * config.alpha() ;
 				Builder:: addDuDv( forms.F, weight, l_itp, l_dc_dx, r_itp, phidc_dx, fullIndices, primalNodes.indices ) ;
 		    }
 		);
@@ -478,13 +483,13 @@ void DiphasicStepData::assembleMatrices(
 			// TODO: test w/ other funcs
 			const Vec& pos = particles.centers().col(i) ;
 			const Scalar phi = phase.fraction( pos ) ;
-			const Scalar mphi = (1-std::min( s_maxPhi, phi )) ;
+			const Scalar mphi = (1-std::min( config.phiMax, phi )) ;
 			const Scalar beta = (config.alpha()*phi + 1) ;
 			const Scalar beta_mphi = config.volMass * beta/mphi ;
 			Vec vW = Vec::Zero() ;
 
 			const Scalar RZ_54 = std::pow(mphi, -config.RZExponent ) ; // Ridcharson-Zaki closure
-			Scalar vR = beta_mphi * beta * RZ_54;
+			Scalar vR = beta_mphi * ( config.alpha() * beta )/(config.alpha() + 1) * RZ_54;
 #ifdef W_MOMENTUM
 			if( phi < s_maxPhi ) {
 				const Vec& u1_adv = particles.velocities().col(i) ;

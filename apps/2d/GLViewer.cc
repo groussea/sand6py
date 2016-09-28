@@ -68,9 +68,9 @@ inline float rnd( float* data, float x, float y )
 	y -= py ;
 
 	return  data[ off ] * (1-x) * (1-y)  +
-			data[ 1 + off ] * y * (1-x) +
-			data[ off + TEX_S ] * (1-y) * x +
-			data[ 1 + off + TEX_S ] * x * y ;
+	        data[ 1 + off ] * y * (1-x) +
+	        data[ off + TEX_S ] * (1-y) * x +
+	        data[ 1 + off + TEX_S ] * x * y ;
 }
 
 void GLViewer::snap()
@@ -105,13 +105,13 @@ void GLViewer::snap()
 	free (buffer);
 	char command[2048];
 	sprintf (
-				command,
-				"convert -depth 8 -size %ix%i rgb:snapshot-%04d.raw snapshot-%04d.png",
-				g_gl_width,
-				g_gl_height,
-				t,
-				t
-				);
+	            command,
+	            "convert -depth 8 -size %ix%i rgb:snapshot-%04d.raw snapshot-%04d.png",
+	            g_gl_width,
+	            g_gl_height,
+	            t,
+	            t
+	            );
 	system (command);
 	sprintf (command, "rm -f %s", name);
 	system (command);
@@ -120,16 +120,23 @@ void GLViewer::snap()
 
 void GLViewer::init( )
 {
+//	glEnable(GL_MULTISAMPLE);
+	GLint bufs, samples ;
+	glGetIntegerv( GL_SAMPLE_BUFFERS, &bufs ) ;
+	glGetIntegerv( GL_SAMPLES, &samples ) ;
+	Log::Debug() << "Using " << bufs << " buffers and " << samples << " samples" << std::endl ;
+
 	updateViewport();
 
+	glClearColor(1.,1.,1.,1) ;
 
 	// Texture
 	{
 		m_rndData.resize( TEX_S * TEX_S  );
 		m_texData.resize( TEX_S * TEX_S * 3 );
 		Eigen::Matrix< float, Eigen::Dynamic, 1 >
-				::Map( &m_rndData[0], TEX_S * TEX_S )
-				= ( Eigen::VectorXf::Random( TEX_S * TEX_S ).array().abs().matrix() )  ;
+		        ::Map( &m_rndData[0], TEX_S * TEX_S )
+		        = ( Eigen::VectorXf::Random( TEX_S * TEX_S ).array().abs().matrix() )  ;
 
 		glGenTextures(1, &m_texId);
 		glBindTexture( GL_TEXTURE_2D, m_texId );
@@ -249,7 +256,7 @@ void GLViewer::update_particle_buffers()
 			const Vec ev = es.eigenvalues().array().max(0).sqrt().max( 1.e-1 ) ;
 
 			mat = ( es.eigenvectors() * ev.asDiagonal() ).cast< GLfloat >()
-					* std::pow( p.volumes()[i], 1./2 )  ;
+			        * std::pow( p.volumes()[i], 1./2 )  ;
 
 			densities[i] = p.volumes()[i]  ;
 
@@ -424,6 +431,15 @@ void GLViewer::draw( ) const
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_ACCUM_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 	glLineWidth( 1.f );
 
+	//BG
+	glColor3f(0.8,0.8,0.8) ;
+	glBegin(GL_QUADS);
+	glVertex2f(0, 0);
+	glVertex2f(0, c.box[1]);
+	glVertex2f(c.box[0], c.box[1]);
+	glVertex2f(c.box[0], 0);
+	glEnd();
+
 	// Grid
 
 	if( m_shouldRender[ eColors ])
@@ -534,7 +550,7 @@ void GLViewer::draw( ) const
 	}
 }
 
-const typename GLViewer::VectorField& GLViewer::getVectorEntity() const
+typename GLViewer::VectorField GLViewer::getVectorEntity() const
 {
 	switch ( m_vectorEntity ) {
 	case veVelocity :
@@ -545,6 +561,8 @@ const typename GLViewer::VectorField& GLViewer::getVectorEntity() const
 		return m_offline.grains().geo_proj ;
 	case veFluidVel :
 		return m_offline.fluid() .velocity ;
+	case veFluctu :
+		return GLViewer::VectorField(m_offline.grains().velocity).axpy( m_offline.fluid().velocity, -1 ) ;
 	default:
 		return m_offline.grains().grad_phi ;
 	}
@@ -560,6 +578,8 @@ typename GLViewer::ScalarField GLViewer::getScalarEntity() const
 		return m_offline.grains().sym_grad.trace().interpolate< Shape >( m_offline.meshes().primal() ) ;
 	case sePorePressure :
 		return m_offline.fluid().pressure ;
+	case seFluidVel :
+		return m_offline.fluid().velocity.norm().interpolate< Shape >( m_offline.meshes().primal() ) ;
 	default:
 		return m_offline.grains().spi_grad.interpolate< Shape >( m_offline.meshes().primal() );
 	}

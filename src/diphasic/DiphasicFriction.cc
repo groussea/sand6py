@@ -15,18 +15,18 @@
 namespace d6 {
 
 DiphasicFrictionSolver::Options::Options()
-	: algorithm( PG ),
-	  reduced(true), direct(true), useCadoux( true ),
-	  maxIterations(250), maxOuterIterations( 15 ),
-	  projectedGradientVariant( -1  ),
-	  useInfinityNorm( true ), tolerance( 1.e-6 )
+    : algorithm( PG ),
+      reduced(true), direct(true), useCadoux( true ),
+      maxIterations(250), maxOuterIterations( 15 ),
+      projectedGradientVariant( -1  ),
+      useInfinityNorm( true ), tolerance( 1.e-6 )
 {
 }
 
 struct DFCallbackProxy {
 
 	DFCallbackProxy( FrictionSolver::Stats& stats, bogus::Timer &timer )
-		: m_stats( stats ), m_timer( timer )
+	    : m_stats( stats ), m_timer( timer )
 	{
 	}
 
@@ -42,9 +42,9 @@ private:
 } ;
 
 static void combine( const DiphasicPrimalData::HType& G,
-					 const DiphasicPrimalData::HType& H,
-					 const unsigned s,
-					 DiphasicPrimalData::HType& B )
+                     const DiphasicPrimalData::HType& H,
+                     const unsigned s,
+                     DiphasicPrimalData::HType& B )
 {
 	const Index m  = G.colsOfBlocks() ;
 	const Index n  = G.rowsOfBlocks() ;
@@ -63,9 +63,9 @@ static void combine( const DiphasicPrimalData::HType& G,
 	B.finalize();
 }
 static void combineDiag( const DiphasicPrimalData::DType& G,
-						 const DiphasicPrimalData::DType& H,
-						 const unsigned s,
-						 DiphasicPrimalData::DType& B )
+                         const DiphasicPrimalData::DType& H,
+                         const unsigned s,
+                         DiphasicPrimalData::DType& B )
 {
 	const Index m  = G.colsOfBlocks() ;
 	const Index n  = H.rowsOfBlocks() ;
@@ -88,9 +88,9 @@ static void combineDiag( const DiphasicPrimalData::DType& G,
 
 template <typename WExpr>
 static Scalar solvePG(
-		const DiphasicFrictionSolver::Options& options, const DiphasicPrimalData &data,
-		const WExpr& W, DynVec &lambda,
-		FrictionSolver::Stats& stats, bogus::Timer& timer	)
+        const DiphasicFrictionSolver::Options& options, const DiphasicPrimalData &data,
+        const WExpr& W, DynVec &lambda,
+        FrictionSolver::Stats& stats, bogus::Timer& timer	)
 {
 
 	DFCallbackProxy callbackProxy( stats, timer ) ;
@@ -112,7 +112,7 @@ static Scalar solvePG(
 		bogus::Signal<unsigned, Scalar> callback ;
 		callback.connect( callbackProxy, &DFCallbackProxy::ackResidual );
 		res = bogus::solveCadoux<SD>( W, data.k.data(), data.mu.data(), pg,
-									  lambda.data(), options.maxOuterIterations, &callback ) ;
+		                              lambda.data(), options.maxOuterIterations, &callback ) ;
 	} else {
 		bogus::SOCLaw< SD, Scalar, true > law( data.mu.rows(), data.mu.data() ) ;
 		pg.callback().connect( callbackProxy, &DFCallbackProxy::ackResidual );
@@ -124,10 +124,10 @@ static Scalar solvePG(
 
 template <typename WType, typename LSExpr, typename HExpr>
 static Scalar solveGS(
-		const DiphasicFrictionSolver::Options& options, const DiphasicPrimalData &data,
-		const WType& W, const LSExpr& Minv, const HExpr &H,
-		DynVec &lambda,
-		FrictionSolver::Stats& stats, bogus::Timer& timer	)
+        const DiphasicFrictionSolver::Options& options, const DiphasicPrimalData &data,
+        const WType& W, const LSExpr& Minv, const HExpr &H,
+        DynVec &lambda,
+        FrictionSolver::Stats& stats, bogus::Timer& timer	)
 {
 
 	DFCallbackProxy callbackProxy( stats, timer ) ;
@@ -151,7 +151,7 @@ static Scalar solveGS(
 }
 
 Scalar DiphasicFrictionSolver::solve(const Options &options,
-		DynVec &x, DynVec &lambda, FrictionSolver::Stats &stats ) const
+        DynVec &x, DynVec &lambda, FrictionSolver::Stats &stats ) const
 {
 	const Scalar pen = 0.e-8 ;
 
@@ -179,8 +179,8 @@ Scalar DiphasicFrictionSolver::solve(const Options &options,
 }
 
 Scalar DiphasicFrictionSolver::solve(const Options &options,
-		const DiphasicPrimalData::MInvType& Minv,
-		DynVec &x, DynVec &lambda, FrictionSolver::Stats &stats ) const
+        const DiphasicPrimalData::MInvType& Minv,
+        DynVec &x, DynVec &lambda, FrictionSolver::Stats &stats ) const
 {
 
 	if( options.algorithm == Options::ADMM ) {
@@ -196,8 +196,8 @@ Scalar DiphasicFrictionSolver::solve(const Options &options,
 
 
 Scalar DiphasicFrictionSolver::solveStokes(const Options &options,
-		const DiphasicPrimalData::MInvType& Minv,
-		DynVec &x, DynVec &lambda, FrictionSolver::Stats &stats ) const
+        const DiphasicPrimalData::MInvType& Minv,
+        DynVec &x, DynVec &lambda, FrictionSolver::Stats &stats ) const
 {
 	assert( options.algorithm == Options::PG && !options.reduced && options.direct ) ;
 
@@ -211,7 +211,7 @@ Scalar DiphasicFrictionSolver::solveStokes(const Options &options,
 
 
 	typedef bogus::Product< BType, bogus::Product< MInvType, bogus::Transpose< BType > > >
-			WExpr ;
+	        WExpr ;
 	WExpr W = B * ( Minv * B.transpose() ) ;
 
 
@@ -228,16 +228,16 @@ Scalar DiphasicFrictionSolver::solveStokes(const Options &options,
 
 template< typename PInvType, typename KType, typename GAGExpr >
 static Scalar solvePGRed(const DiphasicFrictionSolver::Options &options,
-					   const DiphasicPrimalData& data,
-					   const PInvType& P_inv, const KType &K,
-					   const GAGExpr &gag, const GAGExpr& hrh,
-					   DynVec &lambda, DynVec& delta_p,
-					   FrictionSolver::Stats &stats, bogus::Timer &timer )
+                       const DiphasicPrimalData& data,
+                       const PInvType& P_inv, const KType &K,
+                       const GAGExpr &gag, const GAGExpr& hrh,
+                       DynVec &lambda, DynVec& delta_p,
+                       FrictionSolver::Stats &stats, bogus::Timer &timer )
 {
 
 
 	typedef bogus::Product< KType, bogus::Product< PInvType, bogus::Transpose< KType > > >
-			BPBExpr ;
+	        BPBExpr ;
 
 	BPBExpr kpk = K * ( P_inv * K.transpose() ) ;
 
@@ -254,11 +254,11 @@ static Scalar solvePGRed(const DiphasicFrictionSolver::Options &options,
 
 template< typename PInvType, typename KType >
 static Scalar solveProdGSRed(const DiphasicFrictionSolver::Options &options,
-					   const DiphasicPrimalData& data,
-					   const DiphasicPrimalData::DType& R_inv,
-					   const PInvType& P_inv, const KType &K,
-					   DynVec &lambda, DynVec& delta_p,
-					   FrictionSolver::Stats &stats, bogus::Timer &timer )
+                       const DiphasicPrimalData& data,
+                       const DiphasicPrimalData::DType& R_inv,
+                       const PInvType& P_inv, const KType &K,
+                       DynVec &lambda, DynVec& delta_p,
+                       FrictionSolver::Stats &stats, bogus::Timer &timer )
 {
 	typedef DiphasicPrimalData::HType HType ;
 	typedef DiphasicPrimalData::DType DType ;
@@ -299,11 +299,11 @@ static Scalar solveProdGSRed(const DiphasicFrictionSolver::Options &options,
 
 template< typename PInvType, typename KType, typename GAGExpr >
 static Scalar solveGSRed(const DiphasicFrictionSolver::Options &options,
-					   const DiphasicPrimalData& data,
-					   const PInvType& P_inv, const KType &K,
-					   const GAGExpr &gag, const GAGExpr& hrh,
-					   DynVec &lambda, DynVec& delta_p,
-					   FrictionSolver::Stats &stats, bogus::Timer &timer )
+                       const DiphasicPrimalData& data,
+                       const PInvType& P_inv, const KType &K,
+                       const GAGExpr &gag, const GAGExpr& hrh,
+                       DynVec &lambda, DynVec& delta_p,
+                       FrictionSolver::Stats &stats, bogus::Timer &timer )
 {
 
 	typename FormMat<SD,SD>::SymType W = (gag+hrh) ;
@@ -316,7 +316,7 @@ static Scalar solveGSRed(const DiphasicFrictionSolver::Options &options,
 }
 
 Scalar DiphasicFrictionSolver::solveRed(const Options &options, const Scalar pen,
-		DynVec &x, DynVec &lambda, FrictionSolver::Stats &stats ) const
+        DynVec &x, DynVec &lambda, FrictionSolver::Stats &stats ) const
 {
 
 	bogus::Timer timer ;
@@ -330,7 +330,7 @@ Scalar DiphasicFrictionSolver::solveRed(const Options &options, const Scalar pen
 
 	typedef DiphasicPrimalData::HType    HType ;
 	typedef bogus::Product< HType, bogus::Product< DiphasicPrimalData::DType, bogus::Transpose< HType > > >
-			GAGExpr ;
+	        GAGExpr ;
 	GAGExpr gag = m_data.G * ( m_data.M_lumped_inv * m_data.G.transpose() ) ;
 	GAGExpr hrh = m_data.H * (        R_inv        * m_data.H.transpose() ) ;
 
@@ -338,12 +338,12 @@ Scalar DiphasicFrictionSolver::solveRed(const Options &options, const Scalar pen
 	typedef FormMat< SD, 1>::Type        BType ;
 
 	BType K  = m_data.G * ( m_data.M_lumped_inv * m_data.B.transpose() ) +
-			   m_data.H * (        R_inv        * m_data.C.transpose() ) ;
+	           m_data.H * (        R_inv        * m_data.C.transpose() ) ;
 
 	// TODO use SymType and SelfAdjointView
 	typedef FormMat<1,1>::Type PType ;
 	PType P =  m_data.B * ( m_data.M_lumped_inv * m_data.B.transpose() ) +
-			   m_data.C * (        R_inv        * m_data.C.transpose() ) ;
+	           m_data.C * (        R_inv        * m_data.C.transpose() ) ;
 	P  += pen * P.Identity() ;
 
 	DynVec delta_p ;
@@ -386,16 +386,16 @@ Scalar DiphasicFrictionSolver::solveRed(const Options &options, const Scalar pen
 
 	x.segment( m_data.m() + m_data.r(), m_data.p() ) += delta_p ;
 	x.head( m_data.m() ) += m_data.M_lumped_inv *
-		DynVec( m_data.B.transpose() * delta_p + m_data.G.transpose() * lambda) ;
+	    DynVec( m_data.B.transpose() * delta_p + m_data.G.transpose() * lambda) ;
 	x.segment( m_data.m(), m_data.r() ) += R_inv *
-		DynVec( m_data.C.transpose() * delta_p + m_data.H.transpose() * lambda) ;
+	    DynVec( m_data.C.transpose() * delta_p + m_data.H.transpose() * lambda) ;
 
 	return res ;
 }
 
 
 Scalar DiphasicFrictionSolver::solveADMM(const Options &options,
-		DynVec &x, DynVec &lambda, FrictionSolver::Stats &stats ) const
+        DynVec &x, DynVec &lambda, FrictionSolver::Stats &stats ) const
 {
 	bogus::Timer timer ;
 	DFCallbackProxy callbackProxy( stats, timer ) ;
@@ -476,8 +476,8 @@ Scalar DiphasicFrictionSolver::solveADMM(const Options &options,
 	dama.setProjStepSize( 30. );
 
 	typedef bogus::MatrixPreconditioner< DiphasicPrimalData::DType >
-			::Type < bogus::BlockObjectBase<bogus::SparseBlockMatrix< DiphasicPrimalData::AType >> >
-			PrecondType ;
+	        ::Type < bogus::BlockObjectBase<bogus::SparseBlockMatrix< DiphasicPrimalData::AType >> >
+	        PrecondType ;
 	PrecondType precond ;
 	precond.setPreconditionerMatrix( P );
 //	typedef bogus::TrivialPreconditioner<
@@ -491,7 +491,7 @@ Scalar DiphasicFrictionSolver::solveADMM(const Options &options,
 	std::cout << "C " << test_1.minCoeff() << "  " << test_1.maxCoeff() << std::endl ;
 
 	res = dama.solveWithLinearConstraints< bogus::admm::Standard>
-			( law, A, B, H, precond, f, b, m_data.k, v, p, lambda, .003 ) ;
+	        ( law, A, B, H, precond, f, b, m_data.k, v, p, lambda, .003 ) ;
 
 	x.head( A.rows() ) += v ;
 	x.segment( A.rows(), B.rows() ) += p ;

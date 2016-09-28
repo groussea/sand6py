@@ -3,6 +3,8 @@
 
 #include "visu/Offline.hh"
 
+#include "geo/FieldBase.impl.hh"
+
 #include "utils/Log.hh"
 #include "utils/Config.hh"
 #include "utils/units.hh"
@@ -29,10 +31,12 @@ bool plot( unsigned frame, unsigned res, Offline& offline, std::ostream& out ) {
 	if(!offline.load_frame(frame))
 		return false ;
 
-	double convol_width = 3. * offline.box()[1]/(res-1) ;
+	double convol_width = 2. * offline.box()[1]/(res-1) ;
 	int convol_samp = 5 ;
 
 	const Config& c = offline.config() ;
+
+	PrimalScalarField lh = offline.grains().stresses.trace().interpolate< PrimalShape >( offline.meshes().primal() ) ; ;
 
 	for( unsigned i = 0 ; i < res ; ++i ) {
 		Vec x ;
@@ -52,7 +56,7 @@ bool plot( unsigned frame, unsigned res, Offline& offline, std::ostream& out ) {
 //				const Vec& xc = Vec::Constant(1.e-4).cwiseMax(x).cwiseMin(offline.box() - Vec::Constant(1.e-4) ) ;
 
 				phi    += convol_w * offline.grains().fraction( xc ) ;
-				lambda += convol_w * offline.grains().stresses.trace().eval_at( offline.meshes().dual().locate( xc ) ) ;
+				lambda += convol_w * lh( xc ) ;
 				p      += convol_w * offline.fluid().pressure( xc ) ;
 			}
 
@@ -70,7 +74,7 @@ bool plot( unsigned frame, unsigned res, Offline& offline, std::ostream& out ) {
 		        * c.box[1] * c.units().toSI(Units::Length);
 
 		out << base / sL  << "\t" << phi << "\t"
-		    << lambda / (sP * offline.config().alpha() * offline.config().phiMax ) << "\t"
+		    << lambda / (sP * offline.config().alpha() ) << "\t"
 		    << p / ( sP  )
 		    << "\n" ;
 	}

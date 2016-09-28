@@ -268,9 +268,6 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	simuStats.frictionTime       = stats.time() ;
 	simuStats.frictionIterations = stats.nIterations() ;
 
-	if (simuStats.frictionError < 1.e-16)
-		std::exit(1) ;
-
 	// Update velocity
 	u += stepData.forms.M_lumped_inv_sqrt * pbData.H.transpose() * x  ;
 
