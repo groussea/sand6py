@@ -1,3 +1,22 @@
+/*
+ * This file is part of Sand6, a C++ continuum-based granular simulator.
+ *
+ * Copyright 2016 Gilles Daviet <gilles.daviet@inria.fr> (Inria - Université Grenoble Alpes)
+ *
+ * Sand6 is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+
+ * Sand6 is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * You should have received a copy of the GNU General Public License
+ * along with Sand6.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "Scenario.hh"
 
 #include "Simu.hh"
@@ -128,7 +147,7 @@ struct RbPlaneTestScenar : public Scenario {
 struct ImpactScenar : public Scenario {
 
 	Scalar particle_density( const Vec &x ) const override {
-		return ( x[2] <  1./3.*m_config->box[2] ) ? 1. : 0. ;
+		return ( x[2] <  h*m_config->box[2] ) ? 1. : 0. ;
 	}
 
 	virtual void init( const Params& params ) {
@@ -136,6 +155,7 @@ struct ImpactScenar : public Scenario {
 		zvel = scalar_param( params, "zvel", Units::Velocity, 0. ) ;
 		avel = scalar_param( params, "avel", Units::Frequency, 0. ) ;
 		d = scalar_param( params, "d", Units::None, 0.25 ) ;
+		h = scalar_param( params, "h", Units::None, 1./3 ) ;
 	}
 
 	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
@@ -167,6 +187,7 @@ private:
 	Scalar zvel ;
 	Scalar avel ;
 	Scalar d ;
+	Scalar h ;
 };
 
 struct WheelScenar : public Scenario {
@@ -272,7 +293,7 @@ private:
 struct HourglassScenar : public Scenario {
 
 	Scalar particle_density( const Vec &x ) const override {
-		return ( held_ptr->eval_at( x ) < 0 &&
+		return ( hg_ls->eval_at( x ) < 0 &&
 		         x[2] > .5*m_config->box[2] && x[2] < .8*m_config->box[2]
 		) ? 1 : 0 ;
 	}
@@ -286,8 +307,6 @@ struct HourglassScenar : public Scenario {
 
 		hg_ls = LevelSet::make_hourglass( H, d ) ;
 		hg_ls->scale( S ).set_origin( .5 * m_config->box ) ;
-
-		held_ptr = hg_ls.get() ;
 	}
 
 	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
@@ -296,7 +315,6 @@ struct HourglassScenar : public Scenario {
 	}
 
 	mutable LevelSet::Ptr hg_ls ;
-	const LevelSet* held_ptr ;
 };
 
 struct BunnyScenar : public Scenario {
@@ -318,8 +336,6 @@ struct BunnyScenar : public Scenario {
 		        .rotate( Vec(1,0,0), M_PI/4 )
 		        .set_origin( S * Vec(.5,.25,-.5) ) ;
 		bunny_ls->compute( ) ;
-
-		held_ptr = bunny_ls.get() ;
 	}
 
 	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
@@ -347,7 +363,6 @@ struct BunnyScenar : public Scenario {
 	}
 
 	mutable LevelSet::Ptr bunny_ls ;
-	const LevelSet* held_ptr ;
 };
 
 struct WritingScenar : public Scenario {
@@ -505,6 +520,56 @@ struct DiggingScenar : public Scenario {
 	mutable LevelSet::Ptr right_hand_ls ;
 };
 
+struct SplittingScenar : public Scenario {
+	Vec center ;
+	Scalar radius ;
+
+	Scalar volMass ;
+
+	Scalar h0   ;
+	Scalar hvel ;
+	Scalar zvel ;
+	Scalar avel ;
+
+	Scalar particle_density( const Vec &x ) const override {
+		return
+		            ( std::fabs( x[0] - center[0] ) < radius
+		            && x[2] > center[2]+radius  )
+		        ? 1 : 0;
+	}
+
+	virtual void init( const Params& ) override {
+		center = Vec( .5*m_config->box[0], .5*m_config->box[1], .5*m_config->box[2] ) ;
+		radius = .125 * m_config->box[0] ;
+	}
+
+	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
+	{
+		LevelSet::Ptr ls = LevelSet::make_cylinder(m_config->box[1]/radius) ;
+
+		Vec pos = center ;
+		ls->scale(radius).set_origin( pos ).rotate( Vec(1,0,0), M_PI_2 ) ;
+
+		rbs.emplace_back( ls, 1.e99 );
+	}
+};
+
+struct CylinderScenar : public Scenario {
+	Vec center ;
+	Scalar radius ;
+
+	Scalar particle_density( const Vec &x ) const override {
+
+		return (x.head<2>() - center.head<2>()).squaredNorm() < radius*radius ? 1 : 0 ;
+	}
+
+	virtual void init( const Params& params ) override {
+		center = Vec( .5*m_config->box[0], .5*m_config->box[1], .5*m_config->box[2] ) ;
+		Scalar r = scalar_param( params, "r", Units::None   , .125 ) ;
+		radius = r * m_config->box[0] ;
+	}
+};
+
 
 // Factories & stuff
 
@@ -534,6 +599,10 @@ std::unique_ptr< Scenario > DefaultScenarioFactory::make( const std::string & st
 		return std::unique_ptr< Scenario >( new WheelScenar() ) ;
 	if( str == "digging")
 		return std::unique_ptr< Scenario >( new DiggingScenar() ) ;
+	if( str == "splitting")
+		return std::unique_ptr< Scenario >( new SplittingScenar() ) ;
+	if( str == "cylinder")
+		return std::unique_ptr< Scenario >( new CylinderScenar() ) ;
 
 	return std::unique_ptr< Scenario >( new BedScenar() ) ;
 }
