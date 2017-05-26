@@ -13,14 +13,63 @@
 
 namespace d6 {
 
-void DiphasicPrimalData::makePenalizedEigenStokesMatrix(
-		Eigen::SparseMatrix<Scalar> & M,
-		const Scalar pen
-		) const
+void DiphasicPrimalData::makeEigenStiffnessMatrix(
+        Eigen::SparseMatrix<Scalar> & M) const
 {
 	// Assemble Eigen mat for
-	// (  A    0     -B^T  )
-	// (  0    R     -C^T  )
+	// (  A   F^T  )
+	// (  F    R   )
+
+	const Index m = this->m() ;
+	const Index r = this->r() ;
+
+	typedef Eigen::SparseMatrix< Scalar > SM ;
+	SM A, R, F ;
+	bogus::convert( this->A, A ) ;
+	bogus::convert( this->R_visc, R ) ;
+
+	bogus::convert( this->F, F ) ;
+
+	A.prune(1.) ;
+	R.prune(1.) ;
+	F.prune(1.) ;
+
+	M.resize( m+r, m+r ) ;
+
+	typedef Eigen::Triplet<Scalar> Tpl ;
+	std::vector< Tpl > tpl ;
+	tpl.reserve( A.nonZeros() + R.nonZeros() +  2*F.nonZeros()  );
+
+	for( Index i = 0 ; i < m ; ++i ) {
+		for( SM::InnerIterator it (A, i) ; it ; ++it )
+		{
+			tpl.push_back( Tpl( it.row(), i, it.value() ) );
+		}
+	}
+	for( Index i = 0 ; i < r ; ++i ) {
+		for( SM::InnerIterator it (R, i) ; it ; ++it )
+		{
+			tpl.push_back( Tpl( m+it.row(), m+i, it.value() ) );
+		}
+		for( SM::InnerIterator it (F, i) ; it ; ++it )
+		{
+			tpl.push_back( Tpl( it.row(), m+i, it.value() ) );
+			tpl.push_back( Tpl( m+i, it.row(), it.value() ) );
+		}
+	}
+
+	M.setFromTriplets( tpl.begin(), tpl.end() ) ;
+
+}
+
+void DiphasicPrimalData::makePenalizedEigenStokesMatrix(
+        Eigen::SparseMatrix<Scalar> & M,
+        const Scalar pen
+        ) const
+{
+	// Assemble Eigen mat for
+	// (  A   F^T    -B^T  )
+	// (  F    R     -C^T  )
 	// ( -B   -C  -pen Id  )
 
 	const Index m = this->m() ;
