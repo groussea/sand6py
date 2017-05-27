@@ -190,69 +190,46 @@ void DiphasicSolver::solve(
 
 	timer.reset() ;
 
+	DiphasicFrictionSolver::Options options ;
+	bool iterativeStokes = options.reduced ;// && D6_DIM == 3 ;
 
+	SM M ;
+	DiphasicPrimalData::MInvType M_fac ;
+	if( iterativeStokes )
 	{
-		//		SM A ;
-		//		bogus::convert( primal.A, A ) ;
-		//	Eigen::saveMarket(A, "mm/diphasicA_SPD.mtx", Eigen::Symmetric);
-		//	Eigen::saveMarketVector(l.head(m), "mm/diphasicA_b.mtx");
-
-		//	    SM R ;
-		//		bogus::convert( primal.R, R ) ;
-		//	Eigen::saveMarket(R, "mm/diphasicR_SPD.mtx", Eigen::Symmetric);
-		//	Eigen::saveMarketVector(l.segment(m,r), "mm/diphasicR_b.mtx");
-
-		SM K ;
-		primal.makeEigenStiffnessMatrix( K );
+		primal.makeEigenStiffnessMatrix( M );
 		//	Eigen::saveMarket(K, "mm/diphasicK_SPD.mtx", Eigen::Symmetric);
 		//	Eigen::saveMarketVector(l.head(m+r), "mm/diphasicK_b.mtx");
-		DiphasicPrimalData::MInvType K_fac ;
-		DiphasicPrimalData::factorize( K, K_fac ) ;
-		Log::Debug() << "K factorization: " << timer.elapsed() << std::endl ;
+		DiphasicPrimalData::MInvType M_fac ;
+		DiphasicPrimalData::factorize( M, M_fac ) ;
+		Log::Debug() << "M factorization: " << timer.elapsed() << std::endl ;
 
 
-		// Make one big B mat -- could we have use Compund Here ?
-		DiphasicPrimalData::CType B ;
-		{
-			const Index m1  = primal.B.colsOfBlocks() ;
-			const Index m2  = primal.C.colsOfBlocks() ;
-			const Index n  = primal.B.rowsOfBlocks() ;
+		// Make one big B mat -- could we have use Compound Here ?
+		typedef bogus::CompoundBlockMatrix< true, DiphasicPrimalData::CType, DiphasicPrimalData::CType> BType ;
 
-			B.setRows( n );
-			B.setCols( m1+m2 ) ;
-
-			for( Index i = 0 ; i < n ; ++i ) {
-				for( DiphasicPrimalData::CType::InnerIterator it ( primal.B.majorIndex(), i ) ; it ; ++it  ) {
-					B.insertBack( i, it.inner() ) = primal.B.block( it.ptr() ) ;
-				}
-				for( DiphasicPrimalData::CType::InnerIterator it ( primal.C.majorIndex(), i ) ; it ; ++it  ) {
-					B.insertBack( i, m1+it.inner() ) = primal.C.block( it.ptr() ) ;
-				}
-			}
-			B.finalize();
-		}
-
+		BType B(primal.B, primal.C) ;
 
 		// solve
-		//   Ku - B'p = lu
+		//   KMu - B'p = lu
 		//  -Bu - c p = lp
 		//
-		//  cp + B ( K^-1 lu + K^-1 B' p ) + lp = 0
+		//  cp + B ( M^-1 lu + M^-1 B' p ) + lp = 0
 		//  W p - b = 0
 
 		typedef bogus::Product<
-		        bogus::Product < DiphasicPrimalData::CType, DiphasicPrimalData::MInvType >,
-		        bogus::Transpose< DiphasicPrimalData::CType > > WType ;
+		        bogus::Product < BType, DiphasicPrimalData::MInvType >,
+		        bogus::Transpose< BType > > WType ;
 
-		WType W = B * K_fac * B.transpose() ;
-		Eigen::VectorXd b = - B * K_fac * l.head(m+r) - l.segment(m+r,p) ;
+		WType W = B * M_fac * B.transpose() ;
+		Eigen::VectorXd b = - ( B * M_fac * l.head(m+r) + l.segment(m+r,p) ) ;
 
 		typedef Eigen::Matrix<Scalar,1,1> ScalarAsMat ;
 		typedef bogus::SparseBlockMatrix< ScalarAsMat, bogus::SYMMETRIC > PenType ;
 		PenType pen ; pen.setRows( W.rows() ) ; pen.setIdentity() ;
 
 		typedef bogus::Addition< WType, bogus::Scaling<PenType> > WPenType ;
-		WPenType WPen = W + 1.e-3 * pen ;
+		WPenType WPen = W + 1.e-8 * pen ;
 
 		bogus::Krylov< WPenType > krylov( WPen ) ;
 		krylov.setMaxIters(100);
@@ -260,36 +237,33 @@ void DiphasicSolver::solve(
 		auto xp = x.segment( m+r, p ) ;
 		double res = krylov.asCG().solve( b, xp ) ;
 
-		std::cerr << "Krylov stokes: " << res << std::endl ;
+		x.head( m+r ) = M_fac * ( l.head(m+r) + B.transpose()*xp ) ;
+		Log::Debug() << "Krylov Stokes solver time: " << timer.elapsed() <<" \t res: " << res << std::endl ;
 
-		x.head( m+r ) = K_fac * ( l.head(m+r) + B.transpose()*xp ) ;
-		Log::Debug() << "Krylov Stokes solver time : " << timer.elapsed() << std::endl ;
+	} else {
+
+		SM M ;
+		primal.makePenalizedEigenStokesMatrix( M, 1.e-3 );
+
+		//	Eigen::saveMarket(M, "mm/diphasicStokes.mtx", Eigen::Symmetric); // if A is symmetric-positive-definite
+		//	Eigen::saveMarketVector(l, "mm/diphasicStokes_b.mtx");
+
+		//	std::exit(1) ;
+
+		Log::Debug() << "M assembly: " << timer.elapsed() << std::endl ;
+		DiphasicPrimalData::factorize( M, M_fac ) ;
+		Log::Debug() << "M factorization: " << timer.elapsed() << std::endl ;
+
+		if( M_fac.block(0).factorization().info() != 0 ) {
+			Log::Error() << "Stokes fac failed! "  << std::endl ;
+			std::abort() ;
+		}
+
+		x = M_fac * l  ;
+
+		Log::Debug() << "Direct Stokes solver time: " << timer.elapsed() << std::endl ;
 	}
-	timer.reset() ;
 
-	SM M ;
-	primal.makePenalizedEigenStokesMatrix( M, 1.e-3 );
-
-//	Eigen::saveMarket(M, "mm/diphasicStokes.mtx", Eigen::Symmetric); // if A is symmetric-positive-definite
-//	Eigen::saveMarketVector(l, "mm/diphasicStokes_b.mtx");
-
-//	std::exit(1) ;
-
-	DiphasicPrimalData::MInvType M_fac ;
-	Log::Debug() << "M assembly: " << timer.elapsed() << std::endl ;
-	DiphasicPrimalData::factorize( M, M_fac ) ;
-	Log::Debug() << "M factorization: " << timer.elapsed() << std::endl ;
-
-	if( M_fac.block(0).factorization().info() != 0 ) {
-		Log::Error() << "Stokes fac failed! "  << std::endl ;
-		std::abort() ;
-	}
-
-	Eigen::VectorXd x2 = M_fac * l  ;
-
-	Log::Debug() << "Stokes solver time: " << timer.elapsed() << std::endl ;
-	std::cerr << (x2.head(m+r+p) - x.head(m+r+p)).norm()/x2.rows() << std::endl;
-//	std::exit(1) ;
 
 	// III Friction
 
@@ -327,7 +301,6 @@ void DiphasicSolver::solve(
 		primal.dump( arg("primal-%1.dd6", s_stepId).c_str() ) ;
 	}
 
-	DiphasicFrictionSolver::Options options ;
 	if(config.usePG)
 		options.algorithm = DiphasicFrictionSolver::Options::PG ;
 	else
