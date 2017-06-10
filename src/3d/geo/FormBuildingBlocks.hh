@@ -107,6 +107,15 @@ struct FormBlocks {
 		b += m * row_dx ;
 	}
 
+	template < typename ColDerived >
+	static inline void addQDivu( Eigen::Matrix<Scalar, 1, WD>& b,
+								 const Scalar m,
+								 const Eigen::MatrixBase< ColDerived >& col_dx )
+	{
+		// q * ( dux_dx + duy_dy + duz_dz )
+		b += m * col_dx ;
+	}
+
 
 	template < typename ColDerived >
 	static inline void addTauWu( Eigen::Matrix<Scalar, RD, WD>& b,

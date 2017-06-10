@@ -20,11 +20,11 @@
 #include "Phase.hh"
 #include "PhaseMeshes.hh"
 
-#include "instanciations.hh"
-
 #include "simu/DynParticles.hh"
 
 #include "geo/FieldBase.impl.hh" //interpolate
+
+#include "geo/Octree.hh"
 
 namespace d6 {
 
@@ -56,9 +56,9 @@ bool adaptPrimal( const DynParticles &, const Phase &grains, Octree& primal )
 
 	bool adapted = false ;
 
+	// Test: splitting an arbitrary cell
 	Octree::Location loc ;
 	primal.locate( Vec::Ones(), loc ) ;
-
 	adapted = primal.split( loc.cell ) ;
 
 	if( adapted ) {
@@ -113,4 +113,4 @@ void AbstractPhaseMeshes<PMeshT, PMeshT>::adapt( const DynParticles& particles, 
 
 template struct AbstractPhaseMeshes<PrimalMesh, DualMesh> ;
 
-}
+} //d6

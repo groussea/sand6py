@@ -376,6 +376,10 @@ struct DGConstant : public MeshShapeFunc< DGConstant, MeshT >
 		dc_dx.setZero() ;
 	}
 
+	void build_visu_mesh( DynMatW& , DynMati& ) const
+	{ //TODO what should that be ?
+	}
+
 	void locate_dof( typename Base::Location& loc, Index ) const {
 		typename MeshType::CellGeo geo ;
 		Base::mesh().get_geo( loc.cell, geo ) ;

@@ -30,9 +30,9 @@ namespace d6 {
 
 template < typename LhsShape, typename RhsShape >
 void FormBuilder<LhsShape, RhsShape>::addToIndex(
-		const std::vector< Index > &rowIndices,
-		const std::vector< Index > &colIndices
-		) {
+        const std::vector< Index > &rowIndices,
+        const std::vector< Index > &colIndices
+        ) {
 	addToIndexIf( rowIndices, colIndices, [](const Vec&){return true ;} ) ;
 }
 
@@ -62,7 +62,7 @@ void FormBuilder<LhsShape, RhsShape>::makeCompressed()
 #pragma omp parallel for
 	for( size_t i = 0 ; i < m ; ++i ) {
 		memcpy( m_compressed.inner.data() + m_compressed.outer[i], m_data[i].data(),
-				m_compressed.size( i ) * sizeof( BgIndex ) ) ;
+		        m_compressed.size( i ) * sizeof( BgIndex ) ) ;
 	}
 }
 
@@ -91,9 +91,9 @@ void FormBuilder<LhsShape, RhsShape>::addRows( Index rows )
 
 template < typename LhsShape, typename RhsShape >
 void FormBuilder<LhsShape, RhsShape>::addDuDv( FormMat<WD,WD>::Type& A, Scalar w,
-											   LhsItp lhs_itp, LhsDcdx lhs_dc_dx,
-											   RhsItp rhs_itp, RhsDcdx rhs_dc_dx,
-											   Indices rowIndices, Indices colIndices )
+                                               LhsItp lhs_itp, LhsDcdx lhs_dc_dx,
+                                               RhsItp rhs_itp, RhsDcdx rhs_dc_dx,
+                                               Indices rowIndices, Indices colIndices )
 {
 	for( int k = 0 ; k < lhs_itp.nodes.rows() ; ++k ) {
 		addDuDv( A, w, rowIndices[lhs_itp.nodes[k]], lhs_dc_dx.row(k), rhs_itp, rhs_dc_dx, colIndices );
@@ -102,8 +102,8 @@ void FormBuilder<LhsShape, RhsShape>::addDuDv( FormMat<WD,WD>::Type& A, Scalar w
 
 template < typename LhsShape, typename RhsShape >
 void FormBuilder<LhsShape, RhsShape>::addTauDu( FormMat<SD,WD>::Type& A, Scalar w,
-												LhsItp lhs_itp, RhsItp rhs_itp, RhsDcdx dc_dx,
-												Indices rowIndices, Indices colIndices )
+                                                LhsItp lhs_itp, RhsItp rhs_itp, RhsDcdx dc_dx,
+                                                Indices rowIndices, Indices colIndices )
 {
 	for( int k = 0 ; k < lhs_itp.nodes.rows() ; ++k ) {
 		addTauDu( A, w * lhs_itp.coeffs[k], rowIndices[lhs_itp.nodes[k]], rhs_itp, dc_dx, colIndices );
@@ -112,8 +112,8 @@ void FormBuilder<LhsShape, RhsShape>::addTauDu( FormMat<SD,WD>::Type& A, Scalar 
 
 template < typename LhsShape, typename RhsShape >
 void FormBuilder<LhsShape, RhsShape>::addDpV( FormMat<1,WD>::Type& A, Scalar w,
-											  LhsItp lhs_itp, LhsDcdx dc_dx, RhsItp rhs_itp,
-											  Indices rowIndices, Indices colIndices )
+                                              LhsItp lhs_itp, LhsDcdx dc_dx, RhsItp rhs_itp,
+                                              Indices rowIndices, Indices colIndices )
 {
 	for( int k = 0 ; k < lhs_itp.nodes.rows() ; ++k ) {
 		addDpV( A, w, rowIndices[lhs_itp.nodes[k]], dc_dx.row(k), rhs_itp, colIndices );
@@ -122,8 +122,8 @@ void FormBuilder<LhsShape, RhsShape>::addDpV( FormMat<1,WD>::Type& A, Scalar w,
 
 template < typename LhsShape, typename RhsShape >
 void FormBuilder<LhsShape, RhsShape>::addTauWu( FormMat<RD,WD>::Type& A, Scalar w,
-												LhsItp lhs_itp, RhsItp rhs_itp, RhsDcdx dc_dx,
-												Indices rowIndices, Indices colIndices )
+                                                LhsItp lhs_itp, RhsItp rhs_itp, RhsDcdx dc_dx,
+                                                Indices rowIndices, Indices colIndices )
 {
 	for( int k = 0 ; k < lhs_itp.nodes.rows() ; ++k ) {
 		addTauWu( A, w * lhs_itp.coeffs[k], rowIndices[lhs_itp.nodes[k]], rhs_itp, dc_dx, colIndices );
@@ -131,8 +131,18 @@ void FormBuilder<LhsShape, RhsShape>::addTauWu( FormMat<RD,WD>::Type& A, Scalar 
 }
 
 template < typename LhsShape, typename RhsShape >
+void FormBuilder<LhsShape, RhsShape>::addQDivu( FormMat< 1,WD>::Type& A, Scalar w,
+                                                LhsItp lhs_itp, RhsItp rhs_itp, RhsDcdx dc_dx,
+                                                Indices rowIndices, Indices colIndices )
+{
+	for( int k = 0 ; k < lhs_itp.nodes.rows() ; ++k ) {
+		addQDivu( A, w * lhs_itp.coeffs[k], rowIndices[lhs_itp.nodes[k]], rhs_itp, dc_dx, colIndices );
+	}
+}
+
+template < typename LhsShape, typename RhsShape >
 void FormBuilder<LhsShape, RhsShape>::addDuDv( FormMat<WD,WD>::Type& A, Scalar w, Index rowIndex,
-											   LhsDcdxRow row_dx, RhsItp itp, RhsDcdx dc_dx, Indices colIndices )
+                                               LhsDcdxRow row_dx, RhsItp itp, RhsDcdx dc_dx, Indices colIndices )
 {
 	typedef FormMat<WD,WD>::Type::BlockType Block ;
 
@@ -145,7 +155,7 @@ void FormBuilder<LhsShape, RhsShape>::addDuDv( FormMat<WD,WD>::Type& A, Scalar w
 
 template < typename LhsShape, typename RhsShape >
 void FormBuilder<LhsShape, RhsShape>::addTauDu( FormMat<SD,WD>::Type& A, Scalar m, Index rowIndex,
-												RhsItp itp, RhsDcdx dc_dx, Indices colIndices )
+                                                RhsItp itp, RhsDcdx dc_dx, Indices colIndices )
 {
 	typedef FormMat<SD,WD>::Type::BlockType Block ;
 
@@ -158,7 +168,7 @@ void FormBuilder<LhsShape, RhsShape>::addTauDu( FormMat<SD,WD>::Type& A, Scalar 
 
 template < typename LhsShape, typename RhsShape >
 void FormBuilder<LhsShape, RhsShape>:: addDpV  ( FormMat< 1,WD>::Type& A, Scalar w, Index rowIndex, LhsDcdxRow row_dx,
-												 RhsItp itp, Indices colIndices )
+                                                 RhsItp itp, Indices colIndices )
 {
 	typedef FormMat<1,WD>::Type::BlockType Block ;
 
@@ -171,7 +181,7 @@ void FormBuilder<LhsShape, RhsShape>:: addDpV  ( FormMat< 1,WD>::Type& A, Scalar
 
 template < typename LhsShape, typename RhsShape >
 void FormBuilder<LhsShape, RhsShape>::addTauWu( FormMat<RD,WD>::Type& A, Scalar m, Index rowIndex,
-												RhsItp itp, RhsDcdx dc_dx, Indices colIndices )
+                                                RhsItp itp, RhsDcdx dc_dx, Indices colIndices )
 {
 	typedef FormMat<RD,WD>::Type::BlockType Block ;
 
@@ -183,9 +193,22 @@ void FormBuilder<LhsShape, RhsShape>::addTauWu( FormMat<RD,WD>::Type& A, Scalar 
 }
 
 template < typename LhsShape, typename RhsShape >
+void FormBuilder<LhsShape, RhsShape>::addQDivu( FormMat< 1,WD>::Type& A, Scalar m, Index rowIndex,
+                                                RhsItp itp, RhsDcdx dc_dx, Indices colIndices )
+{
+	typedef FormMat<1,WD>::Type::BlockType Block ;
+
+	for( int j = 0 ; j < itp.nodes.rows() ; ++j ) {
+		assert( A.blockPtr( rowIndex, colIndices[itp.nodes[j]] ) != A.InvalidBlockPtr ) ;
+		Block &b = A.block( rowIndex, colIndices[itp.nodes[j]] ) ;
+		FormBlocks::addQDivu( b, m, dc_dx.row(j) ) ;
+	}
+}
+
+template < typename LhsShape, typename RhsShape >
 void FormBuilder<LhsShape, RhsShape>::addUTauGphi( FormMat<SD,WD>::Type& A, Scalar w,
-												   LhsItp lhs_itp, RhsItp rhs_itp,
-												   const Vec& dphi_dx, Indices rowIndices, Indices colIndices )
+                                                   LhsItp lhs_itp, RhsItp rhs_itp,
+                                                   const Vec& dphi_dx, Indices rowIndices, Indices colIndices )
 {
 	typedef FormMat<SD,WD>::Type::BlockType Block ;
 
@@ -202,8 +225,8 @@ void FormBuilder<LhsShape, RhsShape>::addUTauGphi( FormMat<SD,WD>::Type& A, Scal
 
 template < typename LhsShape, typename RhsShape >
 void FormBuilder<LhsShape, RhsShape>::addUTaunGphi( FormMat<SD,WD>::Type& A, Scalar w,
-													LhsItp lhs_itp, RhsItp rhs_itp,
-													const Vec& dphi_dx, Indices rowIndices, Indices colIndices )
+                                                    LhsItp lhs_itp, RhsItp rhs_itp,
+                                                    const Vec& dphi_dx, Indices rowIndices, Indices colIndices )
 {
 	typedef FormMat<SD,WD>::Type::BlockType Block ;
 
@@ -223,10 +246,11 @@ template class FormBuilder<   DGLinear< MeshImpl >, Linear< MeshImpl > > ;
 template class FormBuilder< DGConstant< MeshImpl >, Linear< MeshImpl > > ;
 template class FormBuilder<  UnstructuredShapeFunc, Linear< MeshImpl > > ;
 
-#if (D6_MESH_IMPL == D6_MESH_TET_GRID)
-template class FormBuilder<   Linear< MeshImpl >, P2< MeshImpl > > ;
-template class FormBuilder< DGLinear< MeshImpl >, P2< MeshImpl > > ;
-template class FormBuilder<       P2< MeshImpl >, P2< MeshImpl > > ;
+#if (D6_MESH_IMPL == D6_MESH_TET_GRID) && (D6_DIM == 2)
+//TODO implement P2 quadrature for 3d tet
+template class FormBuilder<   Linear< MeshImpl >,   P2< MeshImpl > > ;
+template class FormBuilder< DGLinear< MeshImpl >,   P2< MeshImpl > > ;
+template class FormBuilder<       P2< MeshImpl >,   P2< MeshImpl > > ;
 template class FormBuilder<  UnstructuredShapeFunc, P2< MeshImpl > > ;
 #endif
 

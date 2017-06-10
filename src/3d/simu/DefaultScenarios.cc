@@ -147,11 +147,7 @@ struct RbPlaneTestScenar : public Scenario {
 struct ImpactScenar : public Scenario {
 
 	Scalar particle_density( const Vec &x ) const override {
-<<<<<<< HEAD
 		return ( x[2] <  h*m_config->box[2] ) ? 1. : 0. ;
-=======
-		return ( x[2] <  1./3.*m_config->box[2] ) ? 1. : 0. ;
->>>>>>> 13c235a... Fix default scenar;
 	}
 
 	virtual void init( const Params& params ) {
@@ -159,10 +155,7 @@ struct ImpactScenar : public Scenario {
 		zvel = scalar_param( params, "zvel", Units::Velocity, 0. ) ;
 		avel = scalar_param( params, "avel", Units::Frequency, 0. ) ;
 		d = scalar_param( params, "d", Units::None, 0.25 ) ;
-<<<<<<< HEAD
 		h = scalar_param( params, "h", Units::None, 1./3 ) ;
-=======
->>>>>>> 13c235a... Fix default scenar;
 	}
 
 	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
@@ -194,10 +187,7 @@ private:
 	Scalar zvel ;
 	Scalar avel ;
 	Scalar d ;
-<<<<<<< HEAD
 	Scalar h ;
-=======
->>>>>>> 13c235a... Fix default scenar;
 };
 
 struct WheelScenar : public Scenario {
@@ -303,11 +293,7 @@ private:
 struct HourglassScenar : public Scenario {
 
 	Scalar particle_density( const Vec &x ) const override {
-<<<<<<< HEAD
 		return ( hg_ls->eval_at( x ) < 0 &&
-=======
-		return ( held_ptr->eval_at( x ) < 0 &&
->>>>>>> 13c235a... Fix default scenar;
 		         x[2] > .5*m_config->box[2] && x[2] < .8*m_config->box[2]
 		) ? 1 : 0 ;
 	}
@@ -321,7 +307,6 @@ struct HourglassScenar : public Scenario {
 
 		hg_ls = LevelSet::make_hourglass( H, d ) ;
 		hg_ls->scale( S ).set_origin( .5 * m_config->box ) ;
-<<<<<<< HEAD
 	}
 
 	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
@@ -330,19 +315,6 @@ struct HourglassScenar : public Scenario {
 	}
 
 	mutable LevelSet::Ptr hg_ls ;
-=======
-
-		held_ptr = hg_ls.get() ;
-	}
-
-	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
-	{
-		rbs.emplace_back( hg_ls, 1.e99 );
-	}
-
-	mutable LevelSet::Ptr hg_ls ;
-	const LevelSet* held_ptr ;
->>>>>>> 13c235a... Fix default scenar;
 };
 
 struct BunnyScenar : public Scenario {
@@ -364,11 +336,6 @@ struct BunnyScenar : public Scenario {
 		        .rotate( Vec(1,0,0), M_PI/4 )
 		        .set_origin( S * Vec(.5,.25,-.5) ) ;
 		bunny_ls->compute( ) ;
-<<<<<<< HEAD
-=======
-
-		held_ptr = bunny_ls.get() ;
->>>>>>> 13c235a... Fix default scenar;
 	}
 
 	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
@@ -396,10 +363,6 @@ struct BunnyScenar : public Scenario {
 	}
 
 	mutable LevelSet::Ptr bunny_ls ;
-<<<<<<< HEAD
-=======
-	const LevelSet* held_ptr ;
->>>>>>> 13c235a... Fix default scenar;
 };
 
 struct WritingScenar : public Scenario {
@@ -555,7 +518,6 @@ struct DiggingScenar : public Scenario {
 	Scalar speedup ;
 	mutable LevelSet::Ptr  left_hand_ls ;
 	mutable LevelSet::Ptr right_hand_ls ;
-<<<<<<< HEAD
 };
 
 struct SplittingScenar : public Scenario {
@@ -606,8 +568,6 @@ struct CylinderScenar : public Scenario {
 		Scalar r = scalar_param( params, "r", Units::None   , .125 ) ;
 		radius = r * m_config->box[0] ;
 	}
-=======
->>>>>>> 13c235a... Fix default scenar;
 };
 
 
@@ -639,17 +599,12 @@ std::unique_ptr< Scenario > DefaultScenarioFactory::make( const std::string & st
 		return std::unique_ptr< Scenario >( new WheelScenar() ) ;
 	if( str == "digging")
 		return std::unique_ptr< Scenario >( new DiggingScenar() ) ;
-<<<<<<< HEAD
 	if( str == "splitting")
 		return std::unique_ptr< Scenario >( new SplittingScenar() ) ;
 	if( str == "cylinder")
 		return std::unique_ptr< Scenario >( new CylinderScenar() ) ;
 
 	    return std::unique_ptr< Scenario >( new BedScenar() ) ;
-=======
-
-	return std::unique_ptr< Scenario >( new BedScenar() ) ;
->>>>>>> 13c235a... Fix default scenar;
 }
 
 

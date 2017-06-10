@@ -68,6 +68,11 @@ namespace d6 {
 	CONFIG_FIELD( output			, bool			,	Units::None			) \
 	CONFIG_FIELD( exportAllFields	, bool			,	Units::None			) \
 	CONFIG_FIELD( dumpPrimalData	, unsigned		,	Units::None			) \
+	\
+	CONFIG_FIELD( fluidVolMass		, Scalar		,	Units::VolumicMass	) \
+	CONFIG_FIELD( stokesFactor		, Scalar		,	Units::None 		) \
+	CONFIG_FIELD( RZExponent		, Scalar		,	Units::None 		) \
+	CONFIG_FIELD( windSpeed			, Vec			,	Units::Velocity 	) \
 
 
 struct Config
@@ -88,6 +93,20 @@ struct Config
 
 	Scalar time( unsigned frame_nb ) const {
 		return (frame_nb / fps ) ;
+	}
+
+	Scalar alpha() const {
+		return ( volMass - fluidVolMass ) / fluidVolMass ;
+	}
+
+	Scalar typicalLength() const {
+		return (box.array()/res.array().cast<Scalar>()).minCoeff() ;
+	}
+
+	Scalar Stokes() const {
+		return  //alpha()/(alpha()+1) *
+		        (std::sqrt( gravity.norm() * typicalLength() ) *volMass*grainDiameter*grainDiameter)
+		        / (typicalLength() * viscosity * stokesFactor) ;
 	}
 
 #define CONFIG_FIELD( name, type, u ) \

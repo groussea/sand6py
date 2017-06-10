@@ -46,7 +46,6 @@ if( OPENMP )
     if(OPENMP_FOUND)
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-        add_definitions(-DEIGEN_DONT_PARALLELIZE)
     else()
         set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas " )
     endif()
@@ -61,6 +60,11 @@ add_definitions( -DBOGUS_WITH_BOOST_SERIALIZATION )
 find_package(Boost 1.36.0 COMPONENTS serialization REQUIRED )
 SET( EXTERNAL_INCLUDES ${EXTERNAL_INCLUDES} ${Boost_INCLUDE_DIR} )
 SET( EXTERNAL_LIBRARIES ${EXTERNAL_LIBRARIES} ${Boost_LIBRARIES} )
+
+#Cholmod
+find_package(Cholmod REQUIRED) 
+SET( EXTERNAL_INCLUDES ${EXTERNAL_INCLUDES} ${CHOLMOD_INCLUDES} )
+SET( EXTERNAL_LIBRARIES ${EXTERNAL_LIBRARIES} ${CHOLMOD_LIBRARIES} )
 
 #OpenGL
 find_package(OpenGL)
@@ -81,6 +85,7 @@ endif()
 
 if ( GCC OR CLANG )
                 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra " )
+                SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-ignored-attributes " )
                 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wno-deprecated-declarations " )
                 SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Werror " )
 

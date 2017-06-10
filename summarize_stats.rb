@@ -45,7 +45,11 @@ end
 
 t = Table.new( File.join(DIR, 'stats.txt') )
 
-max_nodes = t.col( :actNds ).max.to_i
+begin
+  max_nodes = t.col( :actNds ).max.to_i
+rescue TypeError
+  max_nodes = t.col( :priNds ).max.to_i
+end
 max_parts = t.col( :nPart ).max.to_i
 
 puts "Max active nodes: #{max_nodes}"

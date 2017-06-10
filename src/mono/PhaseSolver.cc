@@ -158,20 +158,30 @@ void PhaseSolver::addRigidBodyContrib( const Config &c, const Scalar dt, const P
 	pbData.jacobians.emplace_back( J * rb.projection.transpose() );
 }
 
+void PhaseSolver::getCohesiveStress(
+            const Config &config, const DynArr& cohesion,  const DynArr& fraction,
+            DynVec& cohe_stress )
+{
+	const Scalar cohe_start = .999 * config.phiMax ;
+	const DynArr contact_zone =
+	        ( ( fraction - cohe_start ) / (config.phiMax - cohe_start) )
+	        .max(0).min(1) ;
+
+	cohe_stress.setZero() ;
+	component< SD >( cohe_stress, 0 ).head( cohesion.rows() ).array() =
+	        config.cohesion * cohesion.array() * contact_zone ;
+}
+
 void PhaseSolver::addCohesionContrib (const Config&c, const PhaseStepData &stepData,
                                       PrimalData& pbData, DynVec &u ) const
 {
 	//Cohesion : add \grad{ c phi } to rhs
 	DynVec cohe_force ;
 	{
-		const Scalar cohe_start = .999 * c.phiMax ;
-		const DynArr contact_zone = (
-		            ( stepData.forms.fraction/stepData.forms.volumes - cohe_start )
-		            / (c.phiMax - cohe_start) ).max(0).min(1) ;
-
-		DynVec cohe_stress  = DynVec::Zero( pbData.H.rows() ) ;
-		component< SD >( cohe_stress, 0 ).head( stepData.cohesion.rows()).array() =
-		        c.cohesion * stepData.cohesion * contact_zone ;
+		DynVec cohe_stress( pbData.H.rows() ) ;
+		getCohesiveStress( c, stepData.cohesion,
+		                   stepData.forms.fraction/stepData.forms.volumes,
+		                   cohe_stress ) ;
 		cohe_force = pbData.H.transpose() * cohe_stress ;
 	}
 
@@ -257,15 +267,15 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	// Proper solving
 	FrictionSolver::Options options ;
 	if( c.usePG ) {
-		options.algorithm = FrictionSolver::Options::Cadoux_PG_NoAssembly ;
-		options.projectedGradientVariant = 2 ;
+		options.algorithm = FrictionSolver::Options::PG_NoAssembly ;
+		options.projectedGradientVariant = 4 ;
 	} else {
 		options.algorithm = FrictionSolver::Options::GaussSeidel_NoAssembly ;
 	}
 	if( c.useInfNorm ) {
 		// PG without infinity norm leads to creeping at end of simulation
 		options.useInfinityNorm = true ;
-		options.maxIterations = 1000 ;
+		options.maxIterations = 10000 ;
 	}
 
 	FrictionSolver::Stats stats ;
@@ -276,9 +286,6 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	simuStats.frictionError      = stats.residual() ;
 	simuStats.frictionTime       = stats.time() ;
 	simuStats.frictionIterations = stats.nIterations() ;
-
-	if (simuStats.frictionError < 1.e-16)
-		std::exit(1) ;
 
 	// Update velocity
 	u += stepData.forms.M_lumped_inv_sqrt * pbData.H.transpose() * x  ;

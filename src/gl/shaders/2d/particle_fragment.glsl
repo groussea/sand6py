@@ -33,11 +33,13 @@ void main (void)
 
 	vec4 ambientMat  = vec4(0,0,0,0) ;
 
-	float mat_0 = clamp( 1 - 2*abs(val/5-1.0), 0.0, 1.0 ) ;
-	float mat_1 = clamp( 1 - 2*abs(val/5-0.5), 0.0, 1.0 ) ;
-	float mat_2 = clamp( 1 - 2*abs(val/5-0.0), 0.0, 1.0 ) ;
+	float vis = log(1+100*val) ;
 
-	float mat_3 = clamp( 1 + 2*   (val/5-1.5), 0.0, 1.0 ) ;
+	float mat_0 = clamp( 1 - 2*abs(vis/5-1.0), 0.0, 1.0 ) ;
+	float mat_1 = clamp( 1 - 2*abs(vis/5-0.5), 0.0, 1.0 ) ;
+	float mat_2 = clamp( 1 - 2*abs(vis/5-0.0), 0.0, 1.0 ) ;
+
+	float mat_3 = clamp( 1 + 2*   (vis/5-1.5), 0.0, 1.0 ) ;
 
 	ambientMat += mat_0*vec4( vec3(1.0, 0.0, 0.0), 1. );
 	ambientMat += mat_1*vec4( vec3(0.0, 1.0, 0.0), 1. );

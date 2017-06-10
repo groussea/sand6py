@@ -34,7 +34,28 @@ namespace d6 {
 
 struct RayleighScenar : public Scenario {
 	Scalar particle_density( const Vec &x ) const override {
-		return ( x[1] >  .5*m_config->box[1] ) ? 1. : 0. ;
+		return ( x[1] >  .5*box()[1] &&
+		        (x - .5*box()).squaredNorm() > std::pow(box()[0]/64,2) ) ? 1. : 0. ;
+	}
+};
+
+struct Sedimentation : public Scenario {
+	Scalar particle_density( const Vec &x ) const override {
+		return 	( x[1] <  h0*box()[1] ) ? phi0 : 0 ;
+	}
+	virtual void init( const Params& params ) override {
+		h0 = scalar_param( params,     "h0", Units::None, .9 ) ;
+		phi0 = scalar_param( params, "phi0", Units::None, .3 ) ;
+	}
+
+private:
+	Scalar h0 ;
+	Scalar phi0 ;
+};
+
+struct FallingBallScenar : public Scenario {
+	Scalar particle_density( const Vec &x ) const override {
+		return (x - (.5*box() + Vec(0,.375*box()[1]) )).squaredNorm() < std::pow(box()[0]/4,2)  ? 1. : 0. ;
 	}
 };
 
@@ -46,15 +67,24 @@ struct BedScenar : public Scenario {
 
 struct CollapseScenar : public Scenario {
 	Scalar particle_density( const Vec &x ) const override {
-		return ( x[0] > .75*m_config->box[0] &&  x[1] < .75*m_config->box[1] ) ? 1. : 0. ;
+		return ( x[0] < l0*box()[0] &&  x[1] < h0*box()[1] ) ? 1. : 0. ;
 	}
 
 	virtual void init( const Params& params ) override {
 		l0 = scalar_param( params,   "l0", Units::None, .25 ) ;
+		h0 = scalar_param( params,   "h0", Units::None, .75 ) ;
 	}
 
 private:
 	Scalar l0 ;
+	Scalar h0 ;
+};
+
+struct HeapScenar : public Scenario {
+	Scalar particle_density( const Vec &x ) const override {
+		return ( x[0] > (.375-.175/2)*box()[0] &&  x[0] < (.375+.175/2)*box()[0]
+		        && x[1] < .75*box()[1]) ? 1. : 0. ;
+	}
 };
 
 struct PlaneTestScenar : public Scenario {
@@ -187,6 +217,8 @@ std::unique_ptr< Scenario > DefaultScenarioFactory::make( const std::string & st
 {
 	if( str == "rayleigh")
 		return std::unique_ptr< Scenario >( new RayleighScenar() ) ;
+	if( str == "ball")
+		return std::unique_ptr< Scenario >( new FallingBallScenar() ) ;
 	if( str == "collapse")
 		return std::unique_ptr< Scenario >( new CollapseScenar() ) ;
 	if( str == "planetest")
@@ -197,6 +229,10 @@ std::unique_ptr< Scenario > DefaultScenarioFactory::make( const std::string & st
 		return std::unique_ptr< Scenario >( new SiloScenar() ) ;
 	if( str == "tower")
 		return std::unique_ptr< Scenario >( new TowerScenar() ) ;
+	if( str == "sedim")
+		return std::unique_ptr< Scenario >( new Sedimentation() ) ;
+	if( str == "heap")
+		return std::unique_ptr< Scenario >( new HeapScenar() ) ;
 
 	return std::unique_ptr< Scenario >( new BedScenar() ) ;
 }

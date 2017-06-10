@@ -52,6 +52,8 @@ public:
 		seFraction,
 		seSpin,
 		seDivergence,
+		sePorePressure,
+		seFluidVel,
 		nSE
 	} ;
 
@@ -60,6 +62,8 @@ public:
 		veGradPhi,
 		veProj,
 		veForce,
+		veFluidVel,
+		veFluctu,
 		nVE
 	} ;
 
@@ -70,12 +74,12 @@ public:
 	} ;
 
 	GLViewer( const Offline& offline,
-			const int width, const int height )
-		: m_offline( offline ), m_width( width ), m_height( height ),
-		  m_xOffset( 0 ), m_yOffset( 0 ), m_zoom( 1 ), m_snapId(0),
-		  m_drawOrientations( false ),
-		  m_scalarEntity( seFraction ), m_vectorEntity( veVelocity ),
-		  m_tensorEntity( teDu )
+	        const int width, const int height )
+	    : m_offline( offline ), m_width( width ), m_height( height ),
+	      m_xOffset( 0 ), m_yOffset( 0 ), m_zoom( 1 ), m_snapId(0),
+	      m_drawOrientations( false ),
+	      m_scalarEntity( seFraction ), m_vectorEntity( veVelocity ),
+	      m_tensorEntity( teDu )
 	{
 
 	}
@@ -131,7 +135,7 @@ private:
 	typedef AbstractVectorField< Shape > VectorField ;
 	typedef AbstractTensorField< Shape > TensorField ;
 
-	const VectorField &getVectorEntity() const ;
+	VectorField getVectorEntity() const ;
 	ScalarField getScalarEntity() const ;
 	TensorField getTensorEntity() const ;
 

@@ -24,9 +24,10 @@
 #include "RigidBody.hh"
 #include "RigidBodyData.hh"
 
-#include "FormBuilder.impl.hh"
+#include "simu/FormBuilder.impl.hh"
 
 #include "geo/MeshImpl.hh"
+#include "geo/BoundaryInfo.hh"
 
 #include "utils/Config.hh"
 #include "utils/Log.hh"
@@ -45,17 +46,19 @@ namespace d6 {
 
 void PhaseStepData::computeProjectors(const Config&config,
 									  const PrimalShape& pShape, const DualShape &dShape,
-									  const std::vector<RigidBodyData> &rbData, const PrimalScalarField &lumped_mass,
-									  Projectors& mats) const
+									  const PrimalScalarField &lumped_mass,
+									  const Active &primalNodes, const Active &dualNodes,
+									  const Index nSuppNodes,
+									  Projectors& mats)
 {
 	const Scalar discard_empty = 0. ;
 #ifdef D6_UNSTRUCTURED_DUAL
 	(void) dShape ;
 #endif
 
-	const Index m  = nPrimalNodes() ;
-	const Index n  = nDualNodes() ;
-	const Index nc = nSuppNodes() ;
+	const Index m  = primalNodes.count() ;
+	const Index n  = dualNodes.count() ;
+	const Index nc = nSuppNodes ;
 
 	mats.vel.setRows( m );
 	mats.vel.setIdentity() ;
@@ -107,6 +110,13 @@ void PhaseStepData::computeProjectors(const Config&config,
 #endif
 
 	}
+}
+
+void PhaseStepData::computeRbProjectors(const Config &config, const PrimalShape& pShape,
+									  const std::vector<RigidBodyData> &rbData,
+									  Projectors& mats)
+{
+	StrBoundaryMapper bdMapper ( config.boundary ) ;
 
 	// Additional nodes for frictional boundaries
 	for( const RigidBodyData& rb: rbData ) {
@@ -155,7 +165,8 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 
 	const Scalar mass_regul = 1.e-8 ;
 
-	computeProjectors( config, pShape, dShape, rbData, phiInt, proj ) ;
+	computeProjectors( config, pShape, dShape, phiInt, primalNodes, dualNodes, nSuppNodes(), proj ) ;
+	computeRbProjectors( config, pShape, rbData, proj );
 
 	// Lumped mass matrix
 	{
@@ -448,7 +459,7 @@ void PhaseStepData::compute(const DynParticles& particles,
 	computePhiAndGradPhi( intPhiPrimal, phase.fraction, phase.grad_phi ) ;
 
 	// Active nodes
-	computeActiveNodes( activeCells, pShape, dShape ) ;
+	computeActiveNodes( activeCells, pShape, dShape, primalNodes, dualNodes ) ;
 	Log::Verbose() << "Active nodes: " << nPrimalNodes() << " / " << pShape.nDOF() << std::endl;
 	Log::Verbose() << "  Dual nodes: " <<   nDualNodes() << " / " << dShape.nDOF() << std::endl;
 
@@ -490,7 +501,8 @@ void PhaseStepData::compute(const DynParticles& particles,
 }
 
 
-void PhaseStepData::computePhiAndGradPhi(const PrimalScalarField &intPhi, PrimalScalarField& fraction, PrimalVectorField &grad_phi ) const
+void PhaseStepData::computePhiAndGradPhi(const PrimalScalarField &intPhi, PrimalScalarField& fraction,
+										 PrimalVectorField &grad_phi )
 {
 	const PrimalShape& shape = intPhi.shape() ;
 
@@ -523,7 +535,8 @@ void PhaseStepData::computePhiAndGradPhi(const PrimalScalarField &intPhi, Primal
 }
 
 void PhaseStepData::computeActiveNodes(const std::vector<bool> &activeCells ,
-									 const PrimalShape& pShape, const DualShape& dShape )
+									   const PrimalShape& pShape, const DualShape& dShape,
+									   Active &primalNodes, Active &dualNodes)
 {
 	typedef typename PrimalShape::MeshType MeshType ;
 

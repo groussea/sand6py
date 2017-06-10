@@ -24,6 +24,7 @@
 #include "geo/LevelSet.hh"
 
 #include "mono/Phase.hh"
+#include "diphasic/FluidPhase.hh"
 #include "visu/Offline.hh"
 
 #include "utils/Log.hh"
@@ -86,9 +87,9 @@ inline float rnd( float* data, float x, float y )
 	y -= py ;
 
 	return  data[ off ] * (1-x) * (1-y)  +
-			data[ 1 + off ] * y * (1-x) +
-			data[ off + TEX_S ] * (1-y) * x +
-			data[ 1 + off + TEX_S ] * x * y ;
+	        data[ 1 + off ] * y * (1-x) +
+	        data[ off + TEX_S ] * (1-y) * x +
+	        data[ 1 + off + TEX_S ] * x * y ;
 }
 
 void GLViewer::snap()
@@ -123,13 +124,13 @@ void GLViewer::snap()
 	free (buffer);
 	char command[2048];
 	sprintf (
-				command,
-				"convert -depth 8 -size %ix%i rgb:snapshot-%04d.raw snapshot-%04d.png",
-				g_gl_width,
-				g_gl_height,
-				t,
-				t
-				);
+	            command,
+	            "convert -depth 8 -size %ix%i rgb:snapshot-%04d.raw snapshot-%04d.png",
+	            g_gl_width,
+	            g_gl_height,
+	            t,
+	            t
+	            );
 	system (command);
 	sprintf (command, "rm -f %s", name);
 	system (command);
@@ -138,16 +139,23 @@ void GLViewer::snap()
 
 void GLViewer::init( )
 {
+//	glEnable(GL_MULTISAMPLE);
+	GLint bufs, samples ;
+	glGetIntegerv( GL_SAMPLE_BUFFERS, &bufs ) ;
+	glGetIntegerv( GL_SAMPLES, &samples ) ;
+	Log::Debug() << "Using " << bufs << " buffers and " << samples << " samples" << std::endl ;
+
 	updateViewport();
 
+	glClearColor(1.,1.,1.,1) ;
 
 	// Texture
 	{
 		m_rndData.resize( TEX_S * TEX_S  );
 		m_texData.resize( TEX_S * TEX_S * 3 );
 		Eigen::Matrix< float, Eigen::Dynamic, 1 >
-				::Map( &m_rndData[0], TEX_S * TEX_S )
-				= ( Eigen::VectorXf::Random( TEX_S * TEX_S ).array().abs().matrix() )  ;
+		        ::Map( &m_rndData[0], TEX_S * TEX_S )
+		        = ( Eigen::VectorXf::Random( TEX_S * TEX_S ).array().abs().matrix() )  ;
 
 		glGenTextures(1, &m_texId);
 		glBindTexture( GL_TEXTURE_2D, m_texId );
@@ -267,7 +275,7 @@ void GLViewer::update_particle_buffers()
 			const Vec ev = es.eigenvalues().array().max(0).sqrt().max( 1.e-1 ) ;
 
 			mat = ( es.eigenvectors() * ev.asDiagonal() ).cast< GLfloat >()
-					* .5 * std::pow( p.volumes()[i], 1./2 )  ;
+			        * std::pow( p.volumes()[i], 1./2 )  ;
 
 			densities[i] = p.volumes()[i]  ;
 
@@ -305,17 +313,36 @@ void GLViewer::update_color_buffers()
 	Eigen::Matrix<float, 3, Eigen::Dynamic > colors( 3, field.size() ) ;
 	colors.setZero() ;
 
-	const double max_val = field.flatten().maxCoeff() ;
-	const double min_val = field.flatten().minCoeff() ;
-	if( max_val - min_val > 1.e-12 )
-	{
-		colors.row(1) = ( (field.flatten().array() - min_val)/(max_val - min_val) ).cast<float>() ;
+	if( m_scalarEntity == seFluidVel ) {
+
+#pragma omp parallel for
+		for( Index i = 0 ; i < field.size() ; ++i ) {
+			const Scalar vis = std::log( 1. + 100 * field[i] ) ;
+
+			float mat_0 = clamp( 1 - 2*std::fabs(vis/5-1.0), 0.0, 1.0 ) ;
+			float mat_1 = clamp( 1 - 2*std::fabs(vis/5-0.5), 0.0, 1.0 ) ;
+			float mat_2 = clamp( 1 - 2*std::fabs(vis/5-0.0), 0.0, 1.0 ) ;
+			float mat_3 = clamp( 1 + 2*   (vis/5-1.5), 0.0, 1.0 ) ;
+
+			colors.col(i) += .5*mat_0*Eigen::Vector3f(1.0, 0.0, 0.0);
+			colors.col(i) += .5*mat_1*Eigen::Vector3f(0.0, 1.0, 0.0);
+			colors.col(i) += .5*mat_2*Eigen::Vector3f(0.0, 0.0, 1.0);
+			colors.col(i) += .5*mat_3*Eigen::Vector3f(1.0, 1.0, 1.0);
+		}
+
+	} else {
+		const double max_val = field.flatten().maxCoeff() ;
+		const double min_val = field.flatten().minCoeff() ;
+		if( max_val - min_val > 1.e-12 )
+		{
+			colors.row(1) = ( (field.flatten().array() - min_val)/(max_val - min_val) ).cast<float>() ;
+		}
+
+		Log::Verbose() << "Scalar range\t" << min_val << " ;\t" << max_val << std::endl ;
 	}
 
 	m_gridColors.reset( colors.cols(), colors.data() ) ;
 
-
-	Log::Verbose() << "Scalar range\t" << min_val << " ;\t" << max_val << std::endl ;
 }
 
 
@@ -442,6 +469,15 @@ void GLViewer::draw( ) const
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_ACCUM_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 	glLineWidth( 1.f );
 
+	//BG
+	glColor3f(0.8,0.8,0.8) ;
+	glBegin(GL_QUADS);
+	glVertex2f(0, 0);
+	glVertex2f(0, c.box[1]);
+	glVertex2f(c.box[0], c.box[1]);
+	glVertex2f(c.box[0], 0);
+	glEnd();
+
 	// Grid
 
 	if( m_shouldRender[ eColors ])
@@ -552,7 +588,7 @@ void GLViewer::draw( ) const
 	}
 }
 
-const typename GLViewer::VectorField& GLViewer::getVectorEntity() const
+typename GLViewer::VectorField GLViewer::getVectorEntity() const
 {
 	switch ( m_vectorEntity ) {
 	case veVelocity :
@@ -561,6 +597,10 @@ const typename GLViewer::VectorField& GLViewer::getVectorEntity() const
 		return m_offline.grains().fcontact ;
 	case veProj :
 		return m_offline.grains().geo_proj ;
+	case veFluidVel :
+		return m_offline.fluid() .velocity ;
+	case veFluctu :
+		return GLViewer::VectorField(m_offline.grains().velocity).axpy( m_offline.fluid().velocity, -1 ) ;
 	default:
 		return m_offline.grains().grad_phi ;
 	}
@@ -574,6 +614,10 @@ typename GLViewer::ScalarField GLViewer::getScalarEntity() const
 		return m_offline.grains().stresses.trace().interpolate< Shape >( m_offline.meshes().primal() ) ;
 	case seDivergence :
 		return m_offline.grains().sym_grad.trace().interpolate< Shape >( m_offline.meshes().primal() ) ;
+	case sePorePressure :
+		return m_offline.fluid().pressure ;
+	case seFluidVel :
+		return m_offline.fluid().velocity.norm().interpolate< Shape >( m_offline.meshes().primal() ) ;
 	default:
 		return m_offline.grains().spi_grad.interpolate< Shape >( m_offline.meshes().primal() );
 	}

@@ -11,6 +11,8 @@ gl/Texture.hh
 gl/VertexBuffer.hh
 gl/opengl.hh
 gl/shaders/2d/particle_fragment.glsl
+gl/shaders/2d/particle_fragment.glsl
+gl/shaders/2d/particle_fragment.glsl
 gl/shaders/2d/particle_vertex.glsl
 gl/shaders/2d/tensor_fragment.glsl
 gl/shaders/2d/tensor_vertex.glsl

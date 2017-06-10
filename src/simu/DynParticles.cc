@@ -187,7 +187,7 @@ void DynParticles::update(const Config &config, const Scalar dt, const Phase &ph
 		}
 
 		//Orientation
-		{
+		if( config.elongation > 0 ){
 			const Scalar lambda = config.elongation ;
 
 			auto orient_view( tensor_view( m_geo.m_orient.col(i) ) ) ;
@@ -312,7 +312,6 @@ struct MergeInfo {
 void DynParticles::splitMerge( const MeshType & mesh )
 {
 
-#ifdef SPLIT
 	const std::size_t n = count() ;
 	const Scalar defLength = std::pow( m_meanVolume, 1./WD ) ;
 
@@ -336,6 +335,7 @@ void DynParticles::splitMerge( const MeshType & mesh )
 
 		ev = ev.array().min( defLength * 8 ).max( defLength / 8 ) ;
 
+#ifdef SPLIT
 		if(  	   evMax > evMin * 4.     // Eigenvalues ratio
 				&& evMax > defLength      // Avoid splitting too small particles
 				&& m_geo.volumes()[i] > m_meanVolume / 64 // Avoid splitting too ligth particles
@@ -376,7 +376,9 @@ void DynParticles::splitMerge( const MeshType & mesh )
 					m_events.log( Particles::Event::split( i, j, dx ) );
 
 			}
-		} else {
+		} else
+#endif
+		{
 
 			//Repair flat frames
 			frame = es.eigenvectors() * ev.asDiagonal() * ev.asDiagonal() * es.eigenvectors().transpose() ;
@@ -495,7 +497,7 @@ void DynParticles::splitMerge( const MeshType & mesh )
 
 #endif
 
-#else
+#ifndef SPLIT
 	(void) mesh ;
 #endif
 }
