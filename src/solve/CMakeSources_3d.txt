@@ -1,6 +1,4 @@
 solve/FrictionSolver.cc
-solve/FrictionSolver.cc
-solve/FrictionSolver.cc
 solve/FrictionSolver.hh
 solve/LCP.cc
 solve/LCP.hh

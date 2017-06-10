@@ -35,22 +35,22 @@
 static void usage( const char *name )
 {
 	std::cout << "Usage: " << name
-			  << " [sim_dir=out] [options] "
-			  << "\nTransform raw simulation output into standard VTK files,"
-			  << "\n sim_dir/vtk/fields-[frame_id].vtk and "
-			  << "\n sim_dir/vtk/particles-[frame_id].vtk if the '-p' flag is provided"
-			  << "\n\n" ;
+	          << " [sim_dir=out] [options] "
+	          << "\nTransform raw simulation output into standard VTK files,"
+	          << "\n sim_dir/vtk/fields-[frame_id].vtk and "
+	          << "\n sim_dir/vtk/particles-[frame_id].vtk if the '-p' flag is provided"
+	          << "\n\n" ;
 
 	std::cout << "Options:\n"
-			  << "-? \t Display this help message and exit\n"
-			  << "-n frame_id \t Jump to frame frame_id\n"
-			  << "-a \t Process all subsequent frames\n"
-			  << "-p \t Create VTK file for particles as well \n"
-			  << std::endl ;
+	          << "-? \t Display this help message and exit\n"
+	          << "-n frame_id \t Jump to frame frame_id\n"
+	          << "-a \t Process all subsequent frames\n"
+	          << "-p \t Create VTK file for particles as well \n"
+	          << std::endl ;
 }
 
 void dump_frame( const d6::Offline& offline, bool particles,
-				 const char* base_dir, unsigned frame )
+                 const char* base_dir, unsigned frame )
 {
 
 	if(particles) {
@@ -66,13 +66,18 @@ void dump_frame( const d6::Offline& offline, bool particles,
 		fieldWriter.dump(    "phi", offline.grains().fraction ) ;
 		fieldWriter.dump(      "u", offline.grains().velocity ) ;
 		fieldWriter.dump(  "d_phi", offline.grains().grad_phi ) ;
-		fieldWriter.dump( "forces", offline.grains().fcontact ) ;
 
-		d6::PrimalTensorField tau = offline.grains().stresses.interpolate<d6::PrimalShape>(
-					offline.meshes().primal()) ;
-		fieldWriter.dump("stresses", tau ) ;
+		if( offline.config().exportAllFields )
+		{
+			fieldWriter.dump( "forces", offline.grains().fcontact ) ;
+
+			d6::PrimalTensorField tau = offline.grains().stresses.interpolate<d6::PrimalShape>(
+			            offline.meshes().primal()) ;
+			fieldWriter.dump("stresses", tau ) ;
+		}
 	}
 
+	if( offline.config().exportAllFields )
 	{
 #ifdef D6_UNSTRUCTURED_DUAL
 		d6::VTKParticlesWriter fieldWriter( base_dir, offline.particles() ) ;

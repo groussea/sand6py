@@ -5,8 +5,6 @@ mono/Phase.hh
 mono/PhaseFields.hh
 mono/PhaseMeshes.hh
 mono/PhaseSolver.cc
-mono/PhaseSolver.cc
-mono/PhaseSolver.cc
 mono/PhaseSolver.hh
 mono/PhaseStepData.cc
 mono/PhaseStepData.hh
