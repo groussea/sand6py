@@ -32,7 +32,7 @@
 namespace d6 {
 
 VTKParticlesWriter::VTKParticlesWriter(const char *base_dir, const Particles &particles)
-	: VTKWriter( base_dir ), m_particles(particles)
+    : VTKWriter( base_dir ), m_particles(particles)
 {
 
 }
@@ -64,6 +64,12 @@ bool VTKParticlesWriter::dump( const char *name, const Eigen::MatrixBase< Derive
 template< typename Derived >
 bool VTKParticlesWriter::dump( const char* name, const FieldBase< Derived >& field )
 {
+	if( field.size() != m_particles.count() ) {
+		Log::Error() << " VTKParticlesWriter: attempting to write a field of size "
+		             << field.size() << " on a particle system of size " << m_particles.count()
+		             << std::endl ;
+		return false ;
+	}
 
 	return dump( name, field.flatten(), FieldBase< Derived >::D ) ;
 }
@@ -71,10 +77,10 @@ bool VTKParticlesWriter::dump( const char* name, const FieldBase< Derived >& fie
 bool VTKParticlesWriter::dump_all( )
 {
 	return
-			dump( Volumes ) &&
-			dump( Velocities ) &&
-			dump( Frames ) &&
-			dump( Orientations ) ;
+	        dump( Volumes ) &&
+	        dump( Velocities ) &&
+	        dump( Frames ) &&
+	        dump( Orientations ) ;
 
 	return true ;
 }

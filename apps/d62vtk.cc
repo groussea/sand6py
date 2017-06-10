@@ -93,9 +93,9 @@ void dump_frame( const d6::Offline& offline, bool particles,
 		fieldWriter.dump(    "p", p ) ;
 		fieldWriter.dump(   "dh", dh ) ;
 		fieldWriter.dump( "taun", taun ) ;
+		//	fieldWriter.dump( "lambda", offline.grains().stresses ) ;
 	}
 
-	//	fieldWriter.dump( "lambda", offline.grains().stresses ) ;
 }
 
 int main( int argc, const char* argv[] ) {
