@@ -153,4 +153,41 @@ void Edgewise<Grid>::get_derivatives( const Location&, typename Base::Derivative
 		dc_dx.col( k ) /= mesh().dx()[k] ;
 }
 
+template<>
+void Facewise<Grid>::list_nodes( const Location& loc, typename Base::NodeList& nodes ) const
+{
+	const Grid& grid = Base::mesh().derived() ;
+	nodes[ 0 ] = loc.cell[0] * (grid.dim()[1]+1) + loc.cell[1]   ;
+	nodes[ 1 ] = loc.cell[0] * (grid.dim()[1]+1) + loc.cell[1]+1 ;
+	const Index off = grid.dim()[0] * (grid.dim()[1]+1) ;
+	nodes[ 2 ] = loc.cell[1] * (grid.dim()[0]+1) + loc.cell[0]   + off;
+	nodes[ 3 ] = loc.cell[1] * (grid.dim()[0]+1) + loc.cell[0]+1 + off;
+}
+
+template<>
+void Facewise<Grid>::dof_coeffs( const typename MeshType::Coords& coords, typename Base::CoefList& coeffs ) const
+{
+	coeffs[0] = 1.-coords[1] ;
+	coeffs[1] =    coords[1] ;
+	coeffs[2] = 1.-coords[0] ;
+	coeffs[3] =    coords[0] ;
+}
+
+template<>
+void Facewise<Grid>::get_derivatives( const Location&, typename Base::Derivatives& dc_dx ) const
+{
+	dc_dx(0,0) =  0;
+	dc_dx(0,1) = -1;
+	dc_dx(1,0) =  0;
+	dc_dx(1,1) =  1;
+
+	dc_dx(2,0) = -1;
+	dc_dx(2,1) =  0;
+	dc_dx(3,0) =  1;
+	dc_dx(3,1) =  0;
+
+	for (int k = 0 ; k < WD ; ++k)
+		dc_dx.col( k ) /= mesh().dx()[k] ;
+}
+
 } // d6

@@ -46,6 +46,7 @@ struct MeshTraits< Grid > {
 	static constexpr Index NV = CellGeo::NV ;
 	static constexpr Index NC = CellGeo::NC ;
 	static constexpr Index NE = CellGeo::NE ;
+	static constexpr Index NF = CellGeo::NF ;
 
 	typedef std::vector<Cell> Cells ;
 };
@@ -64,6 +65,7 @@ struct MeshTraits< TetGrid > {
 	static constexpr Index NV = CellGeo::NV ;
 	static constexpr Index NC = CellGeo::NC ;
 	static constexpr Index NE = CellGeo::NE ;
+	static constexpr Index NF = CellGeo::NF ;
 
 	typedef std::vector<Cell> Cells ;
 };
@@ -83,6 +85,7 @@ struct MeshTraits< Octree > {
 	static constexpr Index NV = CellGeo::NV ;
 	static constexpr Index NC = CellGeo::NC ;
 	static constexpr Index NE = CellGeo::NE ;
+	static constexpr Index NF = CellGeo::NF ;
 
 	typedef std::vector<Cell> Cells ;
 };

@@ -34,6 +34,7 @@
 	INSTANTIATE(   DGLinear<Grid   >  ) \
 	INSTANTIATE( DGConstant<Grid   >  ) \
 	INSTANTIATE(   Edgewise<Grid   >  ) \
+	INSTANTIATE(   Facewise<Grid   >  ) \
 	INSTANTIATE(     Linear<Octree >  ) \
 	INSTANTIATE(   DGLinear<Octree >  ) \
 	INSTANTIATE( DGConstant<Octree >  ) \

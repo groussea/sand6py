@@ -5,6 +5,48 @@
 namespace d6 {
 
 template<>
+void Facewise<Grid>::list_nodes( const Location& loc, typename Base::NodeList& nodes ) const
+{
+	const Grid& grid = Base::mesh().derived() ;
+
+	int off = 0 ;
+	for( int j = 0 ; j < 3 ; ++j )
+	{
+		const int k = (j+1)%3 ;
+		const int l = (j+2)%3 ;
+		const Index nk = grid.dim()[k] ;
+		const Index nl = grid.dim()[l] ;
+
+		nodes[2*j+0] = off + loc.cell[j]*nk*nl + loc.cell[k]*nl + loc.cell[l] ;
+		nodes[2*j+1] = off + (loc.cell[j]+1)*nk*nl + loc.cell[k]*nl + loc.cell[l] ;
+		off += grid.dim()[j] * nk * nl ;
+	}
+}
+
+
+template<>
+void Facewise<Grid>::dof_coeffs( const typename MeshType::Coords& coords, typename Base::CoefList& coeffs ) const
+{
+	for( int j = 0 ; j < 3 ; ++j )
+	{
+		coeffs[2*j + 0] = (1-coords[j]) ;
+		coeffs[2*j + 1] = (  coords[j]) ;
+	}
+}
+
+template<>
+void Facewise<Grid>::get_derivatives( const Location&, typename Base::Derivatives& dc_dx ) const
+{
+	dc_dx.setZero() ;
+
+	for( int j = 0 ; j < 3 ; ++j )
+	{
+		dc_dx(2*j+0, j) = -1/mesh().dx()[j] ;
+		dc_dx(2*j+1, j) =  1/mesh().dx()[j] ;
+	}
+}
+
+template<>
 void Edgewise<Grid>::list_nodes( const Location& loc, typename Base::NodeList& nodes ) const
 {
 	const Grid& grid = Base::mesh().derived() ;

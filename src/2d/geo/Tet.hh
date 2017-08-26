@@ -30,6 +30,7 @@ struct Tet {
 	static constexpr Index NV = 3 ;
 	static constexpr Index NC = 3 ;
 	static constexpr Index NE = 3 ;
+	static constexpr Index NF = 3 ;
 
 	typedef Eigen::Matrix< Scalar, NC, 1  > Coords ;
 	typedef Eigen::Matrix< Scalar, NC, WD > Derivatives ;

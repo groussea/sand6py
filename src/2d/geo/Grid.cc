@@ -39,7 +39,7 @@ Index GridIterator::index() const
 }
 
 Grid::Grid(const Vec &box, const VecWi &res, const Particles *)
-	: Base()
+    : Base()
 {
 	m_dim = res ;
 	set_box( box ) ;
@@ -48,6 +48,18 @@ Grid::Grid(const Vec &box, const VecWi &res, const Particles *)
 void Grid::set_box( const Vec& box )
 {
 	m_dx.array() = box.array()/m_dim.array().cast< Scalar >() ;
+}
+
+Index Grid::nEdges() const
+{
+	return
+	        m_dim[0] * (m_dim[1]+1)  +
+	        m_dim[1] * (m_dim[0]+1)  ;
+}
+
+Index Grid::nFaces() const
+{
+	return nEdges() ;
 }
 
 void Grid::boundaryInfo( const Location &loc, const BoundaryMapper& mapper, BoundaryInfo &info ) const

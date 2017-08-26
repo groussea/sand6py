@@ -30,6 +30,7 @@ struct Voxel {
 	static constexpr Index NV = 8 ;
 	static constexpr Index NC = 3 ;
 	static constexpr Index NE = 12 ;
+	static constexpr Index NF = 6 ;
 
 	typedef Eigen::Matrix< Scalar, NC, 1 > Coords ;
 	typedef Eigen::Matrix< Scalar, 3, Eigen::Dynamic > Points ;

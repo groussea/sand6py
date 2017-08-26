@@ -46,6 +46,7 @@ public:
 	enum {
 		NV = Traits::NV ,
 		NE = Traits::NE ,
+		NF = Traits::NF ,
 		NC = Traits::NC
 	} ;
 
@@ -65,6 +66,7 @@ public:
 	Index nNodes() const { return derived().nNodes() ; }
 	Index nCells() const { return derived().nCells() ; }
 	Index nEdges() const { return derived().nEdges() ; }
+	Index nFaces() const { return derived().nFaces() ; }
 
 	Index cellIndex( const Cell& cell ) const
 	{ return derived().cellIndex( cell ) ; }

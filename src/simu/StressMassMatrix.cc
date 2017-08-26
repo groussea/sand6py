@@ -113,6 +113,7 @@ template struct AbstractStressMassMatrix<     Linear< MeshImpl > > ;
 template struct AbstractStressMassMatrix<   DGLinear< MeshImpl > > ;
 template struct AbstractStressMassMatrix< DGConstant< MeshImpl > > ;
 template struct AbstractStressMassMatrix<   Edgewise< MeshImpl > > ;
+template struct AbstractStressMassMatrix<   Facewise< MeshImpl > > ;
 template struct AbstractStressMassMatrix<  UnstructuredShapeFunc > ;
 
 } //d6

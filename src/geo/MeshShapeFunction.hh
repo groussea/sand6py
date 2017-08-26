@@ -453,6 +453,58 @@ struct Edgewise : public MeshShapeFunc< Edgewise, MeshT >
 
 } ;
 
+template< typename MeshT >
+struct ShapeFuncTraits< Facewise<MeshT>  > : public ShapeFuncTraits< MeshShapeFunc< Facewise, MeshT >  >
+{
+	typedef ShapeFuncTraits< MeshShapeFunc< Facewise, MeshT > > Base ;
+	enum {
+		NI = Base::MeshType::NF
+	};
+
+	template <typename CellIterator = typename Base::MeshType::CellIterator >
+	struct QPIterator {
+		typedef MeshQPIterator< MeshT, CellIterator > Type ;
+	};
+
+} ;
+
+template< typename MeshT >
+struct Facewise : public MeshShapeFunc< Facewise, MeshT >
+{
+	typedef MeshShapeFunc< Facewise, MeshT > Base ;
+	typedef MeshBase<MeshT> MeshType ;
+	typedef typename Base::Location Location ;
+
+	Facewise ( const MeshType & mesh )
+	    : Base( mesh )
+	{}
+
+	Index nDOF() const { return Base::mesh().nFaces() ; }
+
+	void interpolate( const Location& loc, typename Base::Interpolation& itp ) const {
+		dof_coeffs( loc.coords, itp.coeffs ) ;
+		list_nodes( loc, itp.nodes ) ;
+	}
+
+	void dof_coeffs( const typename MeshType::Coords& coords, typename Base::CoefList& coeffs ) const ;
+	void get_derivatives( const Location& loc, typename Base::Derivatives& dc_dx ) const ;
+
+	void locate_dof( typename Base::Location& loc, Index dofIndex ) const {
+		typename MeshType::CellGeo geo ;
+		Base::mesh().get_geo( loc.cell, geo ) ;
+		geo.vertexCoords( dofIndex, loc.coords ) ;
+	}
+
+	// Orderin:g all nodes from cell 0, all nodes from cell, ... etc
+	using Base::list_nodes ;
+	void list_nodes( const Location& loc, typename Base::NodeList& list ) const ;
+
+	void interpolate_tpz( const Location& loc, typename Base::Interpolation& itp ) const
+	{ interpolate(loc,itp) ; }
+
+	Scalar dof_volume_fraction( Index ) const	{ return 1./Base::NI ; }
+
+} ;
 
 }
 

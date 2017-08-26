@@ -40,7 +40,8 @@ typedef MeshImpl   DualMesh ;
 #ifdef D6_DG_STRESSES
 //typedef DGLinear<  DualMesh> DualShape ;
 //typedef DGConstant<  DualMesh> DualShape ;
-typedef   Edgewise<  DualMesh> DualShape ;
+//typedef   Edgewise<  DualMesh> DualShape ;
+typedef   Facewise<  DualMesh> DualShape ;
 #else
 typedef   Linear<  DualMesh> DualShape ;
 #endif
