@@ -149,6 +149,7 @@ void DiphasicStepData::assembleMatrices(
 
 
 	// Characteristics functor
+	// TODO subsample
 	const auto char_func = [dt,&pShape]( const PrimalVectorField &velocity, const Vec &pos ) {
 		const Vec u2 = velocity( pos ) ;
 		const Vec pos_prev = pShape.mesh().clamp_point( pos - dt*u2 ) ;

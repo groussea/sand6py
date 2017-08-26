@@ -29,6 +29,7 @@ struct Tet {
 
 	static constexpr Index NV = 3 ;
 	static constexpr Index NC = 3 ;
+	static constexpr Index NE = 3 ;
 
 	typedef Eigen::Matrix< Scalar, NC, 1  > Coords ;
 	typedef Eigen::Matrix< Scalar, NC, WD > Derivatives ;
@@ -163,11 +164,11 @@ struct QuadraturePoints< Tet, 4 >
 
 	static void get( const Tet&, Index k, QuadPoint& qp ) {
 		const Scalar a = k<3
-				? 0.091576213509771
-				: 0.445948490915965 ;
+		        ? 0.091576213509771
+		        : 0.445948490915965 ;
 		const Scalar b = k<3
-				? 0.816847572980459
-				: 0.108103018168070 ;
+		        ? 0.816847572980459
+		        : 0.108103018168070 ;
 
 		qp.setConstant(a) ;
 		qp[k<3?k:(k-3)] = b ;
@@ -175,9 +176,9 @@ struct QuadraturePoints< Tet, 4 >
 
 	static Scalar weight( const Tet& geo, Index k ) {
 		return ( k<3
-				 ? 0.109951743655322
-				 : 0.223381589678011
-				   ) * geo.volume() ;
+		         ? 0.109951743655322
+		         : 0.223381589678011
+		           ) * geo.volume() ;
 	}
 
 } ;

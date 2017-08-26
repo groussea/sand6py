@@ -229,7 +229,7 @@ void DiphasicSolver::solve(
 		PenType pen ; pen.setRows( W.rows() ) ; pen.setIdentity() ;
 
 		typedef bogus::Addition< WType, bogus::Scaling<PenType> > WPenType ;
-		WPenType WPen = W + 1.e-8 * pen ;
+		WPenType WPen = W + config.compressibility * pen ;
 
 		bogus::Krylov< WPenType > krylov( WPen ) ;
 		krylov.setMaxIters(100);
@@ -243,7 +243,7 @@ void DiphasicSolver::solve(
 	} else {
 
 		SM M ;
-		primal.makePenalizedEigenStokesMatrix( M, 1.e-3 );
+		primal.makePenalizedEigenStokesMatrix( M, config.compressibility );
 
 		//	Eigen::saveMarket(M, "mm/diphasicStokes.mtx", Eigen::Symmetric); // if A is symmetric-positive-definite
 		//	Eigen::saveMarketVector(l, "mm/diphasicStokes_b.mtx");

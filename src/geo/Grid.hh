@@ -40,7 +40,7 @@ struct GridIterator
 	Cell cell ;
 
 	GridIterator( const Grid& g, const Cell& c )
-		: grid(g), cell(c)
+	    : grid(g), cell(c)
 	{}
 
 	GridIterator& operator++() ;
@@ -82,6 +82,14 @@ public:
 
 	Index nCells() const
 	{ return m_dim.prod(); }
+
+	Index nEdges() const
+	{
+		return
+		        m_dim[0] * (m_dim[1]+1) * (m_dim[2]+1) +
+		        m_dim[1] * (m_dim[2]+1) * (m_dim[0]+1) +
+		        m_dim[2] * (m_dim[0]+1) * (m_dim[1]+1) ;
+	}
 
 	Index cellIndex( const Cell& cell ) const
 	{

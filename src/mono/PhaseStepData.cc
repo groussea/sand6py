@@ -45,11 +45,11 @@ namespace d6 {
 
 
 void PhaseStepData::computeProjectors(const Config&config,
-									  const PrimalShape& pShape, const DualShape &dShape,
-									  const PrimalScalarField &lumped_mass,
-									  const Active &primalNodes, const Active &dualNodes,
-									  const Index nSuppNodes,
-									  Projectors& mats)
+                                      const PrimalShape& pShape, const DualShape &dShape,
+                                      const PrimalScalarField &lumped_mass,
+                                      const Active &primalNodes, const Active &dualNodes,
+                                      const Index nSuppNodes,
+                                      Projectors& mats)
 {
 	const Scalar discard_empty = 0. ;
 #ifdef D6_UNSTRUCTURED_DUAL
@@ -65,6 +65,10 @@ void PhaseStepData::computeProjectors(const Config&config,
 
 	mats.stress.setRows( n+nc );
 	mats.stress.setIdentity() ;
+
+	mats.pressure.setRows( n+nc );
+	mats.pressure.setCols( n+nc );
+	mats.pressure.setIdentity() ;
 
 	typedef typename PrimalShape::MeshType MeshType ;
 
@@ -106,6 +110,7 @@ void PhaseStepData::computeProjectors(const Config&config,
 			dShape.locate_dof( dloc, k ) ;
 			dShape.mesh().boundaryInfo( dloc, bdMapper, info ) ;
 			info.stressProj( mats.stress.block( i ) ) ;
+			mats.pressure.block( i ) = mats.stress.block(i).block<1,SD>(0,0) ;
 		}
 #endif
 
@@ -113,8 +118,8 @@ void PhaseStepData::computeProjectors(const Config&config,
 }
 
 void PhaseStepData::computeRbProjectors(const Config &config, const PrimalShape& pShape,
-									  const std::vector<RigidBodyData> &rbData,
-									  Projectors& mats)
+                                      const std::vector<RigidBodyData> &rbData,
+                                      Projectors& mats)
 {
 	StrBoundaryMapper bdMapper ( config.boundary ) ;
 
@@ -144,10 +149,10 @@ void PhaseStepData::computeRbProjectors(const Config &config, const PrimalShape&
 }
 
 void PhaseStepData::assembleMatrices(const Particles &particles,
-		const Config &config, const Scalar dt, const DualShape &dShape,
-									 const PrimalScalarField &phiInt,
-		std::vector< RigidBodyData >&rbData
-		)
+        const Config &config, const Scalar dt, const DualShape &dShape,
+                                     const PrimalScalarField &phiInt,
+        std::vector< RigidBodyData >&rbData
+        )
 {
 	const PrimalShape& pShape = phiInt.shape() ;
 
@@ -177,7 +182,7 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 		forms.M_lumped_inv_sqrt.setRows( m );
 		forms.M_lumped_inv_sqrt.setIdentity() ;
 
-	#pragma omp parallel for
+    #pragma omp parallel for
 		for( Index i = 0 ; i < m ; ++i ) {
 			forms.M_lumped.block( i ) *= phiInt[ primalNodes.revIndices[i] ] ;
 		}
@@ -204,18 +209,18 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 
 #if defined(FULL_FEM) || defined(CONSTANT_VISC)
 		builder.integrate_cell<form::Left>( primalNodes.cells.begin(), primalNodes.cells.end(),
-								[&]( Scalar w, const Vec&, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& r_dc_dx )
-			{
-				Builder:: addDuDv( forms.A, w, l_itp, l_dc_dx, r_itp, r_dc_dx, primalNodes.indices, primalNodes.indices ) ;
-			}
+		                        [&]( Scalar w, const Vec&, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& r_dc_dx )
+		    {
+			    Builder:: addDuDv( forms.A, w, l_itp, l_dc_dx, r_itp, r_dc_dx, primalNodes.indices, primalNodes.indices ) ;
+		    }
 		);
 		Log::Debug() << "A Integrate grid: " << timer.elapsed() << std::endl ;
 #else
 		//TODO parallel integration
 		builder.integrate_particle( particles, [&]( Index, Scalar w, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& r_dc_dx )
-			{
-				Builder:: addDuDv( forms.A, w, l_itp, l_dc_dx, r_itp, r_dc_dx, primalNodes.indices, primalNodes.indices ) ;
-			}
+		    {
+			    Builder:: addDuDv( forms.A, w, l_itp, l_dc_dx, r_itp, r_dc_dx, primalNodes.indices, primalNodes.indices ) ;
+		    }
 		);
 		Log::Debug() << "A Integrate particle: " << timer.elapsed() << std::endl ;
 #endif
@@ -343,13 +348,13 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 		}
 #else
 		builder.integrate_particle( particles, [&]( Index, Scalar w, const D_Itp& l_itp, const D_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& r_dc_dx )
-			{
-				Builder::addTauDu( forms.B, w, l_itp, r_itp, r_dc_dx, dualNodes.indices, primalNodes.indices ) ;
+		    {
+			    Builder::addTauDu( forms.B, w, l_itp, r_itp, r_dc_dx, dualNodes.indices, primalNodes.indices ) ;
 				Builder::addTauWu( forms.J, w, l_itp, r_itp, r_dc_dx, dualNodes.indices, primalNodes.indices ) ;
 				if( config.enforceMaxFrac ) {
 					Builder::addDpV  ( forms.C, w, l_itp, l_dc_dx, r_itp, dualNodes.indices, primalNodes.indices ) ;
 				}
-			}
+		    }
 		);
 #endif
 		Log::Debug() << "Integrate particle: " << timer.elapsed() << std::endl ;
@@ -388,9 +393,9 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 	for( Index i = 0 ; i < m ; ++i ) {
 		const Scalar mass = forms.M_lumped.block(i).trace() / WD ;
 		forms.M_lumped         .block(i) = proj.vel.block(i) * mass
-				+ Mat::Identity() - proj.vel.block(i) ;
+		        + Mat::Identity() - proj.vel.block(i) ;
 		forms.M_lumped_inv     .block(i) = proj.vel.block(i) * 1./(mass + mass_regul )
-				+ Mat::Identity() - proj.vel.block(i) ;
+		        + Mat::Identity() - proj.vel.block(i) ;
 		forms.M_lumped_inv_sqrt.block(i) = proj.vel.block(i) * 1./std::sqrt( mass + mass_regul ) ;
 	}
 
@@ -398,7 +403,7 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 }
 
 void PhaseStepData::computeAnisotropy(const DynVec &orientation, const Config& config,
-									 typename FormMat<SD,SD>::SymType &Aniso ) const
+                                     typename FormMat<SD,SD>::SymType &Aniso ) const
 {
 	// Compute anisotropy matrix from interpolated orientation distributions
 
@@ -424,9 +429,9 @@ void PhaseStepData::computeAnisotropy(const DynVec &orientation, const Config& c
 }
 
 void PhaseStepData::compute(const DynParticles& particles,
-		const Config &config, const Scalar dt, Phase &phase,
-		std::vector< RigidBody   >& rigidBodies,
-		std::vector< RBStresses > &rbStresses , std::vector<RigidBodyData> & rbData)
+        const Config &config, const Scalar dt, Phase &phase,
+        std::vector< RigidBody   >& rigidBodies,
+        std::vector< RBStresses > &rbStresses , std::vector<RigidBodyData> & rbData)
 {
 	const PrimalShape& pShape = phase.velocity.shape() ;
 	const   DualShape& dShape = phase.stresses.shape() ;
@@ -502,7 +507,7 @@ void PhaseStepData::compute(const DynParticles& particles,
 
 
 void PhaseStepData::computePhiAndGradPhi(const PrimalScalarField &intPhi, PrimalScalarField& fraction,
-										 PrimalVectorField &grad_phi )
+                                         PrimalVectorField &grad_phi )
 {
 	const PrimalShape& shape = intPhi.shape() ;
 
@@ -535,8 +540,8 @@ void PhaseStepData::computePhiAndGradPhi(const PrimalScalarField &intPhi, Primal
 }
 
 void PhaseStepData::computeActiveNodes(const std::vector<bool> &activeCells ,
-									   const PrimalShape& pShape, const DualShape& dShape,
-									   Active &primalNodes, Active &dualNodes)
+                                       const PrimalShape& pShape, const DualShape& dShape,
+                                       Active &primalNodes, Active &dualNodes)
 {
 	typedef typename PrimalShape::MeshType MeshType ;
 
@@ -598,9 +603,9 @@ void PhaseStepData::computeActiveNodes(const std::vector<bool> &activeCells ,
 }
 
 void PhaseStepData::computeActiveBodies( std::vector<RigidBody> &rigidBodies,
-										 std::vector<RBStresses> &rbStresses,
-										 std::vector< RigidBodyData > &rbData
-										 )
+                                         std::vector<RBStresses> &rbStresses,
+                                         std::vector< RigidBodyData > &rbData
+                                         )
 {
 	rbData.clear();
 	for( unsigned i = 0 ; i < rigidBodies.size() ; ++i ) {

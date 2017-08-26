@@ -33,6 +33,7 @@
 	INSTANTIATE(     Linear<Grid   >  ) \
 	INSTANTIATE(   DGLinear<Grid   >  ) \
 	INSTANTIATE( DGConstant<Grid   >  ) \
+	INSTANTIATE(   Edgewise<Grid   >  ) \
 	INSTANTIATE(     Linear<Octree >  ) \
 	INSTANTIATE(   DGLinear<Octree >  ) \
 	INSTANTIATE( DGConstant<Octree >  ) \
@@ -49,9 +50,9 @@
 
 
 #if D6_DIM == 2
-	#define EXPAND_INSTANTIATIONS_DIM EXPAND_INSTANTIATIONS_2D
+    #define EXPAND_INSTANTIATIONS_DIM EXPAND_INSTANTIATIONS_2D
 #else
-	#define EXPAND_INSTANTIATIONS_DIM EXPAND_INSTANTIATIONS_3D
+    #define EXPAND_INSTANTIATIONS_DIM EXPAND_INSTANTIATIONS_3D
 #endif
 
 #endif

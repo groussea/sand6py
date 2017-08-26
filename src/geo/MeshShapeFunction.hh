@@ -47,7 +47,7 @@ struct MeshShapeFunc : public ShapeFuncBase< Interp<MeshT> >
 	typedef typename Base::Traits Traits ;
 
 	MeshShapeFunc ( const MeshType & mesh )
-		: m_mesh( mesh )
+	    : m_mesh( mesh )
 	{}
 
 	// ~ lumped mass matrix
@@ -170,7 +170,7 @@ struct MeshQPIterator {
 	typedef QuadraturePoints< typename MeshT::CellGeo, Order > QP ;
 
 	explicit MeshQPIterator( const MeshType &mesh_, const CellIterator& cIt )
-		: mesh(mesh_), cellIt( cIt ), qp(0), cache_valid( false )
+	    : mesh(mesh_), cellIt( cIt ), qp(0), cache_valid( false )
 	{
 	}
 
@@ -247,7 +247,7 @@ struct Linear : public MeshShapeFunc< Linear, MeshT >
 	typedef typename Base::Location Location ;
 
 	Linear ( const MeshType & mesh )
-		: Base( mesh )
+	    : Base( mesh )
 	{}
 
 	Index nDOF() const { return Base::mesh().nNodes() ; }
@@ -301,7 +301,7 @@ struct DGLinear : public MeshShapeFunc< DGLinear, MeshT >
 	typedef typename Base::Location Location ;
 
 	DGLinear ( const MeshType & mesh )
-		: Base( mesh )
+	    : Base( mesh )
 	{}
 
 	Index nDOF() const { return Base::mesh().nCells() * MeshType::NV ; }
@@ -363,7 +363,7 @@ struct DGConstant : public MeshShapeFunc< DGConstant, MeshT >
 	typedef typename Base::Location Location ;
 
 	DGConstant ( const MeshType & mesh )
-		: Base( mesh )
+	    : Base( mesh )
 	{}
 
 	Index nDOF() const { return Base::mesh().nCells() ; }
@@ -395,6 +395,61 @@ struct DGConstant : public MeshShapeFunc< DGConstant, MeshT >
 	{ interpolate(loc,itp) ; }
 
 	Scalar dof_volume_fraction( Index ) const	{ return 1. ; }
+
+} ;
+
+// DG edgewise shape func
+
+template< typename MeshT >
+struct ShapeFuncTraits< Edgewise<MeshT>  > : public ShapeFuncTraits< MeshShapeFunc< Edgewise, MeshT >  >
+{
+	typedef ShapeFuncTraits< MeshShapeFunc< Edgewise, MeshT > > Base ;
+	enum {
+		NI = Base::MeshType::NE
+	};
+
+	template <typename CellIterator = typename Base::MeshType::CellIterator >
+	struct QPIterator {
+		typedef MeshQPIterator< MeshT, CellIterator > Type ;
+	};
+
+} ;
+
+template < typename MeshT >
+struct Edgewise : public MeshShapeFunc< Edgewise, MeshT >
+{
+	typedef MeshShapeFunc< Edgewise, MeshT > Base ;
+	typedef MeshBase<MeshT> MeshType ;
+	typedef typename Base::Location Location ;
+
+	Edgewise ( const MeshType & mesh )
+	    : Base( mesh )
+	{}
+
+	Index nDOF() const { return Base::mesh().nEdges() ; }
+
+	void interpolate( const Location& loc, typename Base::Interpolation& itp ) const {
+		dof_coeffs( loc.coords, itp.coeffs ) ;
+		list_nodes( loc, itp.nodes ) ;
+	}
+
+	void dof_coeffs( const typename MeshType::Coords& coords, typename Base::CoefList& coeffs ) const ;
+	void get_derivatives( const Location& loc, typename Base::Derivatives& dc_dx ) const ;
+
+	void locate_dof( typename Base::Location& loc, Index dofIndex ) const {
+		typename MeshType::CellGeo geo ;
+		Base::mesh().get_geo( loc.cell, geo ) ;
+		geo.vertexCoords( dofIndex, loc.coords ) ;
+	}
+
+	// Orderin:g all nodes from cell 0, all nodes from cell, ... etc
+	using Base::list_nodes ;
+	void list_nodes( const Location& loc, typename Base::NodeList& list ) const ;
+
+	void interpolate_tpz( const Location& loc, typename Base::Interpolation& itp ) const
+	{ interpolate(loc,itp) ; }
+
+	Scalar dof_volume_fraction( Index ) const	{ return 1./Base::NI ; }
 
 } ;
 

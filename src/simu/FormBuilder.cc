@@ -244,6 +244,7 @@ void FormBuilder<LhsShape, RhsShape>::addUTaunGphi( FormMat<SD,WD>::Type& A, Sca
 template class FormBuilder<     Linear< MeshImpl >, Linear< MeshImpl > > ;
 template class FormBuilder<   DGLinear< MeshImpl >, Linear< MeshImpl > > ;
 template class FormBuilder< DGConstant< MeshImpl >, Linear< MeshImpl > > ;
+template class FormBuilder<   Edgewise< MeshImpl >, Linear< MeshImpl > > ;
 template class FormBuilder<  UnstructuredShapeFunc, Linear< MeshImpl > > ;
 
 #if (D6_MESH_IMPL == D6_MESH_TET_GRID) && (D6_DIM == 2)

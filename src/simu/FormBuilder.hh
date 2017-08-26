@@ -30,7 +30,7 @@ namespace d6 {
 class Particles ;
 
 namespace form {
-	enum Side {
+    enum Side {
 		Left,
 		Right
 	};
@@ -59,7 +59,7 @@ class FormBuilder {
 public:
 
 	FormBuilder( const LhsShape& lhsShape, const RhsShape& rhsShape )
-		: m_lhsShape( lhsShape ), m_rhsShape( rhsShape )
+	    : m_lhsShape( lhsShape ), m_rhsShape( rhsShape )
 	{}
 
 	void reset( Index rows ) ;
@@ -68,7 +68,7 @@ public:
 	//! Computes matrices non-zero blocks (nodes sharing a cell) from list of active cells
 	template < form::Side side, typename QPIterator, typename Func >
 	void addToIndexIf( const QPIterator& qpBegin, const QPIterator& qpEnd,
-					   Indices rowIndices, Indices colIndices, const Func& f ) ;
+	                   Indices rowIndices, Indices colIndices, const Func& f ) ;
 
 	template < typename Func >
 	void addToIndexIf( Indices rowIndices, Indices colIndices, const Func& f ) ;
@@ -77,7 +77,7 @@ public:
 	// only for LhsShape==RhsShape )
 	template < typename CellIterator >
 	void addToIndex( const CellIterator& cellBegin, const CellIterator& cellEnd,
-					 Indices rowIndices, Indices colIndices	 ) ;
+	                 Indices rowIndices, Indices colIndices	 ) ;
 
 	void addRows( Index rows ) ;
 
@@ -105,7 +105,7 @@ public:
 	// Building blocks
 
 	static void addDuDv     ( FormMat<WD,WD>::Type& A, Scalar w, Index rowIndex, LhsDcdxRow row_dx,
-							  RhsItp itp, RhsDcdx dc_dx, Indices colIndices ) ;
+	                          RhsItp itp, RhsDcdx dc_dx, Indices colIndices ) ;
 	static void addDpV      ( FormMat< 1,WD>::Type& A, Scalar w, Index rowIndex, LhsDcdxRow row_dx, RhsItp itp, Indices colIndices ) ;
 	static void addTauDu    ( FormMat<SD,WD>::Type& A, Scalar w, Index rowIndex, RhsItp itp, RhsDcdx dc_dx, Indices colIndices ) ;
 	static void addTauWu    ( FormMat<RD,WD>::Type& A, Scalar w, Index rowIndex, RhsItp itp, RhsDcdx dc_dx, Indices colIndices ) ;

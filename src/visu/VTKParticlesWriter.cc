@@ -64,7 +64,7 @@ bool VTKParticlesWriter::dump( const char *name, const Eigen::MatrixBase< Derive
 template< typename Derived >
 bool VTKParticlesWriter::dump( const char* name, const FieldBase< Derived >& field )
 {
-	if( field.size() != m_particles.count() ) {
+	if( field.size() != Index(m_particles.count()) ) {
 		Log::Error() << " VTKParticlesWriter: attempting to write a field of size "
 		             << field.size() << " on a particle system of size " << m_particles.count()
 		             << std::endl ;

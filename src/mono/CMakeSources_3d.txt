@@ -1,5 +1,7 @@
 mono/MonoSimu.cc
 mono/MonoSimu.hh
+mono/Newtonian.cc
+mono/Newtonian.hh
 mono/Phase.cc
 mono/Phase.hh
 mono/PhaseFields.hh

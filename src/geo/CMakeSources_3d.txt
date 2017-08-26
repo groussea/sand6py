@@ -1,6 +1,7 @@
 3d/geo/BoundaryInfo.cc
 3d/geo/FormBuildingBlocks.hh
 3d/geo/Grid.cc
+3d/geo/GridShapeFunctions.cc
 3d/geo/LevelSet.cc
 3d/geo/LevelSet.impl.hh
 3d/geo/LevelSet.io.hh

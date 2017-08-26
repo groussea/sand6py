@@ -20,6 +20,7 @@
 #include "MonoSimu.hh"
 
 #include "Phase.hh"
+#include "PhaseSolver.hh"
 #include "simu/RigidBody.hh"
 
 #include "utils/Log.hh"
@@ -40,12 +41,11 @@ namespace d6
 {
 
 MonoSimu::MonoSimu(const Config &config, const char *base_dir)
-	: Simu( config, base_dir ),
-	  m_meshes{ std::unique_ptr<PrimalMesh>(new PrimalMesh( m_config.box, m_config.res, &m_particles.geo() )),
-				std::unique_ptr<  DualMesh>(new   DualMesh( m_config.box, m_config.res, &m_particles.geo() ))
-			   },
-	  m_grains( new Phase( meshes() ) ),
-	  m_solver( m_particles )
+    : Simu( config, base_dir ),
+      m_meshes{ std::unique_ptr<PrimalMesh>(new PrimalMesh( m_config.box, m_config.res, &m_particles.geo() )),
+                std::unique_ptr<  DualMesh>(new   DualMesh( m_config.box, m_config.res, &m_particles.geo() ))
+               },
+      m_grains( new Phase( meshes() ) )
 {
 	m_particles.generate( config, meshes().primal(), *m_scenario );
 
@@ -62,6 +62,10 @@ MonoSimu::MonoSimu(const Config &config, const char *base_dir)
 	m_grains->sym_grad.set_zero();
 	m_grains->spi_grad.set_zero();
 	m_grains->geo_proj.set_zero();
+
+
+	m_solver.reset( new PhaseSolver(m_particles) );
+
 }
 
 MonoSimu::~MonoSimu()
@@ -79,7 +83,7 @@ void MonoSimu::update_fields(const Scalar dt)
 	m_stats.nNodes = meshes().primal().nNodes() ;
 
 	//! Compute new grid velocities
-	m_solver.step( m_config, dt, *m_grains, m_stats, m_rigidBodies, m_rbStresses ) ;
+	m_solver->step( m_config, dt, *m_grains, m_stats, m_rigidBodies, m_rbStresses ) ;
 }
 
 void MonoSimu::move_particles(const Scalar dt)

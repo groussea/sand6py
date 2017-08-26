@@ -59,6 +59,7 @@ typedef Grid    MeshImpl ;
 template < typename MeshT > struct Linear ;
 template < typename MeshT > struct DGLinear ;
 template < typename MeshT > struct DGConstant ;
+template < typename MeshT > struct Edgewise ;
 template < typename MeshT > struct P2 ;
 
 struct UnstructuredDOFs ;

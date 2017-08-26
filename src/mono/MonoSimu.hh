@@ -23,9 +23,10 @@
 #include "simu/Simu.hh"
 
 #include "PhaseMeshes.hh"
-#include "PhaseSolver.hh"
 
 namespace d6 {
+
+class PhaseSolverBase ;
 
 class MonoSimu : public Simu
 {
@@ -54,7 +55,7 @@ private:
 	// Useful for warm-starting stresses at frictional boundary conditions
 	std::vector< RBStresses > m_rbStresses  ;
 
-	PhaseSolver m_solver ;
+	std::unique_ptr<PhaseSolverBase> m_solver ;
 
 };
 

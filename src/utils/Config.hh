@@ -73,7 +73,9 @@ namespace d6 {
 	CONFIG_FIELD( stokesFactor		, Scalar		,	Units::None 		) \
 	CONFIG_FIELD( RZExponent		, Scalar		,	Units::None 		) \
 	CONFIG_FIELD( windSpeed			, Vec			,	Units::Velocity 	) \
-
+	\
+	CONFIG_FIELD( newtonian			, bool			,	Units::None			) \
+	CONFIG_FIELD( compressibility	, Scalar		,	Units::None			) \
 
 struct Config
 {

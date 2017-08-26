@@ -95,7 +95,7 @@ void AbstractStressMassMatrix<DGLinear<MeshT>>::compute( const Shape& shape, con
 		for( Index k = 0 ; k < Shape::NI ; ++k ) {
 			for( Index j = 0 ; j <= k ; ++j ) {
 				inv_sqrt.insertBack( i*Shape::NI + k, i*Shape::NI + j )
-						= diagBlocks( k, i*Shape::NI + j ) * MatS::Identity() ;
+				        = diagBlocks( k, i*Shape::NI + j ) * MatS::Identity() ;
 			}
 
 		}
@@ -112,6 +112,7 @@ void AbstractStressMassMatrix<DGLinear<MeshT>>::compute( const Shape& shape, con
 template struct AbstractStressMassMatrix<     Linear< MeshImpl > > ;
 template struct AbstractStressMassMatrix<   DGLinear< MeshImpl > > ;
 template struct AbstractStressMassMatrix< DGConstant< MeshImpl > > ;
+template struct AbstractStressMassMatrix<   Edgewise< MeshImpl > > ;
 template struct AbstractStressMassMatrix<  UnstructuredShapeFunc > ;
 
 } //d6

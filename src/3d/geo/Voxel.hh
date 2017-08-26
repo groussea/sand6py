@@ -29,6 +29,7 @@ struct Voxel {
 
 	static constexpr Index NV = 8 ;
 	static constexpr Index NC = 3 ;
+	static constexpr Index NE = 12 ;
 
 	typedef Eigen::Matrix< Scalar, NC, 1 > Coords ;
 	typedef Eigen::Matrix< Scalar, 3, Eigen::Dynamic > Points ;
@@ -47,14 +48,14 @@ struct Voxel {
 	static inline Scalar cornerCoeff( const Vec3i& corner, const Coords &coords ) {
 		// c_i(x) = i + (1 - 2*i )*( 1- x) = [ 1-x if i=0, 1 + (-1)(1-x) = x if i = 1 ]
 		return ( corner.cast< Scalar >().array() + ( Coords::Ones() - 2*corner.cast< Scalar >() ).array()
-				* ( Coords::Ones() - coords ).array() ).prod() ;
+		        * ( Coords::Ones() - coords ).array() ).prod() ;
 	}
 
 	// \warning lacs scaling by 1./box
 	template < typename Res >
 	static void getCornerDerivatives( const Vec3i& corner, const Coords &coords, Res res ) {
 		const Vec coeffs =  ( corner.cast< Scalar >().array() + ( Coords::Ones() - 2*corner.cast< Scalar >() ).array()
-				* ( Coords::Ones() - coords ).array() ) ;
+		        * ( Coords::Ones() - coords ).array() ) ;
 		Vec copy ;
 		for( int k = 0 ; k < 3 ; ++k ) {
 			// d (c^k_i(x)) /dx _k = (2 * i - 1)

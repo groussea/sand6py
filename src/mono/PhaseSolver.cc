@@ -22,6 +22,7 @@
 #include "Phase.hh"
 #include "PhaseStepData.hh"
 #include "RigidBodyData.hh"
+#include "Newtonian.hh"
 
 #include "simu/RigidBody.hh"
 
@@ -108,8 +109,11 @@ void PhaseSolver::solve(
 		stats.lcpSolveTime = timer.elapsed() -  stats.linSolveTime ;
 	}
 
-	// Friction solve
-	solveComplementarity( config, dt, stepData, rbData,  u, phase, stats );
+	// Incompressibility or friction solve
+	if( config.newtonian)
+		NewtonianSolver::solveIncompressibility( config, dt, stepData, rbData,  u, phase, stats );
+	else
+		solveComplementarity( config, dt, stepData, rbData,  u, phase, stats );
 
 	// Output
 	stepData.primalNodes.var2field( u, phase.velocity ) ;
@@ -312,6 +316,7 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	}
 
 }
+
 
 void PhaseSolver::enforceMaxFrac(const Config &c, const PhaseStepData &stepData,
                                  const std::vector<RigidBodyData> &rbData,

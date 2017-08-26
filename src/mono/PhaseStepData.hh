@@ -28,6 +28,7 @@
 #include "simu/FormBuilder.hh"
 #include "simu/StressMassMatrix.hh"
 
+
 namespace d6 {
 
 struct Config ;
@@ -74,6 +75,7 @@ struct PhaseStepData {
 	struct Projectors {
 		typename FormMat<WD,WD>::SymType vel ;
 		typename FormMat<SD,SD>::SymType stress ;
+		typename FormMat<1,SD> ::Type    pressure ;
 	} proj ;
 
 
@@ -83,7 +85,7 @@ struct PhaseStepData {
 	typename FormMat<SD,SD>::SymType Aniso ; //!< Anisotropy linear operator (N^{-1})
 
 	PhaseStepData()
-		: m_totRbNodes( 0 )
+	    : m_totRbNodes( 0 )
 	{}
 
 	Index nPrimalNodes() const
@@ -102,43 +104,43 @@ struct PhaseStepData {
 	}
 
 	void compute(
-			const DynParticles& particles, const Config &config, const Scalar dt,
-			Phase &phase,
-			std::vector< RigidBody   >& rigidBodies,
-			std::vector< RBStresses > &rbStresses,
-			std::vector< RigidBodyData > &rbData  ) ;
+	        const DynParticles& particles, const Config &config, const Scalar dt,
+	        Phase &phase,
+	        std::vector< RigidBody   >& rigidBodies,
+	        std::vector< RBStresses > &rbStresses,
+	        std::vector< RigidBodyData > &rbData  ) ;
 
 
 	// Re-used for diphasic
 
 	static void computeActiveNodes(const std::vector< bool >& activeCells,
-								   const PrimalShape &pShape , const DualShape &dShape,
-								   Active& primalNodes, Active& dualNodes
-								   ) ;
+	                               const PrimalShape &pShape , const DualShape &dShape,
+	                               Active& primalNodes, Active& dualNodes
+	                               ) ;
 
 	static void computePhiAndGradPhi(const PrimalScalarField& intPhi, PrimalScalarField&phi, PrimalVectorField &grad_phi ) ;
 
 	static void computeProjectors(const Config &config, const PrimalShape &pShape, const DualShape &dShape,
-						   const PrimalScalarField& lumped_mass,
-						   const Active& primalNodes, const Active& dualNodes, const Index nSuppNodes,
-						   Projectors& mats ) ;
+	                       const PrimalScalarField& lumped_mass,
+	                       const Active& primalNodes, const Active& dualNodes, const Index nSuppNodes,
+	                       Projectors& mats ) ;
 
 	static void computeRbProjectors(const Config& config, const PrimalShape &pShape,
-						   const std::vector< RigidBodyData > &rbData, Projectors& mats ) ;
+	                       const std::vector< RigidBodyData > &rbData, Projectors& mats ) ;
 
 private:
 
 	void computeActiveBodies( std::vector<RigidBody> &rigidBodies,
-							  std::vector<RBStresses> &rbStresses,
-							  std::vector< RigidBodyData > &rbData ) ;
+	                          std::vector<RBStresses> &rbStresses,
+	                          std::vector< RigidBodyData > &rbData ) ;
 
 	void computeAnisotropy(const DynVec& orientation,  const Config &config,
-						   typename FormMat<SD,SD>::SymType &Aniso ) const ;
+	                       typename FormMat<SD,SD>::SymType &Aniso ) const ;
 
 
 	void assembleMatrices(const Particles& particles, const Config& c, const Scalar dt,
-						   const DualShape &dShape, const PrimalScalarField &phiInt,
-						   std::vector< RigidBodyData > &rbData ) ;
+	                       const DualShape &dShape, const PrimalScalarField &phiInt,
+	                       std::vector< RigidBodyData > &rbData ) ;
 
 
 	PhaseStepData( const PhaseStepData& ) = delete ;
