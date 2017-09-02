@@ -57,7 +57,7 @@ void DynParticles::generate(const Config &c, const MeshType &mesh, const Scenari
 #endif
 
 	m_geo.generate( scenario.generator(), c.nSamples, mesh,
-					alignOnCells, c.initialOri );
+	                alignOnCells, c.initialOri );
 
 	  m_affine.leftCols( count() ).setZero() ;
 	 m_inertia.leftCols( count() ).setZero() ;
@@ -228,7 +228,7 @@ void DynParticles::update(const Config &config, const Scalar dt, const Phase &ph
 }
 
 void DynParticles::integratePrimal( std::vector< bool > &activeCells,
-			   PrimalScalarField &phi,    PrimalVectorField &phiVel) const
+               PrimalScalarField &phi,    PrimalVectorField &phiVel) const
 {
 	typedef typename PrimalScalarField::ShapeFuncImpl Shape ;
 
@@ -272,9 +272,9 @@ void DynParticles::integratePrimal( std::vector< bool > &activeCells,
 }
 
 void DynParticles::integrateDual(
-								  DualScalarField &phi,      DualScalarField &phiInertia,
-								  DualTensorField &phiOrient,DualScalarField &phiCohesion
-								  ) const
+                                  DualScalarField &phi,      DualScalarField &phiInertia,
+                                  DualTensorField &phiOrient,DualScalarField &phiCohesion
+                                  ) const
 {
 	typedef DualShape Shape ;
 	const Shape& shape = phi.shape().derived() ;
@@ -337,10 +337,10 @@ void DynParticles::splitMerge( const MeshType & mesh )
 
 #ifdef SPLIT
 		if(  	   evMax > evMin * 4.     // Eigenvalues ratio
-				&& evMax > defLength      // Avoid splitting too small particles
-				&& m_geo.volumes()[i] > m_meanVolume / 64 // Avoid splitting too ligth particles
-				&& m_geo.m_count + 1 != Particles::s_MAX // Avoid running out of memory
-				   )
+		        && evMax > defLength      // Avoid splitting too small particles
+		        && m_geo.volumes()[i] > m_meanVolume / 64 // Avoid splitting too ligth particles
+		        && m_geo.m_count + 1 != Particles::s_MAX // Avoid running out of memory
+		           )
 		{
 			// Split
 			size_t j = 0 ;
@@ -349,7 +349,7 @@ void DynParticles::splitMerge( const MeshType & mesh )
 
 			if( j < Particles::s_MAX ) {
 
-					m_geo.m_volumes[i] *= .5 ;
+				    m_geo.m_volumes[i] *= .5 ;
 					m_geo.m_volumes[j] = m_geo.m_volumes[i] ;
 
 					ev[kMax] *= .5 ;
@@ -385,15 +385,15 @@ void DynParticles::splitMerge( const MeshType & mesh )
 			tensor_view( m_geo.m_frames.col(i) ).set( frame ) ;
 
 			// Add particle to merge candidates
-	#ifdef MERGE
-			if( evMax > 2*evMin ) {
+    #ifdef MERGE
+			if( evMax > 2*evMin && evMax < defLength ) {
 				typename MeshType::Location loc ;
 				mesh.locate( m_geo.centers().col(i), loc );
 				MergeInfo mgi { i, evMin, es.eigenvectors().col(kMin) }  ;
-	#pragma omp critical
+    #pragma omp critical
 				mg_hash[ mesh.cellIndex( loc.cell ) ].push_back( mgi ) ;
 			}
-	#endif
+    #endif
 
 		}
 
@@ -452,8 +452,8 @@ void DynParticles::splitMerge( const MeshType & mesh )
 			tensor_view( m_geo.m_frames.col(j) ).get( fj ) ;
 
 			Mat frame = ( ( fi + (pi - bary)*(pi - bary).transpose() ) * vi +
-						  ( fj + (pj - bary)*(pj - bary).transpose() ) * vj )
-					/ ( vi + vj ) ;
+			              ( fj + (pj - bary)*(pj - bary).transpose() ) * vj )
+			        / ( vi + vj ) ;
 			tensor_view( m_geo.m_frames.col(i) ).set( frame ) ;
 
 			m_geo.m_orient.col(i) = ( vi * m_geo.orient().col(i) + vj * m_geo.orient().col(j) ) / ( vi + vj ) ;
@@ -481,7 +481,7 @@ void DynParticles::splitMerge( const MeshType & mesh )
 			do {
 				reloc_src = --m_geo.m_count ;
 			} while( reloc_src > j && mg_indices[reloc_src] != None
-					 && mg_indices[reloc_src] < reloc_src  ) ;
+			         && mg_indices[reloc_src] < reloc_src  ) ;
 
 			m_geo.m_volumes[j] = m_geo.m_volumes[reloc_src] ;
 			m_geo.m_centers.col(j) = m_geo.m_centers.col(reloc_src) ;

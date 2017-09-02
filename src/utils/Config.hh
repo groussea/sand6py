@@ -76,6 +76,7 @@ namespace d6 {
 	\
 	CONFIG_FIELD( newtonian			, bool			,	Units::None			) \
 	CONFIG_FIELD( compressibility	, Scalar		,	Units::None			) \
+	CONFIG_FIELD( volumeCorrection	, Scalar		,	Units::None			) \
 
 struct Config
 {

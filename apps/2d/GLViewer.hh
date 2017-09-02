@@ -73,11 +73,18 @@ public:
 		nTE
 	} ;
 
+	enum ParticleShape {
+		psFrame,
+		psVolume,
+		psOrientation,
+		nPS
+	} ;
+
 	GLViewer( const Offline& offline,
 	        const int width, const int height )
 	    : m_offline( offline ), m_width( width ), m_height( height ),
 	      m_xOffset( 0 ), m_yOffset( 0 ), m_zoom( 1 ), m_snapId(0),
-	      m_drawOrientations( false ),
+	      m_particleShape( psFrame ),
 	      m_scalarEntity( seFraction ), m_vectorEntity( veVelocity ),
 	      m_tensorEntity( teDu )
 	{
@@ -105,7 +112,7 @@ public:
 
 	void toggleParticleRepr()
 	{
-		m_drawOrientations = !m_drawOrientations ;
+		m_particleShape = (ParticleShape)( (((unsigned)m_particleShape) + 1 ) % nPS ) ;
 	}
 
 	void toggleScalarEntity()
@@ -151,7 +158,7 @@ private:
 	unsigned m_snapId ;
 
 	bool m_shouldRender[ nElements ] ;
-	bool m_drawOrientations ;
+	ParticleShape m_particleShape ;
 
 	ScalarEntity m_scalarEntity ;
 	VectorEntity m_vectorEntity ;

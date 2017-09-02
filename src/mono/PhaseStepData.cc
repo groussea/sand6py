@@ -40,9 +40,56 @@
 //#define FULL_FEM        // Ignore particles, just solve FEM system
 //#define CONSTANT_VISC   // Assumes eta(phi) = 1./Re instead of eta(phi) = phi/Re
 //#define INTEGRATE_PARTICLES_SEQUENTIAL
+#define GHOST_FLUID
 
 namespace d6 {
 
+static void computeSurfaceCells(
+        const PrimalShape& shape,
+        const MeshType& mesh,
+        const typename MeshType::Cells &activeCells,
+        std::vector< bool >& boundaryCells )
+{
+	std::vector< int > surfaceNodes ;
+	surfaceNodes.assign( shape.nDOF(), 0 );
+
+	std::vector< int > activeNodes( shape.nDOF(), 0 ) ;
+//	Eigen::Matrix< Scalar, 3, Eigen::Dynamic > vecs( 3, shape.nNodes() ) ;
+//	vecs.setZero() ;
+
+	for( auto it = activeCells.begin() ; it != activeCells.end() ; ++it )
+	{
+		typename PrimalShape::NodeList nodes ;
+		shape.list_nodes( *it, nodes );
+
+		typename MeshType::CellGeo cellGeo ;
+		mesh.get_geo( *it, cellGeo );
+
+		for( int k = 0 ; k < PrimalShape::NI ; ++ k ) {
+			++activeNodes[ nodes[k] ] ;
+//			vecs.col( nodes[k] ) += ( cellGeo.vertex(k) - cellGeo.center() ).normalized() ;
+		}
+	}
+
+	boundaryCells.assign( activeCells.size(), false ) ;
+	int cidx = 0 ;
+
+	for( auto it = activeCells.begin() ; it != activeCells.end() ; ++it, ++cidx )
+	{
+		typename PrimalShape::Location ploc ;
+		typename PrimalShape::NodeList pnodes ;
+		ploc.cell = *it ;
+		shape.list_nodes( ploc, pnodes ) ;
+
+		for( unsigned k = 0 ; k < PrimalShape::NI ; ++k ) {
+			if( activeNodes[pnodes[k]] < 4 )
+			{
+				boundaryCells[cidx] = true ;
+				break ;
+			}
+		}
+	}
+}
 
 void PhaseStepData::computeProjectors(const Config&config,
                                       const PrimalShape& pShape, const DualShape &dShape,
@@ -74,9 +121,18 @@ void PhaseStepData::computeProjectors(const Config&config,
 
 	StrBoundaryMapper bdMapper ( config.boundary ) ;
 
+	std::vector<bool> surfaceCells( primalNodes.cells.size(), false ) ;
+#ifdef GHOST_FLUID
+	computeSurfaceCells( pShape, pShape.mesh(), primalNodes.cells, surfaceCells ) ;
+#endif
+
+	int cidx = -1 ;
 	for( const typename MeshType::Cell& cell : primalNodes.cells )
 	{
-		if( ! pShape.mesh().onBoundary(cell) ) continue ;
+		++cidx ;
+
+		if( ! pShape.mesh().onBoundary(cell) && !surfaceCells[cidx] )
+			continue ;
 
 		typename PrimalShape::Location ploc ;
 		typename PrimalShape::NodeList pnodes ;
@@ -109,6 +165,14 @@ void PhaseStepData::computeProjectors(const Config&config,
 			BoundaryInfo info ;
 			dShape.locate_dof( dloc, k ) ;
 			dShape.mesh().boundaryInfo( dloc, bdMapper, info ) ;
+
+#ifdef GHOST_FLUID
+			if(info.bc == BoundaryInfo::Interior && surfaceCells[cidx]) {
+				info.bc = BoundaryInfo::Free ;
+				info.normal = Vec(0.f,1.f) ;
+			}
+#endif
+
 			info.stressProj( mats.stress.block( i ) ) ;
 			mats.pressure.block( i ) = mats.stress.block(i).block<1,SD>(0,0) ;
 		}
@@ -252,7 +316,6 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 
 		// C
 		if( config.enforceMaxFrac ) {
-			// TODO enforceMaxFrac cannot work w/ discontinuous stress approx
 			forms.C.clear();
 			forms.C.setRows( builder.rows() );
 			forms.C.setCols( m );
@@ -271,7 +334,19 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 
 		timer.reset() ;
 
-#if !( defined(INTEGRATE_PARTICLES_SEQUENTIAL) || defined(UNSTRUCTURED_DUAL) )
+#if defined(GHOST_FLUID)
+		builder.integrate_cell<form::Right>( primalNodes.cells.begin(), primalNodes.cells.end(), [&](
+		                                    Scalar w, const Vec&, const D_Itp& l_itp, const D_Dcdx& , const P_Itp& r_itp, const P_Dcdx& r_dc_dx )
+		    {
+			    Builder::addTauDu( forms.B, w, l_itp, r_itp, r_dc_dx, dualNodes.indices, primalNodes.indices ) ;
+				Builder::addTauWu( forms.J, w, l_itp, r_itp, r_dc_dx, dualNodes.indices, primalNodes.indices ) ;
+				if( config.enforceMaxFrac ) {
+					Builder::addQDivu( forms.C, -w, l_itp, r_itp, r_dc_dx, dualNodes.indices, primalNodes.indices ) ;
+				}
+		    }
+		);
+
+#elif !( defined(INTEGRATE_PARTICLES_SEQUENTIAL) || defined(UNSTRUCTURED_DUAL) )
 		{
 			// Integrating over particles can be slow and not directly parallelizable
 			// To regain some parallelism, we first associate particles to nodes,
@@ -332,13 +407,12 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 
 					const Scalar w = particles.volumes()[pid] ;
 					const Scalar m = l_itp.coeffs[k0] * w ;
-					const D_Dcdx& const_dcdx = l_dcdx ;
 
 					Builder::addTauDu( forms.B, m, nidx, r_itp, r_dcdx, primalNodes.indices ) ;
 					Builder::addTauWu( forms.J, m, nidx, r_itp, r_dcdx, primalNodes.indices ) ;
 
 					if( config.enforceMaxFrac ) {
-						Builder::addDpV( forms.C, w, nidx, const_dcdx.row(k0), r_itp, primalNodes.indices ) ;
+						Builder::addQDivu( forms.C, -m, nidx, r_itp, r_dcdx, primalNodes.indices ) ;
 					}
 
 				}
@@ -347,12 +421,12 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 
 		}
 #else
-		builder.integrate_particle( particles, [&]( Index, Scalar w, const D_Itp& l_itp, const D_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& r_dc_dx )
+		builder.integrate_particle( particles, [&]( Index, Scalar w, const D_Itp& l_itp, const D_Dcdx& , const P_Itp& r_itp, const P_Dcdx& r_dc_dx )
 		    {
 			    Builder::addTauDu( forms.B, w, l_itp, r_itp, r_dc_dx, dualNodes.indices, primalNodes.indices ) ;
 				Builder::addTauWu( forms.J, w, l_itp, r_itp, r_dc_dx, dualNodes.indices, primalNodes.indices ) ;
 				if( config.enforceMaxFrac ) {
-					Builder::addDpV  ( forms.C, w, l_itp, l_dc_dx, r_itp, dualNodes.indices, primalNodes.indices ) ;
+					Builder::addQDivu  ( forms.C, -w, l_itp, r_itp, r_dc_dx, dualNodes.indices, primalNodes.indices ) ;
 				}
 		    }
 		);
@@ -627,6 +701,8 @@ void PhaseStepData::computeActiveBodies( std::vector<RigidBody> &rigidBodies,
 
 
 }
+
+
 
 
 } //d6

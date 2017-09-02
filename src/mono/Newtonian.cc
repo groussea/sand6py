@@ -6,6 +6,8 @@
 #include "utils/Config.hh"
 #include "utils/Stats.hh"
 
+#include "geo/Tensor.hh"
+
 #include "simu/FormBuilder.hh"
 
 #include <bogus/Core/Block.impl.hpp>
@@ -103,7 +105,7 @@ void  factorize( ESM &mat, MInvType &sbm )
 
 
 void NewtonianSolver::solveIncompressibility(
-        const Config &c, const Scalar, const PhaseStepData& stepData,
+        const Config &c, const Scalar dt, const PhaseStepData& stepData,
         std::vector<RigidBodyData> &,
         DynVec &u, Phase& , Stats &simuStats )
 {
@@ -111,8 +113,17 @@ void NewtonianSolver::solveIncompressibility(
 	//       - delta_u        = B u
 
 	typedef FormMat<1,WD>::Type BType ;
-	BType  B = stepData.proj.pressure * ( stepData.forms.B * stepData.proj.vel ) ;
-	DynVec w = stepData.proj.pressure * ( stepData.forms.B * u )  ;
+	BType  B = stepData.proj.pressure * stepData.forms.S.inv_sqrt * ( stepData.forms.B * stepData.proj.vel ) ;
+
+	DynVec w = stepData.proj.pressure * stepData.forms.S.inv_sqrt * ( stepData.forms.B * u  )  ;
+	if( !c.enforceMaxFrac && c.volumeCorrection > 0 )
+	{
+		DynArr intBeta = ( c.volumeCorrection*c.phiMax*stepData.forms.volumes  - stepData.forms.fraction).min(0);
+		DynVec intBeta_s ( DynVec::Zero( stepData.nDualNodes() * SD ) ) ;
+		component< SD >( intBeta_s, 0 ).array() = intBeta  * s_sqrt_2_d / dt  ;
+
+		w += stepData.proj.pressure * stepData.forms.S.inv_sqrt * ( intBeta_s )  ;
+	}
 
 	const Index m  = B.cols() ;
 	const Index p  = B.rows() ;
@@ -128,6 +139,23 @@ void NewtonianSolver::solveIncompressibility(
 	bogus::Timer timer ;
 
 	bool iterative_stokes = false ;
+
+	if(!iterative_stokes) {
+		ESM M ;
+		makePenalizedEigenStokesMatrix(stepData.forms.A, B, c.compressibility, M);
+		MInvType M_fac ;
+		factorize(M, M_fac);
+		Log::Debug() << "Stokes factorization time: " << timer.elapsed() << std::endl ;
+
+		if( M_fac.block(0).factorization().info() != 0 ) {
+			Log::Error() << "Stokes fac failed! "  << std::endl ;
+			iterative_stokes = true ;
+		} else {
+			x = M_fac * l ;
+			Log::Debug() << "Direct Stokes solver time: " << timer.elapsed() << std::endl ;
+		}
+	}
+
 	if(iterative_stokes)
 	{
 		typedef FormMat<WD,WD>::Type MInvType ;
@@ -162,20 +190,6 @@ void NewtonianSolver::solveIncompressibility(
 		x.head( m ) = M_fac * ( l.head(m) + B.transpose()*xp ) ;
 		Log::Debug() << "Krylov Stokes solver time: " << timer.elapsed() <<" \t res: " << res << std::endl ;
 
-	} else {
-		ESM M ;
-		makePenalizedEigenStokesMatrix(stepData.forms.A, B, c.compressibility, M);
-		MInvType M_fac ;
-		factorize(M, M_fac);
-		Log::Debug() << "Stokes factorization time: " << timer.elapsed() << std::endl ;
-
-		if( M_fac.block(0).factorization().info() != 0 ) {
-			Log::Error() << "Stokes fac failed! "  << std::endl ;
-			std::abort() ;
-		}
-
-		x = M_fac * l ;
-		Log::Debug() << "Direct Stokes solver time: " << timer.elapsed() << std::endl ;
 	}
 
 	simuStats.lcpSolveTime = timer.elapsed() ;

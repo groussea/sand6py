@@ -268,7 +268,7 @@ void GLViewer::update_particle_buffers()
 #pragma omp parallel for private(tensor, mat)
 	for( size_t i = 0 ; i < p.count() ; ++i ) {
 
-		if( m_drawOrientations) {
+		if( m_particleShape == psOrientation) {
 			tensor_view( p.orient().col( i ) ).get( tensor ) ;
 			Eigen::SelfAdjointEigenSolver<Mat> es( tensor );
 
@@ -286,7 +286,10 @@ void GLViewer::update_particle_buffers()
 			const Vec ev = es.eigenvalues().array().max(0).sqrt().max( 1.e-2 ) ;
 			const Scalar vol = 4 * ev.prod() ;
 
-			mat = ( es.eigenvectors() * ev.asDiagonal() ).cast< GLfloat >()  ;
+			if( m_particleShape == psFrame )
+				mat = ( es.eigenvectors() * ev.asDiagonal() ).cast< GLfloat >()  ;
+			else
+				mat = std::sqrt(p.volumes()[i]/M_PI) * Eigen::Matrix2f::Identity() ;
 
 			densities[i] = p.volumes()[i] / vol ;
 		}
