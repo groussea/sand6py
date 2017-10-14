@@ -40,7 +40,7 @@
 //#define FULL_FEM        // Ignore particles, just solve FEM system
 //#define CONSTANT_VISC   // Assumes eta(phi) = 1./Re instead of eta(phi) = phi/Re
 //#define INTEGRATE_PARTICLES_SEQUENTIAL
-#define GHOST_FLUID
+//#define GHOST_FLUID
 
 namespace d6 {
 
@@ -271,6 +271,9 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 
 		Log::Debug() << "A Index computation: " << timer.elapsed() << std::endl ;
 
+		if( config.viscosity > 0 )
+		{
+
 #if defined(FULL_FEM) || defined(CONSTANT_VISC)
 		builder.integrate_cell<form::Left>( primalNodes.cells.begin(), primalNodes.cells.end(),
 		                        [&]( Scalar w, const Vec&, const P_Itp& l_itp, const P_Dcdx& l_dc_dx, const P_Itp& r_itp, const P_Dcdx& r_dc_dx )
@@ -288,6 +291,7 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 		);
 		Log::Debug() << "A Integrate particle: " << timer.elapsed() << std::endl ;
 #endif
+		}
 
 		timer.reset() ;
 
@@ -364,7 +368,6 @@ void PhaseStepData::assembleMatrices(const Particles &particles,
 
 			typedef typename PrimalShape::Location P_Loc ;
 			typedef typename   DualShape::Location D_Loc ;
-
 
 #pragma omp parallel
 			for ( size_t i = 0 ; i < np ; ++i )

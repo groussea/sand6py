@@ -138,7 +138,7 @@ void NewtonianSolver::solveIncompressibility(
 
 	bogus::Timer timer ;
 
-	bool iterative_stokes = false ;
+	bool iterative_stokes = true ;
 
 	if(!iterative_stokes) {
 		ESM M ;
@@ -182,7 +182,7 @@ void NewtonianSolver::solveIncompressibility(
 		WPenType WPen = W + c.compressibility * pen ;
 
 		bogus::Krylov< WPenType > krylov( WPen ) ;
-		krylov.setMaxIters(100);
+		krylov.setMaxIters(300);
 		krylov.setTol(1.e-8);
 		auto xp = x.segment( m, p ) ;
 		double res = krylov.asCG().solve( b, xp ) ;
