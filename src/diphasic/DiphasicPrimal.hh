@@ -4,7 +4,6 @@
 #include "utils/block_mat.hh"
 
 #include <Eigen/Sparse>
-#include <Eigen/CholmodSupport>
 
 namespace d6 {
 
@@ -59,7 +58,7 @@ struct DiphasicPrimalData {
 
 
 	typedef Eigen::SparseMatrix< Scalar > ESM ;
-	typedef Eigen::CholmodSimplicialLDLT<ESM> ESMFact ;
+	typedef Eigen::SimplicialLDLT<ESM> ESMFact ;
 	typedef bogus::SparseBlockMatrix< bogus::EigenSparseFactorization< ESM, ESMFact > > MInvType ;
 
 	void makePenalizedEigenStokesMatrix( ESM &M, Scalar pen ) const ;
