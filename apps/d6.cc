@@ -26,7 +26,7 @@
 #include <cstring>
 
 namespace d6 {
-	extern const char* g_git_branch ;
+    extern const char* g_git_branch ;
 	extern const char* g_git_commit ;
 	extern const char* g_timestamp  ;
 }
@@ -34,17 +34,17 @@ namespace d6 {
 static void usage( const char *name )
 {
 	std::cout << "Usage: " << name
-			  << " [sim_dir=out] [options] "
-			  << "\nGranular material simulator. "
-			  << "\n Output files are created inside the directory specified by `sim_dir`, which defaults to 'out'. "
-			  << "\n\n" ;
+	          << " [sim_dir=out] [options] "
+	          << "\nGranular material simulator. "
+	          << "\n Output files are created inside the directory specified by `sim_dir`, which defaults to 'out'. "
+	          << "\n\n" ;
 
 	std::cout << "Options:\n"
-			  << "-? \t Display this help message and exit\n"
-			  << "-i file \t Load a configuration file  \n"
-			  << "-v level \t Specify the verbosity level \n"
-			  << "-key value \t Set the configuration parameter 'key' to 'value' ( see README.md )  \n"
-			  << std::endl ;
+	          << "-? \t Display this help message and exit\n"
+	          << "-i file \t Load a configuration file  \n"
+	          << "-v level \t Specify the verbosity level \n"
+	          << "-key value \t Set the configuration parameter 'key' to 'value' ( see README.md )  \n"
+	          << std::endl ;
 }
 
 int main( int argc, const char* argv[] )
@@ -90,6 +90,9 @@ int main( int argc, const char* argv[] )
 	config.dump( outDir.filePath("config"), info.c_str() );
 	config.internalize();
 
+	d6::Log::Debug() << "Typical length = " << config.units().toSI(d6::Units::Length) << " m"<< std::endl ;
+	d6::Log::Debug() << "Typical velocity = " << config.units().toSI(d6::Units::Velocity) << " m.s^-1" << std::endl ;
+	d6::Log::Debug() << "Typical pressure = " << config.units().toSI(d6::Units::Stress) << " Pa" << std::endl ;
 	d6::Log::Debug() << "1/Re = " << config.viscosity << std::endl ;
 
 	// Run simulation

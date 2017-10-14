@@ -80,6 +80,10 @@ int main( int argc, const char* argv[] )
 	config.dump( outDir.filePath("config"), info.c_str() );
 	config.internalize();
 
+	d6::Log::Debug() << "Typical length = " << config.units().toSI(d6::Units::Length) << " m"<< std::endl ;
+	d6::Log::Debug() << "Typical velocity = " << config.units().toSI(d6::Units::Velocity) << " m.s^-1" << std::endl ;
+	d6::Log::Debug() << "Typical pressure = " << config.units().toSI(d6::Units::Stress) << " Pa" << std::endl ;
+
 	d6::Log::Debug() << "1/Re  =\t " << config.viscosity << std::endl ;
 	d6::Log::Debug() << "Stk =\t " << config.Stokes() << std::endl ;
 	d6::Log::Debug() << "Alpha =\t " << config.alpha() << std::endl ;
