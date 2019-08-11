@@ -19,7 +19,7 @@ ENDMACRO( ADD_D6_LIB )
 INCLUDE_DIRECTORIES( . ${DIM_STR} )
 
 ADD_D6_LIB(utils)
-ADD_D6_LIB(geo  d6_utils )
+ADD_D6_LIB(geo  d6_utils ${EXTERNAL_LIBRARIES}  )
 ADD_D6_LIB(solve ${EXTERNAL_LIBRARIES} )
 ADD_D6_LIB(simu d6_utils d6_geo d6_solve ${EXTERNAL_LIBRARIES} )
 

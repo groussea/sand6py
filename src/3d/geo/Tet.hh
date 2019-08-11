@@ -148,8 +148,8 @@ struct QuadraturePoints< Tet, 2 >
 	typedef Eigen::Matrix< Scalar, Tet::NC, 1> QuadPoint ;
 
 	static void get( const Tet&, Index k, QuadPoint& qp ) {
-		static constexpr Scalar a = (5. -   std::sqrt(5.) ) / 20 ;
-		static constexpr Scalar b = (5. + 3*std::sqrt(5.) ) / 20 ;
+		static const Scalar a = (5. -   std::sqrt(5.) ) / 20 ;
+		static const Scalar b = (5. + 3*std::sqrt(5.) ) / 20 ;
 
 		qp.setConstant(a) ;
 		qp[k] = b ;

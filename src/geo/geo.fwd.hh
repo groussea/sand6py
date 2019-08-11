@@ -31,7 +31,7 @@
 namespace d6 {
 
 template < typename M > class MeshBase ;
-template < typename S > class ShapeFuncBase ;
+template < typename S > struct ShapeFuncBase ;
 
 
 template< typename ValueType > struct Expr ;

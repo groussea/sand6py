@@ -84,6 +84,14 @@ public:
 	Index nCells() const {
 		return m_trees.back().offset() + m_trees.back().nLeafs() ;
 	}
+	
+	Index nFaces() const {
+		return -1; // Unsupported
+	}
+	
+	Index nEdges() const {
+		return -1; // Unsupported
+	}
 
 	Index cellIndex( const Cell& cell ) const {
 		return subtree(cell).offset() + cell[WD] ;

@@ -1,22 +1,3 @@
-/*
- * This file is part of Sand6, a C++ continuum-based granular simulator.
- *
- * Copyright 2016 Gilles Daviet <gilles.daviet@inria.fr> (Inria - Université Grenoble Alpes)
- *
- * Sand6 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
-
- * Sand6 is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
-
- * You should have received a copy of the GNU General Public License
- * along with Sand6.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
 #include "GLViewer.hh"
 
 #include "visu/Offline.hh"
@@ -28,485 +9,133 @@
 #include "geo/LevelSet.hh"
 
 #include "utils/Log.hh"
-#include "utils/File.hh"
 
-#include <Eigen/Eigenvalues>
-
-#include <GL/gl.h>
-
-#include <QKeyEvent>
-#include <QApplication>
-
-#include <iomanip>
-
-#define fb_width  2*2560
-#define fb_height 2*1440
-
-namespace d6 {
-
-GLViewer::GLViewer(const QGLFormat &glFormat, Offline &offline,
-                   unsigned nSamples, unsigned width, unsigned height)
-    : QGLViewer( glFormat ),
-      m_offline( offline ),
-      m_vp_width( width ), m_vp_height( height ), m_lightDirection( Eigen::Vector3f::Zero() ),
-      m_currentFrame(-1),
-      m_drawParticles( 0 == nSamples ), m_enableBending( false ),
-      m_fastDraw( true ), m_drawObjects( true ), m_drawOrientations( false ),
-      m_snapshotting(false), m_lastSnapped( m_currentFrame ),
-      m_grainsRenderer( offline, m_shapeRenderer, nSamples )
+namespace d6
 {
-	setKeyDescription(Qt::Key_I, "Jumps to next frame");
-	setKeyDescription(Qt::Key_P, "Jumps to previous frame (particles mode only)");
-	setKeyDescription(Qt::Key_Home, "Jumps to first frame (particles mode only)");
-	setKeyDescription(Qt::Key_O, "Toggles orientation tensors (particles mode only)");
-	setKeyDescription(Qt::Key_D, "Toggles particles display (particles mode only)");
-	setKeyDescription(Qt::Key_F, "Toggles fast-drawing mode when moving camera") ;
-	setKeyDescription(Qt::Key_B, "Toggles alpha blending") ;
-	setKeyDescription(Qt::Key_L, "Toggles rigid-bodies display") ;
-	setKeyDescription(Qt::Key_R, "Toggles snapshots recording in sim_dir/snaps") ;
-	setKeyDescription(Qt::Key_Q, "Quits without saving viewer state") ;
-}
-
-void GLViewer::fastDraw()
-{
-	if( !m_fastDraw ) {
-		draw() ;
-		return ;
-	}
-
-	{
-		glPointSize( 3 );
-
-		glEnableClientState( GL_VERTEX_ARRAY );
-		m_centers.set_vertex_pointer( 10*3 );
-
-		if( m_drawParticles ) {
-			gl::ColorPointer  cp( m_colors ) ;
-			glDrawArrays( GL_POINTS, 0, m_centers.size()/10 );
-		} else {
-			glColor3f(0,0,1) ;
-			glDrawArrays( GL_POINTS, 0, m_centers.size()/10 );
-		}
-		glDisableClientState( GL_VERTEX_ARRAY );
-
-	}
-
-	for( const LevelSet::Ptr& ls: m_offline.levelSets() ) {
-		drawObject( *ls );
-	}
-
-}
-
-void GLViewer::draw()
-{
-
-	if( m_enableBending ) {
-		glEnable (GL_BLEND);
-		glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	}
-
-	bool shadowed = false ;
-	Eigen::Matrix4f depthModelView ;
-	Eigen::Matrix4f depthProjection ;
-
-	if( m_drawParticles )
-	{
-		m_shapeRenderer.sphereQuadIndices().bind();
-
-		if( m_particlesShader.ok() ) {
-
-			UsingShader sh( m_particlesShader ) ;
-
-			// Model-view
-			sh.bindMVP() ;
-
-			//Vertices
-			gl::VertexAttribPointer vap( m_shapeRenderer.sphereVertices(), m_particlesShader.attributes["vertex"] ) ;
-
-			// Densities
-			gl::VertexAttribPointer  ap( m_alpha, m_particlesShader.attributes["alpha"], false, 1 ) ;
-
-			//Frames
-			gl::ArrayAttribPointer<4>  fp( m_frames, m_particlesShader.attributes["frame"], false, 1 ) ;
-
-			glDrawElementsInstanced( GL_QUADS, m_shapeRenderer.sphereQuadIndices().size(), GL_UNSIGNED_INT, 0, m_matrices.cols() );
-
-		} else {
-
-			gl::VertexPointer vp( m_shapeRenderer.sphereVertices() ) ;
-			gl::NormalPointer np( m_shapeRenderer.sphereVertices() ) ;
-
-			for( int i = 0 ; i < m_matrices.cols() ; ++i ){
-				glPushMatrix();
-				glMultMatrixf( m_matrices.col(i).data() );
-
-				glColor4f(1., 0, 0, m_densities[i]);
-				glDrawElements( GL_QUADS, m_shapeRenderer.sphereQuadIndices().size(), GL_UNSIGNED_INT, 0 );
-
-				glPopMatrix();
-			}
-
-		}
-
-	}
-
-	if( renderSamples() )
-	{
-
-		// Set-up light POV camera
-//			qglviewer::Camera& cam = *camera() ; //Debug mode
-		qglviewer::Camera  cam ; cam = *camera() ;
-
-		const Eigen::Vector3f& light_pos = lightPosition() ;
-		qglviewer::Vec lp( light_pos[0], light_pos[1], light_pos[2] )  ;
-
-		cam.setPosition( lp );
-		cam.lookAt( sceneCenter() );
-		//cam.setFieldOfView( M_PI*.9 ) ;//std::atan2( m_offline.mesh().box().norm(), lightPosition().norm()/2 ) ) ;
-		cam.setFOVToFitScene();
-		cam.computeModelViewMatrix();
-		cam.computeProjectionMatrix();
-
-		Eigen::Matrix4d depthMVP_d ;
-		cam.getModelViewMatrix(depthMVP_d.data());
-		depthModelView = depthMVP_d.cast< float >() ;
-		cam.getProjectionMatrix(depthMVP_d.data());
-		depthProjection = depthMVP_d.cast< float >() ;
-
-		const Eigen::Matrix4f depthMVP = depthProjection*depthModelView ;
-
-
-		if( m_grainsRenderer.sampler().mode() != Sampler::VelocityCut )
-		{
-
-			// Compute grains shadowing
-			UsingFrameBuffer fb( m_depthBuffer ) ;
-
-			glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depthTexture.id(), 0);
-			glDrawBuffer(GL_NONE); // No color buffer is drawn to.
-
-			if( m_depthBuffer.check_complete() )
-				Log::Error() << "Frame buffer incomplete" << std::endl ;
-
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-			const Scalar pixelSize = cam.type() == qglviewer::Camera::ORTHOGRAPHIC
-			        ? 0
-			        : fb_height / std::tan(cam.horizontalFieldOfView() / 2)  ;
-
-			m_grainsRenderer.compute_shadow( pixelSize, depthMVP );
-
-			if( m_drawObjects ) {
-				for( const LevelSet::Ptr& ls: m_offline.levelSets() ) {
-					m_shapeRenderer.compute_shadow( *ls, depthModelView, depthProjection ) ;
-				}
-			}
-
-			shadowed = true ;
-		}
-
-		if(0){
-			UsingShader sh( m_testShader ) ;
-
-			UsingTexture tx( m_depthTexture ) ;
-			tx.bindUniform( m_testShader.uniform("in_texture") );
-
-			gl::VertexAttribPointer vap_v( m_shapeRenderer.squareVertices(), m_testShader.attribute("vertex") ) ;
-			gl::VertexPointer vp( m_shapeRenderer.squareVertices() ) ;
-			glDrawArrays( GL_QUADS, 0, m_shapeRenderer.squareVertices().size() ) ;
-
-		}
-
-		if(1){
-			const Scalar pixelSize = cam.type() == qglviewer::Camera::ORTHOGRAPHIC
-			        ? 0
-			        : height() / std::tan(camera()->horizontalFieldOfView() / 2) ;
-
-			m_grainsRenderer.draw( m_depthTexture, lightPosition(), pixelSize, depthMVP  );
-		}
-
-		glDisable( GL_PROGRAM_POINT_SIZE ) ;
-		glDisable( GL_POINT_SPRITE ) ;
-
-	}
-
-	glDisable (GL_BLEND);
-
-	if(m_drawObjects) {
-		for( const LevelSet::Ptr& ls: m_offline.levelSets() ) {
-			m_shapeRenderer.draw( *ls, m_offline.box(), lightPosition(), shadowed, m_depthTexture, depthModelView, depthProjection );
-		}
-	}
-
-	if( m_snapshotting )
-		snap() ;
-
-//	Log::Debug() << "Current fps " << currentFPS() << std::endl ;
-
-}
-
-void GLViewer::drawWithNames()
-{
-
-	if( m_drawParticles )
-	{
-
-		m_shapeRenderer.sphereQuadIndices().bind();
-
-		gl::VertexPointer vp( m_shapeRenderer.sphereVertices() ) ;
-
-		for( int i = 0 ; i < m_matrices.cols() ; ++i ){
-			glPushMatrix();
-			glMultMatrixf( m_matrices.col(i).data() );
-			glPushName(i) ;
-
-			glDrawElements( GL_QUADS, m_shapeRenderer.sphereQuadIndices().size(), GL_UNSIGNED_INT, 0 );
-
-			glPopName() ;
-			glPopMatrix();
-		}
-
-	}
-}
-
-void GLViewer::drawObject(const LevelSet &ls)
-{
-	if(!m_drawObjects) return ;
-	m_shapeRenderer.draw( ls, m_offline.box(), lightPosition(), false, m_depthTexture, Eigen::Matrix4f::Zero(), Eigen::Matrix4f::Zero() );
-}
 
 void GLViewer::init()
 {
-	glEnable( GL_MULTISAMPLE );
+    GLint bufs, samples;
+    glGetIntegerv(GL_SAMPLE_BUFFERS, &bufs);
+    glGetIntegerv(GL_SAMPLES, &samples);
+    Log::Debug() << "Using " << bufs << " buffers and " << samples << " samples" << std::endl;
 
-	GLint bufs, samples ;
-	glGetIntegerv( GL_SAMPLE_BUFFERS, &bufs ) ;
-	glGetIntegerv( GL_SAMPLES, &samples ) ;
-	Log::Debug() << "Using " << bufs << " buffers and " << samples << " samples" << std::endl ;
-
-	// Restore previous viewer state.
-	restoreStateFromFile();
-
-	resize( m_vp_width, m_vp_height ) ;
-	setBackgroundColor( QColor(255, 255, 255, 255 ) );
-
-	// Camera
-	const Vec& box = m_offline.box() ;
-	const qglviewer::Vec qgl_box( box[0], box[1], box[2] ) ;
-	const qglviewer::Vec qgl_ori(0,0,0) ;
-	setSceneBoundingBox( qgl_ori, qgl_box) ;
-	camera()->setZNearCoefficient(1.e-3);
-	camera()->setZClippingCoefficient( 1 );
-
-	if( m_grainsRenderer.sampler().mode() == Sampler::VelocityCut ) {
-		camera()->setType( qglviewer::Camera::ORTHOGRAPHIC );
-		camera()->setViewDirection( qglviewer::Vec(0,-1,0));
-		camera()->setUpVector( qglviewer::Vec(0,0,1));
-	} else {
-		camera()->setType( qglviewer::Camera::PERSPECTIVE );
-	}
-
-	m_shapeRenderer.init();
-
-	m_particlesShader.add_attribute("vertex") ;
-	m_particlesShader.add_attribute("frame") ;
-	m_particlesShader.add_attribute("alpha") ;
-
-	m_particlesShader.add_uniform("model_view") ;
-	m_particlesShader.add_uniform("projection") ;
-	m_particlesShader.load("particles_vertex", "particles_fragment") ;
-
-	if( renderSamples() ) {
-
-
-		m_grainsRenderer.init();
-
-		m_depthBuffer.reset( fb_width, fb_height );
-
-		m_depthTexture.reset( GL_TEXTURE_2D );
-		m_depthTexture.bind() ;
-
-		float* data = 0 ;
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, m_depthBuffer.width(), m_depthBuffer.height(), 0,GL_DEPTH_COMPONENT, GL_FLOAT, data);
-
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-	}
-
-	m_testShader.add_attribute("vertex") ;
-	m_testShader.add_uniform("in_texture");
-	m_testShader.load("textest_vertex","textest_fragment") ;
-
-	update_buffers();
-}
-
-void GLViewer::animate()
-{
-	if( ! next_frame() )
-		stopAnimation();
-}
-
-Eigen::Vector3f GLViewer::lightPosition() const
-{
-	return ( m_offline.box() / 2 ).cast< float >() + camera()->sceneRadius() * m_lightDirection ;
+    frameAll();
 }
 
 void GLViewer::update_buffers()
 {
-	if( m_shapeRenderer.squareVertices().size() == 0 )
-		return ; // No OpenGL context yet ;
+    const Particles &p = m_offline.particles();
+    m_centers.reset(p.count(), p.centers().data(), GL_STATIC_DRAW);
 
+    if (m_drawParticles)
+    {
 
-	const Particles &p = m_offline.particles() ;
-	m_centers.reset( p.count(), p.centers().data(), GL_STATIC_DRAW )  ;
+        m_matrices.resize(16, p.count());
+        m_densities.resize(p.count());
 
-	if( m_drawParticles )
-	{
-
-		m_matrices.resize( 16, p.count() );
-		m_densities.resize( p.count() );
-
-		// Compute movel-view matrix from tensor
-		Eigen::Matrix4f mat ;
-		Mat tensor ;
+        // Compute movel-view matrix from tensor
+        Eigen::Matrix4f mat;
+        Mat tensor;
 
 #pragma omp parallel for private(mat, tensor)
-		for( size_t i = 0 ; i < p.count() ; ++i ) {
-			mat.setIdentity()  ;
+        for (size_t i = 0; i < p.count(); ++i)
+        {
+            mat.setIdentity();
 
-			if( m_drawOrientations) {
-				tensor_view( p.orient().col( i ) ).get( tensor ) ;
-				Eigen::SelfAdjointEigenSolver<Mat> es( tensor );
+            if (m_drawOrientations)
+            {
+                tensor_view(p.orient().col(i)).get(tensor);
+                Eigen::SelfAdjointEigenSolver<Mat> es(tensor);
 
-				const Vec ev = es.eigenvalues().array().max(0).sqrt() ;
+                const Vec ev = es.eigenvalues().array().max(0).sqrt();
 
-				mat.block<3,3>(0,0) = ( es.eigenvectors() * ev.asDiagonal() ).cast< GLfloat >()
-				        * .5 * std::pow( p.volumes()[i], 1./3 )  ;
-				mat.block<3,1>(0,3) = p.centers().col(i).cast < GLfloat >() ;
+                mat.block<3, 3>(0, 0) = (es.eigenvectors() * ev.asDiagonal()).cast<GLfloat>() * .5 * std::pow(p.volumes()[i], 1. / 3);
+                mat.block<3, 1>(0, 3) = p.centers().col(i).cast<GLfloat>();
 
-				m_densities[i] = p.volumes()[i]  ;
+                m_densities[i] = p.volumes()[i];
+            }
+            else
+            {
+                tensor_view(p.frames().col(i)).get(tensor);
+                Eigen::SelfAdjointEigenSolver<Mat> es(tensor);
 
-			} else {
-				tensor_view( p.frames().col( i ) ).get( tensor ) ;
-				Eigen::SelfAdjointEigenSolver<Mat> es( tensor );
+                const Vec ev = es.eigenvalues().array().max(0).sqrt();
+                const Scalar vol = 8 * ev.prod();
 
-				const Vec ev = es.eigenvalues().array().max(0).sqrt() ;
-				const Scalar vol = 8 * ev.prod() ;
+                mat.block<3, 3>(0, 0) = (es.eigenvectors() * ev.asDiagonal()).cast<GLfloat>();
+                mat.block<3, 1>(0, 3) = p.centers().col(i).cast<GLfloat>();
 
-				mat.block<3,3>(0,0) = ( es.eigenvectors() * ev.asDiagonal() ).cast< GLfloat >()  ;
-				mat.block<3,1>(0,3) = p.centers().col(i).cast < GLfloat >() ;
+                m_densities[i] = p.volumes()[i] / vol;
+            }
 
-				m_densities[i] = p.volumes()[i] / vol ;
-			}
+            m_matrices.col(i) = Eigen::Matrix<GLfloat, 16, 1>::Map(mat.data(), mat.size());
+        }
+        m_frames.reset(p.count(), m_matrices.data(), GL_STATIC_DRAW);
+        m_alpha.reset(p.count(), m_densities.data(), GL_STATIC_DRAW);
 
-
-			m_matrices.col(i) = Eigen::Matrix< GLfloat, 16, 1 >::Map( mat.data(), mat.size() ) ;
-
-		}
-		m_frames.reset( p.count(), m_matrices.data(), GL_STATIC_DRAW )  ;
-		m_alpha.reset ( p.count(), m_densities.data(), GL_STATIC_DRAW )  ;
-
-		// Colors
-		Eigen::Matrix4Xf colors( 4, p.count() ) ;
-		colors.topRows(2).setZero() ;
-		colors.row(2) = m_densities.cast< float >() ;
-		colors.row(3).setOnes() ;
-		m_colors.reset( p.count(), colors.data(), GL_STATIC_DRAW )  ;
-	}
-
-	if( renderSamples() ) {
-		m_grainsRenderer.update_buffers();
-	}
+        // Colors
+        Eigen::Matrix4Xf colors(4, p.count());
+        colors.topRows(2).setZero();
+        colors.row(2) = m_densities.cast<float>();
+        colors.row(3).setOnes();
+        m_colors.reset(p.count(), colors.data(), GL_STATIC_DRAW);
+    }
 }
 
-void GLViewer::postSelection(const QPoint& )
+void GLViewer::draw() const
 {
-	Log::Info() << "Selected particle: " << selectedName() << std::endl ;
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_ACCUM_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+    {
+        glEnableClientState(GL_VERTEX_ARRAY);
+        m_centers.set_vertex_pointer(3);
+
+        if (m_drawParticles)
+        {
+            gl::ColorPointer cp(m_colors);
+            glDrawArrays(GL_POINTS, 0, m_centers.size());
+        }
+        else
+        {
+            glColor3f(0, 0, 1);
+            glDrawArrays(GL_POINTS, 0, m_centers.size());
+        }
+
+        glDisableClientState(GL_VERTEX_ARRAY);
+    }
 }
 
-
-void GLViewer::set_frame(unsigned frame)
+void GLViewer::snap()
 {
-
-	if( frame == m_currentFrame+1 && renderSamples() ) {
-		m_grainsRenderer.move() ;
-	}
-
-	if( m_offline.load_frame( frame ) ) {
-
-		m_currentFrame = frame ;
-	}
-
-	update_buffers();
 }
 
-void GLViewer::keyPressEvent(QKeyEvent *e)
+
+void GLViewer::frameAll()
 {
-	switch (e->key())
-	{
-	case Qt::Key_I :
-	case Qt::Key_Period :
-		next_frame();
-		break ;
-	case Qt::Key_P :
-		prev_frame();
-		break ;
-	case Qt::Key_Home :
-		set_frame(0);
-		break ;
-	case Qt::Key_O:
-		m_drawOrientations = !m_drawOrientations ;
-		update_buffers() ;
-		break ;
-	case Qt::Key_D:
-		m_drawParticles = !m_drawParticles ;
-		update_buffers() ;
-		break ;
-	case Qt::Key_F:
-		m_fastDraw = !m_fastDraw ;
-		break ;
-	case Qt::Key_B:
-		m_enableBending = !m_enableBending ;
-		break ;
-	case Qt::Key_L:
-		m_drawObjects = !m_drawObjects ;
-		break ;
-	case Qt::Key_R:
-		m_snapshotting = !m_snapshotting ;
-		break ;
-	case Qt::Key_Q :
-		QApplication::exit( 0 ) ;
-	default:
-		QGLViewer::keyPressEvent(e);
-	}
-	updateGL() ;
+    Log::Debug() << "Framing " << m_centers.size() << " particles" << std::endl;
+    Eigen::Vector3f box = m_offline.box().cast<float>();
+
+    Eigen::Vector3f position;
+    position[0] = 0.5*box[0] ;
+    position[1] = 3*box[1];
+    position[2] = 0.5*box[2];
+
+    m_camera.lookAt(position, 0.5*box, Eigen::Vector3f(0,0,1));
+    m_camera.setPerspective(2*M_PI/3, m_width/(float)m_height, 0.01, 10*box.norm() );
+    m_camera.apply();
 }
 
-void GLViewer::snap() {
-	if( m_lastSnapped != m_currentFrame ) {
-
-		//Snaps
-		FileInfo snap_dir( FileInfo( m_offline.base_dir() ).filePath("snaps") ) ;
-		FileInfo snap_file( snap_dir.filePath("qgl-%1.png") ) ;
-		snap_file.makePath() ;
-
-		std::stringstream num ;
-		num << std::setfill('0') << std::setw(4) <<  m_currentFrame ;
-		const std::string fileName = arg(snap_file.path(),  num.str() ) ;
-
-		QImage snapshot = grabFrameBuffer( true );
-		bool ok = snapshot.save( QString( fileName.c_str() ), "PNG" );
-		if( ok ) {
-			Log::Verbose() << "Saved snap of frame " << m_currentFrame << " on " << fileName << std::endl ;
-		} else {
-			Log::Error() << "Failed snapping frame " << m_currentFrame << " on " << fileName << std::endl ;
-		}
-		m_lastSnapped = m_currentFrame ;
-	}
+void GLViewer::move(float xAmount, float yAmount)
+{
+    m_camera.rotate(-M_PI*xAmount/m_width, -M_PI*yAmount/m_height);
+    m_camera.apply();
 }
 
-} //d6
+void GLViewer::zoom(float amount)
+{
+    m_camera.zoom(amount);
+    m_camera.apply();
+}
+
+} // namespace d6

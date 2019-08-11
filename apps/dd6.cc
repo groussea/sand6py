@@ -91,7 +91,9 @@ int main( int argc, const char* argv[] )
 	d6::Log::Debug() << "Stk^2/Alpha =\t " << config.Stokes()*config.Stokes()/( config.alpha() )<< std::endl ;
 	d6::Log::Debug() << "(A+1)Stk/Re =\t " << (config.alpha()+1) * config.viscosity * config.Stokes() << std::endl ;
 
+#ifndef __APPLE__
 	feenableexcept( FE_DIVBYZERO ) ;
+#endif
 
 	// Run simulation
 	d6::DiphasicSimu( config, base_dir ).run() ;
