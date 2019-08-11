@@ -41,7 +41,8 @@ public:
     void snap();
     void frameAll();
 
-    void move(float xAmount, float yAmount);
+    void rotate(float xAmount, float yAmount);
+    void translate(float xAmount, float yAmount);
     void zoom(float amount);
 
 private:

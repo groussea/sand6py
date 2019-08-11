@@ -102,9 +102,9 @@ public:
 		return *s_instance ;
 	}
 
-	static void key_callback(GLFWwindow *, int key, int /*scancode*/, int action, int /*mods*/ )
+	static void key_callback(GLFWwindow *, int key, int /*scancode*/, int action, int mods )
 	{
-		instance().process_key( key, action ) ;
+		instance().process_key( key, action, mods ) ;
 	}
 
 	static void mouse_click_callback(GLFWwindow *, int button, int action, int /*mods*/ )
@@ -159,8 +159,11 @@ private:
 
 	}
 
-	void process_key( int key, int action )
+	void process_key( int key, int action, int mods )
 	{
+		if(action == GLFW_PRESS) m_keyMods |= mods;
+		if(action == GLFW_RELEASE) m_keyMods = 0;
+
 		if( action != GLFW_RELEASE && action != GLFW_REPEAT )
 			return ;
 
@@ -211,7 +214,11 @@ private:
 
 	void process_mouse_motion( double x, double y )
 	{
-		m_viewer.move( x - m_mouseX, y - m_mouseY );
+		bool translate = m_keyMods & GLFW_MOD_SUPER;
+		if (translate)
+			m_viewer.translate(x - m_mouseX, y - m_mouseY);
+		else
+			m_viewer.rotate(x - m_mouseX, y - m_mouseY);
 		m_mouseX = x ; m_mouseY = y ;
 	}
 
@@ -235,9 +242,9 @@ private:
 	void process_mouse_scroll( double offset )
 	{
 		if( offset > 0 )
-			m_viewer.zoom( .8 ) ;
+			m_viewer.zoom( 0.9 ) ;
 		else if( offset < 0 )
-			m_viewer.zoom( 1.25 ) ;
+			m_viewer.zoom( 1.0/0.9 ) ;
 	}
 
 
@@ -252,6 +259,7 @@ private:
 
 	static Appli* s_instance ;
 
+	int m_keyMods = 0;
 	double m_mouseX, m_mouseY ;
 };
 

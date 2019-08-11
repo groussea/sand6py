@@ -116,19 +116,32 @@ void GLViewer::frameAll()
     Log::Debug() << "Framing " << m_centers.size() << " particles" << std::endl;
     Eigen::Vector3f box = m_offline.box().cast<float>();
 
-    Eigen::Vector3f position;
-    position[0] = 0.5*box[0] ;
-    position[1] = 3*box[1];
-    position[2] = 0.5*box[2];
+    if (!m_camera.valid())
+    {
+        Eigen::Vector3f position;
+        position[0] = 0.5 * box[0];
+        position[1] = 3 * box[1];
+        position[2] = 0.5 * box[2];
+        m_camera.lookAt(position, 0.5 * box, Eigen::Vector3f(0, 0, 1));
+        m_camera.setPerspective(M_PI_2, m_width / (float)m_height, 0.1*box.norm(), 10 * box.norm());
+    }
+    else
+    {
+        m_camera.frame(box);
+    }
 
-    m_camera.lookAt(position, 0.5*box, Eigen::Vector3f(0,0,1));
-    m_camera.setPerspective(2*M_PI/3, m_width/(float)m_height, 0.01, 10*box.norm() );
     m_camera.apply();
 }
 
-void GLViewer::move(float xAmount, float yAmount)
+void GLViewer::rotate(float xAmount, float yAmount)
 {
     m_camera.rotate(-M_PI*xAmount/m_width, -M_PI*yAmount/m_height);
+    m_camera.apply();
+}
+
+void GLViewer::translate(float xAmount, float yAmount)
+{
+    m_camera.translate(xAmount/m_width, -yAmount/m_height);
     m_camera.apply();
 }
 
