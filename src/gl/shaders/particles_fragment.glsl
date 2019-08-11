@@ -17,13 +17,13 @@
  * along with Sand6.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#version 130
+#version 330
 
 uniform mat4 model_view ;
 
-varying vec3 normal;
-varying vec3 pos ;
-varying float alpha ;
+in vec3 normal;
+in vec3 pos ;
+in float alpha ;
 
 out vec4 color ;
 

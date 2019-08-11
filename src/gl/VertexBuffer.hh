@@ -85,20 +85,26 @@ public:
 	void set_vertex_pointer( GLsizei stride = 0, GLuint offset = 0, unsigned d = Dim  ) const
 	{
 		bind() ;
+#ifndef GL_CORE
 		glVertexPointer(d, Traits< Scalar >::id , stride * sizeof( Scalar ),
 						(GLvoid*) (offset * sizeof( Scalar )));
+#endif
 	}
 	void set_normal_pointer( GLsizei stride = 0, GLuint offset = 0 ) const
 	{
 		bind() ;
+#ifndef GL_CORE
 		glNormalPointer( Traits< Scalar >::id , stride * sizeof( Scalar ),
 						(GLvoid*)  (offset * sizeof( Scalar )));
+#endif
 	}
 	void set_color_pointer( GLsizei stride = 0, GLuint offset = 0, unsigned d = Dim ) const
 	{
 		bind() ;
+#ifndef GL_CORE
 		glColorPointer(d, Traits< Scalar >::id , stride * sizeof( Scalar ),
 					   (GLvoid*) (offset * sizeof( Scalar )));
+#endif
 	}
 	void set_vertex_attrib_pointer( GLint attribute, bool normalized = false, GLsizei stride = 0, GLuint offset = 0, unsigned d = Dim  ) const
 	{
@@ -150,11 +156,15 @@ struct VertexPointer
 	VertexPointer( const VertexBuffer< Scalar, Dim, Type > &vb )
 	{
 		vb.set_vertex_pointer();
+		#ifndef GL_CORE
 		glEnableClientState( GL_VERTEX_ARRAY );
+		#endif
 	}
 	~VertexPointer()
 	{
-		glDisableClientState( GL_VERTEX_ARRAY );
+		#ifndef GL_CORE
+			glDisableClientState( GL_VERTEX_ARRAY );
+		#endif
 	}
 };
 struct NormalPointer
@@ -162,14 +172,19 @@ struct NormalPointer
 	template< typename Scalar, unsigned Dim, int Type >
 	NormalPointer( const VertexBuffer< Scalar, Dim, Type > &vb )
 	{
-		if( vb.valid() ) {
+		if (vb.valid())
+		{
 			vb.set_normal_pointer();
-			glEnableClientState( GL_NORMAL_ARRAY );
+#ifndef GL_CORE
+			glEnableClientState(GL_NORMAL_ARRAY);
+#endif
 		}
 	}
 	~NormalPointer()
 	{
-		glDisableClientState( GL_NORMAL_ARRAY );
+		#ifndef GL_CORE
+			glDisableClientState( GL_NORMAL_ARRAY );
+		#endif
 	}
 };
 struct ColorPointer
@@ -179,12 +194,16 @@ struct ColorPointer
 	{
 		if( vb.valid() ) {
 			vb.set_color_pointer();
+		#ifndef GL_CORE
 			glEnableClientState( GL_COLOR_ARRAY );
+#endif
 		}
 	}
 	~ColorPointer()
 	{
+		#ifndef GL_CORE
 		glDisableClientState( GL_COLOR_ARRAY );
+		#endif
 	}
 };
 struct VertexAttribPointer
@@ -232,6 +251,52 @@ struct ArrayAttribPointer
 	}
 private:
 	GLint m_attrib ;
+};
+
+struct VAO
+{
+	VAO()
+		:  m_vao(INVALID_VAO)
+	{
+	}
+
+	~VAO()
+	{
+		destroy() ;
+	}
+
+	bool valid() const
+	{
+		return m_vao != INVALID_VAO ;
+	}
+
+	void gen()
+	{
+		assert( !valid() ) ;
+		glGenVertexArrays(1, &m_vao);
+	}
+
+	void destroy()
+	{
+		if( valid() ) {
+			glDeleteVertexArrays( 1, &m_vao ) ;
+			m_vao = INVALID_VAO ;
+		}
+	}
+
+	void bind() const
+	{
+		glBindVertexArray(m_vao);
+	}
+
+	void unbind() const
+	{
+		glBindVertexArray(0);
+	}
+
+private:
+	static const GLuint INVALID_VAO = -1 ;
+	GLuint m_vao;
 };
 
 typedef VertexBuffer< GLfloat, 4, GL_ARRAY_BUFFER > VertexBuffer4f ;

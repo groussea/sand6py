@@ -52,6 +52,8 @@ public:
 	{ return m_sphereVertices ; }
 	const gl::IndexBuffer& sphereQuadIndices() const
 	{ return m_sphereQuadIndices ; }
+	const gl::VAO& sphereVertexArrays() const
+	{ return m_sphereVertexArrays ; }
 
 	const gl::VertexBuffer3f& squareVertices() const
 	{ return m_squareVertices ; }
@@ -60,6 +62,7 @@ private:
 
 	gl::VertexBuffer3f m_sphereVertices ;
 	gl::IndexBuffer	   m_sphereQuadIndices ;
+	gl::VAO 		   m_sphereVertexArrays;
 
 	gl::VertexBuffer3f m_squareVertices ;
 

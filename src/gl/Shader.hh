@@ -77,6 +77,9 @@ struct UsingShader {
 	UsingShader( const Shader& shader ) ;
 	~UsingShader() ;
 
+	void bindMVP( const float* modelView, const float* projection,
+				  const char* model_view_name = "model_view",
+				  const char* projection_name = "projection" ) ;
 	void bindMVP( const char* model_view = "model_view",
 				  const char* projection = "projection" ) ;
 

@@ -23,10 +23,17 @@
 #endif
 
 #ifdef __APPLE__
+
+#define GL_CORE
+#ifdef GL_CORE
+#include <OpenGL/gl3.h>
+#else
 #include <OpenGL/gl.h>
 #define  glVertexAttribDivisor glVertexAttribDivisorARB
 #define  glDrawArraysInstanced glDrawArraysInstancedARB
+#define  glDrawElementsInstanced glDrawElementsInstancedARB
 #define  GL_PROGRAM_POINT_SIZE GL_PROGRAM_POINT_SIZE_EXT
+#endif
 #else
 #include <GL/gl.h>
 #endif

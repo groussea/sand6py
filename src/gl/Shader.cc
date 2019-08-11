@@ -22,6 +22,8 @@
 #include "utils/Log.hh"
 #include "utils/File.hh"
 
+#include <iostream>
+
 /*
  * Adapted from:
  * http://duriansoftware.com/joe/An-intro-to-modern-OpenGL.-Chapter-2.2:-Shaders.html
@@ -155,15 +157,27 @@ UsingShader::~UsingShader()
 	glUseProgram( previous );
 }
 
+void UsingShader::bindMVP(const float *modelView, const float *projection,
+						  const char *model_view_name, const char *projection_name)
+{
+	glUniformMatrix4fv(m_shader.uniform(model_view_name), 1, GL_FALSE, modelView );
+	glUniformMatrix4fv(m_shader.uniform(projection_name), 1, GL_FALSE, projection );
+}
+
 void UsingShader::bindMVP( const char* model_view_name, const char* projection_name )
 {
+	#ifndef GL_CORE
 	float model_view[16];
 	glGetFloatv(GL_MODELVIEW_MATRIX, model_view);
 	float projection[16];
 	glGetFloatv(GL_PROJECTION_MATRIX, projection);
 
+	std::cerr << "BINDING MVP " << std::endl; 
+
 	glUniformMatrix4fv(m_shader.uniform(model_view_name), 1, GL_FALSE, model_view );
 	glUniformMatrix4fv(m_shader.uniform(projection_name), 1, GL_FALSE, projection );
+
+	#endif
 }
 
 } // d6

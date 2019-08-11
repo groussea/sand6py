@@ -10,8 +10,20 @@
 
 #include "utils/Log.hh"
 
+#define fb_width  2*2560
+#define fb_height 2*1440
+
 namespace d6
 {
+
+GLViewer::GLViewer(const Offline &offline,
+                   const int nSamples,
+                   const int width, const int height)
+    : m_offline(offline), m_width(width), m_height(height),
+      m_drawParticles( 0 == nSamples ), 
+      m_grainsRenderer( offline, m_shapeRenderer, nSamples )
+{
+}
 
 void GLViewer::init()
 {
@@ -21,6 +33,52 @@ void GLViewer::init()
     Log::Debug() << "Using " << bufs << " buffers and " << samples << " samples" << std::endl;
 
     frameAll();
+
+	if( m_grainsRenderer.sampler().mode() == Sampler::VelocityCut ) {
+        // TODO set orthographic
+	} else {
+	}
+
+	m_shapeRenderer.init();
+
+	m_particlesShader.add_attribute("vertex") ;
+	m_particlesShader.add_attribute("frame") ;
+	m_particlesShader.add_attribute("alpha") ;
+
+	m_particlesShader.add_uniform("model_view") ;
+	m_particlesShader.add_uniform("projection") ;
+	m_particlesShader.load("particles_vertex", "particles_fragment") ;
+	
+	m_pointShader.add_attribute("vertex") ;
+	m_pointShader.add_uniform("model_view") ;
+	m_pointShader.add_uniform("projection") ;
+    m_pointShader.load("point_vertex", "point_fragment") ;
+
+	if( renderSamples() ) {
+
+		m_grainsRenderer.init();
+
+		m_depthBuffer.reset( fb_width, fb_height );
+
+		m_depthTexture.reset( GL_TEXTURE_2D );
+		m_depthTexture.bind() ;
+
+		float* data = 0 ;
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, m_depthBuffer.width(), m_depthBuffer.height(), 0,GL_DEPTH_COMPONENT, GL_FLOAT, data);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	}
+
+	m_testShader.add_attribute("vertex") ;
+	m_testShader.add_uniform("in_texture");
+	//m_testShader.load("textest_vertex","textest_fragment") ;
+
+	update_buffers();
 }
 
 void GLViewer::update_buffers()
@@ -81,13 +139,19 @@ void GLViewer::update_buffers()
         colors.row(3).setOnes();
         m_colors.reset(p.count(), colors.data(), GL_STATIC_DRAW);
     }
+
+	if( renderSamples() ) {
+		m_grainsRenderer.update_buffers();
+	}
 }
 
 void GLViewer::draw() const
 {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_ACCUM_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT |  GL_STENCIL_BUFFER_BIT);
 
+    if(m_fastDraw)
     {
+        #ifndef GL_CORE
         glEnableClientState(GL_VERTEX_ARRAY);
         m_centers.set_vertex_pointer(3);
 
@@ -103,7 +167,80 @@ void GLViewer::draw() const
         }
 
         glDisableClientState(GL_VERTEX_ARRAY);
+#endif
+        return;
     }
+
+
+	if( m_enableBending ) {
+		glEnable (GL_BLEND);
+		glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	}
+
+	bool shadowed = false ;
+	Eigen::Matrix4f depthModelView ;
+	Eigen::Matrix4f depthProjection ;
+
+	if( m_drawParticles )
+	{
+		if( m_pointShader.ok() ) {
+
+            glPointSize(2.0f);
+			UsingShader sh( m_pointShader ) ;
+
+			// Model-view
+            sh.bindMVP(m_camera.viewMatrix.data(), m_camera.projectionMatrix.data());
+
+			//Vertices
+            m_shapeRenderer.sphereVertexArrays().bind();
+			gl::VertexAttribPointer vap( m_centers, m_pointShader.attribute("vertex") ) ;
+			std::cerr << m_centers.size() << std::endl ;
+
+            glDrawArrays( GL_POINTS, 0, m_centers.size());
+
+		} else if( m_particlesShader.ok() ) {
+
+			UsingShader sh( m_particlesShader ) ;
+		
+            m_shapeRenderer.sphereVertexArrays().bind();
+            m_shapeRenderer.sphereQuadIndices().bind();
+
+			// Model-view
+            sh.bindMVP(m_camera.viewMatrix.data(), m_camera.projectionMatrix.data());
+
+			//Vertices
+			gl::VertexAttribPointer vap( m_shapeRenderer.sphereVertices(), m_particlesShader.attribute("vertex") ) ;
+
+			// Densities
+			gl::VertexAttribPointer  ap( m_alpha, m_particlesShader.attribute("alpha"), false, 1 ) ;
+
+			//Frames
+			gl::ArrayAttribPointer<4>  fp( m_frames, m_particlesShader.attribute("frame"), false, 1 ) ;
+
+			//glDrawElementsInstanced( GL_QUADS, m_shapeRenderer.sphereQuadIndices().size(), GL_UNSIGNED_INT, 0, m_matrices.cols() );
+			//glDrawElements( GL_QUADS, m_shapeRenderer.sphereQuadIndices().size(), GL_UNSIGNED_INT, 0);
+			glDrawArrays( GL_POINT, 0, m_shapeRenderer.sphereQuadIndices().size());
+
+		} else {
+#ifndef GL_CORE
+            m_shapeRenderer.sphereQuadIndices().bind();
+            gl::VertexPointer vp( m_shapeRenderer.sphereVertices() ) ;
+			gl::NormalPointer np( m_shapeRenderer.sphereVertices() ) ;
+
+			for( int i = 0 ; i < m_matrices.cols() ; ++i ){
+				glPushMatrix();
+				glMultMatrixf( m_matrices.col(i).data() );
+
+				glColor4f(1., 0, 0, m_densities[i]);
+				glDrawElements( GL_QUADS, m_shapeRenderer.sphereQuadIndices().size(), GL_UNSIGNED_INT, 0 );
+
+				glPopMatrix();
+			}
+#endif
+        }
+
+	}
+
 }
 
 void GLViewer::snap()

@@ -37,9 +37,10 @@ class Appli
 
 public:
 	Appli( d6::Offline& offline, unsigned frame,
+	  	const int nSamples,
 	       const int width, const int height ) :
 	    m_pWindow( NULL ),
-	    m_offline(offline), m_viewer( offline, width, height ),
+	    m_offline(offline), m_viewer( offline, nSamples, width, height ),
 	    m_currentFrame( frame ),
 	    m_running( false ), m_snapshotting( false ),
 	    m_mouseX( 0 ), m_mouseY( 0 )
@@ -137,6 +138,12 @@ private:
 	{
 		if ( !glfwInit() )
 			quit(1);
+
+		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+
 		if(!( m_pWindow = glfwCreateWindow(m_viewer.width(), m_viewer.height(), "Sand6GL", NULL, NULL) ))
 		{
 			quit(1);
@@ -173,6 +180,7 @@ private:
 			m_running = !m_running ;
 			break;
 		case 'A':
+			m_viewer.toggleFastDraw();
 			break;
 		case 'C':
 			break;
@@ -326,8 +334,8 @@ int main( int argc, const char * argv[] )
 
 		std::cerr << width << "x" << height << std::endl ;
 	}
-
-	return d6::Appli( offline, frame, width, height ).run( ) ;
+	int nSamples = 0;
+	return d6::Appli( offline, frame, nSamples, width, height ).run( ) ;
 
 }
 

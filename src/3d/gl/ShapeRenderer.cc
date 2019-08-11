@@ -257,6 +257,7 @@ void ShapeRenderer::init()
 	genSphere( 5, 8, sphereVertices, quadIndices );
 	m_sphereVertices.reset( sphereVertices.cols(), sphereVertices.data(), GL_STATIC_DRAW );
 	m_sphereQuadIndices.reset( quadIndices.size(), quadIndices.data() );
+	m_sphereVertexArrays.gen();
 
 	Eigen::Matrix<float, 3, 4> vtx ;
 	vtx  <<  -1, -1, 1,  1,
@@ -347,7 +348,7 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 
 		draw_fake_ball( ls, m_ballShader, m_squareVertices ) ;
 	} else {
-
+#ifndef GL_CORE
 		Eigen::Matrix4f mat ;
 		get_ls_matrix( ls, mat ) ;
 		Eigen::Matrix4f completeDepthMVP = depthProjection * depthModelView * mat ;
@@ -430,6 +431,7 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 
 
 		glPopMatrix();
+#endif 
 	}
 
 

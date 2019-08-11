@@ -24,10 +24,8 @@ class GLViewer
 
 public:
     GLViewer(const Offline &offline,
-             const int width, const int height)
-        : m_offline(offline), m_width(width), m_height(height)
-    {
-    }
+             const int nSamples,
+             const int width, const int height);
 
     int width() const { return m_width; }
     int height() const { return m_height; }
@@ -44,6 +42,14 @@ public:
     void rotate(float xAmount, float yAmount);
     void translate(float xAmount, float yAmount);
     void zoom(float amount);
+
+    void toggleFastDraw() {
+        m_fastDraw = !m_fastDraw;
+    }
+
+	bool renderSamples() const {
+		return m_grainsRenderer.valid() ;
+	}
 
 private:
     const Offline &m_offline;
@@ -69,12 +75,14 @@ private:
 	gl::ArrayBufferf m_alpha ;
 
 	Shader m_particlesShader ;
+	Shader m_pointShader ;
 	Shader m_testShader ;
 
 	Texture     m_depthTexture ;
 	FrameBuffer m_depthBuffer  ;
 
 	ShapeRenderer m_shapeRenderer ;
+	GrainRenderer m_grainsRenderer ;
 };
 
 } // namespace d6
