@@ -32,12 +32,12 @@ namespace d6 {
 // Very naive, ugly sphere
 static void genSphere( const unsigned parallels, const unsigned meridians,
 					   Eigen::Matrix3Xf& ballVerts,
-					   std::vector< GLuint >& quadIndices )
+					   std::vector< GLuint >& triIndices )
 {
 	ballVerts.resize( 3, parallels * meridians ) ;
 
-	quadIndices.clear();
-	quadIndices.reserve( 4 * (parallels - 1) * meridians ) ;
+	triIndices.clear();
+	triIndices.reserve( 6 * (parallels - 1) * meridians ) ;
 
 	const double dphi = M_PI / (parallels - 1.);
 	const double dpsi = 2 * M_PI / meridians ;
@@ -53,10 +53,12 @@ static void genSphere( const unsigned parallels, const unsigned meridians,
 			ballVerts.col( i*meridians + j ) = p.cast< GLfloat >() ;
 
 			if( i > 0 ) {
-				quadIndices.push_back( (i-1)*meridians + ( ( j+1 ) % meridians ) ) ;
-				quadIndices.push_back( (i-1)*meridians + j ) ;
-				quadIndices.push_back( i*meridians + j ) ;
-				quadIndices.push_back( i*meridians +  ( ( j+1 ) % meridians ) ) ;
+				triIndices.push_back( (i-1)*meridians + ( ( j+1 ) % meridians ) ) ;
+				triIndices.push_back( (i-1)*meridians + j ) ;
+				triIndices.push_back( i*meridians + j ) ;
+				triIndices.push_back( (i-1)*meridians + ( ( j+1 ) % meridians ) ) ;
+				triIndices.push_back( i*meridians + j ) ;
+				triIndices.push_back( i*meridians +  ( ( j+1 ) % meridians ) ) ;
 			}
 		}
 	}
@@ -67,10 +69,10 @@ static void genPointyCylinder( const float height, const unsigned res,
 					   Eigen::Matrix3Xf& vertices,
 					   Eigen::Matrix3Xf& normals,
 					   Eigen::Matrix3Xf& uvs,
-					   std::vector< GLuint >& quadIndices )
+					   std::vector< GLuint >& triIndices )
 {
-	quadIndices.clear() ;
-	quadIndices.reserve( res * 4 * 3 ) ;
+	triIndices.clear() ;
+	triIndices.reserve( res * 4 * 3 ) ;
 	vertices.resize( 3, 2 + res * 2 ) ;
 	normals.resize( 3, 2 + res * 2 ) ;
 	uvs.resize( 3, 2 + res * 2 ) ;
@@ -101,20 +103,21 @@ static void genPointyCylinder( const float height, const unsigned res,
 		uvs     .col(id_cur+0) = Eigen::Vector3f(1/(height+2),beta0/(2*M_PI),0) ;
 		uvs     .col(id_cur+1) = Eigen::Vector3f((1+height)/(height+2),beta0/(2*M_PI),0) ;
 
-		quadIndices.push_back( 0 ) ;
-		quadIndices.push_back( id_cur+0 ) ;
-		quadIndices.push_back( id_nxt+0 ) ;
-		quadIndices.push_back( 0 ) ;
+		triIndices.push_back( 0 ) ;
+		triIndices.push_back( id_cur+0 ) ;
+		triIndices.push_back( id_nxt+0 ) ;
 
-		quadIndices.push_back( id_cur+0 ) ;
-		quadIndices.push_back( id_nxt+0 ) ;
-		quadIndices.push_back( id_nxt+1 ) ;
-		quadIndices.push_back( id_cur+1 ) ;
+		triIndices.push_back( id_cur+0 ) ;
+		triIndices.push_back( id_nxt+0 ) ;
+		triIndices.push_back( id_nxt+1 ) ;
+	
+		triIndices.push_back( id_cur+0 ) ;
+		triIndices.push_back( id_nxt+1 ) ;
+		triIndices.push_back( id_cur+1 ) ;
 
-		quadIndices.push_back( 1 ) ;
-		quadIndices.push_back( id_cur+1 ) ;
-		quadIndices.push_back( id_nxt+1 ) ;
-		quadIndices.push_back( 1 ) ;
+		triIndices.push_back( id_cur+1 ) ;
+		triIndices.push_back( id_nxt+1 ) ;
+		triIndices.push_back( 1 ) ;
 
 	}
 
@@ -125,10 +128,10 @@ static void genTorus( const float radius,
 					  Eigen::Matrix3Xf& vertices,
 					  Eigen::Matrix3Xf& normals,
 					  Eigen::Matrix3Xf& uvs,
-					  std::vector< GLuint >& quadIndices )
+					  std::vector< GLuint >& triIndices )
 {
-	quadIndices.clear() ;
-	quadIndices.reserve( parallels * meridians * 4 ) ;
+	triIndices.clear() ;
+	triIndices.reserve( parallels * meridians * 6 ) ;
 	vertices.resize( 3, parallels * meridians ) ;
 	normals.resize( 3, parallels * meridians ) ;
 	uvs.resize( 3, parallels * meridians ) ;
@@ -154,10 +157,13 @@ static void genTorus( const float radius,
 
 			vertices.col(idx) = p0 + radius * n0 ;
 
-			quadIndices.push_back( i*parallels + j );
-			quadIndices.push_back( i*parallels + ((j+1)%parallels) );
-			quadIndices.push_back( ((i+1)%meridians)*parallels + ((j+1)%parallels)  );
-			quadIndices.push_back( ((i+1)%meridians)*parallels + j  );
+			triIndices.push_back( i*parallels + j );
+			triIndices.push_back( i*parallels + ((j+1)%parallels) );
+			triIndices.push_back( ((i+1)%meridians)*parallels + ((j+1)%parallels)  );
+			
+			triIndices.push_back( i*parallels + j );
+			triIndices.push_back( ((i+1)%meridians)*parallels + ((j+1)%parallels)  );
+			triIndices.push_back( ((i+1)%meridians)*parallels + j  );
 
 		}
 	}
@@ -192,7 +198,7 @@ static void draw_solid( const Shader& shader,
 			const Eigen::Matrix3Xf& cylVertices,
 			const Eigen::Matrix3Xf& cylNormals,
 			const Eigen::Matrix3Xf& cylUVs,
-			const std::vector< GLuint > &quadIndices )
+			const std::vector< GLuint > &triIndices )
 {
 	// Transfer to VBO
 	gl::VertexBuffer3f cylv, cyln, cyluv ;
@@ -200,7 +206,7 @@ static void draw_solid( const Shader& shader,
 	cylv.reset( cylVertices.cols(), cylVertices.data(), GL_DYNAMIC_DRAW );
 	cyln.reset( cylNormals .cols(), cylNormals .data(), GL_DYNAMIC_DRAW );
 	cyluv.reset( cylUVs    .cols(), cylUVs     .data(), GL_DYNAMIC_DRAW );
-	cylqi.reset( quadIndices.size(), quadIndices.data() );
+	cylqi.reset( triIndices.size(), triIndices.data() );
 
 	cylqi.bind() ;
 
@@ -208,7 +214,7 @@ static void draw_solid( const Shader& shader,
 	gl::VertexAttribPointer nap( cyln, shader.attribute("normal") ) ;
 	gl::VertexAttribPointer uap( cyln, shader.attribute("uv") ) ;
 
-	glDrawElements( GL_QUADS, cylqi.size(), GL_UNSIGNED_INT, 0 );
+	glDrawElements( GL_TRIANGLES, cylqi.size(), GL_UNSIGNED_INT, 0 );
 }
 
 static void draw_shape_elements( const LevelSet &ls, const Shader& shader )
@@ -236,15 +242,15 @@ static void draw_shape_elements( const LevelSet &ls, const Shader& shader )
 
 	} else if( torus || cylinder ) {
 		Eigen::Matrix3Xf cylVertices, cylNormals, cylUVs ;
-		std::vector< GLuint > quadIndices ;
+		std::vector< GLuint > triIndices ;
 
 		if( torus ) {
-			genTorus( torus->radius(), 30, 30, cylVertices, cylNormals, cylUVs, quadIndices );
+			genTorus( torus->radius(), 30, 30, cylVertices, cylNormals, cylUVs, triIndices );
 		} else if( cylinder ) {
-			genPointyCylinder( cylinder->height(), 30, cylVertices, cylNormals, cylUVs, quadIndices );
+			genPointyCylinder( cylinder->height(), 30, cylVertices, cylNormals, cylUVs, triIndices );
 		}
 
-		draw_solid( shader, cylVertices, cylNormals, cylUVs, quadIndices ) ;
+		draw_solid( shader, cylVertices, cylNormals, cylUVs, triIndices ) ;
 	}
 
 }
@@ -253,10 +259,10 @@ void ShapeRenderer::init()
 {
 	// Gen glyph vertices
 	Eigen::Matrix3Xf sphereVertices ;
-	std::vector< GLuint > quadIndices ;
-	genSphere( 5, 8, sphereVertices, quadIndices );
+	std::vector< GLuint > triIndices ;
+	genSphere( 5, 8, sphereVertices, triIndices );
 	m_sphereVertices.reset( sphereVertices.cols(), sphereVertices.data(), GL_STATIC_DRAW );
-	m_sphereQuadIndices.reset( quadIndices.size(), quadIndices.data() );
+	m_sphereTriIndices.reset( triIndices.size(), triIndices.data() );
 	m_sphereVertexArrays.gen();
 
 	Eigen::Matrix<float, 3, 4> vtx ;

@@ -40,7 +40,7 @@ void main (void)
     vec4 spec;
     vec4 ambient;
 
-    vec4 light = model_view * vec4( light_pos, 1 )  ;
+    vec4 light = vec4( light_pos, 1 )  ;
     vec3 L = normalize( light.xyz - pos);
     vec3 E = normalize(-pos);
     vec3 R = normalize(reflect(-L,normal));
@@ -51,4 +51,6 @@ void main (void)
 
     color = ambient + diffuse + spec;
     color.a = alpha ;
+
+    color = ambientMat + diffuse;
 }

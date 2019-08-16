@@ -32,9 +32,9 @@ out float alpha ;
 
 void main()
 {
-	vec4 ip = model_view * frame * vec4( vertex, 1)  ;
-	pos     = ip.xyz ;
-	normal  = normalize( mat3(model_view) * mat3(frame) * vertex ) ;
+	pos  = (frame * vec4( vertex, 1)).xyz;
+	vec4 ip = model_view * vec4( pos, 1)  ;
+	normal  = normalize(  mat3(frame) * vertex ) ;
 
 	alpha = density ;
 

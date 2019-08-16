@@ -77,7 +77,6 @@ public:
 
 	int run( )
 	{
-		std::cerr << "RUN " << std::endl ;
 		do {
 			if( m_running && !next_frame() ) {
 				m_running = false ;

@@ -151,26 +151,27 @@ void GLViewer::draw() const
 
     if(m_fastDraw)
     {
-        #ifndef GL_CORE
-        glEnableClientState(GL_VERTEX_ARRAY);
-        m_centers.set_vertex_pointer(3);
+        if( m_pointShader.ok() ) {
+            glPointSize(2.0f);
+			UsingShader sh( m_pointShader ) ;
 
-        if (m_drawParticles)
-        {
-            gl::ColorPointer cp(m_colors);
-            glDrawArrays(GL_POINTS, 0, m_centers.size());
-        }
-        else
-        {
-            glColor3f(0, 0, 1);
-            glDrawArrays(GL_POINTS, 0, m_centers.size());
-        }
+			// Model-view
+            sh.bindMVP(m_camera.viewMatrix.data(), m_camera.projectionMatrix.data());
 
-        glDisableClientState(GL_VERTEX_ARRAY);
-#endif
+			//Vertices
+            m_shapeRenderer.sphereVertexArrays().bind();
+			gl::VertexAttribPointer vap( m_centers, m_pointShader.attribute("vertex") ) ;
+			//gl::VertexAttribPointer cap( m_colors, m_pointShader.attribute("color") ) ;
+            
+            glDrawArrays( GL_POINTS, 0, m_centers.size());
+
+		}  else {
+            std::cerr << "Invalid point shader" << std::endl; 
+        }
         return;
     }
 
+    glEnable(GL_DEPTH_TEST);
 
 	if( m_enableBending ) {
 		glEnable (GL_BLEND);
@@ -183,27 +184,12 @@ void GLViewer::draw() const
 
 	if( m_drawParticles )
 	{
-		if( m_pointShader.ok() ) {
-
-            glPointSize(2.0f);
-			UsingShader sh( m_pointShader ) ;
-
-			// Model-view
-            sh.bindMVP(m_camera.viewMatrix.data(), m_camera.projectionMatrix.data());
-
-			//Vertices
-            m_shapeRenderer.sphereVertexArrays().bind();
-			gl::VertexAttribPointer vap( m_centers, m_pointShader.attribute("vertex") ) ;
-			std::cerr << m_centers.size() << std::endl ;
-
-            glDrawArrays( GL_POINTS, 0, m_centers.size());
-
-		} else if( m_particlesShader.ok() ) {
+		 if( m_particlesShader.ok() ) {
 
 			UsingShader sh( m_particlesShader ) ;
 		
             m_shapeRenderer.sphereVertexArrays().bind();
-            m_shapeRenderer.sphereQuadIndices().bind();
+            m_shapeRenderer.sphereTriIndices().bind();
 
 			// Model-view
             sh.bindMVP(m_camera.viewMatrix.data(), m_camera.projectionMatrix.data());
@@ -217,26 +203,11 @@ void GLViewer::draw() const
 			//Frames
 			gl::ArrayAttribPointer<4>  fp( m_frames, m_particlesShader.attribute("frame"), false, 1 ) ;
 
-			//glDrawElementsInstanced( GL_QUADS, m_shapeRenderer.sphereQuadIndices().size(), GL_UNSIGNED_INT, 0, m_matrices.cols() );
-			//glDrawElements( GL_QUADS, m_shapeRenderer.sphereQuadIndices().size(), GL_UNSIGNED_INT, 0);
-			glDrawArrays( GL_POINT, 0, m_shapeRenderer.sphereQuadIndices().size());
+			//glDrawElementsInstanced( GL_TRIANGLES, m_shapeRenderer.sphereTriIndices().size(), GL_UNSIGNED_INT, 0, 1 );
+			glDrawElementsInstanced( GL_TRIANGLES, m_shapeRenderer.sphereTriIndices().size(), GL_UNSIGNED_INT, 0, m_matrices.cols() );
 
-		} else {
-#ifndef GL_CORE
-            m_shapeRenderer.sphereQuadIndices().bind();
-            gl::VertexPointer vp( m_shapeRenderer.sphereVertices() ) ;
-			gl::NormalPointer np( m_shapeRenderer.sphereVertices() ) ;
-
-			for( int i = 0 ; i < m_matrices.cols() ; ++i ){
-				glPushMatrix();
-				glMultMatrixf( m_matrices.col(i).data() );
-
-				glColor4f(1., 0, 0, m_densities[i]);
-				glDrawElements( GL_QUADS, m_shapeRenderer.sphereQuadIndices().size(), GL_UNSIGNED_INT, 0 );
-
-				glPopMatrix();
-			}
-#endif
+		}  else {
+            std::cerr << "Invalid particles shader" << std::endl; 
         }
 
 	}
