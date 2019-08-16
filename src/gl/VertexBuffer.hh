@@ -253,14 +253,14 @@ private:
 	GLint m_attrib ;
 };
 
-struct VAO
+struct ArrayObject
 {
-	VAO()
+	ArrayObject()
 		:  m_vao(INVALID_VAO)
 	{
 	}
 
-	~VAO()
+	~ArrayObject()
 	{
 		destroy() ;
 	}
@@ -293,6 +293,28 @@ struct VAO
 	{
 		glBindVertexArray(0);
 	}
+
+	struct Using
+	{		
+		Using(const ArrayObject& vao) 
+		: m_vao(vao)
+		{
+			vao.bind();
+		}
+
+		Using(ArrayObject& vao) 
+		: m_vao(vao)
+		{
+			if(!vao.valid()) vao.gen();
+			vao.bind();
+		}
+
+		~Using() {
+			m_vao.unbind();
+		}
+
+		const ArrayObject& m_vao;
+	};
 
 private:
 	static const GLuint INVALID_VAO = -1 ;

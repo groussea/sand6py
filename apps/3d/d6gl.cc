@@ -179,7 +179,7 @@ private:
 			m_running = !m_running ;
 			break;
 		case 'A':
-			m_viewer.toggleFastDraw();
+			m_fastDrawForCameraMotion = !m_fastDrawForCameraMotion;
 			break;
 		case 'C':
 			break;
@@ -240,8 +240,10 @@ private:
 		if( action == GLFW_PRESS )
 		{
 			glfwSetCursorPosCallback( m_pWindow, &Appli::mouse_motion_callback ) ;
+			if(m_fastDrawForCameraMotion) m_viewer.setFastDraw(true);
 		} else {
 			glfwSetCursorPosCallback( m_pWindow, NULL ) ;
+			m_viewer.setFastDraw(false);
 		}
 
 	}
@@ -268,6 +270,7 @@ private:
 
 	int m_keyMods = 0;
 	double m_mouseX, m_mouseY ;
+	bool m_fastDrawForCameraMotion = false;
 };
 
 Appli* Appli::s_instance = NULL ;

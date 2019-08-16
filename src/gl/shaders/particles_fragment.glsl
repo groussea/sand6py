@@ -20,6 +20,7 @@
 #version 330
 
 uniform mat4 model_view ;
+uniform vec3 light_pos ;
 
 in vec3 normal;
 in vec3 pos ;
@@ -29,8 +30,6 @@ out vec4 color ;
 
 void main (void)
 {
-    vec3 light_pos = vec3(0,0,100) ;
-
     vec4 ambientMat = vec4(0.3,0.2, 0.1, 1. );
     vec4 diffuseMat = vec4(.7 , .6, .2, 1. );
     vec4 specMat    = vec4(1. , 1., 1., 1. );
@@ -51,6 +50,4 @@ void main (void)
 
     color = ambient + diffuse + spec;
     color.a = alpha ;
-
-    color = ambientMat + diffuse;
 }

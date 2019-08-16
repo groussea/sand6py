@@ -44,15 +44,16 @@ void GLViewer::init()
 	m_particlesShader.add_attribute("vertex") ;
 	m_particlesShader.add_attribute("frame") ;
 	m_particlesShader.add_attribute("alpha") ;
-
 	m_particlesShader.add_uniform("model_view") ;
 	m_particlesShader.add_uniform("projection") ;
+	m_particlesShader.add_uniform("light_pos") ;
 	m_particlesShader.load("particles_vertex", "particles_fragment") ;
 	
 	m_pointShader.add_attribute("vertex") ;
 	m_pointShader.add_uniform("model_view") ;
 	m_pointShader.add_uniform("projection") ;
     m_pointShader.load("point_vertex", "point_fragment") ;
+    m_pointArrays.gen();
 
 	if( renderSamples() ) {
 
@@ -145,6 +146,11 @@ void GLViewer::update_buffers()
 	}
 }
 
+Eigen::Vector3f GLViewer::lightPosition() const
+{
+	return ( m_offline.box() / 2 ).cast< float >() + 10 * m_offline.box().norm() * m_lightDirection ;
+}
+
 void GLViewer::draw() const
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT |  GL_STENCIL_BUFFER_BIT);
@@ -159,9 +165,8 @@ void GLViewer::draw() const
             sh.bindMVP(m_camera.viewMatrix.data(), m_camera.projectionMatrix.data());
 
 			//Vertices
-            m_shapeRenderer.sphereVertexArrays().bind();
+            gl::ArrayObject::Using vao(m_pointArrays);
 			gl::VertexAttribPointer vap( m_centers, m_pointShader.attribute("vertex") ) ;
-			//gl::VertexAttribPointer cap( m_colors, m_pointShader.attribute("color") ) ;
             
             glDrawArrays( GL_POINTS, 0, m_centers.size());
 
@@ -187,12 +192,14 @@ void GLViewer::draw() const
 		 if( m_particlesShader.ok() ) {
 
 			UsingShader sh( m_particlesShader ) ;
-		
-            m_shapeRenderer.sphereVertexArrays().bind();
-            m_shapeRenderer.sphereTriIndices().bind();
+
+            Eigen::Vector3f lightPos = lightPosition();
+            glUniform3fv(m_particlesShader.uniform("light_pos"), 1, lightPos.data());
 
 			// Model-view
             sh.bindMVP(m_camera.viewMatrix.data(), m_camera.projectionMatrix.data());
+            
+            gl::ArrayObject::Using vao(m_shapeRenderer.sphereVertexArrays());
 
 			//Vertices
 			gl::VertexAttribPointer vap( m_shapeRenderer.sphereVertices(), m_particlesShader.attribute("vertex") ) ;
@@ -210,6 +217,14 @@ void GLViewer::draw() const
             std::cerr << "Invalid particles shader" << std::endl; 
         }
 
+	}
+
+	glDisable (GL_BLEND);
+
+	if(m_drawObjects) {
+		for( const LevelSet::Ptr& ls: m_offline.levelSets() ) {
+			m_shapeRenderer.draw( *ls, m_offline.box(), lightPosition(), shadowed, m_depthTexture, depthModelView, depthProjection );
+		}
 	}
 
 }

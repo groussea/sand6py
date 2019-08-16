@@ -43,6 +43,9 @@ public:
     void translate(float xAmount, float yAmount);
     void zoom(float amount);
 
+    void setFastDraw(bool enable) {
+        m_fastDraw = enable;
+    }
     void toggleFastDraw() {
         m_fastDraw = !m_fastDraw;
     }
@@ -52,8 +55,10 @@ public:
 	}
 
 private:
+    Eigen::Vector3f lightPosition() const;
+
     const Offline &m_offline;
-    
+
     int m_width;
     int m_height;
 
@@ -63,10 +68,13 @@ private:
 	bool 	 m_drawObjects = true;
 	bool 	 m_drawOrientations  = false ;
 
+    Eigen::Vector3f m_lightDirection = Eigen::Vector3f(0.5, 0.5, 1);
+
     Camera m_camera;
 
 	gl::VertexBuffer3d m_centers ;
 	gl::VertexBuffer4f m_colors  ;
+    gl::ArrayObject m_pointArrays;
 
 	Eigen::Matrix< float, 16, Eigen::Dynamic> m_matrices ;
 	gl::VertexBuffer16f m_frames  ;

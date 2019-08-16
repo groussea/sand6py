@@ -258,12 +258,17 @@ static void draw_shape_elements( const LevelSet &ls, const Shader& shader )
 void ShapeRenderer::init()
 {
 	// Gen glyph vertices
-	Eigen::Matrix3Xf sphereVertices ;
-	std::vector< GLuint > triIndices ;
-	genSphere( 5, 8, sphereVertices, triIndices );
-	m_sphereVertices.reset( sphereVertices.cols(), sphereVertices.data(), GL_STATIC_DRAW );
-	m_sphereTriIndices.reset( triIndices.size(), triIndices.data() );
-	m_sphereVertexArrays.gen();
+	{
+		Eigen::Matrix3Xf sphereVertices;
+		std::vector<GLuint> triIndices;
+		genSphere(5, 8, sphereVertices, triIndices);
+		m_sphereVertices.reset(sphereVertices.cols(), sphereVertices.data(), GL_STATIC_DRAW);
+		
+		// Bind tri indices to array object
+		gl::ArrayObject::Using vao(m_sphereVertexArrays);
+		m_sphereTriIndices.reset( triIndices.size(), triIndices.data() );
+	}
+
 
 	Eigen::Matrix<float, 3, 4> vtx ;
 	vtx  <<  -1, -1, 1,  1,

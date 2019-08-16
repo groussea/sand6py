@@ -52,7 +52,7 @@ public:
 	{ return m_sphereVertices ; }
 	const gl::IndexBuffer& sphereTriIndices() const
 	{ return m_sphereTriIndices ; }
-	const gl::VAO& sphereVertexArrays() const
+	const gl::ArrayObject& sphereVertexArrays() const
 	{ return m_sphereVertexArrays ; }
 
 	const gl::VertexBuffer3f& squareVertices() const
@@ -62,7 +62,7 @@ private:
 
 	gl::VertexBuffer3f m_sphereVertices ;
 	gl::IndexBuffer	   m_sphereTriIndices ;
-	gl::VAO 		   m_sphereVertexArrays;
+	gl::ArrayObject 		   m_sphereVertexArrays;
 
 	gl::VertexBuffer3f m_squareVertices ;
 
