@@ -40,11 +40,14 @@ class ShapeRenderer
 
 public:
 	void init() ;
+	void config_shaders() ;
+	void setup_vaos() ;
 
 	void compute_shadow( const LevelSet &ls, 
 		const Eigen::Matrix4f& depthModelView, const Eigen::Matrix4f& depthProjection ) const ;
 	void draw(const LevelSet &ls, const Vec &box, const Eigen::Vector3f &lightPos,
 		bool shadowed, const Texture& depthTexture,
+		const Eigen::Matrix4f& modelView, const Eigen::Matrix4f& projection, 
 		const Eigen::Matrix4f& depthModelView, const Eigen::Matrix4f& depthProjection ) const ;
 
 
@@ -62,9 +65,10 @@ private:
 
 	gl::VertexBuffer3f m_sphereVertices ;
 	gl::IndexBuffer	   m_sphereTriIndices ;
-	gl::ArrayObject 		   m_sphereVertexArrays;
+	gl::ArrayObject    m_sphereVertexArrays;
 
 	gl::VertexBuffer3f m_squareVertices ;
+	gl::ArrayObject    m_billboardArrays;
 
 	Shader m_ballShader ;
 	Shader m_ballDepthShader ;

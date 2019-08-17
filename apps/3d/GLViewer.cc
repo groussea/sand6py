@@ -39,28 +39,15 @@ void GLViewer::init()
 	} else {
 	}
 
-	m_shapeRenderer.init();
+    config_shaders();
 
-	m_particlesShader.add_attribute("vertex") ;
-	m_particlesShader.add_attribute("frame") ;
-	m_particlesShader.add_attribute("alpha") ;
-	m_particlesShader.add_uniform("model_view") ;
-	m_particlesShader.add_uniform("projection") ;
-	m_particlesShader.add_uniform("light_pos") ;
-	m_particlesShader.load("particles_vertex", "particles_fragment") ;
-	
-	m_pointShader.add_attribute("vertex") ;
-	m_pointShader.add_uniform("model_view") ;
-	m_pointShader.add_uniform("projection") ;
-    m_pointShader.load("point_vertex", "point_fragment") ;
-    m_pointArrays.gen();
+	m_shapeRenderer.init();
 
 	if( renderSamples() ) {
 
 		m_grainsRenderer.init();
 
 		m_depthBuffer.reset( fb_width, fb_height );
-
 		m_depthTexture.reset( GL_TEXTURE_2D );
 		m_depthTexture.bind() ;
 
@@ -75,11 +62,27 @@ void GLViewer::init()
 
 	}
 
+	update_buffers();
+}
+
+void GLViewer::config_shaders()
+{
+	m_particlesShader.add_attribute("vertex") ;
+	m_particlesShader.add_attribute("frame") ;
+	m_particlesShader.add_attribute("alpha") ;
+	m_particlesShader.add_uniform("model_view") ;
+	m_particlesShader.add_uniform("projection") ;
+	m_particlesShader.add_uniform("light_pos") ;
+	m_particlesShader.load("particles_vertex", "particles_fragment") ;
+	
+	m_pointShader.add_attribute("vertex") ;
+	m_pointShader.add_uniform("model_view") ;
+	m_pointShader.add_uniform("projection") ;
+    m_pointShader.load("point_vertex", "point_fragment") ;
+
 	m_testShader.add_attribute("vertex") ;
 	m_testShader.add_uniform("in_texture");
 	//m_testShader.load("textest_vertex","textest_fragment") ;
-
-	update_buffers();
 }
 
 void GLViewer::update_buffers()
@@ -144,6 +147,31 @@ void GLViewer::update_buffers()
 	if( renderSamples() ) {
 		m_grainsRenderer.update_buffers();
 	}
+
+    update_vaos();
+}
+
+void GLViewer::update_vaos()
+{
+
+    if(m_pointShader.ok()){
+        gl::ArrayObject::Using vao(m_pointArrays);
+        //Vertices
+        gl::VertexAttribPointer vap(m_centers, m_pointShader.attribute("vertex"));
+    }
+
+    if(m_drawParticles) {
+        if(m_particlesShader.ok()){
+            gl::ArrayObject::Using vao(m_shapeRenderer.sphereVertexArrays());
+           
+            //Vertices
+            gl::VertexAttribPointer vap(m_shapeRenderer.sphereVertices(), m_particlesShader.attribute("vertex"));
+            // Densities
+            gl::VertexAttribPointer ap(m_alpha, m_particlesShader.attribute("alpha"), false, 1);
+            //Frames
+            gl::ArrayAttribPointer<4> fp(m_frames, m_particlesShader.attribute("frame"), false, 1);
+        }
+    }
 }
 
 Eigen::Vector3f GLViewer::lightPosition() const
@@ -166,8 +194,6 @@ void GLViewer::draw() const
 
 			//Vertices
             gl::ArrayObject::Using vao(m_pointArrays);
-			gl::VertexAttribPointer vap( m_centers, m_pointShader.attribute("vertex") ) ;
-            
             glDrawArrays( GL_POINTS, 0, m_centers.size());
 
 		}  else {
@@ -200,17 +226,6 @@ void GLViewer::draw() const
             sh.bindMVP(m_camera.viewMatrix.data(), m_camera.projectionMatrix.data());
             
             gl::ArrayObject::Using vao(m_shapeRenderer.sphereVertexArrays());
-
-			//Vertices
-			gl::VertexAttribPointer vap( m_shapeRenderer.sphereVertices(), m_particlesShader.attribute("vertex") ) ;
-
-			// Densities
-			gl::VertexAttribPointer  ap( m_alpha, m_particlesShader.attribute("alpha"), false, 1 ) ;
-
-			//Frames
-			gl::ArrayAttribPointer<4>  fp( m_frames, m_particlesShader.attribute("frame"), false, 1 ) ;
-
-			//glDrawElementsInstanced( GL_TRIANGLES, m_shapeRenderer.sphereTriIndices().size(), GL_UNSIGNED_INT, 0, 1 );
 			glDrawElementsInstanced( GL_TRIANGLES, m_shapeRenderer.sphereTriIndices().size(), GL_UNSIGNED_INT, 0, m_matrices.cols() );
 
 		}  else {
@@ -223,7 +238,8 @@ void GLViewer::draw() const
 
 	if(m_drawObjects) {
 		for( const LevelSet::Ptr& ls: m_offline.levelSets() ) {
-			m_shapeRenderer.draw( *ls, m_offline.box(), lightPosition(), shadowed, m_depthTexture, depthModelView, depthProjection );
+			m_shapeRenderer.draw( *ls, m_offline.box(), lightPosition(), shadowed, m_depthTexture, 
+            m_camera.viewMatrix, m_camera.projectionMatrix, depthModelView, depthProjection );
 		}
 	}
 

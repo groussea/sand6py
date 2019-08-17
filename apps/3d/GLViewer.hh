@@ -31,8 +31,10 @@ public:
     int height() const { return m_height; }
 
     void init();
+    void config_shaders();
 
     void update_buffers();
+    void update_vaos();
 
     void draw() const;
 

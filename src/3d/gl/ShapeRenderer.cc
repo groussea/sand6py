@@ -178,20 +178,18 @@ static void get_ls_matrix( const LevelSet &ls, Eigen::Matrix4f & mat )
 	mat.block<3,1>(0,3) = translation ;
 }
 
-static void draw_fake_ball( const LevelSet &ls, const Shader& shader, const gl::VertexBuffer3f& squareVertices )
+static void draw_fake_ball( const LevelSet &ls, const Shader& shader, const gl::ArrayObject& billboardArrays)
 {
 	const Eigen::Matrix3f rotation = ls.rotation().matrix().cast < GLfloat >() ;
 	const Eigen::Vector3f translation = ls.origin().cast < GLfloat >() ;
-	
-	//Vertices
-	gl::VertexAttribPointer vap_v( squareVertices, shader.attribute("vertex") ) ;
 
 	glUniform1f( shader.uniform("radius"), ls.scale() ) ;
 	glUniformMatrix3fv( shader.uniform("rotation"), 1, GL_FALSE, rotation.data() ) ;
 	glUniform3fv( shader.uniform("center"), 1, translation.data() ) ;
-
-	gl::VertexPointer vp( squareVertices ) ;
-	glDrawArrays( GL_QUADS, 0, squareVertices.size() ) ;
+	
+	//Vertices
+	gl::ArrayObject::Using vao(billboardArrays);
+	glDrawArrays( GL_TRIANGLES, 0, 6) ;
 }
 
 static void draw_solid( const Shader& shader,
@@ -255,28 +253,8 @@ static void draw_shape_elements( const LevelSet &ls, const Shader& shader )
 
 }
 
-void ShapeRenderer::init()
+void ShapeRenderer::config_shaders()
 {
-	// Gen glyph vertices
-	{
-		Eigen::Matrix3Xf sphereVertices;
-		std::vector<GLuint> triIndices;
-		genSphere(5, 8, sphereVertices, triIndices);
-		m_sphereVertices.reset(sphereVertices.cols(), sphereVertices.data(), GL_STATIC_DRAW);
-		
-		// Bind tri indices to array object
-		gl::ArrayObject::Using vao(m_sphereVertexArrays);
-		m_sphereTriIndices.reset( triIndices.size(), triIndices.data() );
-	}
-
-
-	Eigen::Matrix<float, 3, 4> vtx ;
-	vtx  <<  -1, -1, 1,  1,
-		 -1,  1, 1, -1,
-		 0, 0 ,0, 0 ;
-	m_squareVertices.reset( 4, vtx.data() );
-
-
 	// Ball shader
 	m_ballShader.add_uniform("model_view") ;
 	m_ballShader.add_uniform("projection") ;
@@ -314,7 +292,42 @@ void ShapeRenderer::init()
 	m_solidDepthShader.add_attribute("normal") ;
 	m_solidDepthShader.add_attribute("uv") ;
 	m_solidDepthShader.load("depth_vertex","depth_fragment") ;
+}
 
+void ShapeRenderer::setup_vaos()
+{
+
+	// Gen glyph vertices
+	{
+		Eigen::Matrix3Xf sphereVertices;
+		std::vector<GLuint> triIndices;
+		genSphere(5, 8, sphereVertices, triIndices);
+		m_sphereVertices.reset(sphereVertices.cols(), sphereVertices.data(), GL_STATIC_DRAW);
+		
+		// Bind tri indices to array object
+		gl::ArrayObject::Using vao(m_sphereVertexArrays);
+		m_sphereTriIndices.reset( triIndices.size(), triIndices.data() );
+	}
+
+	{
+		Eigen::Matrix<float, 3, 6> vtx;
+		vtx << -1, -1, 1, -1, 1, 1,
+			-1, 1, 1, -1, 1, -1,
+			0, 0, 0, 0, 0, 0;
+		gl::ArrayObject::Using vao(m_billboardArrays);
+		m_squareVertices.reset(vtx.cols(), vtx.data());
+
+		gl::VertexAttribPointer vap_v(m_squareVertices, m_ballShader.attribute("vertex"));
+	}
+
+}
+
+
+void ShapeRenderer::init()
+{
+	config_shaders();
+
+	setup_vaos();
 }
 
 void ShapeRenderer::compute_shadow( const LevelSet &ls, 
@@ -324,12 +337,9 @@ void ShapeRenderer::compute_shadow( const LevelSet &ls,
 	if( dynamic_cast<const SphereLevelSet*>(&ls) )
 	{
 		UsingShader sh( m_ballDepthShader ) ;
+		sh.bindMVP(depthModelView.data(), depthProjection.data());
 	
-		// Model-view
-		glUniformMatrix4fv( m_ballDepthShader.uniform("model_view"), 1, GL_FALSE, depthModelView.data()) ;
-		glUniformMatrix4fv( m_ballDepthShader.uniform("projection"), 1, GL_FALSE, depthProjection.data()) ;
-
-		draw_fake_ball( ls, m_ballDepthShader, m_squareVertices ) ;
+		draw_fake_ball( ls, m_ballDepthShader, m_billboardArrays ) ;
 	} else {
 		// Solid shader
 		Eigen::Matrix4f mat ;
@@ -346,6 +356,7 @@ void ShapeRenderer::compute_shadow( const LevelSet &ls,
 
 void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vector3f& lightPos,
 		bool shadowed, const Texture& depthTexture, 
+		const Eigen::Matrix4f& modelView, const Eigen::Matrix4f& projection,
 		const Eigen::Matrix4f& depthModelView, const Eigen::Matrix4f& depthProjection ) const 
 {
 	const Eigen::Matrix3f rotation = ls.rotation().matrix().cast < GLfloat >() ;
@@ -355,9 +366,9 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 	{
 		UsingShader sh( m_ballShader ) ;
 		// Model-view
-		sh.bindMVP() ;
+		sh.bindMVP(modelView.data(), projection.data()) ;
 
-		draw_fake_ball( ls, m_ballShader, m_squareVertices ) ;
+		draw_fake_ball( ls, m_ballShader, m_billboardArrays ) ;
 	} else {
 #ifndef GL_CORE
 		Eigen::Matrix4f mat ;

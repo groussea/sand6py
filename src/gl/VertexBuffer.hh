@@ -221,8 +221,8 @@ struct VertexAttribPointer
 	}
 	~VertexAttribPointer()
 	{
-		glVertexAttribDivisor( m_attrib,  0 ) ;
-		glDisableVertexAttribArray( m_attrib );
+		//glVertexAttribDivisor( m_attrib,  0 ) ;
+		//glDisableVertexAttribArray( m_attrib );
 	}
 private:
 	GLint m_attrib ;
@@ -244,10 +244,10 @@ struct ArrayAttribPointer
 	}
 	~ArrayAttribPointer()
 	{
-		for( unsigned i = 0 ; i < Cols ; ++i ) {
-			glVertexAttribDivisor( m_attrib+i,  0 ) ;
-			glDisableVertexAttribArray( m_attrib+i );
-		}
+		//for( unsigned i = 0 ; i < Cols ; ++i ) {
+			//glVertexAttribDivisor( m_attrib+i,  0 ) ;
+			//glDisableVertexAttribArray( m_attrib+i );
+		//}
 	}
 private:
 	GLint m_attrib ;
