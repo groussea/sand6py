@@ -40,8 +40,8 @@ class ShapeRenderer
 
 public:
 	void init() ;
-	void config_shaders() ;
-	void setup_vaos() ;
+	void clear_buffers();
+	void setup_buffers(const LevelSet &ls);
 
 	void compute_shadow( const LevelSet &ls, 
 		const Eigen::Matrix4f& depthModelView, const Eigen::Matrix4f& depthProjection ) const ;
@@ -63,12 +63,26 @@ public:
 
 private:
 
+	struct MeshDrawData
+	{
+		gl::VertexBuffer3f vertices;
+		gl::VertexBuffer3f normals;
+		gl::VertexBuffer3f uvs;
+		gl::IndexBuffer triIndices;
+		gl::ArrayObject vertexArrays;
+	};
+
+	void config_shaders() ;
+	void setup_vaos() ;
+	void setup_solid_data( const LevelSet &ls, const Shader& shader, MeshDrawData& data );
+
 	gl::VertexBuffer3f m_sphereVertices ;
 	gl::IndexBuffer	   m_sphereTriIndices ;
 	gl::ArrayObject    m_sphereVertexArrays;
 
 	gl::VertexBuffer3f m_squareVertices ;
 	gl::ArrayObject    m_billboardArrays;
+	std::unordered_map<const LevelSet*, MeshDrawData> m_solidData;
 
 	Shader m_ballShader ;
 	Shader m_ballDepthShader ;

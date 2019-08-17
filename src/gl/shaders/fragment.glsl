@@ -17,7 +17,7 @@
  * along with Sand6.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#version 130
+#version 330
 
 uniform mat4 model_view ;
 uniform vec3 light_pos ;

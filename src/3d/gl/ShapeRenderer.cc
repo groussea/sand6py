@@ -215,6 +215,37 @@ static void draw_solid( const Shader& shader,
 	glDrawElements( GL_TRIANGLES, cylqi.size(), GL_UNSIGNED_INT, 0 );
 }
 
+void ShapeRenderer::setup_solid_data( const LevelSet &ls, const Shader& shader, ShapeRenderer::MeshDrawData& data )
+{
+	const CylinderLevelSet* cylinder = dynamic_cast< const CylinderLevelSet* > (&ls) ;
+	const TorusLevelSet*       torus = dynamic_cast< const    TorusLevelSet* > (&ls) ;
+	const MeshLevelSet*         mesh = dynamic_cast< const     MeshLevelSet* > (&ls) ;
+
+	if(cylinder || torus)
+	{
+		Eigen::Matrix3Xf cylVertices, cylNormals, cylUVs ;
+		std::vector< GLuint > triIndices ;
+
+		if( torus ) {
+			genTorus( torus->radius(), 30, 30, cylVertices, cylNormals, cylUVs, triIndices );
+		} else if( cylinder ) {
+			genPointyCylinder( cylinder->height(), 30, cylVertices, cylNormals, cylUVs, triIndices );
+		}
+
+		// Transfer to VBO
+		gl::ArrayObject::Using vao(data.vertexArrays);
+		data.vertices.reset( cylVertices.cols(), cylVertices.data(), GL_STATIC_DRAW );
+		data.normals.reset( cylNormals .cols(), cylNormals .data(), GL_STATIC_DRAW );
+		data.uvs.reset( cylUVs    .cols(), cylUVs     .data(), GL_STATIC_DRAW );
+		data.triIndices.reset( triIndices.size(), triIndices.data() );
+
+		gl::VertexAttribPointer vap( data.vertices, shader.attribute("vertex") ) ;
+		gl::VertexAttribPointer nap( data.normals, shader.attribute("normal") ) ;
+		gl::VertexAttribPointer uap( data.uvs, shader.attribute("uv") ) ;
+	}
+
+}
+
 static void draw_shape_elements( const LevelSet &ls, const Shader& shader )
 {
 
@@ -322,12 +353,22 @@ void ShapeRenderer::setup_vaos()
 
 }
 
-
 void ShapeRenderer::init()
 {
 	config_shaders();
-
 	setup_vaos();
+}
+
+void ShapeRenderer::clear_buffers()
+{
+	m_solidData.clear();
+}
+	
+void ShapeRenderer::setup_buffers(const LevelSet &ls)
+{
+	if( dynamic_cast<const SphereLevelSet*>(&ls) ) return;
+
+	setup_solid_data(ls, m_solidShader, m_solidData[&ls]);
 }
 
 void ShapeRenderer::compute_shadow( const LevelSet &ls, 
@@ -350,7 +391,13 @@ void ShapeRenderer::compute_shadow( const LevelSet &ls,
 		UsingShader sh( m_solidDepthShader ) ;
 		glUniformMatrix4fv( m_solidDepthShader.uniform("depth_mvp"), 1, GL_FALSE, completeMVP.data()) ;
 
-		draw_shape_elements( ls, m_solidDepthShader ) ;
+		auto dataIt = m_solidData.find(&ls);
+		if (dataIt != m_solidData.end())
+		{
+			const auto &data = dataIt->second;
+			gl::ArrayObject::Using vao(data.vertexArrays);
+			glDrawElements(GL_TRIANGLES, data.triIndices.size(), GL_UNSIGNED_INT, 0);
+		}
 	}
 }
 
@@ -370,20 +417,18 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 
 		draw_fake_ball( ls, m_ballShader, m_billboardArrays ) ;
 	} else {
-#ifndef GL_CORE
 		Eigen::Matrix4f mat ;
 		get_ls_matrix( ls, mat ) ;
 		Eigen::Matrix4f completeDepthMVP = depthProjection * depthModelView * mat ;
 
-		glColor4f(1., 0., .8, 1);
-
-		glPushMatrix();
-		glMultMatrixf( mat.data() );
+		//glColor4f(1., 0., .8, 1);
+		Eigen::Matrix4f finalModelView = modelView * mat; 
 
 		const Eigen::Vector3f objLight = rotation.inverse() / ls.scale() * (lightPos - translation) ;
 
 		const HoleLevelSet* hole = nullptr ;
 
+#ifndef GL_CORE
 		if ( dynamic_cast<const PlaneLevelSet*>(&ls) ) {
 
 			glBegin( GL_QUADS );
@@ -431,29 +476,33 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 				glEnd( ) ;
 			}
 		} else  {
+#endif
+			auto dataIt = m_solidData.find(&ls);
+			Eigen::Vector3f color(0.3, 0.15, 0.1);
 
-			Eigen::Vector3f color(0.3,0.15,0.1) ;
+			if (m_solidShader.ok() && dataIt != m_solidData.end())
+			{
+				UsingShader sh(m_solidShader);
+				sh.bindMVP(finalModelView.data(), projection.data());
 
-			if( m_solidShader.ok() ) {
-				UsingShader sh( m_solidShader ) ;
-				sh.bindMVP() ;
+				glUniform3fv(m_solidShader.uniform("light_pos"), 1, objLight.data());
+				glUniform3fv(m_solidShader.uniform("ambient"), 1, color.data());
 
-				glUniform3fv( m_solidShader.uniform("light_pos"), 1, objLight.data() ) ;
-				glUniform3fv( m_solidShader.uniform("ambient"), 1, color.data() ) ;
-
-				UsingTexture tx( depthTexture ) ;
-				if( shadowed ) {
-					tx.bindUniform( m_solidShader.uniform("depth_texture") );
-					glUniformMatrix4fv( m_solidShader.uniform("depth_mvp"), 1, GL_FALSE, completeDepthMVP.data()) ;
+				UsingTexture tx(depthTexture);
+				if (shadowed)
+				{
+					tx.bindUniform(m_solidShader.uniform("depth_texture"));
+					glUniformMatrix4fv(m_solidShader.uniform("depth_mvp"), 1, GL_FALSE, completeDepthMVP.data());
 				}
 
-				draw_shape_elements( ls, m_solidShader ) ;
+				const auto &data = dataIt->second;
+				gl::ArrayObject::Using vao(data.vertexArrays);
+				glDrawElements(GL_TRIANGLES, data.triIndices.size(), GL_UNSIGNED_INT, 0);
+
+				//std::cerr << "Err = A" << glGetError() << " " << data.triIndices.size() << std::endl ;
+
 			}
-		}
-
-
-		glPopMatrix();
-#endif 
+		//}
 	}
 
 

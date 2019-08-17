@@ -69,7 +69,7 @@ void GLViewer::config_shaders()
 {
 	m_particlesShader.add_attribute("vertex") ;
 	m_particlesShader.add_attribute("frame") ;
-	m_particlesShader.add_attribute("alpha") ;
+	m_particlesShader.add_attribute("density") ;
 	m_particlesShader.add_uniform("model_view") ;
 	m_particlesShader.add_uniform("projection") ;
 	m_particlesShader.add_uniform("light_pos") ;
@@ -167,10 +167,15 @@ void GLViewer::update_vaos()
             //Vertices
             gl::VertexAttribPointer vap(m_shapeRenderer.sphereVertices(), m_particlesShader.attribute("vertex"));
             // Densities
-            gl::VertexAttribPointer ap(m_alpha, m_particlesShader.attribute("alpha"), false, 1);
+            gl::VertexAttribPointer ap(m_alpha, m_particlesShader.attribute("density"), false, 1);
             //Frames
             gl::ArrayAttribPointer<4> fp(m_frames, m_particlesShader.attribute("frame"), false, 1);
         }
+    }
+	
+    m_shapeRenderer.clear_buffers();
+    for( const LevelSet::Ptr& ls: m_offline.levelSets() ) {
+        m_shapeRenderer.setup_buffers(*ls);
     }
 }
 
@@ -262,7 +267,7 @@ void GLViewer::frameAll()
         position[1] = 3 * box[1];
         position[2] = 0.5 * box[2];
         m_camera.lookAt(position, 0.5 * box, Eigen::Vector3f(0, 0, 1));
-        m_camera.setPerspective(M_PI_2, m_width / (float)m_height, 0.1*box.norm(), 10 * box.norm());
+        m_camera.setPerspective(M_PI/3, m_width / (float)m_height, 0.1*box.norm(), 10 * box.norm());
     }
     else
     {
