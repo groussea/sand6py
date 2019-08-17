@@ -47,14 +47,14 @@ public:
 	{
 		assert( ! s_instance ) ;
 		s_instance = this ;
-
-		init() ;
 	}
 
 	~Appli()
 	{
 		quit(0) ;
 	}
+
+	GLViewer& viewer() { return m_viewer; }
 
 	void set_frame( unsigned frame ) {
 		if( m_offline.load_frame( frame ) ) {
@@ -122,17 +122,6 @@ public:
 		instance().process_mouse_scroll( y_offset );
 	}
 
-private:
-
-	void quit(int rc)
-	{
-		if( m_pWindow) glfwDestroyWindow(m_pWindow);
-
-		std::clog << "Bye. [code " << rc << "]" << std::endl ;
-		glfwTerminate();
-		std::exit(rc);
-	}
-
 	void init()
 	{
 		if ( !glfwInit() )
@@ -163,6 +152,17 @@ private:
 		set_frame( m_currentFrame );
 		m_viewer.init( ) ;
 
+	}
+
+private:
+
+	void quit(int rc)
+	{
+		if( m_pWindow) glfwDestroyWindow(m_pWindow);
+
+		std::clog << "Bye. [code " << rc << "]" << std::endl ;
+		glfwTerminate();
+		std::exit(rc);
 	}
 
 	void process_key( int key, int action, int mods )
@@ -303,6 +303,9 @@ int main( int argc, const char * argv[] )
 	unsigned height = 0 ;
 	unsigned nSamples = 0;
 
+	bool discs  = false ;
+	float grainSizeFactor = 1 ;
+
 	for( int i = 1 ; i < argc ; ++i )
 	{
 		if( argv[i][0] == '-' ){
@@ -326,6 +329,13 @@ int main( int argc, const char * argv[] )
 				if( ++i == argc ) break ;
 				nSamples = d6::to_uint( argv[i] ) ;
 				break;
+			case 'd':
+				discs = true ;
+				break;
+			case 'g':
+				if( ++i == argc ) break ;
+				grainSizeFactor = d6::to_float( argv[i] ) ;
+				break;
 			}
 		} else {
 			base_dir = argv[i] ;
@@ -339,7 +349,14 @@ int main( int argc, const char * argv[] )
 		height = std::sqrt( 5.e5 / a ) ;
 		width = height * a ;
 	}
-	return d6::Appli( offline, frame, nSamples, width, height ).run( ) ;
+
+	d6::Appli appli( offline, frame, nSamples, width, height );
+	if (discs)
+		appli.viewer().grainsRenderer().useDiscs();
+	appli.viewer().grainsRenderer().setGrainSizeFactor( grainSizeFactor );
+
+	appli.init();
+	return appli.run( ) ;
 
 }
 

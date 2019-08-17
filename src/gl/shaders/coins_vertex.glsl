@@ -38,8 +38,8 @@ out float material ;
 
 void main()
 {
-    coord.y = 1 - 2*((gl_VertexID>>1)%2) ;
-    coord.x = 1 - 2*(((gl_VertexID>>1)%2) ^ (gl_VertexID%2)) ;
+    const vec2[6] lut = vec2[6](vec2(-1,-1), vec2(-1,1), vec2(1, 1), vec2(-1, -1), vec2(1, 1), vec2(1, -1) );
+    coord = lut[gl_VertexID];
 
     vec3 t1, t2 ;
     if( normal.x > 1.e-12 ) {

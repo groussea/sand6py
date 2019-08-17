@@ -54,7 +54,7 @@ void GrainRenderer::draw_grains ( const Shader &shader, const float pixelSize,
 	//vertices
 	if( instanced )
 	{
-		glDrawArraysInstanced( GL_QUADS, 0, m_shapeRenderer.squareVertices().size(), m_grainVertices.size() );
+		glDrawArraysInstanced( GL_TRIANGLES, 0, m_shapeRenderer.squareVertices().size(), m_grainVertices.size() );
 	} else {
 
 		if( pixelSize > 0 )

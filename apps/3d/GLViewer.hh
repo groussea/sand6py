@@ -56,6 +56,8 @@ public:
 		return m_grainsRenderer.valid() ;
 	}
 
+	GrainRenderer& grainsRenderer() { return m_grainsRenderer ;}
+
 private:
     Eigen::Vector3f lightPosition() const;
 
