@@ -123,7 +123,9 @@ static void genPointyCylinder( const float height, const unsigned res,
 
 }
 
-static void genTorus( const float radius,
+static void genTorus( 
+				      const float outerRadius,
+					  const float radius,
 					  const unsigned parallels, const unsigned meridians,
 					  Eigen::Matrix3Xf& vertices,
 					  Eigen::Matrix3Xf& normals,
@@ -155,7 +157,7 @@ static void genTorus( const float radius,
 			normals.col(idx) = n0 ;
 			uvs.col(idx) = Eigen::Vector3f(alpha0/(2*M_PI),beta0/(2*M_PI),0) ;
 
-			vertices.col(idx) = p0 + radius * n0 ;
+			vertices.col(idx) = outerRadius * p0 + radius * n0 ;
 
 			triIndices.push_back( i*parallels + j );
 			triIndices.push_back( i*parallels + ((j+1)%parallels) );
@@ -168,6 +170,29 @@ static void genTorus( const float radius,
 		}
 	}
 }
+
+static void genPlane( const Eigen::Vector3f& box,
+					  Eigen::Matrix3Xf& vertices,
+					  Eigen::Matrix3Xf& normals,
+					  Eigen::Matrix3Xf& uvs,
+					  std::vector< GLuint >& triIndices )
+{
+	triIndices = {0, 1 , 2, 0, 2 , 3} ;
+	vertices.resize( 3, 4 ) ;
+	normals.resize( 3, 4 ) ;
+	uvs.resize( 3, 4 ) ;
+
+	vertices << -box[0], box[0], box[0], -box[0],
+		-box[1], -box[1], box[1], box[1],
+		0, 0, 0, 0;
+	normals.topRows<2>().setZero();
+	normals.row(2).setOnes();
+
+	uvs << 0, 1, 1, 0,
+		   0, 0, 1, 1,
+		   0, 0, 0, 0;
+}
+
 
 static void get_ls_matrix( const LevelSet &ls, Eigen::Matrix4f & mat )
 {
@@ -192,96 +217,45 @@ static void draw_fake_ball( const LevelSet &ls, const Shader& shader, const gl::
 	glDrawArrays( GL_TRIANGLES, 0, 6) ;
 }
 
-static void draw_solid( const Shader& shader,
-			const Eigen::Matrix3Xf& cylVertices,
-			const Eigen::Matrix3Xf& cylNormals,
-			const Eigen::Matrix3Xf& cylUVs,
-			const std::vector< GLuint > &triIndices )
+void ShapeRenderer::setup_solid_data(const LevelSet &ls, const Eigen::Vector3f &box,
+									 const Shader &shader, ShapeRenderer::MeshDrawData &data)
 {
-	// Transfer to VBO
-	gl::VertexBuffer3f cylv, cyln, cyluv ;
-	gl::IndexBuffer cylqi ;
-	cylv.reset( cylVertices.cols(), cylVertices.data(), GL_DYNAMIC_DRAW );
-	cyln.reset( cylNormals .cols(), cylNormals .data(), GL_DYNAMIC_DRAW );
-	cyluv.reset( cylUVs    .cols(), cylUVs     .data(), GL_DYNAMIC_DRAW );
-	cylqi.reset( triIndices.size(), triIndices.data() );
+	const CylinderLevelSet *cylinder = dynamic_cast<const CylinderLevelSet *>(&ls);
+	const TorusLevelSet *torus = dynamic_cast<const TorusLevelSet *>(&ls);
+	const MeshLevelSet *mesh = dynamic_cast<const MeshLevelSet *>(&ls);
+	const HoleLevelSet *hole = dynamic_cast<const HoleLevelSet *>(&ls);
+	const PlaneLevelSet *plane = dynamic_cast<const PlaneLevelSet *>(&ls);
 
-	cylqi.bind() ;
+	Eigen::Matrix3Xf cylVertices, cylNormals, cylUVs;
+	std::vector<GLuint> triIndices;
 
-	gl::VertexAttribPointer vap( cylv, shader.attribute("vertex") ) ;
-	gl::VertexAttribPointer nap( cyln, shader.attribute("normal") ) ;
-	gl::VertexAttribPointer uap( cyln, shader.attribute("uv") ) ;
-
-	glDrawElements( GL_TRIANGLES, cylqi.size(), GL_UNSIGNED_INT, 0 );
-}
-
-void ShapeRenderer::setup_solid_data( const LevelSet &ls, const Shader& shader, ShapeRenderer::MeshDrawData& data )
-{
-	const CylinderLevelSet* cylinder = dynamic_cast< const CylinderLevelSet* > (&ls) ;
-	const TorusLevelSet*       torus = dynamic_cast< const    TorusLevelSet* > (&ls) ;
-	const MeshLevelSet*         mesh = dynamic_cast< const     MeshLevelSet* > (&ls) ;
-
-	if(cylinder || torus)
+	if (torus)
 	{
-		Eigen::Matrix3Xf cylVertices, cylNormals, cylUVs ;
-		std::vector< GLuint > triIndices ;
-
-		if( torus ) {
-			genTorus( torus->radius(), 30, 30, cylVertices, cylNormals, cylUVs, triIndices );
-		} else if( cylinder ) {
-			genPointyCylinder( cylinder->height(), 30, cylVertices, cylNormals, cylUVs, triIndices );
-		}
-
-		// Transfer to VBO
-		gl::ArrayObject::Using vao(data.vertexArrays);
-		data.vertices.reset( cylVertices.cols(), cylVertices.data(), GL_STATIC_DRAW );
-		data.normals.reset( cylNormals .cols(), cylNormals .data(), GL_STATIC_DRAW );
-		data.uvs.reset( cylUVs    .cols(), cylUVs     .data(), GL_STATIC_DRAW );
-		data.triIndices.reset( triIndices.size(), triIndices.data() );
-
-		gl::VertexAttribPointer vap( data.vertices, shader.attribute("vertex") ) ;
-		gl::VertexAttribPointer nap( data.normals, shader.attribute("normal") ) ;
-		gl::VertexAttribPointer uap( data.uvs, shader.attribute("uv") ) ;
+		genTorus(1.0f, torus->radius(), 30, 30, cylVertices, cylNormals, cylUVs, triIndices);
+	}
+	else if (cylinder)
+	{
+		genPointyCylinder(cylinder->height(), 30, cylVertices, cylNormals, cylUVs, triIndices);
+	}
+	else if (hole)
+	{
+		genTorus(hole->radius(), 1.0f, 30, 30, cylVertices, cylNormals, cylUVs, triIndices);
+	}
+	else if (plane)
+	{
+		genPlane(box, cylVertices, cylNormals, cylUVs, triIndices);
 	}
 
-}
+	// Transfer to VBO
+	gl::ArrayObject::Using vao(data.vertexArrays);
+	data.vertices.reset(cylVertices.cols(), cylVertices.data(), GL_STATIC_DRAW);
+	data.normals.reset(cylNormals.cols(), cylNormals.data(), GL_STATIC_DRAW);
+	data.uvs.reset(cylUVs.cols(), cylUVs.data(), GL_STATIC_DRAW);
+	data.triIndices.reset(triIndices.size(), triIndices.data());
 
-static void draw_shape_elements( const LevelSet &ls, const Shader& shader )
-{
-
-	typedef std::unordered_map< std::string, MeshRenderer > MeshRenderers ;
-	MeshRenderers s_meshRenderers ;
-
-	const CylinderLevelSet* cylinder = dynamic_cast< const CylinderLevelSet* > (&ls) ;
-	const TorusLevelSet*       torus = dynamic_cast< const    TorusLevelSet* > (&ls) ;
-	const MeshLevelSet*         mesh = dynamic_cast< const     MeshLevelSet* > (&ls) ;
-
-	if( mesh ) {
-		MeshRenderer& renderer = s_meshRenderers[ mesh->objFile() ] ;
-		if( !renderer.ok() ) {
-			TriangularMesh triMesh ;
-			triMesh.loadObj( mesh->objFile().c_str() ) ;
-			if( !triMesh.hasVertexNormals() )
-				triMesh.computeFaceNormals() ;
-
-			renderer.reset( triMesh ) ;
-		}
-
-		renderer.draw( shader ) ;
-
-	} else if( torus || cylinder ) {
-		Eigen::Matrix3Xf cylVertices, cylNormals, cylUVs ;
-		std::vector< GLuint > triIndices ;
-
-		if( torus ) {
-			genTorus( torus->radius(), 30, 30, cylVertices, cylNormals, cylUVs, triIndices );
-		} else if( cylinder ) {
-			genPointyCylinder( cylinder->height(), 30, cylVertices, cylNormals, cylUVs, triIndices );
-		}
-
-		draw_solid( shader, cylVertices, cylNormals, cylUVs, triIndices ) ;
-	}
-
+	gl::VertexAttribPointer vap(data.vertices, shader.attribute("vertex"));
+	gl::VertexAttribPointer nap(data.normals, shader.attribute("normal"));
+	gl::VertexAttribPointer uap(data.uvs, shader.attribute("uv"));
 }
 
 void ShapeRenderer::config_shaders()
@@ -364,11 +338,11 @@ void ShapeRenderer::clear_buffers()
 	m_solidData.clear();
 }
 	
-void ShapeRenderer::setup_buffers(const LevelSet &ls)
+void ShapeRenderer::setup_buffers(const LevelSet &ls, const Eigen::Vector3f& box)
 {
 	if( dynamic_cast<const SphereLevelSet*>(&ls) ) return;
 
-	setup_solid_data(ls, m_solidShader, m_solidData[&ls]);
+	setup_solid_data(ls, box, m_solidShader, m_solidData[&ls]);
 }
 
 void ShapeRenderer::compute_shadow( const LevelSet &ls, 
@@ -426,57 +400,6 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 
 		const Eigen::Vector3f objLight = rotation.inverse() / ls.scale() * (lightPos - translation) ;
 
-		const HoleLevelSet* hole = nullptr ;
-
-#ifndef GL_CORE
-		if ( dynamic_cast<const PlaneLevelSet*>(&ls) ) {
-
-			glBegin( GL_QUADS );
-			glNormal3f( 0.f, 0.f, 1.f );
-			glVertex3d( -box[0], -box[1], 0 );
-			glNormal3f( 0.f, 0.f, 1.f );
-			glVertex3d( -box[0],  box[1], 0 );
-			glNormal3f( 0.f, 0.f, 1.f );
-			glVertex3d(  box[0],  box[1], 0 );
-			glNormal3f( 0.f, 0.f, 1.f );
-			glVertex3d(  box[0], -box[1], 0 );
-			glEnd( ) ;
-
-		} else if ( (hole = dynamic_cast<const HoleLevelSet*>(&ls)) ) {
-
-			const unsigned res= 10 ;
-			for( unsigned i = 0 ; i < res ; ++i ) {
-
-				const float alpha0 = (2*M_PI*(i+0)) / res ;
-				const float alpha1 = (2*M_PI*(i+1)) / res ;
-
-				const Eigen::Vector3f p0( std::cos(alpha0), std::sin(alpha0), 0 ) ;
-				const Eigen::Vector3f p1( std::cos(alpha1), std::sin(alpha1), 0 ) ;
-
-				glBegin( GL_QUAD_STRIP );
-				for( unsigned j = 0 ; j < res ; ++j )
-				{
-					const float beta0 = (2*M_PI*(j+0)) / (res-1) ;
-
-					Eigen::Vector3f n0 = std::cos(beta0)*p0.normalized() ;
-					n0[2] = std::sin(beta0) ;
-
-					Eigen::Vector3f n1 = std::cos(beta0)*p1.normalized() ;
-					n1[2] = std::sin(beta0) ;
-
-					Eigen::Vector3f v0 = hole->radius() * p0 + n0 ;
-					Eigen::Vector3f v1 = hole->radius() * p1 + n1 ;
-
-					glNormal3fv( n0.data() );
-					glVertex3fv( v0.data() );
-					glNormal3fv( n1.data() );
-					glVertex3fv( v1.data() );
-
-				}
-				glEnd( ) ;
-			}
-		} else  {
-#endif
 			auto dataIt = m_solidData.find(&ls);
 			Eigen::Vector3f color(0.3, 0.15, 0.1);
 
@@ -499,10 +422,7 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 				gl::ArrayObject::Using vao(data.vertexArrays);
 				glDrawElements(GL_TRIANGLES, data.triIndices.size(), GL_UNSIGNED_INT, 0);
 
-				//std::cerr << "Err = A" << glGetError() << " " << data.triIndices.size() << std::endl ;
-
 			}
-		//}
 	}
 
 

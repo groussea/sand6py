@@ -175,7 +175,7 @@ void GLViewer::update_vaos()
 	
     m_shapeRenderer.clear_buffers();
     for( const LevelSet::Ptr& ls: m_offline.levelSets() ) {
-        m_shapeRenderer.setup_buffers(*ls);
+        m_shapeRenderer.setup_buffers(*ls, m_offline.box().cast<float>());
     }
 }
 

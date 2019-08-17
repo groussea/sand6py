@@ -41,7 +41,7 @@ class ShapeRenderer
 public:
 	void init() ;
 	void clear_buffers();
-	void setup_buffers(const LevelSet &ls);
+	void setup_buffers(const LevelSet &ls, const Eigen::Vector3f& box);
 
 	void compute_shadow( const LevelSet &ls, 
 		const Eigen::Matrix4f& depthModelView, const Eigen::Matrix4f& depthProjection ) const ;
@@ -74,7 +74,7 @@ private:
 
 	void config_shaders() ;
 	void setup_vaos() ;
-	void setup_solid_data( const LevelSet &ls, const Shader& shader, MeshDrawData& data );
+	void setup_solid_data( const LevelSet &ls, const Eigen::Vector3f& box, const Shader& shader, MeshDrawData& data );
 
 	gl::VertexBuffer3f m_sphereVertices ;
 	gl::IndexBuffer	   m_sphereTriIndices ;
