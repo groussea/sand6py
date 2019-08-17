@@ -35,7 +35,8 @@ class MeshRenderer
 	
 	void reset( const TriangularMesh& mesh ) ;
 
-	void draw( const Shader &shader ) const ;
+	void bind( const Shader &shader ) const ;
+	void draw() const ;
 
 	bool ok() const 
 	{

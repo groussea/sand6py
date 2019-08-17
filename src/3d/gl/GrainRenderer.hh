@@ -58,9 +58,10 @@ public:
 		return m_nSamples > 0 ;
 	}
 
-	void compute_shadow( const float baseGrainSize, const Eigen::Matrix4f &depthMVP ) ;
-	void draw(const Texture &depthTexture, const Eigen::Vector3f& lightPosition,
-			  const float baseGrainSize, const Eigen::Matrix4f &depthMVP ) ;
+	void compute_shadow( const float baseGrainSize, const Eigen::Matrix4f &depthMVP ) const ;
+	void draw(const Texture &depthTexture, const Eigen::Vector3f &lightPosition,
+			  const Eigen::Matrix4f &modelView, const Eigen::Matrix4f &projection,
+			  const float baseGrainSize, const Eigen::Matrix4f &depthMVP) const;
 
 	void init() ;
 	void update_buffers() ;
@@ -68,6 +69,7 @@ public:
 	void move() ;
 
 private:
+	void setup_vao( const Shader& shader, bool instanced) ;
 
 	void draw_grains ( const Shader &shader, const float pixelSize,
 					   const Eigen::Matrix4f &depthMVP, bool instanced ) const ;
@@ -80,6 +82,8 @@ private:
 	unsigned m_nSamples  ;
 
 	float 	 m_grainSizeFactor ;
+
+	gl::ArrayObject m_grainArrays;
 
 	gl::VertexBuffer3f m_grainVertices ;
 	gl::VertexBuffer3f m_grainNormals ;

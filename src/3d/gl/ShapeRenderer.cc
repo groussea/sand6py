@@ -220,9 +220,25 @@ static void draw_fake_ball( const LevelSet &ls, const Shader& shader, const gl::
 void ShapeRenderer::setup_solid_data(const LevelSet &ls, const Eigen::Vector3f &box,
 									 const Shader &shader, ShapeRenderer::MeshDrawData &data)
 {
+	static std::unordered_map<std::string, MeshRenderer> s_meshRenderers;
+	
+	gl::ArrayObject::Using vao(data.vertexArrays);
+	
+	const MeshLevelSet *mesh = dynamic_cast<const MeshLevelSet *>(&ls);
+	if (mesh)
+	{
+		MeshRenderer& meshRenderer = s_meshRenderers[mesh->objFile()];
+		if(!meshRenderer.ok())
+		{
+			TriangularMesh triMesh;
+			triMesh.loadObj(mesh->objFile().c_str());
+			meshRenderer.reset(triMesh);
+		}
+		meshRenderer.bind(shader);
+	}
+
 	const CylinderLevelSet *cylinder = dynamic_cast<const CylinderLevelSet *>(&ls);
 	const TorusLevelSet *torus = dynamic_cast<const TorusLevelSet *>(&ls);
-	const MeshLevelSet *mesh = dynamic_cast<const MeshLevelSet *>(&ls);
 	const HoleLevelSet *hole = dynamic_cast<const HoleLevelSet *>(&ls);
 	const PlaneLevelSet *plane = dynamic_cast<const PlaneLevelSet *>(&ls);
 
@@ -247,7 +263,6 @@ void ShapeRenderer::setup_solid_data(const LevelSet &ls, const Eigen::Vector3f &
 	}
 
 	// Transfer to VBO
-	gl::ArrayObject::Using vao(data.vertexArrays);
 	data.vertices.reset(cylVertices.cols(), cylVertices.data(), GL_STATIC_DRAW);
 	data.normals.reset(cylNormals.cols(), cylNormals.data(), GL_STATIC_DRAW);
 	data.uvs.reset(cylUVs.cols(), cylUVs.data(), GL_STATIC_DRAW);
@@ -345,6 +360,19 @@ void ShapeRenderer::setup_buffers(const LevelSet &ls, const Eigen::Vector3f& box
 	setup_solid_data(ls, box, m_solidShader, m_solidData[&ls]);
 }
 
+void ShapeRenderer::MeshDrawData::draw() const 
+{
+	if (meshRenderer)
+	{
+		meshRenderer->draw();
+	}
+	else
+	{
+		gl::ArrayObject::Using vao(vertexArrays);
+		glDrawElements(GL_TRIANGLES, triIndices.size(), GL_UNSIGNED_INT, 0);
+	}
+}
+
 void ShapeRenderer::compute_shadow( const LevelSet &ls, 
 		const Eigen::Matrix4f& depthModelView, const Eigen::Matrix4f& depthProjection ) const 
 {
@@ -368,9 +396,7 @@ void ShapeRenderer::compute_shadow( const LevelSet &ls,
 		auto dataIt = m_solidData.find(&ls);
 		if (dataIt != m_solidData.end())
 		{
-			const auto &data = dataIt->second;
-			gl::ArrayObject::Using vao(data.vertexArrays);
-			glDrawElements(GL_TRIANGLES, data.triIndices.size(), GL_UNSIGNED_INT, 0);
+			dataIt->second.draw();
 		}
 	}
 }
@@ -418,10 +444,7 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 					glUniformMatrix4fv(m_solidShader.uniform("depth_mvp"), 1, GL_FALSE, completeDepthMVP.data());
 				}
 
-				const auto &data = dataIt->second;
-				gl::ArrayObject::Using vao(data.vertexArrays);
-				glDrawElements(GL_TRIANGLES, data.triIndices.size(), GL_UNSIGNED_INT, 0);
-
+				dataIt->second.draw();
 			}
 	}
 

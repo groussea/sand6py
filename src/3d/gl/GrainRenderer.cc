@@ -26,16 +26,24 @@
 
 namespace d6 {
 
+void GrainRenderer::setup_vao( const Shader &shader, bool instanced)
+{
+	gl::ArrayObject::Using vao(m_grainArrays);
+
+	//Attributes
+	const int  divisor   = instanced ? 1 : 0 ;
+	gl::VertexAttribPointer vap_v( m_grainVertices, shader.attribute("vertex"), false, divisor ) ;
+	gl::VertexAttribPointer vap_n( m_grainNormals, shader.attribute("normal"), false, divisor ) ;
+	gl::VertexAttribPointer vap_a( m_grainVisibility, shader.attribute("visibility"), false, divisor ) ;
+
+	gl::VertexAttribPointer vap_s( m_grainNoise, m_grainsShader.attribute("noise"), false, divisor ) ;
+}
 
 void GrainRenderer::draw_grains ( const Shader &shader, const float pixelSize,
 								  const Eigen::Matrix4f &depthMVP, bool instanced ) const
 {
-	const int  divisor   = instanced ? 1 : 0 ;
 
-	//Attributes
-	gl::VertexAttribPointer vap_v( m_grainVertices, shader.attribute("vertex"), false, divisor ) ;
-	gl::VertexAttribPointer vap_n( m_grainNormals, shader.attribute("normal"), false, divisor ) ;
-	gl::VertexAttribPointer vap_a( m_grainVisibility, shader.attribute("visibility"), false, divisor ) ;
+	gl::ArrayObject::Using vao(m_grainArrays);
 
 	// Uniforms
 	glUniform1f( shader.uniform("grain_size"), m_offline.config().grainDiameter * m_grainSizeFactor ) ;
@@ -46,7 +54,6 @@ void GrainRenderer::draw_grains ( const Shader &shader, const float pixelSize,
 	//vertices
 	if( instanced )
 	{
-		gl::VertexPointer vp( m_shapeRenderer.squareVertices() ) ;
 		glDrawArraysInstanced( GL_QUADS, 0, m_shapeRenderer.squareVertices().size(), m_grainVertices.size() );
 	} else {
 
@@ -57,9 +64,7 @@ void GrainRenderer::draw_grains ( const Shader &shader, const float pixelSize,
 			glPointSize( m_grainSizeFactor ) ;
 		}
 
-		gl::VertexPointer vp( m_grainVertices ) ;
 		glDrawArrays( GL_POINTS, 0, m_grainVertices.size() );
-
 		glDisable( GL_PROGRAM_POINT_SIZE ) ;
 	}
 
@@ -67,7 +72,7 @@ void GrainRenderer::draw_grains ( const Shader &shader, const float pixelSize,
 }
 
 void GrainRenderer::compute_shadow(
-		const float pixelSize, const Eigen::Matrix4f &depthMVP )
+		const float pixelSize, const Eigen::Matrix4f &depthMVP ) const
 {
 	if( !m_depthShader.ok() )
 		return ;
@@ -76,24 +81,21 @@ void GrainRenderer::compute_shadow(
 
 	const bool instanced = m_sampler.mode() == Sampler::Discs ;
 	draw_grains( m_depthShader, pixelSize, depthMVP, instanced ) ;
-
 }
 
 void GrainRenderer::draw(const Texture& depthTexture, const Eigen::Vector3f &lightPosition,
-		const float pixelSize, const Eigen::Matrix4f &depthMVP )
+		const Eigen::Matrix4f& modelView, const Eigen::Matrix4f& projection,
+		const float pixelSize, const Eigen::Matrix4f &depthMVP ) const
 {
 	if( !m_grainsShader.ok() )
 		return ;
 
 	UsingShader sh( m_grainsShader ) ;
 	// Model-view
-	sh.bindMVP() ;
+	sh.bindMVP(modelView.data(), projection.data()) ;
 
 	// Attributes
 	const bool instanced = m_sampler.mode() == Sampler::Discs ;
-	const int  divisor   = instanced ? 1 : 0 ;
-
-	gl::VertexAttribPointer vap_s( m_grainNoise, m_grainsShader.attribute("noise"), false, divisor ) ;
 
 	// Uniforms
 	glUniform3fv( m_grainsShader.uniform("light_pos"), 1, lightPosition.data() ) ;
@@ -157,6 +159,10 @@ void GrainRenderer::update_buffers()
 	m_grainNormals   .reset( m_sampler.count(), m_sampler.normals().data()   , GL_DYNAMIC_DRAW )  ;
 	m_grainVisibility.reset( m_sampler.count(), m_sampler.visibility().data(), GL_DYNAMIC_DRAW )  ;
 	m_grainNoise     .reset( m_sampler.count(), m_sampler.noise().data()     , GL_DYNAMIC_DRAW )  ;
+
+	// Attributes
+	const bool instanced = m_sampler.mode() == Sampler::Discs ;
+	setup_vao(m_grainsShader, instanced);
 }
 
 } //d6

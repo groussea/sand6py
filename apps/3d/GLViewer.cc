@@ -10,8 +10,8 @@
 
 #include "utils/Log.hh"
 
-#define fb_width  2*2560
-#define fb_height 2*1440
+#define fb_width  (2*2560)
+#define fb_height (2*1440)
 
 namespace d6
 {
@@ -87,6 +87,8 @@ void GLViewer::config_shaders()
 
 void GLViewer::update_buffers()
 {
+    if(!m_camera.valid()) return;
+
     const Particles &p = m_offline.particles();
     m_centers.reset(p.count(), p.centers().data(), GL_STATIC_DRAW);
 
@@ -181,7 +183,7 @@ void GLViewer::update_vaos()
 
 Eigen::Vector3f GLViewer::lightPosition() const
 {
-	return ( m_offline.box() / 2 ).cast< float >() + 10 * m_offline.box().norm() * m_lightDirection ;
+	return ( m_offline.box() / 2 ).cast< float >() + 3 * m_offline.box().norm() * m_lightDirection.normalized() ;
 }
 
 void GLViewer::draw() const
@@ -215,8 +217,6 @@ void GLViewer::draw() const
 	}
 
 	bool shadowed = false ;
-	Eigen::Matrix4f depthModelView ;
-	Eigen::Matrix4f depthProjection ;
 
 	if( m_drawParticles )
 	{
@@ -239,12 +239,83 @@ void GLViewer::draw() const
 
 	}
 
+    Camera depthCam = m_camera;
+    Camera viewCam = m_camera;
+
+    if( renderSamples() )
+	{
+
+		// Set-up light POV camera
+        const Eigen::Vector3f &light_pos = lightPosition();
+        Eigen::Vector3f box = m_offline.box().cast<float>();
+
+        const Eigen::Vector3f sceneCenter = 0.5f*box;
+        const float centerDepth = (light_pos - sceneCenter).norm(); 
+		depthCam.lookAt(light_pos, sceneCenter, depthCam.up);
+        float fov = std::atan2(box.norm(), centerDepth);
+        depthCam.setPerspective(fov, fb_width/(float)fb_height, 0.5*centerDepth, 2*centerDepth);
+
+        const Eigen::Matrix4f depthMVP = depthCam.projectionMatrix * depthCam.viewMatrix;
+
+
+        if(  m_grainsRenderer.sampler().mode() != Sampler::VelocityCut )
+		{
+
+			// Compute grains shadowing
+			UsingFrameBuffer fb( m_depthBuffer ) ;
+
+			glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depthTexture.id(), 0);
+			glDrawBuffer(GL_NONE); // No color buffer is drawn to.
+
+			if( m_depthBuffer.check_complete() )
+				Log::Error() << "Frame buffer incomplete" << std::endl ;
+
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			const Scalar pixelSize = false /*cam.type() == qglviewer::Camera::ORTHOGRAPHIC*/
+			        ? 0
+			        : fb_height / std::tan(depthCam.fieldOfView / 2)  ;
+
+			m_grainsRenderer.compute_shadow( pixelSize, depthMVP );
+
+			if( m_drawObjects ) {
+				for( const LevelSet::Ptr& ls: m_offline.levelSets() ) {
+					m_shapeRenderer.compute_shadow( *ls, depthCam.viewMatrix, depthCam.projectionMatrix ) ;
+				}
+			}
+
+			shadowed = true ;
+		}
+
+		if(0){
+			UsingShader sh( m_testShader ) ;
+
+			UsingTexture tx( m_depthTexture ) ;
+			tx.bindUniform( m_testShader.uniform("in_texture") );
+
+			gl::VertexAttribPointer vap_v( m_shapeRenderer.squareVertices(), m_testShader.attribute("vertex") ) ;
+			gl::VertexPointer vp( m_shapeRenderer.squareVertices() ) ;
+			glDrawArrays( GL_TRIANGLES, 0, m_shapeRenderer.squareVertices().size() ) ;
+
+		}
+
+		if(1){
+			const Scalar pixelSize = false /*cam.type() == qglviewer::Camera::ORTHOGRAPHIC*/
+			        ? 0
+			        : m_height / std::tan(viewCam.fieldOfView / 2)  ;
+
+			m_grainsRenderer.draw( m_depthTexture, lightPosition(), viewCam.viewMatrix, viewCam.projectionMatrix, pixelSize, depthMVP  );
+		}
+
+		glDisable( GL_PROGRAM_POINT_SIZE ) ;
+	}
+
 	glDisable (GL_BLEND);
 
 	if(m_drawObjects) {
 		for( const LevelSet::Ptr& ls: m_offline.levelSets() ) {
 			m_shapeRenderer.draw( *ls, m_offline.box(), lightPosition(), shadowed, m_depthTexture, 
-            m_camera.viewMatrix, m_camera.projectionMatrix, depthModelView, depthProjection );
+            viewCam.viewMatrix, viewCam.projectionMatrix, depthCam.viewMatrix, depthCam.projectionMatrix );
 		}
 	}
 

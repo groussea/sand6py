@@ -65,11 +65,15 @@ private:
 
 	struct MeshDrawData
 	{
+		const MeshRenderer* meshRenderer = nullptr;
+
 		gl::VertexBuffer3f vertices;
 		gl::VertexBuffer3f normals;
 		gl::VertexBuffer3f uvs;
 		gl::IndexBuffer triIndices;
 		gl::ArrayObject vertexArrays;
+
+		void draw() const;
 	};
 
 	void config_shaders() ;

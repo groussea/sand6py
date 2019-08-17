@@ -17,7 +17,7 @@
  * along with Sand6.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#version 130
+#version 330
 
 uniform mat4 depth_mvp  ;
 uniform float grain_size  ;

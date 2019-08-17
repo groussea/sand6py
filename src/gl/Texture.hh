@@ -126,7 +126,7 @@ struct FrameBuffer {
 		}
 	}
 
-	bool check_complete() {
+	bool check_complete() const {
 		return glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE ;
 	}
 

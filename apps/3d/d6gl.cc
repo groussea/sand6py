@@ -160,8 +160,8 @@ private:
 		          << " from " << glGetString(GL_VENDOR)
 		          << std::endl  ;
 
-		m_viewer.init( ) ;
 		set_frame( m_currentFrame );
+		m_viewer.init( ) ;
 
 	}
 
@@ -301,6 +301,7 @@ int main( int argc, const char * argv[] )
 
 	unsigned width  = 0 ;
 	unsigned height = 0 ;
+	unsigned nSamples = 0;
 
 	for( int i = 1 ; i < argc ; ++i )
 	{
@@ -321,6 +322,10 @@ int main( int argc, const char * argv[] )
 				if( ++i == argc ) break ;
 				height = d6::to_uint( argv[i] ) ;
 				break;
+			case 's':
+				if( ++i == argc ) break ;
+				nSamples = d6::to_uint( argv[i] ) ;
+				break;
 			}
 		} else {
 			base_dir = argv[i] ;
@@ -333,10 +338,7 @@ int main( int argc, const char * argv[] )
 		const float a = offline.config().box[0]/offline.config().box[1] ;
 		height = std::sqrt( 5.e5 / a ) ;
 		width = height * a ;
-
-		std::cerr << width << "x" << height << std::endl ;
 	}
-	int nSamples = 0;
 	return d6::Appli( offline, frame, nSamples, width, height ).run( ) ;
 
 }

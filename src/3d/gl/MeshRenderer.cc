@@ -80,22 +80,16 @@ void MeshRenderer::reset( const TriangularMesh& mesh )
 
 }
 
-void MeshRenderer::draw( const Shader &shader ) const
+void MeshRenderer::bind(const Shader &shader) const
 {
-	gl::VertexPointer vp( m_vertices ) ;
-	if( shader.ok() )
-	{
-		gl::VertexAttribPointer vap( m_vertices, shader.attribute("vertex") ) ;
-		gl::VertexAttribPointer nap( m_normals,  shader.attribute("normal") ) ;
-		gl::VertexAttribPointer uap( m_uvs,  shader.attribute("uv") ) ;
+	gl::VertexAttribPointer vap(m_vertices, shader.attribute("vertex"));
+	gl::VertexAttribPointer nap(m_normals, shader.attribute("normal"));
+	gl::VertexAttribPointer uap(m_uvs, shader.attribute("uv"));
+}
 
-		glDrawArrays( GL_TRIANGLES, 0, m_vertices.size() ) ;
-
-	} else {
-		gl::NormalPointer np( m_normals ) ;
-
-		glDrawArrays( GL_TRIANGLES, 0, m_vertices.size() ) ;
-	}
+void MeshRenderer::draw() const
+{
+	glDrawArrays(GL_TRIANGLES, 0, m_vertices.size());
 }
 
 } //d6

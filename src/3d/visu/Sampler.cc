@@ -358,6 +358,7 @@ void Sampler::sampleParticles( unsigned nSamples )
 {
     const Particles& particles = m_offline.particles() ;
     const Index n = particles.count() ;
+    std::cerr << n << "x" << nSamples << std::endl ;
 
     m_particleIds.resize( n * nSamples ) ;
     m_offsets.resize( 3, n * nSamples ) ;
