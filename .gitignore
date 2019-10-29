@@ -1,3 +1,5 @@
 *.swp
 *.autosave
 *.user
+*.pyc
+/build

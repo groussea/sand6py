@@ -46,19 +46,11 @@ struct BedScenar : public Scenario {
 
 struct CollapseScenar : public Scenario {
 	Scalar particle_density( const Vec &x ) const override {
-		return ( x[0] > (1-l0)*m_config->box[0]
-		        && x[2] < h0*m_config->box[2] ) ? 1. : 0. ;
+	return ( x[0] < m_config->columnLength ||  x[1] < .1*m_config->box[1] ) ? 1. : 0. ;
 	}
 
-	virtual void init( const Params& params ) override {
-		l0 = scalar_param( params,   "l0", Units::None, .25 ) ;
-		h0 = scalar_param( params,   "h0", Units::None, 1.0 ) ;
-	}
-
-private:
-	Scalar l0 ;
-	Scalar h0 ;
 };
+
 struct BridsonScenar : public Scenario {
 	Vec center ;
 	Scalar radius ;
@@ -134,6 +126,7 @@ struct TowerScenar : public Scenario {
 struct RbPlaneTestScenar : public Scenario {
 	Scalar particle_density( const Vec &x ) const override {
 		return ( x[2] >  .5*m_config->box[2] ) ? 1. : 0. ;
+
 	}
 
 	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
@@ -146,6 +139,60 @@ struct RbPlaneTestScenar : public Scenario {
 		rbs.back().set_velocity( Vec(0,0,1.e-1), Vec(0,0,0) ) ;
 	}
 };
+
+struct ImpactScenarlhe : public Scenario {
+
+	Scalar particle_density( const Vec &x ) const override {
+		return ( x[2] <  m_config->Hbed_impact ) ? 1. : 0. ;
+	std::cout << .5*m_config->box[2] << std::endl;
+	}
+
+
+	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
+	{
+		LevelSet::Ptr ls = LevelSet::make_sphere() ;
+		ls->scale( radius() ).set_origin( Vec(0.5*m_config->box[1],0.5*m_config->box[1],0.5*m_config->box[2]));
+		rbs.emplace_back( ls, m_config->vmBall );
+		rbs.back().set_velocity( Vec(0,0,-std::sqrt(-2*m_config->gravity[2]*(m_config->HiniBall-(m_config->box[2]-m_config->Hbed_impact))) ), Vec(0,0,0));
+		std::ofstream RBout( "out/RBinfo.txt");
+		d6::dump(RBout,"Nframe\ttime\tX\tY\tZ\tUx\tUy\tUz");   RBout << "\n";
+		RBout.close();
+
+
+	}
+
+	void update( Simu& simu, Scalar time, Scalar dt ) const override
+	{
+		for( RigidBody& rb: simu.rigidBodies() ) {
+			rb.integrate_gravity( dt, m_config->gravity );
+			Vec vel = rb.velocity() ;
+			//Vec pos = vel*dt + pos
+			//vel[2] = std::max( vel[2], (radius() - rb.levelSet().origin()[2])/dt ) ;
+			rb.set_velocity( vel, rb.angularVelocity() );
+			std::cout << vel << std::endl;
+			std::cout <<  rb.levelSet().origin() << std::endl;
+			std::cout <<  time*m_config->units().toSI( Units::Time )  << std::endl;
+    			std::ofstream RBout( "out/RBinfo.txt" , std::fstream::app);
+			RBout << std::floor( time*m_config->fps); RBout << "\t";
+			RBout << time*m_config->units().toSI( Units::Time ) ;RBout << "\t";		        
+			d6::dump(RBout,rb.levelSet().origin()); d6::dump(RBout,vel);   RBout << "\n";
+			RBout.close();
+
+		}
+
+	}
+
+	Scalar radius() const {
+		return m_config->dBall/2 ;
+	}
+
+private:
+	Scalar volMass ;
+	Scalar zvel ;
+	Scalar avel ;
+	Scalar d ;
+};
+
 
 struct ImpactScenar : public Scenario {
 
@@ -192,6 +239,7 @@ private:
 	Scalar d ;
 	Scalar h ;
 };
+
 
 struct WheelScenar : public Scenario {
 
@@ -590,6 +638,8 @@ std::unique_ptr< Scenario > DefaultScenarioFactory::make( const std::string & st
 		return std::unique_ptr< Scenario >( new RbPlaneTestScenar() ) ;
 	if( str == "impact")
 		return std::unique_ptr< Scenario >( new ImpactScenar() ) ;
+	if( str == "impactlhe")
+		return std::unique_ptr< Scenario >( new ImpactScenarlhe() ) ;
 	if( str == "silo")
 		return std::unique_ptr< Scenario >( new SiloScenar() ) ;
 	if( str == "bunny")

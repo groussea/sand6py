@@ -83,9 +83,11 @@ int main( int argc, char* argv[] ) {
 			case 'e':
 				if( ++i == argc ) break ;
 				stats.timeOut = to_double( argv[i] ) ;
+                break;
 			case 'v':
 				if( ++i == argc ) break ;
 				d6::Log::Config::get().setLevel( argv[i] ) ;
+                break;
 			}
 		} else {
 			problem = argv[i] ;

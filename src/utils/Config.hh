@@ -77,6 +77,13 @@ namespace d6 {
 	CONFIG_FIELD( newtonian			, bool			,	Units::None			) \
 	CONFIG_FIELD( compressibility	, Scalar		,	Units::None			) \
 	CONFIG_FIELD( volumeCorrection	, Scalar		,	Units::None			) \
+	CONFIG_FIELD( columnLength		, Scalar			,	Units::Length 	) \
+	CONFIG_FIELD( Hbed_impact		, Scalar			,	Units::Length 	) \
+	CONFIG_FIELD( vmBall		, Scalar			,   Units::VolumicMass	) \
+	CONFIG_FIELD( dBall		, Scalar			,	Units::Length 	) \
+	CONFIG_FIELD( HiniBall		, Scalar			,	Units::Length 	) \
+	CONFIG_FIELD( velIni		, Scalar			,	Units::Velocity 	) \
+	CONFIG_FIELD( base_dir			, std::string	,	Units::None			) \
 
 struct Config
 {

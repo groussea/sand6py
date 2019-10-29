@@ -90,9 +90,11 @@ int main( int argc, char* argv[] ) {
 			case 'e':
 				if( ++i == argc ) break ;
 				stats.timeOut = to_double( argv[i] ) ;
+                break ;
 			case 'v':
 				if( ++i == argc ) break ;
 				d6::Log::Config::get().setLevel( argv[i] ) ;
+                break;
 			}
 		} else {
 			problem = argv[i] ;
@@ -107,13 +109,17 @@ int main( int argc, char* argv[] ) {
 	switch( options.algorithm ) {
 	case FrictionSolver::Options::Cadoux_GS:
 		Log::Verbose() << "Cadoux / " ;
+        break;
 	case FrictionSolver::Options::GaussSeidel:
+        break;
 	case FrictionSolver::Options::GaussSeidel_NoAssembly:
 		Log::Verbose() << "Gauss-Seidel " ;
 		break ;
 	case FrictionSolver::Options::Cadoux_PG:
+        break;
 	case FrictionSolver::Options::Cadoux_PG_NoAssembly:
 		Log::Verbose() << "Cadoux / " ;
+        break;
 	default:
 		Log::Verbose() << " Projected Gradient -- " ;
 

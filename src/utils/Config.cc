@@ -57,7 +57,14 @@ Config::Config() :
     output( true ), exportAllFields( bool(3-D6_DIM) ), dumpPrimalData( 0 ),
     fluidVolMass( 1 ), stokesFactor( 18 ), RZExponent( 0 ),
     windSpeed( Vec::Zero() ),
-    newtonian(false), compressibility(0), volumeCorrection( 0)
+    newtonian(false), compressibility(0), volumeCorrection( 0),
+    columnLength(0.25),
+    Hbed_impact(0.1),
+    vmBall(1.04e4),
+    dBall(0.04),
+    HiniBall(0.2),
+    velIni(3.75),
+    base_dir("out")
 {
 	gravity[WD-1] = -9.81 ;
 }
