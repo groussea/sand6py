@@ -3,3 +3,6 @@
 *.user
 out/*
 build/*
+.vscode
+*.qt.cc
+*.qt.hh

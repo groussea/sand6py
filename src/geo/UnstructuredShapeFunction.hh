@@ -57,6 +57,8 @@ struct UnstructuredDOFs {
 	template < typename Archive >
 	void serialize( Archive &ar, unsigned int ) ;
 
+	void build_visu_mesh(DynMatW &, DynMati &) const {}
+
 private:
 
 	void compute_weights_from_particles() ;

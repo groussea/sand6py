@@ -80,6 +80,11 @@ public:
 
 	Index nEdges() const ;
 
+	Index nFaces() const
+	{
+		return 0; // Not implemented
+	}
+
 	Index nCells() const
 	{ return m_dim.prod() * Nsub ; }
 

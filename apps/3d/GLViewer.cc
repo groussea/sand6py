@@ -32,6 +32,8 @@ void GLViewer::init()
     glGetIntegerv(GL_SAMPLES, &samples);
     Log::Debug() << "Using " << bufs << " buffers and " << samples << " samples" << std::endl;
 
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+
     frameAll();
 
 	if( m_grainsRenderer.sampler().mode() == Sampler::VelocityCut ) {
