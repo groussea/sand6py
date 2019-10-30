@@ -193,6 +193,51 @@ static void genPlane( const Eigen::Vector3f& box,
 		   0, 0, 0, 0;
 }
 
+static void genBox( const Eigen::Vector3d& box,
+					  Eigen::Matrix3Xf& vertices,
+					  Eigen::Matrix3Xf& normals,
+					  Eigen::Matrix3Xf& uvs,
+					  std::vector< GLuint >& triIndices )
+{
+	// 0 1 2 3
+	// 5 4 7 6
+
+	// 4 5 1 0
+	// 5 6 2 1
+	// 6 7 3 2
+	// 7 4 0 3
+
+	triIndices = {0, 1 ,2, 
+				  0, 2, 3,
+				  5, 4, 7,
+				  5, 7, 6,
+
+				  4, 5, 1,
+				  4, 1, 0,
+				  
+				  5, 6, 2,
+				  5, 2, 1,
+				  
+				  6, 7, 3,
+				  6, 3, 2,
+				  
+				  7, 4, 0,
+				  7, 0, 3
+				  } ;
+	vertices.resize( 3, 8 ) ;
+	normals.resize( 3, 8 ) ;
+	uvs.resize( 3, 8 ) ;
+
+	for(int l = 0 ;l < 8 ; ++l)
+	{
+		int i = l&4 ? 1 : -1; 
+		int j = l&2 ? 1 : -1; 
+		int k = l&1 ? 1 : -1;
+		vertices.col(l) = Eigen::Vector3f(box[0]*i, box[1]*j, box[2]*k);
+		normals.col(l) = vertices.col(l).normalized();
+		uvs.col(l) = Eigen::Vector3f(0.5f+0.5*i,0.5f+0.5*j,0.5f+0.5*k);
+	}
+}
 
 static void get_ls_matrix( const LevelSet &ls, Eigen::Matrix4f & mat )
 {
@@ -241,6 +286,7 @@ void ShapeRenderer::setup_solid_data(const LevelSet &ls, const Eigen::Vector3f &
 	const TorusLevelSet *torus = dynamic_cast<const TorusLevelSet *>(&ls);
 	const HoleLevelSet *hole = dynamic_cast<const HoleLevelSet *>(&ls);
 	const PlaneLevelSet *plane = dynamic_cast<const PlaneLevelSet *>(&ls);
+	const BoxLevelSet *boxLs = dynamic_cast<const BoxLevelSet *>(&ls);
 
 	Eigen::Matrix3Xf cylVertices, cylNormals, cylUVs;
 	std::vector<GLuint> triIndices;
@@ -260,6 +306,10 @@ void ShapeRenderer::setup_solid_data(const LevelSet &ls, const Eigen::Vector3f &
 	else if (plane)
 	{
 		genPlane(box, cylVertices, cylNormals, cylUVs, triIndices);
+	}
+	else if (boxLs)
+	{
+		genBox(boxLs->box(), cylVertices, cylNormals, cylUVs, triIndices);
 	}
 
 	// Transfer to VBO

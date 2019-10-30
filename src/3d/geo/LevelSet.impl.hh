@@ -50,7 +50,76 @@ struct SphereLevelSet : public LevelSet
 
 	template<class Archive>
 	void serialize(Archive &ar, const unsigned int version ) ;
+
 };
+
+struct BoxLevelSet : public LevelSet
+{
+	explicit BoxLevelSet(const Vec& box = Vec::Ones()) 
+	: m_box(box) 
+	{}
+
+	const Vec& box() const { return m_box; }
+
+	using Vec6 = Eigen::Matrix<Scalar, 6, 1>;
+
+	Scalar eval_local(const Vec &x) const override
+	{
+		Vec6 d;
+		compute_d(x, d);
+
+		int minCoeff;
+		d.cwiseAbs().minCoeff(&minCoeff);
+
+		return d[minCoeff];
+	}
+
+	Vec grad_local(const Vec &x) const override {
+		Vec6 d;
+		compute_d(x, d);
+
+		int minCoeff;
+		d.cwiseAbs().minCoeff(&minCoeff);
+
+		Vec grad;
+		grad[minCoeff%3] = minCoeff >= 3 ? 1 : -1;
+
+		return grad;
+	}
+
+	void local_inv_inertia( Mat& I ) const override {
+		const Vec&b = m_box;
+		const Vec cross(b[2] * b[2] + b[1] * b[1],
+						b[0] * b[0] + b[2] * b[2], b[0] * b[0] + b[1] * b[1]);
+
+		I = (1.0 / cross.array()).matrix().asDiagonal() * (3.0 / local_volume());
+	}
+
+	Scalar local_volume() const override {
+		return  8 * m_box.prod();
+	}
+
+	template<class Archive>
+	void serialize(Archive &ar, const unsigned int version ) ;
+
+private:
+
+	void compute_d(const Vec&x, Vec6&d) const
+	{
+		Vec6 bounds;
+		bounds.head<3>() = m_box;
+		bounds.tail<3>() = -m_box;
+
+		Vec6 xx;
+		xx.head<3>() = x;
+		xx.tail<3>() = -x;
+
+		d = bounds-xx;
+	}
+
+	Vec m_box;
+};
+
 struct PlaneLevelSet : public LevelSet
 {
 	Scalar eval_local(const Vec &x) const override {

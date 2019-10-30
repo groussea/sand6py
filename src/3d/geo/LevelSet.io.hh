@@ -68,6 +68,12 @@ void MeshLevelSet::serialize(Archive &ar, const unsigned int )
 	ar & boost::serialization::base_object<LevelSet>(*this);
 	ar & m_objFile ;
 }
+template<class Archive>
+void BoxLevelSet::serialize(Archive &ar, const unsigned int )
+{
+	ar & boost::serialization::base_object<LevelSet>(*this);
+	ar & m_box ;
+}
 
 
 // register derived class ptrs
@@ -81,6 +87,7 @@ void LevelSet::register_derived(Archive &ar )
 	ar.register_type(static_cast<     MeshLevelSet *>(NULL));
 	ar.register_type(static_cast<     HoleLevelSet *>(NULL));
 	ar.register_type(static_cast<HourglassLevelSet *>(NULL));
+	ar.register_type(static_cast<      BoxLevelSet *>(NULL));
 }
 
 //base class serilization
