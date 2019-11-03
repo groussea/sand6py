@@ -69,7 +69,7 @@ struct BoxLevelSet : public LevelSet
 		compute_d(x, d);
 
 		int minCoeff;
-		d.cwiseAbs().minCoeff(&minCoeff);
+		d.minCoeff(&minCoeff);
 
 		return d[minCoeff];
 	}
@@ -79,10 +79,10 @@ struct BoxLevelSet : public LevelSet
 		compute_d(x, d);
 
 		int minCoeff;
-		d.cwiseAbs().minCoeff(&minCoeff);
+		d.minCoeff(&minCoeff);
 
-		Vec grad;
-		grad[minCoeff%3] = minCoeff >= 3 ? 1 : -1;
+		Vec grad = Vec::Zero();
+		grad[minCoeff%3] = minCoeff >= 3 ? 1 : -1 ;
 
 		return grad;
 	}
@@ -108,7 +108,7 @@ private:
 	{
 		Vec6 bounds;
 		bounds.head<3>() = m_box;
-		bounds.tail<3>() = -m_box;
+		bounds.tail<3>() = m_box;
 
 		Vec6 xx;
 		xx.head<3>() = x;

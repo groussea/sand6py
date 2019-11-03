@@ -200,6 +200,10 @@ static void genBox( const Eigen::Vector3d& box,
 					  std::vector< GLuint >& triIndices )
 {
 	// 0 1 2 3
+	// 4 5 6 7
+	
+	
+	// 0 1 2 3
 	// 5 4 7 6
 
 	// 4 5 1 0
@@ -230,9 +234,10 @@ static void genBox( const Eigen::Vector3d& box,
 
 	for(int l = 0 ;l < 8 ; ++l)
 	{
-		int i = l&4 ? 1 : -1; 
-		int j = l&2 ? 1 : -1; 
-		int k = l&1 ? 1 : -1;
+		int i = l&4 ? 1 : -1;
+		int ll = l&3;
+		int j = ll==0 || ll==3 ? -1 : 1; 
+		int k = l&2 ? 1 : -1;
 		vertices.col(l) = Eigen::Vector3f(box[0]*i, box[1]*j, box[2]*k);
 		normals.col(l) = vertices.col(l).normalized();
 		uvs.col(l) = Eigen::Vector3f(0.5f+0.5*i,0.5f+0.5*j,0.5f+0.5*k);
