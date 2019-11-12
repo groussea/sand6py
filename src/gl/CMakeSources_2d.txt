@@ -30,6 +30,8 @@ gl/shaders/grains_vel_fragment.glsl
 gl/shaders/grains_vertex.glsl
 gl/shaders/particles_fragment.glsl
 gl/shaders/particles_vertex.glsl
+gl/shaders/point_fragment.glsl
+gl/shaders/point_vertex.glsl
 gl/shaders/textest_fragment.glsl
 gl/shaders/textest_vertex.glsl
 gl/shaders/vertex.glsl

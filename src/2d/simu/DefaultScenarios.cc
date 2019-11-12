@@ -81,7 +81,7 @@ struct CollapseScenarLHEDoor : public Scenario
 {
 	Scalar particle_density(const Vec &x) const override
 	{
-		return ((x[0] < m_config->columnLength || x[1] < .1 * m_config->box[1]) & (x[1] < (fracH + 0.1) * m_config->box[1])) ? 1. : 0.;
+		return ((x[0] < columnLength || x[1] < .1 * m_config->box[1]) & (x[1] < (fracH + 0.1) * m_config->box[1])) ? 1. : 0.;
 	}
 
 	virtual void init(const Params &params) override
@@ -90,6 +90,7 @@ struct CollapseScenarLHEDoor : public Scenario
 		velD = scalar_param(params, "veldoor", Units::Velocity, 1.0);
 		ts = scalar_param(params, "ts", Units::None, 15);
 		fracH = scalar_param(params, "frac_h", Units::None, 1.);
+		columnLength= scalar_param(params, "column_length", Units::Length, 0.);
 	}
 
 	void add_rigid_bodies(std::vector<RigidBody> &rbs) const override
@@ -98,7 +99,7 @@ struct CollapseScenarLHEDoor : public Scenario
 		const Scalar L = m_config->box[1] * (0.9);
 
 		LevelSet::Ptr ls = LevelSet::make_cylinder(L);
-		ls->set_origin(Vec(m_config->columnLength + m_config->typicalLength(), .1 * m_config->box[1] + L / 2 + m_config->typicalLength()));
+		ls->set_origin(Vec(columnLength + m_config->typicalLength(), .1 * m_config->box[1] + L / 2 + m_config->typicalLength()));
 		ls->set_rotation(0);
 		rbs.emplace_back(ls, 1.);
 		rbs.back().set_velocity(Vec(0, 0), 0.);
@@ -158,40 +159,44 @@ private:
 	Scalar velD;
 	Scalar ts;
 	Scalar fracH;
+	Scalar columnLength;
 };
 
 struct CollapseScenarLHE : public Scenario
 {
 	Scalar particle_density(const Vec &x) const override
 	{
-		return (x[0] < m_config->columnLength || x[1] < .1 * m_config->box[1]) ? 1. : 0.;
+		return (x[0] < columnLength || x[1] < .1 * m_config->box[1]) ? 1. : 0.;
 	}
 
 	virtual void init(const Params &params) override
 	{
-		l0 = scalar_param(params, "l0", Units::None, .25);
+		columnLength = scalar_param(params, "column_length", Units::Length, .25);
+		
 	}
 
 private:
 	Scalar l0;
 	Scalar h0;
+	Scalar columnLength;
 };
 
 struct CollapseScenarCohesion : public Scenario
 {
 	Scalar particle_density(const Vec &x) const override
 	{
-		return (x[0] < m_config->columnLength) ? 1. : 0.;
+		return (x[0] < columnLength) ? 1. : 0.;
 	}
 
 	virtual void init(const Params &params) override
 	{
-		l0 = scalar_param(params, "l0", Units::None, .25);
+		columnLength = scalar_param(params, "column_length", Units::Length, .25);
 	}
 
 private:
 	Scalar l0;
 	Scalar h0;
+	Scalar columnLength;
 };
 
 struct CollapseScenar : public Scenario
