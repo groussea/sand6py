@@ -28,391 +28,436 @@
 #include "utils/string.hh"
 #include "utils/Log.hh"
 
-namespace d6 {
+namespace d6
+{
 
 // Default scenars
 
-struct RayleighScenar : public Scenario {
-	Scalar particle_density( const Vec &x ) const override {
-		return ( x[1] >  .5*box()[1] &&
-		        (x - .5*box()).squaredNorm() > std::pow(box()[0]/64,2) ) ? 1. : 0. ;
+struct RayleighScenar : public Scenario
+{
+	Scalar particle_density(const Vec &x) const override
+	{
+		return (x[1] > .5 * box()[1] &&
+				(x - .5 * box()).squaredNorm() > std::pow(box()[0] / 64, 2))
+				   ? 1.
+				   : 0.;
 	}
 };
 
-struct Sedimentation : public Scenario {
-	Scalar particle_density( const Vec &x ) const override {
-		return 	( x[1] <  h0*box()[1] ) ? phi0 : 0 ;
+struct Sedimentation : public Scenario
+{
+	Scalar particle_density(const Vec &x) const override
+	{
+		return (x[1] < h0 * box()[1]) ? phi0 : 0;
 	}
-	virtual void init( const Params& params ) override {
-		h0 = scalar_param( params,     "h0", Units::None, .9 ) ;
-		phi0 = scalar_param( params, "phi0", Units::None, .3 ) ;
+	virtual void init(const Params &params) override
+	{
+		h0 = scalar_param(params, "h0", Units::None, .9);
+		phi0 = scalar_param(params, "phi0", Units::None, .3);
 	}
 
 private:
-	Scalar h0 ;
-	Scalar phi0 ;
+	Scalar h0;
+	Scalar phi0;
 };
 
-struct FallingBallScenar : public Scenario {
-	Scalar particle_density( const Vec &x ) const override {
-		return (x - (.5*box() + Vec(0,.375*box()[1]) )).squaredNorm() < std::pow(box()[0]/4,2)  ? 1. : 0. ;
-	}
-};
-
-struct BedScenar : public Scenario {
-	Scalar particle_density( const Vec &x ) const override {
-		return ( x[1] <  .5*m_config->box[1] ) ? 1. : 0. ;
-	}
-};
-
-struct CollapseScenarLHEDoor : public Scenario {
-	Scalar particle_density( const Vec &x ) const override {
-		return (( x[0] < m_config->columnLength  ||  x[1] < .1*m_config->box[1] ) & (x[1] < (fracH+0.1)*m_config->box[1] ) ) ? 1. : 0. ;
-	}
-	
-	virtual void init( const Params& params ) override {
-	tauD = scalar_param( params,   "taudoor", Units::Time, .06 ) ;
-        velD = scalar_param( params,   "veldoor", Units::Velocity, 1.0 ) ;
-        ts = scalar_param( params,   "ts", Units::None, 15 ) ;
-	fracH = scalar_param( params,   "frac_h", Units::None, 1. ) ;
-	}
-	
-
-	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
+struct FallingBallScenar : public Scenario
+{
+	Scalar particle_density(const Vec &x) const override
 	{
-// 		const Scalar a = 0.1 ;
-		const Scalar L = m_config->box[1] * (0.9)  ;
+		return (x - (.5 * box() + Vec(0, .375 * box()[1]))).squaredNorm() < std::pow(box()[0] / 4, 2) ? 1. : 0.;
+	}
+};
 
-		LevelSet::Ptr ls = LevelSet::make_cylinder( L ) ;
-		ls->set_origin( Vec(m_config->columnLength+m_config->typicalLength(),.1*m_config->box[1]+L/2+m_config->typicalLength()) ) ;
-		ls->set_rotation( 0 ) ;
-		rbs.emplace_back( ls, 1. );
-        rbs.back().set_velocity( Vec(0,0), 0.);
-		std::ofstream RBout(  m_config->base_dir+ "/door.txt");
-		d6::dump(RBout,"Nframe,time,X,Y,Ux,Uy");   RBout << "\n";
+struct BedScenar : public Scenario
+{
+	Scalar particle_density(const Vec &x) const override
+	{
+		return (x[1] < .5 * m_config->box[1]) ? 1. : 0.;
+	}
+};
+
+struct CollapseScenarLHEDoor : public Scenario
+{
+	Scalar particle_density(const Vec &x) const override
+	{
+		return ((x[0] < m_config->columnLength || x[1] < .1 * m_config->box[1]) & (x[1] < (fracH + 0.1) * m_config->box[1])) ? 1. : 0.;
+	}
+
+	virtual void init(const Params &params) override
+	{
+		tauD = scalar_param(params, "taudoor", Units::Time, .06);
+		velD = scalar_param(params, "veldoor", Units::Velocity, 1.0);
+		ts = scalar_param(params, "ts", Units::None, 15);
+		fracH = scalar_param(params, "frac_h", Units::None, 1.);
+	}
+
+	void add_rigid_bodies(std::vector<RigidBody> &rbs) const override
+	{
+		// 		const Scalar a = 0.1 ;
+		const Scalar L = m_config->box[1] * (0.9);
+
+		LevelSet::Ptr ls = LevelSet::make_cylinder(L);
+		ls->set_origin(Vec(m_config->columnLength + m_config->typicalLength(), .1 * m_config->box[1] + L / 2 + m_config->typicalLength()));
+		ls->set_rotation(0);
+		rbs.emplace_back(ls, 1.);
+		rbs.back().set_velocity(Vec(0, 0), 0.);
+		std::ofstream RBout(m_config->base_dir + "/door.txt");
+		d6::dump(RBout, "Nframe,time,X,Y,Ux,Uy");
+		RBout << "\n";
 		RBout.close();
-
 	}
-	
-    void update( Simu& simu, Scalar time, Scalar /*dt*/ ) const override
-	{
-        Scalar t = time*m_config->fps;
-        Scalar tau = tauD*m_config->fps;
- 
-        Scalar speedy = velD*(1-exp(-(t-ts)/tau));
-//         Scalar speedy = 0.1*m_config->units().fromSI( Units::Velocity)*(1-exp(-t/(0.05)));
-        Vec vel = Vec::Zero();
-        if (t>ts) {vel[1]=speedy;}
-        
-		for( RigidBody& rb: simu.rigidBodies()) {
-			rb.set_velocity( vel,0);
-//             std::cout << vel << std::endl;
-// 			std::cout <<  rb.levelSet().origin() << std::endl;
-     
-            std::cout <<  time*m_config->fps<< std::endl;
-			std::cout <<  std::abs(t-static_cast<int>(std::round(t)))<< std::endl;
 
-            if (std::abs(t-static_cast<int>(std::round(t)))<1.e-8){
-                std::cout <<  "flag"<< std::endl;
-    		std::ofstream RBout( m_config->base_dir+"/door.txt" , std::fstream::app);
-			RBout << std::round( time*m_config->fps); RBout << ",";
-            RBout << time*m_config->units().toSI( Units::Time ) ;RBout << ",";
-			RBout << time*m_config->units().toSI( Units::Time ) ;RBout << ",";		
-            RBout << rb.levelSet().origin()[0]*m_config->units().toSI( Units::Length) ;RBout << ",";
-            RBout << rb.levelSet().origin()[1]*m_config->units().toSI( Units::Length) ;RBout << ",";
-            RBout << vel[0]*m_config->units().toSI( Units::Velocity) ;RBout << ",";
-            RBout << vel[1]*m_config->units().toSI( Units::Velocity) ; RBout << "\n";
-			RBout.close();}
+	void update(Simu &simu, Scalar time, Scalar /*dt*/) const override
+	{
+		Scalar t = time * m_config->fps;
+		Scalar tau = tauD * m_config->fps;
+
+		Scalar speedy = velD * (1 - exp(-(t - ts) / tau));
+		//         Scalar speedy = 0.1*m_config->units().fromSI( Units::Velocity)*(1-exp(-t/(0.05)));
+		Vec vel = Vec::Zero();
+		if (t > ts)
+		{
+			vel[1] = speedy;
 		}
 
-			
+		for (RigidBody &rb : simu.rigidBodies())
+		{
+			rb.set_velocity(vel, 0);
+			//             std::cout << vel << std::endl;
+			// 			std::cout <<  rb.levelSet().origin() << std::endl;
+
+			std::cout << time * m_config->fps << std::endl;
+			std::cout << std::abs(t - static_cast<int>(std::round(t))) << std::endl;
+
+			if (std::abs(t - static_cast<int>(std::round(t))) < 1.e-8)
+			{
+				std::cout << "flag" << std::endl;
+				std::ofstream RBout(m_config->base_dir + "/door.txt", std::fstream::app);
+				RBout << std::round(time * m_config->fps);
+				RBout << ",";
+				RBout << time * m_config->units().toSI(Units::Time);
+				RBout << ",";
+				RBout << time * m_config->units().toSI(Units::Time);
+				RBout << ",";
+				RBout << rb.levelSet().origin()[0] * m_config->units().toSI(Units::Length);
+				RBout << ",";
+				RBout << rb.levelSet().origin()[1] * m_config->units().toSI(Units::Length);
+				RBout << ",";
+				RBout << vel[0] * m_config->units().toSI(Units::Velocity);
+				RBout << ",";
+				RBout << vel[1] * m_config->units().toSI(Units::Velocity);
+				RBout << "\n";
+				RBout.close();
+			}
+		}
 	}
-	
-	private:
-	Scalar tauD ;
-	Scalar velD ;
-	Scalar ts ;
+
+private:
+	Scalar tauD;
+	Scalar velD;
+	Scalar ts;
 	Scalar fracH;
-
-	
 };
 
-
-struct CollapseScenarLHE : public Scenario {
-	Scalar particle_density( const Vec &x ) const override {
-		return ( x[0] < m_config->columnLength ||  x[1] < .1*m_config->box[1] ) ? 1. : 0. ;
+struct CollapseScenarLHE : public Scenario
+{
+	Scalar particle_density(const Vec &x) const override
+	{
+		return (x[0] < m_config->columnLength || x[1] < .1 * m_config->box[1]) ? 1. : 0.;
 	}
 
-	virtual void init( const Params& params ) override {
-		l0 = scalar_param( params,   "l0", Units::None, .25 ) ;
+	virtual void init(const Params &params) override
+	{
+		l0 = scalar_param(params, "l0", Units::None, .25);
 	}
 
 private:
-	Scalar l0 ;
-	Scalar h0 ;
+	Scalar l0;
+	Scalar h0;
 };
 
-struct CollapseScenarCohesion : public Scenario {
-	Scalar particle_density( const Vec &x ) const override {
-		return ( x[0] < m_config->columnLength ) ? 1. : 0. ;
+struct CollapseScenarCohesion : public Scenario
+{
+	Scalar particle_density(const Vec &x) const override
+	{
+		return (x[0] < m_config->columnLength) ? 1. : 0.;
 	}
 
-	virtual void init( const Params& params ) override {
-		l0 = scalar_param( params,   "l0", Units::None, .25 ) ;
+	virtual void init(const Params &params) override
+	{
+		l0 = scalar_param(params, "l0", Units::None, .25);
 	}
 
 private:
-	Scalar l0 ;
-	Scalar h0 ;
+	Scalar l0;
+	Scalar h0;
 };
 
-
-
-
-struct CollapseScenar : public Scenario {
-	Scalar particle_density( const Vec &x ) const override {
-		return ( x[0] < l0*box()[0] &&  x[1] < h0*box()[1] ) ? 1. : 0. ;
+struct CollapseScenar : public Scenario
+{
+	Scalar particle_density(const Vec &x) const override
+	{
+		return (x[0] < l0 * box()[0] && x[1] < h0 * box()[1]) ? 1. : 0.;
 	}
 
-	virtual void init( const Params& params ) override {
-		l0 = scalar_param( params,   "l0", Units::None, .25 ) ;
-		h0 = scalar_param( params,   "h0", Units::None, .75 ) ;
+	virtual void init(const Params &params) override
+	{
+		l0 = scalar_param(params, "l0", Units::None, .25);
+		h0 = scalar_param(params, "h0", Units::None, .75);
 	}
 
 private:
-	Scalar l0 ;
-	Scalar h0 ;
+	Scalar l0;
+	Scalar h0;
 };
 
-
-
-struct HeapScenar : public Scenario {
-	Scalar particle_density( const Vec &x ) const override {
-		return ( x[0] > (.375-.175/2)*box()[0] &&  x[0] < (.375+.175/2)*box()[0]
-		        && x[1] < .75*box()[1]) ? 1. : 0. ;
-	}
-};
-
-struct PlaneTestScenar : public Scenario {
-	Scalar particle_density( const Vec &x ) const override {
-		return ( x[1] <  .2*box(1) ) ? 1. : 0. ;
-	}
-
-	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
+struct HeapScenar : public Scenario
+{
+	Scalar particle_density(const Vec &x) const override
 	{
-		LevelSet::Ptr ls = LevelSet::make_plane() ;
-		ls->set_origin( .5 * m_config->box - Vec(0,.5*m_config->box[1]) ) ;
-		ls->set_rotation( M_PI/2) ;
-
-		rbs.emplace_back( ls, 1. );
-		rbs.back().set_velocity( Vec(0,0), 0 ) ;
+		return (x[0] > (.375 - .175 / 2) * box()[0] && x[0] < (.375 + .175 / 2) * box()[0] && x[1] < .75 * box()[1]) ? 1. : 0.;
 	}
 };
 
-struct ImpactScenar : public Scenario {
-
-	Scalar particle_density( const Vec &x ) const override {
-		return ( x[1] <  1./3.*m_config->box[1] ) ? 1. : 0. ;
-	}
-
-	virtual void init( const Params& params ) {
-		volMass = scalar_param( params, "vm", Units::VolumicMass, 1.5*m_config->units().R ) ;
-		zvel = scalar_param( params, "zvel", Units::Velocity, 0. ) ;
-		avel = scalar_param( params, "avel", Units::Frequency, 0. ) ;
-		d = scalar_param( params, "d", Units::None, 0.25 ) ;
-	}
-
-	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
+struct PlaneTestScenar : public Scenario
+{
+	Scalar particle_density(const Vec &x) const override
 	{
-		LevelSet::Ptr ls = LevelSet::make_sphere() ;
-        
-		ls->scale( radius() ).set_origin( .5 * m_config->box + Vec(0,.25*m_config->box[1]) ) ;
-
-		rbs.emplace_back( ls, volMass );
-		rbs.back().set_velocity( Vec(0,-zvel), avel ) ;
+		return (x[1] < .2 * box(1)) ? 1. : 0.;
 	}
 
-	Scalar radius() const {
-		return d/2*m_config->box[0] ;
-	}
-
-	void update( Simu& simu, Scalar /*time*/, Scalar dt ) const override
+	void add_rigid_bodies(std::vector<RigidBody> &rbs) const override
 	{
-		for( RigidBody& rb: simu.rigidBodies() ) {
-			rb.integrate_gravity( dt, m_config->gravity );
+		LevelSet::Ptr ls = LevelSet::make_plane();
+		ls->set_origin(.5 * m_config->box - Vec(0, .5 * m_config->box[1]));
+		ls->set_rotation(M_PI / 2);
+
+		rbs.emplace_back(ls, 1.);
+		rbs.back().set_velocity(Vec(0, 0), 0);
+	}
+};
+
+struct ImpactScenar : public Scenario
+{
+
+	Scalar particle_density(const Vec &x) const override
+	{
+		return (x[1] < 1. / 3. * m_config->box[1]) ? 1. : 0.;
+	}
+
+	virtual void init(const Params &params)
+	{
+		volMass = scalar_param(params, "vm", Units::VolumicMass, 1.5 * m_config->units().R);
+		zvel = scalar_param(params, "zvel", Units::Velocity, 0.);
+		avel = scalar_param(params, "avel", Units::Frequency, 0.);
+		d = scalar_param(params, "d", Units::None, 0.25);
+	}
+
+	void add_rigid_bodies(std::vector<RigidBody> &rbs) const override
+	{
+		LevelSet::Ptr ls = LevelSet::make_sphere();
+
+		ls->scale(radius()).set_origin(.5 * m_config->box + Vec(0, .25 * m_config->box[1]));
+
+		rbs.emplace_back(ls, volMass);
+		rbs.back().set_velocity(Vec(0, -zvel), avel);
+	}
+
+	Scalar radius() const
+	{
+		return d / 2 * m_config->box[0];
+	}
+
+	void update(Simu &simu, Scalar /*time*/, Scalar dt) const override
+	{
+		for (RigidBody &rb : simu.rigidBodies())
+		{
+			rb.integrate_gravity(dt, m_config->gravity);
 		}
-
 	}
 
 private:
-	Scalar volMass ;
-	Scalar zvel ;
-	Scalar avel ;
-	Scalar d ;
+	Scalar volMass;
+	Scalar zvel;
+	Scalar avel;
+	Scalar d;
 };
 
-struct SiloScenar : public Scenario {
+struct SiloScenar : public Scenario
+{
 
-	virtual void init( const Params& params ) {
-		volMass = scalar_param( params, "vm", Units::VolumicMass, 0.1*m_config->units().R ) ;
-		hvel = scalar_param( params, "hvel", Units::Velocity, 1 ) ;
-		avel = scalar_param( params, "avel", Units::Frequency, 0. ) ;
-		d = scalar_param( params, "d", Units::None, 0.2 ) ;
-        vpos = scalar_param( params, "vpos", Units::None, 0.5 ) ;
+	virtual void init(const Params &params)
+	{
+		volMass = scalar_param(params, "vm", Units::VolumicMass, 0.1 * m_config->units().R);
+		hvel = scalar_param(params, "hvel", Units::Velocity, 1);
+		avel = scalar_param(params, "avel", Units::Frequency, 0.);
+		d = scalar_param(params, "d", Units::None, 0.2);
+		vpos = scalar_param(params, "vpos", Units::None, 0.5);
 	}
-		Scalar particle_density( const Vec &x ) const override {
-		return ( x[1]-1 >  vpos*m_config->box[1]) ? 1. : 0. ;
+	Scalar particle_density(const Vec &x) const override
+	{
+		return (x[1] - 1 > vpos * m_config->box[1]) ? 1. : 0.;
 	}
-	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
+	void add_rigid_bodies(std::vector<RigidBody> &rbs) const override
 	{
 
-		const Scalar L = m_config->box[0] * (1 - d) / 2 ;
+		const Scalar L = m_config->box[0] * (1 - d) / 2;
 
-		LevelSet::Ptr ls = LevelSet::make_cylinder( L ) ;
-		ls->set_origin( Vec( L/2,vpos*m_config->box[1]) ) ;
-		ls->set_rotation( M_PI/2 ) ;
+		LevelSet::Ptr ls = LevelSet::make_cylinder(L);
+		ls->set_origin(Vec(L / 2, vpos * m_config->box[1]));
+		ls->set_rotation(M_PI / 2);
 
-		LevelSet::Ptr ls2 = LevelSet::make_cylinder( L ) ;
-		ls2->set_origin( Vec( m_config->box[0]-L/2,vpos*m_config->box[1]) ) ;
-		ls2->set_rotation( M_PI/2 ) ;
+		LevelSet::Ptr ls2 = LevelSet::make_cylinder(L);
+		ls2->set_origin(Vec(m_config->box[0] - L / 2, vpos * m_config->box[1]));
+		ls2->set_rotation(M_PI / 2);
 
-		rbs.emplace_back( ls2, 1. );
-		rbs.emplace_back( ls, 1. );
-        
+		rbs.emplace_back(ls2, 1.);
+		rbs.emplace_back(ls, 1.);
 	}
 
 private:
-	Scalar volMass ;
-	Scalar hvel ;
-	Scalar avel ;
-	Scalar d ;
-    Scalar vpos;
+	Scalar volMass;
+	Scalar hvel;
+	Scalar avel;
+	Scalar d;
+	Scalar vpos;
 };
 
-struct SiloScenarObstacle : public Scenario {
-	Scalar particle_density( const Vec &x ) const override {
-		return ( x[1]-1 >  vpos*m_config->box[1] and 
-		std::pow(std::pow(x[0]-vpos*box(0),2.)+std::pow(x[1]-vpos*box(1)-3.*radius(),2.),0.5)>radius()) ? 1. : 0. ;
+struct SiloScenarObstacle : public Scenario
+{
+	Scalar particle_density(const Vec &x) const override
+	{
+		return (x[1] - 1 > vpos * m_config->box[1] and
+				std::pow(std::pow(x[0] - vpos * box(0), 2.) + std::pow(x[1] - vpos * box(1) - 3. * radius(), 2.), 0.5) > radius())
+				   ? 1.
+				   : 0.;
 	}
-	virtual void init( const Params& params ) {
-		volMass = scalar_param( params, "vm", Units::VolumicMass, 0.1*m_config->units().R ) ;
-		hvel = scalar_param( params, "hvel", Units::Velocity, 1 ) ;
-		avel = scalar_param( params, "avel", Units::Frequency, 0. ) ;
-		d = scalar_param( params, "d", Units::None, 0.2 ) ;
-        vpos = scalar_param( params, "vpos", Units::None, 0.5 ) ;
+	virtual void init(const Params &params)
+	{
+		volMass = scalar_param(params, "vm", Units::VolumicMass, 0.1 * m_config->units().R);
+		hvel = scalar_param(params, "hvel", Units::Velocity, 1);
+		avel = scalar_param(params, "avel", Units::Frequency, 0.);
+		d = scalar_param(params, "d", Units::None, 0.2);
+		vpos = scalar_param(params, "vpos", Units::None, 0.5);
 	}
-	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
+	void add_rigid_bodies(std::vector<RigidBody> &rbs) const override
 	{
 
-		const Scalar L = m_config->box[0] * (1 - d) / 2 ;
+		const Scalar L = m_config->box[0] * (1 - d) / 2;
 
-		LevelSet::Ptr ls = LevelSet::make_cylinder( L ) ;
-		ls->set_origin( Vec( L/2,vpos*m_config->box[1]) ) ;
-		ls->set_rotation( M_PI/2 ) ;
+		LevelSet::Ptr ls = LevelSet::make_cylinder(L);
+		ls->set_origin(Vec(L / 2, vpos * m_config->box[1]));
+		ls->set_rotation(M_PI / 2);
 
-		LevelSet::Ptr ls2 = LevelSet::make_cylinder( L ) ;
-		ls2->set_origin( Vec( m_config->box[0]-L/2,vpos*m_config->box[1]) ) ;
-		ls2->set_rotation( M_PI/2 ) ;
+		LevelSet::Ptr ls2 = LevelSet::make_cylinder(L);
+		ls2->set_origin(Vec(m_config->box[0] - L / 2, vpos * m_config->box[1]));
+		ls2->set_rotation(M_PI / 2);
 
-		rbs.emplace_back( ls2, 1. );
-		rbs.emplace_back( ls, 1. );
-        
-        LevelSet::Ptr ls3 = LevelSet::make_sphere() ;
-		ls3->scale( radius() ).set_origin( Vec(.5*box(0),vpos*box(1)+3*radius())  ) ;
+		rbs.emplace_back(ls2, 1.);
+		rbs.emplace_back(ls, 1.);
 
-// 		const Scalar t = .25*box(0) / hvel ;
-// 		const Scalar zvel = .5 * m_config->gravity.norm() * t ;
+		LevelSet::Ptr ls3 = LevelSet::make_sphere();
+		ls3->scale(radius()).set_origin(Vec(.5 * box(0), vpos * box(1) + 3 * radius()));
 
-		rbs.emplace_back( ls3, std::numeric_limits<Scalar>::infinity() );
-		rbs.back().set_velocity( Vec(0, 0), 0 ) ;
+		// 		const Scalar t = .25*box(0) / hvel ;
+		// 		const Scalar zvel = .5 * m_config->gravity.norm() * t ;
+
+		rbs.emplace_back(ls3, std::numeric_limits<Scalar>::infinity());
+		rbs.back().set_velocity(Vec(0, 0), 0);
 	}
-		Scalar radius() const {
-		return d/2*m_config->box[0] ;
+	Scalar radius() const
+	{
+		return d / 2 * m_config->box[0];
 	}
+
 private:
-	Scalar volMass ;
-	Scalar hvel ;
-	Scalar avel ;
-	Scalar d ;
-    Scalar vpos;
+	Scalar volMass;
+	Scalar hvel;
+	Scalar avel;
+	Scalar d;
+	Scalar vpos;
 };
 
-struct TowerScenar : public Scenario {
+struct TowerScenar : public Scenario
+{
 
-	Scalar particle_density( const Vec &x ) const override {
-		return ( x[0] >= .25*box(0) && x[0] <= .375*box(0) ) ? 1. : 0. ;
-	}
-
-	virtual void init( const Params& params ) {
-		volMass = scalar_param( params, "vm", Units::VolumicMass, 0.1*m_config->units().R ) ;
-		hvel = scalar_param( params, "hvel", Units::Velocity, 1 ) ;
-		avel = scalar_param( params, "avel", Units::Frequency, 0. ) ;
-		d = scalar_param( params, "d", Units::None, 0.25 ) ;
-	}
-
-	void add_rigid_bodies( std::vector< RigidBody >& rbs ) const override
+	Scalar particle_density(const Vec &x) const override
 	{
-		LevelSet::Ptr ls = LevelSet::make_sphere() ;
-		ls->scale( radius() ).set_origin( Vec(0,.375*box(1))  ) ;
-
-		const Scalar t = .25*box(0) / hvel ;
-		const Scalar zvel = .5 * m_config->gravity.norm() * t ;
-
-		rbs.emplace_back( ls, volMass );
-		rbs.back().set_velocity( Vec(hvel, zvel), avel ) ;
+		return (x[0] >= .25 * box(0) && x[0] <= .375 * box(0)) ? 1. : 0.;
 	}
 
-	Scalar radius() const {
-		return d/2*m_config->box[1] ;
-	}
-
-	void update( Simu& simu, Scalar /*time*/, Scalar dt ) const override
+	virtual void init(const Params &params)
 	{
-		for( RigidBody& rb: simu.rigidBodies() ) {
-			rb.integrate_gravity( dt, m_config->gravity );
+		volMass = scalar_param(params, "vm", Units::VolumicMass, 0.1 * m_config->units().R);
+		hvel = scalar_param(params, "hvel", Units::Velocity, 1);
+		avel = scalar_param(params, "avel", Units::Frequency, 0.);
+		d = scalar_param(params, "d", Units::None, 0.25);
+	}
+
+	void add_rigid_bodies(std::vector<RigidBody> &rbs) const override
+	{
+		LevelSet::Ptr ls = LevelSet::make_sphere();
+		ls->scale(radius()).set_origin(Vec(0, .375 * box(1)));
+
+		const Scalar t = .25 * box(0) / hvel;
+		const Scalar zvel = .5 * m_config->gravity.norm() * t;
+
+		rbs.emplace_back(ls, volMass);
+		rbs.back().set_velocity(Vec(hvel, zvel), avel);
+	}
+
+	Scalar radius() const
+	{
+		return d / 2 * m_config->box[1];
+	}
+
+	void update(Simu &simu, Scalar /*time*/, Scalar dt) const override
+	{
+		for (RigidBody &rb : simu.rigidBodies())
+		{
+			rb.integrate_gravity(dt, m_config->gravity);
 		}
-
 	}
 
 private:
-	Scalar volMass ;
-	Scalar hvel ;
-	Scalar avel ;
-	Scalar d ;
+	Scalar volMass;
+	Scalar hvel;
+	Scalar avel;
+	Scalar d;
 };
 
 // Factories & stuff
 
-std::unique_ptr< Scenario > DefaultScenarioFactory::make( const std::string & str ) const
+std::unique_ptr<Scenario> DefaultScenarioFactory::make(const std::string &str) const
 {
-	if( str == "rayleigh")
-		return std::unique_ptr< Scenario >( new RayleighScenar() ) ;
-	if( str == "ball")
-		return std::unique_ptr< Scenario >( new FallingBallScenar() ) ;
-	if( str == "collapselhe")
-		return std::unique_ptr< Scenario >( new CollapseScenarLHE() ) ;
-        if( str == "collapselhedoor")
-		return std::unique_ptr< Scenario >( new CollapseScenarLHEDoor() ) ;
-	if( str == "collapsecohesion")
-		return std::unique_ptr< Scenario >( new CollapseScenarCohesion() ) ;
-	if( str == "collapse")
-		return std::unique_ptr< Scenario >( new CollapseScenar() ) ;
-	if( str == "planetest")
-		return std::unique_ptr< Scenario >( new PlaneTestScenar() ) ;
-	if( str == "impact")
-		return std::unique_ptr< Scenario >( new ImpactScenar() ) ;
-	if( str == "silo")
-		return std::unique_ptr< Scenario >( new SiloScenar() ) ;
-    if( str == "silobstacle")
-		return std::unique_ptr< Scenario >( new SiloScenarObstacle() ) ;
-	if( str == "tower")
-		return std::unique_ptr< Scenario >( new TowerScenar() ) ;
-	if( str == "sedim")
-		return std::unique_ptr< Scenario >( new Sedimentation() ) ;
-	if( str == "heap")
-		return std::unique_ptr< Scenario >( new HeapScenar() ) ;
-	return std::unique_ptr< Scenario >( new BedScenar() ) ;
+	if (str == "rayleigh")
+		return std::unique_ptr<Scenario>(new RayleighScenar());
+	if (str == "ball")
+		return std::unique_ptr<Scenario>(new FallingBallScenar());
+	if (str == "collapselhe")
+		return std::unique_ptr<Scenario>(new CollapseScenarLHE());
+	if (str == "collapselhedoor")
+		return std::unique_ptr<Scenario>(new CollapseScenarLHEDoor());
+	if (str == "collapsecohesion")
+		return std::unique_ptr<Scenario>(new CollapseScenarCohesion());
+	if (str == "collapse")
+		return std::unique_ptr<Scenario>(new CollapseScenar());
+	if (str == "planetest")
+		return std::unique_ptr<Scenario>(new PlaneTestScenar());
+	if (str == "impact")
+		return std::unique_ptr<Scenario>(new ImpactScenar());
+	if (str == "silo")
+		return std::unique_ptr<Scenario>(new SiloScenar());
+	if (str == "silobstacle")
+		return std::unique_ptr<Scenario>(new SiloScenarObstacle());
+	if (str == "tower")
+		return std::unique_ptr<Scenario>(new TowerScenar());
+	if (str == "sedim")
+		return std::unique_ptr<Scenario>(new Sedimentation());
+	if (str == "heap")
+		return std::unique_ptr<Scenario>(new HeapScenar());
+	return std::unique_ptr<Scenario>(new BedScenar());
 }
 
-
-} //d6
+} // namespace d6

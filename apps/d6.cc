@@ -84,6 +84,8 @@ int main( int argc, const char* argv[] )
 	std::string info = d6::arg( d6::arg3("%1 %3 on %2 [%4]", argv[0], d6::g_git_branch, d6::g_git_commit ), d6::g_timestamp ) ;
 	d6::Log::Info() << "This is " << info << std::endl ;
 
+	//write base_dir on config
+	config.from_string("base_dir", base_dir);
 	// Save copy of final configuration and convert to interal units
 	d6::FileInfo outDir ( base_dir ) ;
 	if( !outDir.exists() ) outDir.makeDir() ;
