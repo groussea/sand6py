@@ -7,3 +7,5 @@ build/*
 *.qt.cc
 *.qt.hh
 *.pyc
+/build
+/build_2d
