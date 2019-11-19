@@ -8,6 +8,7 @@ Created on Wed Jul  3 10:48:34 2019
 import os, sys
 import numpy as np
 import json
+import csv
 #%%
 def findHzeroAndMeanVel(Field,Ux,Uy,X,Y,vecXexpD,expD_in):
     import cv2
@@ -570,7 +571,7 @@ class ExperimentalRun():
         self.dictE=self.dictExp[listExp[runNumber]]
         self.typicalTime=(self.dictE['H']/9.81)**0.5
                 
-        self.vecxMax=[2,2.5,3,3,2.5,3,4,6]
+        self.vecxMax=[2,2.5,3,3,2.5,3,4,6,8]
         self.xmax=self.vecxMax[runNumber]
 
         self.nFrames=int(self.dictExp[listExp[runNumber]]['nFrames'])
@@ -598,6 +599,9 @@ class ExperimentalRun():
          
      def plotDepthProfile(self,ax,ifile,**args):
         self.l=ax.plot(self.vecXexpD/self.scaleLength,self.expD[ifile]/self.scaleLength,**args)
+
+     def plotField(self,ax,ifile,**args):
+        self.im=ax.imshow((self.Ux[ifile]**2+self.Uy[ifile]**2)**0.5,extent=[self.X[0]/self.scaleLength,self.X[-1]/self.scaleLength,self.Y[-1]/self.scaleLength,self.Y[0]/self.scaleLength])
 
 
 def setFigure(fig,ax,sL,unit='-'):

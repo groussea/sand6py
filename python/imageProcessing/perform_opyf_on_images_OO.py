@@ -57,7 +57,7 @@ for j in range(1,8):
 
 #creat the video Analyzer Object
     
-    vidAnalyzer=opyf.videoAnalyser(vidPath,vlim=[0,30],imageROI=sdictE['ROI'])
+    vidAnalyzer=opyf.videoAnalyzer(vidPath,vlim=[0,30],imageROI=sdictE['ROI'])
     step,shift,Ntot=8,10,int(sdictE['nFrames'])+5
     vidAnalyzer.setVecTime(starting_frame=int(sdictE['framedeb'])-100,step=step,shift=shift,Ntot=Ntot)
     

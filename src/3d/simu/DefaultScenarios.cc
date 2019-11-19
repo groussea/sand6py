@@ -53,7 +53,7 @@ struct CollapseScenar : public Scenario
 {
 	Scalar particle_density(const Vec &x) const override
 	{
-		return (x[0] < 0.5 * m_config->box[0] || x[2] < .1 * m_config->box[2]) ? 1. : 0.;
+		return (x[0] < 0.5 * m_config->box[0] || x[2] < 1. * m_config->box[2]) ? 1. : 0.;
 	}
 
 };
