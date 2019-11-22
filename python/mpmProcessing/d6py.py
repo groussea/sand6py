@@ -70,50 +70,40 @@ def extractInfoVTKprimalfields(filename):
     import vtk
     from vtk.util.numpy_support import vtk_to_numpy
     reader = vtk.vtkDataSetReader()
+    #required to read all file datas
+    reader.ReadAllScalarsOn()
+    reader.ReadAllVectorsOn()
+    reader.ReadAllTensorsOn()
     reader.SetFileName(filename)
     reader.Update()
     data=reader.GetOutput()           
     pdata=data.GetPointData()
-    #Convert volocities into Numpy Array
-    velname=pdata.GetArrayName(1)
-    velarray=pdata.GetArray(velname)
-    npvelArr=vtk_to_numpy(velarray) 
-    #Convert solid fraction into Numpy Array
-    volname=pdata.GetArrayName(0)
-    npPhiArr=vtk_to_numpy(pdata.GetArray(volname)) 
-    #Convert stresses into Numpy Array
-    strressname=pdata.GetArrayName(2)
-    npStressesArr=vtk_to_numpy(pdata.GetArray(strressname))     
-    
+    N_array=pdata.GetNumberOfArrays()
     #Convert points into Numpy Array
-    pointsArr=data.GetPoints().GetData()
-    nppointsArr=vtk_to_numpy(pointsArr) 
+    np_points=vtk_to_numpy(data.GetPoints().GetData()) 
     
-    return npvelArr, npPhiArr, npStressesArr, nppointsArr
+    #Convert solid fraction into Numpy Array
+    np_phi=vtk_to_numpy(pdata.GetArray(pdata.GetArrayName(0))) 
+    #Convert volocities into Numpy Array
+    np_vel=vtk_to_numpy(pdata.GetArray(pdata.GetArrayName(1))) 
+
+        #Convert d_phi into Numpy Array
+    np_d_phi=vtk_to_numpy(pdata.GetArray(pdata.GetArrayName(2)))   
+
+    if N_array>3:
+                #convert forces
+        np_forces=vtk_to_numpy(pdata.GetArray(pdata.GetArrayName(3))) 
+        #Convert stresses into Numpy Array
+        np_stresses=vtk_to_numpy(pdata.GetArray(pdata.GetArrayName(4)))     
+    
+    else:
+        # vtk file is in mode 'extractAllField=False'
+        np_stresses=None        
+        np_forces=None
+    
+    return  np_points, np_phi, np_vel,  np_stresses, np_d_phi, np_forces, N_array
 
 
-def extractInfoVTKprimalfields3D(filename):  
-    import vtk
-    from vtk.util.numpy_support import vtk_to_numpy
-    reader = vtk.vtkDataSetReader()
-    reader.SetFileName(filename)
-    reader.Update()
-    data=reader.GetOutput()           
-    pdata=data.GetPointData()
-    #Convert volocities into Numpy Array
-    velname=pdata.GetArrayName(1)
-    velarray=pdata.GetArray(velname)
-    npvelArr=vtk_to_numpy(velarray) 
-    #Convert solid fraction into Numpy Array
-    phiname=pdata.GetArrayName(0)
-    npPhiArr=vtk_to_numpy(pdata.GetArray(phiname)) 
-    #Convert stresses into Numpy Array
- 
-    #Convert points into Numpy Array
-    pointsArr=data.GetPoints().GetData()
-    nppointsArr=vtk_to_numpy(pointsArr) 
-    
-    return npvelArr, npPhiArr, nppointsArr
 
 
 def readConfigFile(configFile):
@@ -148,7 +138,7 @@ def readConfigFile(configFile):
     dictConf={}
     #Create a dictionnary with all the infos we need
     for ic in range(1,len(Conf)):
-        if Conf[ic][0]=='box' or Conf[ic][0]=='res' or Conf[ic][0]=='initialOri':
+        if Conf[ic][0]=='box' or Conf[ic][0]=='res' or Conf[ic][0]=='initialOri' or Conf[ic][0]=='gravity':
             if len(Conf[ic])==3:
                 dictConf[Conf[ic][0]]=[float(Conf[ic][1]),float(Conf[ic][2])]
             else:
@@ -174,16 +164,19 @@ def readConfigFile(configFile):
     boxX=float(dictConf['box'][0])
     boxY=float(dictConf['box'][1])
     if len(dictConf['res'])==2:
-        gridscale=np.min([boxX/resX,boxY/resY]) #the grid scale is the minimum grid length
+        typ_L=np.min([boxX/resX,boxY/resY]) #the grid scale is the minimum grid length
  #the velocities are usually scaled with the wave velocity
     else:
         resZ=int(dictConf['res'][2])
         boxZ=float(dictConf['box'][2])
-        gridscale=np.min([boxX/resX,boxY/resY,boxZ/resZ])
+        typ_L=np.min([boxX/resX,boxY/resY,boxZ/resZ])
     
-   
-    dictConf['gridScale']= gridscale 
-    dictConf['velScale']= np.sqrt(gridscale*9.81)     
+    typ_G=np.linalg.norm(dictConf['gravity'])
+    typ_R=dictConf['volMass']
+
+    dictConf['gridScale']= typ_L
+    dictConf['velScale']= np.sqrt(typ_L*typ_G) 
+    dictConf['pressureScale']= typ_G*typ_R*typ_L
     return dictConf    
 
 def modifyConfigFile(configFile,newConfigFile,parameter,value):
@@ -267,51 +260,70 @@ def fromVTKtoscaledDataParticles2D(VTKfilename,dConfig):
 
 
     return pointsp,vel,vol      
-    ###translate the origine on the points and the grid (comment if isnot dConfig['columnLength'])
 
-    #% load phi in primal field
 def fromVTKtoscaledDataFields3D(VTKfilename,dConfig):        
-#    npvelArr, npPhiArr, npStressesArr, nppointsArr=tools.extractInfoVTKprimalfields(VTKfilename)
+
     Ratio, Orx, Ory=RatioAndOrigin(dConfig)
-    npvelArr, npPhiArr, nppointsArr=extractInfoVTKprimalfields3D(VTKfilename)
-     
-    nppointsArr=nppointsArr*dConfig['gridScale']
-    points_grid=np.zeros_like(nppointsArr)             
-    points_grid[:,0]=nppointsArr[:,0]-Orx
-    points_grid[:,2]=nppointsArr[:,2]-Ory 
+    np_points, np_phi, np_vel,  np_stresses, np_d_phi, np_forces, N_array =extractInfoVTKprimalfields(VTKfilename)
+    
+    np_points=np_points*dConfig['gridScale']
+    points_grid=np.zeros_like(np_points)             
+    points_grid[:,0]=np_points[:,0]-Orx
+    points_grid[:,1]=np_points[:,1]-Ory 
     resX=int(dConfig['res'][0])
     resY=int(dConfig['res'][1])
     resZ=int(dConfig['res'][2])
     grid_x=np.reshape(points_grid[:,0],(resX+1,resY+1,resZ+1))
     grid_y=np.reshape(points_grid[:,1],(resX+1,resY+1,resZ+1))
     grid_z=np.reshape(points_grid[:,2],(resX+1,resY+1,resZ+1))
-    reshaped_Phi=np.reshape(npPhiArr,(resX+1,resY+1,resZ+1))
-    velx=np.reshape(npvelArr[:,0],(resX+1,resY+1,resZ+1))
-    vely=np.reshape(npvelArr[:,1],(resX+1,resY+1,resZ+1))
-    velz=np.reshape(npvelArr[:,2],(resX+1,resY+1,resZ+1))
-    return [grid_x, grid_y, grid_z], [velx,vely,velz],reshaped_Phi
+
+    reshaped_Phi=np.reshape(np_phi,(resX+1,resY+1,resZ+1))
+    velx=np.reshape(np_vel[:,0],(resX+1,resY+1,resZ+1))*dConfig['velScale']
+    vely=np.reshape(np_vel[:,1],(resX+1,resY+1,resZ+1))*dConfig['velScale']
+    velz=np.reshape(np_vel[:,2],(resX+1,resY+1,resZ+1))*dConfig['velScale']
+    np_d_phi_reshaped=np.reshape(np_d_phi,(resX+1,resY+1,resZ+1,3))
+    
+    if N_array>3:
+        np_stresses_reshaped=np.reshape(np_stresses,(resX+1,resY+1,resZ+1,9))*dConfig['pressureScale']
+        np_forces_reshaped=np.reshape(np_forces,(resX+1,resY+1,resZ+1,3))*dConfig['pressureScale']
+    else:
+        np_stresses_reshaped=None
+        np_forces_reshaped=None
+
+    return [grid_x, grid_y, grid_z], [velx,vely,velz], reshaped_Phi, np_d_phi_reshaped, np_stresses_reshaped, np_forces_reshaped
+
 
 
 def fromVTKtoscaledDataFields2D(VTKfilename,dConfig):        
 #    npvelArr, npPhiArr, npStressesArr, nppointsArr=tools.extractInfoVTKprimalfields(VTKfilename)
     Ratio, Orx, Ory=RatioAndOrigin(dConfig,dim=2)
-    npvelArr, npPhiArr, npStressesArr, nppointsArr=extractInfoVTKprimalfields(VTKfilename)
-     
-    nppointsArr=nppointsArr*dConfig['gridScale']
-    points_grid=np.zeros_like(nppointsArr)             
-    points_grid[:,0]=nppointsArr[:,0]-Orx
-    points_grid[:,1]=nppointsArr[:,1]-Ory 
+    np_points, np_phi, np_vel,  np_stresses, np_d_phi, np_forces, N_array =extractInfoVTKprimalfields(VTKfilename)
+    
+    np_points=np_points*dConfig['gridScale']
+    points_grid=np.zeros_like(np_points)             
+    points_grid[:,0]=np_points[:,0]-Orx
+    points_grid[:,1]=np_points[:,1]-Ory 
     resX=int(dConfig['res'][0])
     resY=int(dConfig['res'][1])
 
     grid_x=np.reshape(points_grid[:,0],(resX+1,resY+1))
     grid_y=np.reshape(points_grid[:,1],(resX+1,resY+1))
+    
 
-    reshaped_Phi=np.reshape(npPhiArr,(resX+1,resY+1))
-    velx=np.reshape(npvelArr[:,0],(resX+1,resY+1))
-    vely=np.reshape(npvelArr[:,1],(resX+1,resY+1))
+    reshaped_Phi=np.reshape(np_phi,(resX+1,resY+1))
+    velx=np.reshape(np_vel[:,0],(resX+1,resY+1))*dConfig['velScale']
+    vely=np.reshape(np_vel[:,1],(resX+1,resY+1))*dConfig['velScale']
 
-    return [grid_x, grid_y], [velx,vely],reshaped_Phi
+    np_d_phi_reshaped=np.reshape(np_d_phi,(resX+1,resY+1,3))
+
+    if N_array>3:
+        np_stresses_reshaped=np.reshape(np_stresses,(resX+1,resY+1,9))*dConfig['pressureScale']
+        np_forces_reshaped=np.reshape(np_forces,(resX+1,resY+1,3))*dConfig['pressureScale']
+    else:
+        np_stresses_reshaped=None
+        np_forces_reshaped=None
+
+    return [grid_x, grid_y], [velx,vely], reshaped_Phi, np_d_phi_reshaped, np_stresses_reshaped, np_forces_reshaped
 
 def csv_write(realpoints,realvel,realvol,csvPath):
     npoints=len(realvel)
@@ -488,8 +500,6 @@ def whereSand6OutFromParms(listRuns,**params):
 
 
 
-
-
 class NumericalRun():
     def __init__(self,d6OutFolder,doorFolder=None):
 
@@ -511,32 +521,67 @@ class NumericalRun():
         self.dimSim=dimSim
         self.H=self.Ldoor
         self.vecxMax=np.array([2,2.5,3,3,2.5,3,4,6])*self.H
+
 #        self.runNumber=runNumber
 #        self.dConfig['runNunmber']=runNumber
 #        self.xmax=self.vecxMax[self.runNumber]
         self.scaleLength=1
         
-
         
     def loadVTK(self, ifile):
         self.ifile=ifile
         VTKfilename_part = self.d6OutFolder+'/vtk/particles-'+ str(ifile) +'.vtk'  
         VTKfilename= self.d6OutFolder+'/vtk/primal-fields-'+ str(ifile) +'.vtk' 
         if self.dimSim==3: 
-            self.pointsp,self.vel,self.vol =fromVTKtoscaledDataParticles3D(VTKfilename_part,self.dConfig)
-            [self.grid_x, self.grid_y, self.grid_z], [self.velx,self.vely,self.velz],self.reshaped_Phi=fromVTKtoscaledDataFields3D(VTKfilename,self.dConfig)   
-        if self.dimSim==2:
-            [self.grid_x, self.grid_y], [self.velx,self.vely],self.reshaped_Phi=fromVTKtoscaledDataFields2D(VTKfilename,self.dConfig)
-            self.pointsp,self.vel,self.vol =fromVTKtoscaledDataParticles2D(VTKfilename_part,self.dConfig)
+           [self.grid_x, self.grid_y, self.grid_z], [self.velx,self.vely,self.velz],self.reshaped_Phi, self.np_d_phi_reshaped, self.np_stresses_reshaped, self.np_forces_reshaped=fromVTKtoscaledDataFields3D(VTKfilename,self.dConfig)   
+           self.pointsp,self.vel,self.vol =fromVTKtoscaledDataParticles3D(VTKfilename_part,self.dConfig)
 
+        if self.dimSim==2:
+            [self.grid_x, self.grid_y], [self.velx,self.vely],self.reshaped_Phi,  self.np_d_phi_reshaped, self.np_stresses_reshaped, self.np_forces_reshaped=fromVTKtoscaledDataFields2D(VTKfilename,self.dConfig)
+            self.pointsp,self.vel,self.vol =fromVTKtoscaledDataParticles2D(VTKfilename_part,self.dConfig)
+        if self.np_stresses_reshaped is not None:
+            self.calculatePressure() 
+        self.extentR=np.array([self.grid_x[0,0],self.grid_x[-1,0],self.grid_y[0,0],self.grid_y[0,-1]])/self.scaleLength
+    
     def scLength(self,length):       
         self.scaleLength=length
-    
+
     def plotContour(self,ax,**args):
         if self.dimSim==3: 
             self.CS=ax.contour(self.grid_x[:,6,:]/self.scaleLength,self.grid_z[:,6,:]/self.scaleLength,self.reshaped_Phi[:,6,:],**args)
         if self.dimSim==2:
             self.CS=ax.contour(self.grid_x/self.scaleLength,self.grid_y/self.scaleLength,self.reshaped_Phi,**args)
+    def calculatePressure(self):
+        if self.dimSim==2:
+            self.P=np.flipud(1/2*(self.np_stresses_reshaped[:,:,0]+self.np_stresses_reshaped[:,:,4]).T)
+        if self.dimSim==3:
+            self.P=np.flipud(1/3*(self.np_stresses_reshaped[:,:,:,0]+self.np_stresses_reshaped[:,:,:,4]+self.np_stresses_reshaped[:,:,:,8]).T)
+
+    def calculateShearRate(self):
+        if self.dimSim==2:
+            self.P=np.flipud(1/2*(self.np_stresses_reshaped[:,:,0]+self.np_stresses_reshaped[:,:,4]).T)
+        if self.dimSim==3:
+            self.P=np.flipud(1/3*(self.np_stresses_reshaped[:,:,:,0]+self.np_stresses_reshaped[:,:,:,4]+self.np_stresses_reshaped[:,:,:,8]).T)
+    
+    
+    def plotPressure(self,ax,**args):
+        if self.dimSim==2:
+            ax.imshow(self.P,extent=self.extentR,**args)
+        if self.dimSim==3:
+            ax.imshow(self.P[:,:,6],extent=self.extentR,**args)
+    def plotInertia(self,ax,**args):
+        if self.dimSim==2:
+            ax.imshow(self.P,extent=self.extentR,**args)
+
+        
+    def plotInertialNumber(self,ax,**args):
+#        inertialNumber=
+        if self.dimSim==3: 
+            self.CS=ax.imshow(self.reshaped_Phi[:,6,:],**args)
+        if self.dimSim==2:
+            self.CS=ax.imshow(self.reshaped_Phi[:,6,:],**args)
+            self.CS=ax.contour(self.grid_x/self.scaleLength,self.grid_y/self.scaleLength,self.reshaped_Phi,**args)
+            
     
     def plotPoints(self,ax,**args):
         if self.dimSim==3: 
