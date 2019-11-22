@@ -628,10 +628,21 @@ class ExperimentalRun():
             self.Time=coordinates[0][1]
             self.X=coordinates[1][1]
             self.Y=coordinates[2][1]
+            self.dx=self.dy=self.X[1]-self.X[0]
             self.Ux=variables[0][1]
             self.Uy=variables[1][1]
             self.Ux[np.where(self.Ux==0)]=np.nan
             self.Uy[np.where(self.Uy==0)]=np.nan
+            # calculate strain rate
+            self.epsilon21=[]
+            for k in range(0,len(self.Time)):
+                dUxdy=(self.Ux[k][:-1,:]-self.Ux[k][1:,:])/self.dy
+                self.dUxdyReshaped=(dUxdy[1:,1:-1]+dUxdy[:-1,1:-1])/2          
+                dUydx=(self.Uy[k][:,1:]-self.Uy[k][:,:-1])/self.dx
+                self.dUydxReshaped=(dUydx[1:-1,1:]+dUydx[1:-1,:-1])/2    
+                self.epsilon21.append(0.5*(self.dUxdyReshaped+self.dUydxReshaped))
+            self.epsilon21=np.array(self.epsilon21)
+
             self.h,self.w=self.Ux[0].shape
             
         self.scaleLength=1.
@@ -645,9 +656,17 @@ class ExperimentalRun():
      def plotDepthProfile(self,ax,ifile,**args):
         self.l=ax.plot(self.vecXexpD/self.scaleLength,self.expD[ifile]/self.scaleLength,**args)
 
-     def plotField(self,ax,ifile,**args):
-        self.im=ax.imshow((self.Ux[ifile]**2+self.Uy[ifile]**2)**0.5,extent=[self.X[0]/self.scaleLength,self.X[-1]/self.scaleLength,self.Y[-1]/self.scaleLength,self.Y[0]/self.scaleLength])
-
+     def plotField(self,ax,ifile,Type='velocity_norm',**args):
+        Xplot=self.X/self.scaleLength
+        Yplot=self.Y/self.scaleLength
+        dxp=self.dx/self.scaleLength
+        dyp=self.dy/self.scaleLength
+        if Type=='velocity_norm':
+            self.im=ax.imshow((self.Ux[ifile]**2+self.Uy[ifile]**2)**0.5,extent=[Xplot[0]-dxp/2,Xplot[-1]+dxp/2,Yplot[-1]-dyp/2,Yplot[0]+dyp/2])
+        elif Type=='shear_rate':            
+            self.im=ax.imshow(self.epsilon21,extent=[Xplot[0]+dxp/2,Xplot[-1]-dxp/2,Yplot[-1]+dyp/2,Yplot[0]-dyp/2],alpha=0.5,vmin=-10,vmax=40)
+#        elif Type=='inertia':
+            
 
 def setFigure(fig,ax,sL,unit='-'):
     ax.set_aspect('auto')
@@ -658,7 +677,7 @@ def setFigure(fig,ax,sL,unit='-'):
     ax.yaxis.set_label_coords(-0.1,0.5 )
     #opyfDisp.ax.xaxis.set_ticklabels([])
 #    ax.yaxis.set_ticks([0,0.2,0.4,0.6,0.8,1])
-    fig.set_size_inches((8*0.5,4.5*0.5))    
+    fig.set_size_inches((8*2,4.5*2))    
     ax.plot([-3/sL,4/sL],[0/sL,0/sL],'k',linewidth=0.5,zorder=1.)
     ax.plot([0,0],[-3/sL,3/sL],'k',linewidth=0.5,zorder=1.) 
     ax.grid(zorder=-0.)

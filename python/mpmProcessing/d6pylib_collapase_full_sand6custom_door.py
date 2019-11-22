@@ -24,20 +24,45 @@ If no argments: the csv files are saved in the out folder considering the python
 
 @author: Gauthier
 """
+import cv2
+from shutil import copyfile
 import os
 import numpy as np  
+import csv
+import matplotlib.pyplot as plt
 import json
 import sys
 import subprocess
+from matplotlib_scalebar.scalebar import ScaleBar
 
 driveFolder='/scratch/garousse/'
-#driveFolder='/media/gauthier/Gauthier_Backup/'
-#driveFolder='/media/garousse/Gauthier_Backup/'
+driveFolder='/media/gauthier/Gauthier_Backup/'
 sys.path.append(driveFolder+'TAF/TAF_EPFL/OPyF-Project/github/opyFlow')
 import opyf
 
+sys.path.append(driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/python-essentials/Essentials OpenCV')
+from TrackandInterpolate import *
+from vtk.util import numpy_support as VN
+#import trackandinterpolate
+plt.style.use('fivethirtyeight')
+plt.rcParams['axes.edgecolor']='0'
+plt.rcParams['axes.linewidth']=2.
+plt.rc('text', usetex=True)
+plt.rc('font', family='serif')
+plt.rcParams['axes.facecolor']='white'
+plt.rcParams['figure.facecolor']='white'
+def write_csvField(data,csvpath):
+    h , w = data.shape
+    f=open(csvpath,'w')
+    writer = writer = csv.writer(f, delimiter=';')       
+    for ip in range(0,h):
+        writer.writerow(data[ip,:]) 
+    f.close()
+    
 
- 
+plt.close('all')
+plt.ioff()
+    
     #the path where all the videos are
 
 vidPath=driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/Video_src' 
@@ -46,17 +71,24 @@ vidPath=driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/Video_src'
 JSONpath=driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/Video_src/dictExp.json'
 
     # the d6 soft path
-d6Path='/scratch/garousse/TAF/TAF_inria/INRIA_current_work/GitLab/sand6/build'
-#d6Path='/media/gauthier/Data-Gauthier/programs/gitLab/sand6-perso/build'
-
-#d6Path='/home/gauthier/programs/epfl_lhe/build2d'
+d6Path=driveFolder+'TAF/TAF_inria/Sand6/epfl_lhe_2d_and_3d/build_fast'
+d6Path='/media/gauthier/Data-Gauthier/programs/gitLab/sand6/build_2d'
 d6OutFolder='out'
+out_Opyf=driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/outputs_opyf/'
+listOutOpyf=['Run_00_gravels-2.7mm_Slope=0deg_H=0.114m_L=0.187',
+'Run_01_gravels-2.7mm_Slope=5deg_H=0.124m_L=0.198',
+'Run_02_gravels-2.7mm_Slope=10deg_H=0.115m_L=0.279',
+'Run_03_gravels-2.7mm_Slope=15deg_H=0.117m_L=0.268',
+'Run_04_glass-beads-0.47mm_Slope=0deg_H=0.119m_L=0.223',
+'Run_05_glass-beads-0.47mm_Slope=5deg_H=0.111m_L=0.223',
+'Run_06_glass-beads-0.47mm_Slope=10deg_H=0.111m_L=0.224',
+'Run_07_glass-beads-0.47mm_Slope=15deg_H=0.111m_L=0.224']
 
 os.chdir(d6Path)
 #%%
 
     #add d6py module pythonpath
-sys.path.append(d6Path+'/../python/mpmProcessing')
+sys.path.append(d6Path+'/../python')
 
 import d6py
 #%
@@ -76,12 +108,12 @@ t=time.time()
 
 door='with'
 
-for j in range(8,9 ): 
+for j in range(7,8): 
 #    plt.close('all')
 #for j in range(0,8):
     sE=lExp[j] #Selected exeperiment
     sdictE=dictExp[sE]
-    fracH=0.8
+    fracH=0.9
     
     if sdictE['camType']=='Phantom':
         sdictE['L']=sdictE['L']+0.1
@@ -91,7 +123,7 @@ for j in range(8,9 ):
     Lmod=sdictE['Ltot']
     nFrames=sdictE['nFrames']
     
-    if (sdictE['camType']=='BW') & (sdictE['Slope']==15. or sdictE['Slope']==20.):
+    if (sdictE['camType']=='BW') & (sdictE['Slope']==15.):
         Lmod=sdictE['Ltot']+0.5
     
 
@@ -105,37 +137,28 @@ for j in range(8,9 ):
         ts=20
     substeps=4
     sdictE['delta_mu']=delta_mu
-
-    mu=sdictE['mu']
-    prop='low'
-    if prop=='low':
-        mu=sdictE['mu']-0.05
-    
-    if prop=='inscrit':
-        mu=mu/(1+1/3*mu**2)
-
-    prop='higher'   
+    prop=''
     if door=='with':
-        runName=str('Run_'+format(j,'02.0f')+'_3D_Door_muRigid='+str(muRigid)+'_'+sdictE['grainType']+'_Slope='+format(sdictE['Slope'],'.0f')+'deg_H='+format(sdictE['H'],'.3f')+'m_L='+format(sdictE['L'],'.3f')+'_delta_mu='+format(delta_mu,'.3f')+'_substeps_'+str(substeps)+'_fracH='+str(fracH)+prop+'mu_s='+str(mu))    
+        runName=str('Run_'+format(j,'02.0f')+'_Door_muRigid='+str(muRigid)+'_'+sdictE['grainType']+'_Slope='+format(sdictE['Slope'],'.0f')+'deg_H='+format(sdictE['H'],'.3f')+'m_L='+format(sdictE['L'],'.3f')+'_delta_mu='+format(delta_mu,'.3f')+'_substeps_'+str(substeps)+'_fracH='+str(fracH)+prop)    
     else:
-        runName=str('Run_'+format(j,'02.0f')+'_3D_no_Door_start_at_0.13_s_'+sdictE['grainType']+'_Slope='+format(sdictE['Slope'],'.0f')+'deg_H='+format(sdictE['H'],'.3f')+'m_L='+format(sdictE['L'],'.3f')+'_delta_mu='+format(delta_mu,'.3f')+'_substeps_'+str(substeps)+'_fracH='+str(fracH)+prop+'mu_s='+str(mu))      
+        runName=str('Run_'+format(j,'02.0f')+'_no_Door_start_at_0.13_s_'+sdictE['grainType']+'_Slope='+format(sdictE['Slope'],'.0f')+'deg_H='+format(sdictE['H'],'.3f')+'m_L='+format(sdictE['L'],'.3f')+'_delta_mu='+format(delta_mu,'.3f')+'_substeps_'+str(substeps)+'_fracH='+str(fracH)+prop)      
   
     
+     
      
     d6OutFolder=driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/outputs/Tests/'+runName
     opyf.mkdir2(d6OutFolder) 
     
-    newConfigFile=d6OutFolder+'/collapse.3d_'+runName+'m.conf'
-    configFilein=d6Path+'/../scenes/collapse.3d.LHE.Door.conf'
-
-    d6py.modifyConfigFile(configFilein,newConfigFile,'box',[Lmod, 0.06,Hmod])
-    d6py.modifyConfigFile(newConfigFile,newConfigFile,'fps',[150])
-    d6py.modifyConfigFile(newConfigFile,newConfigFile,'gravity',[+9.81*np.sin(sdictE['Slope']*np.pi/180), 0,-9.81*np.cos(sdictE['Slope']*np.pi/180)])
+    newConfigFile=d6OutFolder+'/collapse.2d_'+runName+'m.conf'
+    configFilein=d6Path+'/../scenes/collapse.2d.LHE.Door.conf'
+    
+    d6py.modifyConfigFile(configFilein,newConfigFile,'box',[Lmod, Hmod])
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'gravity',[+9.81*np.sin(sdictE['Slope']*np.pi/180), -9.81*np.cos(sdictE['Slope']*np.pi/180)])
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'nFrames',[nFrames+ts])
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'randomize',[0])
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'substeps',[substeps])
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'grainDiameter',[sdictE['grainDiameter']])
-    d6py.modifyConfigFile(newConfigFile,newConfigFile,'mu',[mu])
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'mu',[sdictE['mu']])
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'muRigid',[muRigid]) #mu Door
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'delta_mu',[delta_mu])
     if door=='with':
@@ -148,9 +171,9 @@ for j in range(8,9 ):
 
     
     TypicalLength=0.005
-    d6py.modifyConfigFile(newConfigFile,newConfigFile,'res',[Lmod//TypicalLength,0.06//TypicalLength,np.round(Hmod/TypicalLength/10)*10]) #pour avoir un réolution divisible par 10 selon Y
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'res',[Lmod//TypicalLength,np.round(Hmod/TypicalLength/10)*10]) #pour avoir un réolution divisible par 10 selon Y
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'I0',[0.279]) 
-      
+       
     #load the final config file dictionnary    
         
     dConfigmod=d6py.readConfigFile(newConfigFile)
@@ -183,7 +206,7 @@ for j in range(8,9 ):
         sys.exit() 
     else:
         print("program output:", out)
-#    shutil.copyfile(d6Path+'/out/door.txt',d6OutFolder+'/door.txt')
+    
     #%%
     ################# Write the Different subfolders ###############     
         
@@ -360,79 +383,79 @@ for j in range(8,9 ):
 #    writingModDepthPath=out_Opyf+listOutOpyf[j]+'/DATA_sand6'
 #    opyf.mkdir2(writingModDepthPath)
 #    if door=='with':
-#        outputname='/Run_'+format(j,'02.0f')+'_3D_Door_muRigid='+str(muRigid)+'_delta_mu='+format(delta_mu,'.3f')+'TypicalLength='+format(TypicalLength,'.3f')+'_model_depths'+'_substeps_'+str(substeps)
+#        outputname='/Run_'+format(j,'02.0f')+'_Door_muRigid='+str(muRigid)+'_delta_mu='+format(delta_mu,'.3f')+'TypicalLength='+format(TypicalLength,'.3f')+'_model_depths'+'_substeps_'+str(substeps)
 #    else:
-#        outputname='/Run_'+format(j,'02.0f')+'_3D_no_Door_start_at_0.13_s_delta_mu='+format(delta_mu,'.3f')+'TypicalLength='+format(TypicalLength,'.3f')+'_model_depths'+'_substeps_'+str(substeps)
+#        outputname='/Run_'+format(j,'02.0f')+'_no_Door_start_at_0.13_s_delta_mu='+format(delta_mu,'.3f')+'TypicalLength='+format(TypicalLength,'.3f')+'_model_depths'+'_substeps_'+str(substeps)
 #
 #    filename=writingModDepthPath+outputname+'.hdf5'
 #    d6Depth=np.array(d6Depth)
 #    opyf.hdf5_Write(filename,[['T [s]',np.arange(ifile)/dConfig['fps']],['X [m]',vecX]],[['Depth [m]',d6Depth]])
 #    copyfile(configFileout, writingModDepthPath+outputname+'.conf')
-    
-    
-    
-#%% Write the field of solid fraction and velocity field and stress field
-
-
-
-
-    
-#%%                        
-     
-
-#            scalebar = ScaleBar(1,length_fraction=0.3)
-#            scalebar.box_alpha=0.
-#            plt.gca().add_artist(scalebar)
+#    
+#    
+#    
+##%% Write the field of solid fraction and velocity field and stress field
 #
-#               
 #
-#                Time=float((frame_idx-frameref))/sdictE['fps']  
-#  
-#                dech,decv=-0.005,0.005
-#                ax.text(0.1+dech,0.08+decv,  'Type : '+str(sdictE['grainType'])+ r'~~Time: ' + format(Time,'1.2f') +' s')
-#                l=ax.legend(bbox_to_anchor=((0.09+dech-extentr[0])/(extentr[1]-extentr[0]),(0.068-extentr[2])/(extentr[3]-extentr[2])),loc=6,fontsize=10)
-#                l.get_frame().set_linewidth(0.0)
-#                l.get_frame().fill=False
-##                ax.text(0.1+dech,0.04+decv,)
-#                ax.text(0.1+dech,0.04+decv,r'$\mu$ = ' + format(sdictE['mu'],'1.2f') + r'$~~~\Delta \mu$ = ' + format(delta_mu,'1.2f') + r'$~~~Slope$ = '+ format(sdictE['Slope'],'1.0f') +'$^\circ$')
-##                ax.text(0.22+dech,0.04+decv,r'$Slope$ ='+ format(sdictE['Slope'],'1.0f') +'$^\circ$')
-#                      
-##                ax.text(0.23+dech,0.08+decv,r'Time: ' + format(Time,'1.2f') )
-#                     
-#                     
-#                
-#        #        fig.set_size_inches(4.5, 3)   
-#                
-#                plt.savefig(writingImgPath2+'/Step'+format(frame_idx-framedeb,'04.0f')+'.png',format='png',dpi=200) 
-#                
-##%
 #
-#                fig2=plt.figure('fig',figsize=(Lfig, Hfig))
-#                fig2.clf()
-#                ax = plt.Axes(fig2, [0.1, 0.25, 0.85, 0.75])
-#                fig2.add_axes(ax)
-#                extent=[np.min(grid_xp),np.max(grid_xp),np.min(grid_yp),np.max(grid_yp)]
-#                infoPlot={'cmap' : cmap,
-#                          'markersize' : 0.3,
-#                          'contourlim' : contourlim,
-#                          'vlim' : vlim,
-#                          'label' : 'Sand6 - MPM - Simulation',
-#                          'strpoints': 'Count MPM particles ',
-#                          'ifile':frame_idx,
-#                          'DP':{'vecX' : vecX, 'H' : H},
-#                          'extentr':extentr,
-#                          'axes':None}  
-#        
-#                d6py.d6imshow(grid_val, grid_xp, grid_yp,pointsp,extent,dConfig=dConfig,fig=fig2,infoPlot=infoPlot,sdictE=sdictE)
-# 
-#                plt.savefig(writingImgPath+'/Step'+format(frame_idx-framedeb,'04.0f')+'.png',format='png',dpi=200) 
-#
-#                plt.pause(0.01)
 #
 #    
-    
-    
-
+##%%                        
+#     
+#
+##            scalebar = ScaleBar(1,length_fraction=0.3)
+##            scalebar.box_alpha=0.
+##            plt.gca().add_artist(scalebar)
+##
+##               
+##
+##                Time=float((frame_idx-frameref))/sdictE['fps']  
+##  
+##                dech,decv=-0.005,0.005
+##                ax.text(0.1+dech,0.08+decv,  'Type : '+str(sdictE['grainType'])+ r'~~Time: ' + format(Time,'1.2f') +' s')
+##                l=ax.legend(bbox_to_anchor=((0.09+dech-extentr[0])/(extentr[1]-extentr[0]),(0.068-extentr[2])/(extentr[3]-extentr[2])),loc=6,fontsize=10)
+##                l.get_frame().set_linewidth(0.0)
+##                l.get_frame().fill=False
+###                ax.text(0.1+dech,0.04+decv,)
+##                ax.text(0.1+dech,0.04+decv,r'$\mu$ = ' + format(sdictE['mu'],'1.2f') + r'$~~~\Delta \mu$ = ' + format(delta_mu,'1.2f') + r'$~~~Slope$ = '+ format(sdictE['Slope'],'1.0f') +'$^\circ$')
+###                ax.text(0.22+dech,0.04+decv,r'$Slope$ ='+ format(sdictE['Slope'],'1.0f') +'$^\circ$')
+##                      
+###                ax.text(0.23+dech,0.08+decv,r'Time: ' + format(Time,'1.2f') )
+##                     
+##                     
+##                
+##        #        fig.set_size_inches(4.5, 3)   
+##                
+##                plt.savefig(writingImgPath2+'/Step'+format(frame_idx-framedeb,'04.0f')+'.png',format='png',dpi=200) 
+##                
+###%
+##
+##                fig2=plt.figure('fig',figsize=(Lfig, Hfig))
+##                fig2.clf()
+##                ax = plt.Axes(fig2, [0.1, 0.25, 0.85, 0.75])
+##                fig2.add_axes(ax)
+##                extent=[np.min(grid_xp),np.max(grid_xp),np.min(grid_yp),np.max(grid_yp)]
+##                infoPlot={'cmap' : cmap,
+##                          'markersize' : 0.3,
+##                          'contourlim' : contourlim,
+##                          'vlim' : vlim,
+##                          'label' : 'Sand6 - MPM - Simulation',
+##                          'strpoints': 'Count MPM particles ',
+##                          'ifile':frame_idx,
+##                          'DP':{'vecX' : vecX, 'H' : H},
+##                          'extentr':extentr,
+##                          'axes':None}  
+##        
+##                d6py.d6imshow(grid_val, grid_xp, grid_yp,pointsp,extent,dConfig=dConfig,fig=fig2,infoPlot=infoPlot,sdictE=sdictE)
+## 
+##                plt.savefig(writingImgPath+'/Step'+format(frame_idx-framedeb,'04.0f')+'.png',format='png',dpi=200) 
+##
+##                plt.pause(0.01)
+##
+##    
+#    
+#    
+#
 
 
 
