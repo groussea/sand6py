@@ -15,15 +15,16 @@ driveFolder='/media/gauthier/Gauthier_Backup/'
 driveFolder='/media/garousse/Gauthier_Backup/'
 import d6py
 
-maind6OutFolder=driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/outputs/Tests/'
-
+maind6OutFolder=driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/outputs/Tests'
+maind6OutFolder='/media/gauthier/Data-Gauthier/programs/gitLab/sand6/build'
 paths,folders,listDictConf,listNumRun=d6py.findOutSand6Paths(maind6OutFolder,4)
 
 
 #%%
-N=8
-selectedRuns,selectedDict=d6py.whereSand6OutFromParms(listNumRun,runNumber=N,dimSim=3,frac_h=0.8)
-selectedRuns=selectedRuns[0:1]
+N=7
+selectedRuns1,selectedDict=d6py.whereSand6OutFromParms(listNumRun,runNumber=N,dimSim=3,frac_h=0.8,muRigid=0.18,delta_mu=0)
+selectedRuns2,selectedDict=d6py.whereSand6OutFromParms(listNumRun,runNumber=N,dimSim=3,frac_h=0.8,muRigid=0.18,delta_mu=0.26)
+selectedRuns=[selectedRuns1[2],selectedRuns2[2]]
 for sR in selectedRuns:
     sR.scLength(0.01)
 mainExpFolder=driveFolder+'/TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/outputs_opyf'
@@ -48,7 +49,8 @@ fig, ax = plt.subplots()
 #d6Out_title= ''.join([(s!='_')*s for s in d6Out])
 #ax.set_title(d6Out_title,fontsize=9)
 kt=0
-for ifile in range(15,20,5):
+
+for ifile in range(5,10,5):
     ax.cla()
     h1, l1 = [], []
     ls=['--','-','-.','-']
