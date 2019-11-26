@@ -526,7 +526,9 @@ class NumericalRun():
 #        self.dConfig['runNunmber']=runNumber
 #        self.xmax=self.vecxMax[self.runNumber]
         self.scaleLength=1
-        
+        self.strainRateCalculated=False
+        self.pressureCalculated=False
+        self.velocityCalculated=False
         
     def loadVTK(self, ifile):
         self.ifile=ifile
@@ -539,10 +541,14 @@ class NumericalRun():
         if self.dimSim==2:
             [self.grid_x, self.grid_y], [self.velx,self.vely],self.reshaped_Phi,  self.np_d_phi_reshaped, self.np_stresses_reshaped, self.np_forces_reshaped=fromVTKtoscaledDataFields2D(VTKfilename,self.dConfig)
             self.pointsp,self.vel,self.vol =fromVTKtoscaledDataParticles2D(VTKfilename_part,self.dConfig)
-        if self.np_stresses_reshaped is not None:
-            self.calculatePressure() 
-        self.extentR=np.array([self.grid_x[0,0],self.grid_x[-1,0],self.grid_y[0,0],self.grid_y[0,-1]])/self.scaleLength
-    
+            self.extentR=np.array([self.grid_x[0,0]-self.dx/2,self.grid_x[-1,0]+self.dx/2,self.grid_y[0,0]-self.dy/2,self.grid_y[0,-1]+self.dy/2])/self.scaleLength
+            self.dx=np.absolute(self.grid_x[0,0]-self.grid_x[1,0])
+            self.dy=np.absolute(self.grid_y[0,0]-self.grid_y[0,1])
+        self.phiT=np.flipud(self.reshaped_Phi.T)    
+        
+
+
+
     def scLength(self,length):       
         self.scaleLength=length
 
@@ -552,35 +558,89 @@ class NumericalRun():
         if self.dimSim==2:
             self.CS=ax.contour(self.grid_x/self.scaleLength,self.grid_y/self.scaleLength,self.reshaped_Phi,**args)
     def calculatePressure(self):
+        
         if self.dimSim==2:
             self.P=np.flipud(1/2*(self.np_stresses_reshaped[:,:,0]+self.np_stresses_reshaped[:,:,4]).T)
         if self.dimSim==3:
             self.P=np.flipud(1/3*(self.np_stresses_reshaped[:,:,:,0]+self.np_stresses_reshaped[:,:,:,4]+self.np_stresses_reshaped[:,:,:,8]).T)
+        self.pressureCalculated=True
+        
+    def calculateStrainRate(self):
+        
+        if self.dimSim==2:
+            self.P=np.flipud(1/2*(self.np_stresses_reshaped[:,:,0]+self.np_stresses_reshaped[:,:,4]).T)
+        if self.dimSim==3:
+            [vxdx,vxdy,vxdz]=np.gradient(self.velx,self.dx,self.dy,self.dz)
+            [vydx,vydy,vydz]=np.gradient(self.vely,self.dx,self.dy,self.dz)
+            [vzdx,vzdy,vzdz]=np.gradient(self.velz,self.dx,self.dy,self.dz)
+            
+            (rx,ry,rz)=self.velx.shape
+            self.gammaN=np.zeros_like(self.velz)
+        
+            self.sym=np.array(self.gammaN,dtype=object)
+            self.J=np.array(self.gammaN,dtype=object)
+            for i in range(rx):
+                for j in range(ry):
+                   for k in range(rz): 
+                    self.J[i,j,k]=np.array([[vxdx[i,j,k], vxdy[i,j,k], vxdz[i,j,k]],[vydx[i,j,k], vydy[i,j,k], vydz[i,j,k]],[vzdx[i,j,k], vzdy[i,j,k], vzdz[i,j,k]]])
+                    self.sym[i,j,k]=0.5*(self.J[i,j,k]+self.J[i,j,k].T)
+                    self.gammaN[i,j,k]=(0.5**0.5)*np.linalg.norm(self.sym[i,j,k])
+                    self.normV=np.linalg.norm([self.velx,self.vely])
+        self.strainRateCalculated=True
+        
+    def calculateNormVelocity(self):
+        if self.dimSim==2:
+            ax.imshow(self.P,extent=self.extentR,**args)
+        if self.dimSim==3:
+            self.normV=((self.velx)**2+(self.vely)**2+(self.velz)**2)**0.5
+        self.velocityCalculated=True
+        
+        
+    def plotVelocity(self,ax,**args):       
+        if self.velocityCalculated==False:
+            self.calculateNormVelocity()
+        self.IMvel=np.flipud(self.normV.T)
+        if self.dimSim==2:
+            ax.imshow(self.P,extent=self.extentR,**args)
 
-    def calculateShearRate(self):
+    def plotStrainRate(self,ax,**args):
+        if self.strainRateCalculated==False:
+            self.calculateStrainRate()
+        self.IMgamma=np.flipud(self.gammaN.T)
         if self.dimSim==2:
-            self.P=np.flipud(1/2*(self.np_stresses_reshaped[:,:,0]+self.np_stresses_reshaped[:,:,4]).T)
+            ax.imshow(self.IMgamma*(self.phiT>0.5),extent=self.extentR,**args)
         if self.dimSim==3:
-            self.P=np.flipud(1/3*(self.np_stresses_reshaped[:,:,:,0]+self.np_stresses_reshaped[:,:,:,4]+self.np_stresses_reshaped[:,:,:,8]).T)
-    
+            ax.imshow(self.IMgamma[:,6,:]*(self.phiT[:,6,:]>0.5),extent=self.extentR,**args)        
     
     def plotPressure(self,ax,**args):
-        if self.dimSim==2:
-            ax.imshow(self.P,extent=self.extentR,**args)
-        if self.dimSim==3:
-            ax.imshow(self.P[:,:,6],extent=self.extentR,**args)
-    def plotInertia(self,ax,**args):
-        if self.dimSim==2:
-            ax.imshow(self.P,extent=self.extentR,**args)
-
-        
-    def plotInertialNumber(self,ax,**args):
-#        inertialNumber=
-        if self.dimSim==3: 
-            self.CS=ax.imshow(self.reshaped_Phi[:,6,:],**args)
-        if self.dimSim==2:
-            self.CS=ax.imshow(self.reshaped_Phi[:,6,:],**args)
-            self.CS=ax.contour(self.grid_x/self.scaleLength,self.grid_y/self.scaleLength,self.reshaped_Phi,**args)
+        if self.pressureCalculated==False:
+            if self.np_stresses_reshaped is not None:
+                self.calculatePressure() 
+            else:
+                print('Warning : it is impossible to calculate the pressure from the sand6 outputs (set exportAllFields in the config file to 1 before the simulation if you wish to export stresses and deduce pressure)')
+        if hasattr(self, 'P') :
+            if self.dimSim==2:
+                ax.imshow(self.P,extent=self.extentR,**args)
+            if self.dimSim==3:
+                ax.imshow(self.P[:,6,:],extent=self.extentR,**args)
+            
+    def plotI(self,ax,**args):
+        if self.pressureCalculated==False:
+            if self.np_stresses_reshaped is not None:
+                self.calculatePressure() 
+            else:
+                print('Warning : it is impossible to calculate the pressure from the sand6 outputs (set exportAllFields in the config file to 1 before the simulation if you wish to export stresses and deduce pressure)')
+                
+        if self.strainRateCalculated==False:
+            self.calculateStrainRate()
+            
+        if hasattr(self, 'P') and hasattr(self, 'gammaN'):
+            if self.dimSim==2:
+                self.IMgamma=np.flipud(self.gammaN[:,:].T)
+                ax.imshow(self.IMgamma*self.dConfig['grainDiameter']/(self.P/self.dConfig['volMass'])*(self.phiT>0.5),extent=self.extentR,**args)
+            if self.dimSim==3:
+                self.IMgamma=np.flipud(self.gammaN[:,6,:].T)
+                ax.imshow(self.IMgamma*self.dConfig['grainDiameter']/(self.P[:,6,:]/self.dConfig['volMass'])*(self.phiT[:,6,:]>0.5),extent=self.extentR,**args)
             
     
     def plotPoints(self,ax,**args):

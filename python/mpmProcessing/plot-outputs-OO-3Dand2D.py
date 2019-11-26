@@ -16,7 +16,7 @@ driveFolder='/media/garousse/Gauthier_Backup/'
 import d6py
 
 maind6OutFolder=driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/outputs/Tests'
-maind6OutFolder='/media/gauthier/Data-Gauthier/programs/gitLab/sand6/build'
+
 paths,folders,listDictConf,listNumRun=d6py.findOutSand6Paths(maind6OutFolder,4)
 
 
@@ -24,7 +24,7 @@ paths,folders,listDictConf,listNumRun=d6py.findOutSand6Paths(maind6OutFolder,4)
 N=7
 selectedRuns1,selectedDict=d6py.whereSand6OutFromParms(listNumRun,runNumber=N,dimSim=3,frac_h=0.8,muRigid=0.18,delta_mu=0)
 selectedRuns2,selectedDict=d6py.whereSand6OutFromParms(listNumRun,runNumber=N,dimSim=3,frac_h=0.8,muRigid=0.18,delta_mu=0.26)
-selectedRuns=[selectedRuns1[2],selectedRuns2[2]]
+selectedRuns=[selectedRuns1[1],selectedRuns1[2],selectedRuns2[1]]
 for sR in selectedRuns:
     sR.scLength(0.01)
 mainExpFolder=driveFolder+'/TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/outputs_opyf'
@@ -57,8 +57,13 @@ for ifile in range(5,10,5):
     c=[0.2,0.8,1,0.1]
     for sR,i in zip(selectedRuns,range(len(selectedRuns))):
         sR.loadVTK(ifile)
-        sR.plotContour(ax,levels=[0.5],linewidths=1,linestyles=ls[i%4],colors=[cmap((i+1)/(len(selectedRuns)+1))])
-        h,l = sR.CS.legend_elements(str(sR.dimSim)+"D- \mu_{rb}="+format(sR.dConfig['muRigid'],'0.2f') +"D- frac_h="+format(sR.dConfig['frac_h'],'0.2f') + "- \mu= "+ format(sR.dConfig['mu'],'0.2f')+" - \phi")        
+#        sR.plotVelocity(ax)
+#        sR.plotI(ax,vmin=0,vmax=.5)
+#        sR.plotPressure(ax,vmin=0,vmax=1000)
+#        ax.imshow(np.mean(sR.P[:,:,:],axis=1),extent=sR.extentR,vmin=0,vmax=2000)
+#        ax.imshow(np.mean(sR.epsilon21[:,:,:],axis=1),extent=sR.extentR,vmin=-50,vmax=50)
+        sR.plotContour(ax,levels=[0.5],linewidths=1,linestyles=ls[i%4],colors=[cmap((i+1)/(len(selectedRuns)+1))])        
+        h,l = sR.CS.legend_elements(str(sR.dimSim)+"D- \mu_{rb}="+format(sR.dConfig['muRigid'],'0.2f') +"D- frac_h="+format(sR.dConfig['frac_h'],'0.2f') + "- \mu= "+ format(sR.dConfig['mu'],'0.2f')+ "- I0-start= "+ format(sR.dConfig['I0_start']) +"- P0= "+ format(sR.dConfig['P0'],'0.4f')+"- delta_mu= "+ format(sR.dConfig['delta_mu'],'0.4f')+" - \phi")        
         h1, l1=h1+h, l1+l
     runExp1.plotField(ax,ifile)
     runExp1.plotDepthProfile(ax,ifile,linestyle='--',color='k',linewidth=1,label="Experience")
@@ -75,29 +80,14 @@ for ifile in range(5,10,5):
 #        kt+=1
 #        fig.savefig(listSaveFolders[runExp1.runNumber]+'/test2_compMPM_EXP_t='+format(runExp1.Time[ifile],'02.2f')+'.png')
 #%%
-        
-#import vtk
-#from vtk.util.numpy_support import vtk_to_numpy
-#reader = vtk.vtkDataSetReader()
-##required to read all file datas
-#reader.ReadAllScalarsOn()
-#reader.ReadAllVectorsOn()
-#reader.ReadAllTensorsOn()
-#filename='/media/gauthier/Gauthier_Backup/TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/outputs/Tests/2D/0.8/Run_00_no_Door_start_at_0.13_s_gravels-2.7mm_Slope=0deg_H=0.114m_L=0.287_delta_mu=0.000_substeps_4/vtk/primal-fields-63.vtk'
-#reader.SetFileName(filename)
-#reader.Update()
-#data=reader.GetOutput()           
-#pdata=data.GetPointData()
-#N_array=pdata.GetNumberOfArrays()
-##Convert points into Numpy Array
-#np_points=vtk_to_numpy(data.GetPoints().GetData())  
-#np_phi=vtk_to_numpy(pdata.GetArray(pdata.GetArrayName(0))) 
-#        #Convert volocities into Numpy Array
-#np_vel=vtk_to_numpy(pdata.GetArray(pdata.GetArrayName(1))) 
-##Convert stresses into Numpy Array
-#np_stresses=vtk_to_numpy(pdata.GetArray(pdata.GetArrayName(2)))   
-##Convert d_phi into Numpy Array
-#np_d_phi=vtk_to_numpy(pdata.GetArray(pdata.GetArrayName(3))) 
-##convert forces
-#np_forces=vtk_to_numpy(pdata.GetArray(pdata.GetArrayName(4)))           
-#        
+#import subprocess
+#import os
+#for p in paths:
+#    os.chdir(p)
+#    cmd = str('rm -r frame*')
+#    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+#    (out, err) = proc.communicate()
+#    print("program output:", out)
+#
+#    
+
