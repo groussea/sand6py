@@ -532,6 +532,9 @@ class NumericalRun():
         
     def loadVTK(self, ifile):
         self.ifile=ifile
+        self.strainRateCalculated=False
+        self.pressureCalculated=False
+        self.velocityCalculated=False
         VTKfilename_part = self.d6OutFolder+'/vtk/particles-'+ str(ifile) +'.vtk'  
         VTKfilename= self.d6OutFolder+'/vtk/primal-fields-'+ str(ifile) +'.vtk' 
         if self.dimSim==3: 
@@ -649,6 +652,8 @@ class NumericalRun():
         if self.dimSim==2:
             ax.plot(self.pointsp[:,0]/self.scaleLength,self.pointsp[:,1]/self.scaleLength,**args)
 
+
+
     def plotDoor(self,ax):
         if self.ifile<100:
             X=np.array([self.datas[self.ifile,3],self.datas[self.ifile,3]])/self.scaleLength
@@ -656,7 +661,25 @@ class NumericalRun():
             ax.plot(X,Y,'k')
 
 
-        
+    def opyfPointCloudColoredScatter(self,ax,nvec=3000,**args):
+       
+        from matplotlib.colors import Normalize
+        if len(self.pointsp) < nvec:
+            N = len(self.pointsp)
+        else:
+            N = nvec
+            print('only '+str(N)+'vectors plotted because length(X) >' + str(nvec))
+
+        ind = np.random.choice(np.arange(len(self.pointsp)), N, replace=False)
+        Xc = self.pointsp[ind, :]
+        Vc = self.vel[ind, :]
+        if self.dimSim==3:
+            self.norm_vel=(Vc[:,0]**2+Vc[:,2]**2)**0.5
+
+            norm = Normalize()
+            norm.autoscale(self.norm_vel)
+            self.im = ax.scatter(Xc[:, 0]/self.scaleLength, Xc[:, 2]/self.scaleLength, c=self.norm_vel,**args)
+
 
         
         
@@ -722,9 +745,9 @@ class ExperimentalRun():
         dxp=self.dx/self.scaleLength
         dyp=self.dy/self.scaleLength
         if Type=='velocity_norm':
-            self.im=ax.imshow((self.Ux[ifile]**2+self.Uy[ifile]**2)**0.5,extent=[Xplot[0]-dxp/2,Xplot[-1]+dxp/2,Yplot[-1]-dyp/2,Yplot[0]+dyp/2])
+            self.im=ax.imshow((self.Ux[ifile]**2+self.Uy[ifile]**2)**0.5,extent=[Xplot[0]-dxp/2,Xplot[-1]+dxp/2,Yplot[-1]-dyp/2,Yplot[0]+dyp/2],**args)
         elif Type=='shear_rate':            
-            self.im=ax.imshow(self.epsilon21,extent=[Xplot[0]+dxp/2,Xplot[-1]-dxp/2,Yplot[-1]+dyp/2,Yplot[0]-dyp/2],alpha=0.5,vmin=-10,vmax=40)
+            self.im=ax.imshow(self.epsilon21,extent=[Xplot[0]+dxp/2,Xplot[-1]-dxp/2,Yplot[-1]+dyp/2,Yplot[0]-dyp/2],alpha=0.5,**args)
 #        elif Type=='inertia':
             
 

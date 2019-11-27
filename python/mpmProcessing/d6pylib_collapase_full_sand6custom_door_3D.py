@@ -5,39 +5,40 @@ Created on Mon Oct 16 14:35:06 2017
 This python script tranform the Particles-###.vtk files in to csv files
 +read the config file to store simulation parameters in a dict
 +perform the scaling to obtain real length an velocities
-+interpolate the data to obtain the velocity field
-+plotting functions
 4 Functions can be imported extractInfoVTK, readConfigFile, csv_write, csv_read,
 interpolate2D, d6imshow
 
 
 extractInfoVTK(vtkfilename) return the velocities, the volumes and points of each MPM point
 readconfigFile(configFile) return a disctionary with 18 firs lines of the config file 
+
 .... continuing
-
-Usage :
-d6pylib.py [writing path] [d6vtk path(by default 'out')]
-
-Warning : only used for 2D simulation (modification are needed for 3D)
-If no argments: the csv files are saved in the out folder considering the python file is in the build folder
-
 
 @author: Gauthier
 """
-import os
+import cv2
+from shutil import copyfile
+import os, shutil
 import numpy as np  
+import csv
+import matplotlib.pyplot as plt
 import json
 import sys
 import subprocess
+from matplotlib_scalebar.scalebar import ScaleBar
 
 driveFolder='/scratch/garousse/'
-#driveFolder='/media/gauthier/Gauthier_Backup/'
-#driveFolder='/media/garousse/Gauthier_Backup/'
+driveFolder='/media/gauthier/Gauthier_Backup/'
 sys.path.append(driveFolder+'TAF/TAF_EPFL/OPyF-Project/github/opyFlow')
+
 import opyf
 
+sys.path.append(driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/python-essentials/Essentials OpenCV')
+from TrackandInterpolate import *
+from vtk.util import numpy_support as VN
+#import trackandinterpolate
 
- 
+    
     #the path where all the videos are
 
 vidPath=driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/Video_src' 
@@ -46,11 +47,21 @@ vidPath=driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/Video_src'
 JSONpath=driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/Video_src/dictExp.json'
 
     # the d6 soft path
-d6Path='/scratch/garousse/TAF/TAF_inria/INRIA_current_work/GitLab/sand6/build'
-#d6Path='/media/gauthier/Data-Gauthier/programs/gitLab/sand6-perso/build'
-
+d6Path=driveFolder+'TAF/TAF_inria/Sand6/epfl_lhe_2d_and_3d/build_fast'
+d6Path='/media/gauthier/Data-Gauthier/programs/gitLab/sand6/build'
+#d6Path=driveFolder+'TAF/TAF_inria/GitLab/sand6cohesive/build_julien'
 #d6Path='/home/gauthier/programs/epfl_lhe/build2d'
 d6OutFolder='out'
+out_Opyf=driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/outputs_opyf/'
+listOutOpyf=['Run_00_gravels-2.7mm_Slope=0deg_H=0.114m_L=0.187',
+'Run_01_gravels-2.7mm_Slope=5deg_H=0.124m_L=0.198',
+'Run_02_gravels-2.7mm_Slope=10deg_H=0.115m_L=0.279',
+'Run_03_gravels-2.7mm_Slope=15deg_H=0.117m_L=0.268',
+'Run_04_glass-beads-0.47mm_Slope=0deg_H=0.119m_L=0.223',
+'Run_05_glass-beads-0.47mm_Slope=5deg_H=0.111m_L=0.223',
+'Run_06_glass-beads-0.47mm_Slope=10deg_H=0.111m_L=0.224',
+'Run_07_glass-beads-0.47mm_Slope=15deg_H=0.111m_L=0.224',
+'Run_08_glass-beads-0.47mm_Slope=20deg_H=0.111m_L=0.224']
 
 os.chdir(d6Path)
 #%%
@@ -76,7 +87,7 @@ t=time.time()
 
 door='with'
 
-for j in range(8,9 ): 
+for j in range(7,8 ): 
 #    plt.close('all')
 #for j in range(0,8):
     sE=lExp[j] #Selected exeperiment
@@ -93,12 +104,16 @@ for j in range(8,9 ):
     
     if (sdictE['camType']=='BW') & (sdictE['Slope']==15. or sdictE['Slope']==20.):
         Lmod=sdictE['Ltot']+0.5
-    
 
+    delta_mu=0.2
+    I0=0.3
+    I0_start=0.003
+    delta_mu_start=0.07
     muRigid=0.18
+    P0=1.
     
     Hmod=(sdictE['H']+0.005)/fracH
-    delta_mu=0.
+    
     if door=='with':
         ts=0
     else:
@@ -107,20 +122,21 @@ for j in range(8,9 ):
     sdictE['delta_mu']=delta_mu
 
     mu=sdictE['mu']
-    prop='low'
+    prop=''
     if prop=='low':
         mu=sdictE['mu']-0.05
     
     if prop=='inscrit':
         mu=mu/(1+1/3*mu**2)
 
-    prop='higher'   
-    if door=='with':
-        runName=str('Run_'+format(j,'02.0f')+'_3D_Door_muRigid='+str(muRigid)+'_'+sdictE['grainType']+'_Slope='+format(sdictE['Slope'],'.0f')+'deg_H='+format(sdictE['H'],'.3f')+'m_L='+format(sdictE['L'],'.3f')+'_delta_mu='+format(delta_mu,'.3f')+'_substeps_'+str(substeps)+'_fracH='+str(fracH)+prop+'mu_s='+str(mu))    
-    else:
-        runName=str('Run_'+format(j,'02.0f')+'_3D_no_Door_start_at_0.13_s_'+sdictE['grainType']+'_Slope='+format(sdictE['Slope'],'.0f')+'deg_H='+format(sdictE['H'],'.3f')+'m_L='+format(sdictE['L'],'.3f')+'_delta_mu='+format(delta_mu,'.3f')+'_substeps_'+str(substeps)+'_fracH='+str(fracH)+prop+'mu_s='+str(mu))      
-  
+    prop='Test_P0'   
     
+    if door=='with':
+        runName=str('Run_'+format(j,'02.0f')+'_3D_Door_muRigid='+str(muRigid)+'_'+sdictE['grainType']+'_Slope='+format(sdictE['Slope'],'.0f')+'deg_H='+format(sdictE['H'],'.3f')+'m_L='+format(sdictE['L'],'.3f')+'_delta_mu='+format(delta_mu,'.3f')+'_substeps_'+str(substeps)+'_fracH='+str(fracH)+'_I0_start='+format(I0_start,'.4f')+'_delta_mu_start='+format(delta_mu_start,'.4f')+'_P0='+format(P0,'.4f')+prop)    
+    else:
+        runName=str('Run_'+format(j,'02.0f')+'_3D_no_Door_start_at_0.13_s_'+sdictE['grainType']+'_Slope='+format(sdictE['Slope'],'.0f')+'deg_H='+format(sdictE['H'],'.3f')+'m_L='+format(sdictE['L'],'.3f')+'_delta_mu='+format(delta_mu,'.3f')+'_substeps_'+str(substeps)+'_fracH='+str(fracH)+'_I0_start='+format(I0_start,'.4f')+'_delta_mu_start='+format(delta_mu_start,'.4f')+'_P0='+format(P0,'.4f')+prop)      
+       
+
      
     d6OutFolder=driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/outputs/Tests/'+runName
     opyf.mkdir2(d6OutFolder) 
@@ -138,6 +154,9 @@ for j in range(8,9 ):
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'mu',[mu])
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'muRigid',[muRigid]) #mu Door
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'delta_mu',[delta_mu])
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'delta_mu_start',[delta_mu_start])
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'I0_start',[I0_start])
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'P0',[P0])
     if door=='with':
         if j<=3:
             d6py.modifyConfigFile(newConfigFile,newConfigFile,'scenario','collapselhedoor taudoor:0.06 veldoor:0.8 ts:'+format(ts,'1.0f')+' frac_h:'+format(fracH,'1.1f')+' column_length:'+str(L))
@@ -149,7 +168,7 @@ for j in range(8,9 ):
     
     TypicalLength=0.005
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'res',[Lmod//TypicalLength,0.06//TypicalLength,np.round(Hmod/TypicalLength/10)*10]) #pour avoir un réolution divisible par 10 selon Y
-    d6py.modifyConfigFile(newConfigFile,newConfigFile,'I0',[0.279]) 
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'I0',[I0]) 
       
     #load the final config file dictionnary    
         
