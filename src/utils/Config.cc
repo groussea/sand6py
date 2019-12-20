@@ -119,7 +119,7 @@ bool Config::dump(const std::string &file_name, const char *comment) const
 	std::ofstream out(file_name);
 	if (!out)
 	{
-		Log::Error() << "Could not wrtie config file " << file_name << std::endl;
+		Log::Error() << "Could not write config file " << file_name << std::endl;
 		return false;
 	}
 

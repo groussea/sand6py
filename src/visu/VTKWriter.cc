@@ -123,12 +123,14 @@ static void write_scalar_binary( File& file, const Scalar* data, const size_t si
 {
 	typedef typename binary_type< Scalar >::type BinScalar ;
 	unsigned char bin[ sizeof(BinScalar) ] ;
-
+	// std::cout << data << std::endl;
 	for( size_t i = 0 ; i < size ; ++ i ) {
 		to_big_endian( BinScalar(data[i]), bin ) ;
-		for( unsigned j=0 ; j < sizeof(BinScalar) ; ++j )
+		for( unsigned j=0 ; j < sizeof(BinScalar) ; ++j ){
 			file << bin[j] ;
+		}
 	}
+
 }
 
 #if D6_DIM == 3
@@ -209,7 +211,7 @@ static void write_tensor_binary( File& file, const Scalar* data, const size_t si
 
 template< typename Scalar >
 void VTKWriter::write( File &file, const Scalar* data, int Dim, const size_t size ) const
-{
+{	
 	if( m_mode == Ascii ) {
 		if( Dim == SD ) {
 			write_tensor_ascii( file, data, size ) ;
@@ -235,7 +237,9 @@ template< typename Scalar >
 void VTKWriter::writeAttribute( const char *name, const Scalar* data, int Dim )
 {
 	writeAttributeHeader( m_file, Dim, name ) ;
+
 	write( m_file, data, Dim, nDataPoints() ) ;
+
 }
 
 template void VTKWriter::write( File &file, const double*, int, size_t) const ;

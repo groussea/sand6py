@@ -87,7 +87,7 @@ bool VTKFieldWriter<ShapeFuncT>::dump( const char* name, const FieldBase< Derive
 	}
 
 	writeAttribute( name, field.flatten().data(), FieldBase< Derived >::D ) ;
-
+	
 	return true ;
 }
 

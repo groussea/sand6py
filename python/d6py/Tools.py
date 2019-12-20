@@ -5,49 +5,22 @@ Created on Wed Jul  3 10:48:34 2019
 
 @author: Gauthier Rousseau
 """
-import os, sys
+import os
 import numpy as np
 import json
 import csv
+import vtk
+from vtk.util.numpy_support import vtk_to_numpy
+
+
+
 #%%
-def findHzeroAndMeanVel(Field,Ux,Uy,X,Y,vecXexpD,expD_in):
-    import cv2
-    h,w=Field.shape
-    ret, thresh = cv2.threshold(Field, 0.05, 255, 0)
-    cv2.dilate(thresh,kernel=np.ones((3,3)))
-    thresh=np.array( thresh,dtype='uint8') 
-    contours, hie= cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE )
 
-    drawing = np.zeros((thresh.shape[0], thresh.shape[1]), dtype=np.uint8)
-    if len(contours)>0:
-        drawing=cv2.drawContours(drawing, contours, np.argmax([len(i) for i in contours]), (255,255,255), 1, cv2.LINE_8, hie, 0)
-
-    Hzero=np.zeros(w)
-    indHfromXtovecXexpD=np.zeros(w,'uint16')
-    indHfromYtoexpD=np.zeros(w,'uint16')
-    deltaH=np.zeros(w)
-    Uxmean,Uymean=np.zeros(w),np.zeros(w)
-    for j in range (0,len(drawing[0,:])):
-        indHfromXtovecXexpD[j]=np.argmin((X[j]-vecXexpD)**2)
-    for i in range (0,len(drawing[:,0])):
-        indHfromYtoexpD[j]=np.argmin((Y[i]-expD_in)**2)
-    for j in range (0,len(drawing[0,:])):
-        for i in np.arange(len(drawing[:,0])-1,-1,-1):
-            if drawing[i,j] !=0 :
-                Hzero[j]=Y[i]
-                Uxmean[j]=np.nanmean(Ux[indHfromYtoexpD[i]:i,j])
-                Uymean[j]=np.nanmean(Uy[indHfromYtoexpD[i]:i,j])
-                break
-        if Hzero[j]==0:
-            np.argmin(X[j]-vecXexpD)
-            Hzero[j]=expD_in[indHfromXtovecXexpD[j]]
-        deltaH[j]=expD_in[indHfromXtovecXexpD[j]]-Hzero[j]
-        
-    return Hzero,deltaH,Uxmean,Uymean
+def mkdir2(path):
+    if not os.path.isdir(path):
+        os.mkdir(path)
 
 def extractInfoVTK(filename):  
-    import vtk
-    from vtk.util.numpy_support import vtk_to_numpy
     reader = vtk.vtkDataSetReader()
     reader.SetFileName(filename)
     reader.Update()
@@ -67,8 +40,6 @@ def extractInfoVTK(filename):
     return npvelArr, npvolArr, nppointsArr
 
 def extractInfoVTKprimalfields(filename):  
-    import vtk
-    from vtk.util.numpy_support import vtk_to_numpy
     reader = vtk.vtkDataSetReader()
     #required to read all file datas
     reader.ReadAllScalarsOn()
@@ -683,12 +654,16 @@ class NumericalRun():
 
         
         
-import opyf        
+      
 class ExperimentalRun():
+
+     
      def __init__(self, runNumber=0,mainFolder='.',loadSurfaceElevation=True,loadPoints=False,loadField=False):
+     # OPYF LIBRARY IS REQUIRED
+        import opyf  
         self.runNumber=runNumber
-#load json experiment dictionnary
-         
+        
+#load json experiment dictionnary        
         JSONpath=mainFolder+'/Granular_Collapses_Experimental_Informations.json'
         in_file = open(JSONpath,"r")
         self.dictExp = json.load(in_file) 
