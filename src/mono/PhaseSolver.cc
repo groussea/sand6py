@@ -213,8 +213,29 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 
 	// Inertia, mu(I) = \delta_mu * (1./ (1 + I0/I) ), I = dp * sqrt( rho ) * inertia, inertia = |D(U)|/sqrt(p)
 	const Scalar I0bar = c.I0 / ( c.grainDiameter * std::sqrt( c.volMass )) ;
-	pbData.mu.segment(0,stepData.nDualNodes()).array() = c.mu +
-	        c.delta_mu / ( 1. + I0bar / stepData.inertia.max(1.e-12) ) ;
+	const Scalar P0PowQuarter = std::pow(c.P0, 0.25) ;
+
+	// pbData.mu.segment(0,stepData.nDualNodes()).array() = c.mu -
+	//         c.delta_mu_start / ( 1. + I0_start_bar / stepData.inertia.max(1.e-12) ) + c.delta_mu / ( 1. + I0bar / stepData.inertia.max(1.e-12) );
+
+	// pbData.mu.segment(0,stepData.nDualNodes()).array() = c.mu -
+	//         c.delta_mu_start / ( 1. + ((I0_start_bar / stepData.inertia.max(1.e-12))*stepData.pressurePowQuarter.max(1.e-12)/P0PowQuarter)) + c.delta_mu / ( 1. + I0bar / stepData.inertia.max(1.e-12) );
+
+
+	pbData.mu.segment(0,stepData.nDualNodes()).array() = c.mu -
+	        c.delta_mu_start / ( 1. + ((I0_start_bar / stepData.inertia.max(1.e-12)))) + c.delta_mu / ( 1. + I0bar / stepData.inertia.max(1.e-12) );
+
+// with a ramp
+for( unsigned k = 0 ; k < stepData.inertia.size() ; ++k ) {
+	if (stepData.inertia[k]*( c.grainDiameter * std::sqrt( c.volMass ))<c.I0_start){
+pbData.mu[k]= c.mu;
+	}
+	else {
+	pbData.mu[k] = c.mu - c.delta_mu_start + c.delta_mu / ( 1. + I0bar / std::max(stepData.inertia[k],1.e-12) );
+	};
+
+}
+
 
 	DynArr rbIntFraction( stepData.nDualNodes() ) ;
 	rbIntFraction.setZero() ;

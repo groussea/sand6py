@@ -134,20 +134,46 @@ struct TowerScenar : public Scenario
 
 struct RbPlaneTestScenar : public Scenario
 {
-	Scalar particle_density(const Vec &x) const override
+	// Scalar particle_density(const Vec &x) const override
+	// {
+	// 	return (x[2] < .5 * m_config->box[2]) ? 1. : 0.;
+	// }
+
+		Scalar particle_density(const Vec &x) const override
 	{
-		return (x[2] > .5 * m_config->box[2]) ? 1. : 0.;
+		return ((x[0] < .5 * m_config->box[0] || x[2] < 0. * m_config->box[2]) && (x[2] < 0.3* m_config->box[2])) ? 1. : 0.;
+	}
+
+	void init(const Params &params) override
+	{
+
+		R = scalar_param(params, "d", Units::None, 0.05) * m_config->box[0];
+		H = scalar_param(params, "h", Units::None, 0.5) * m_config->box[2];
+		S = scalar_param(params, "s", Units::None, 1.);
+
+
 	}
 
 	void add_rigid_bodies(std::vector<RigidBody> &rbs) const override
 	{
-		LevelSet::Ptr ls = LevelSet::make_plane();
-		ls->set_origin(.5 * m_config->box - Vec(0, 0, .25 * m_config->box[2]));
-		ls->set_rotation(Vec(1, 0, 0), M_PI / 8);
+		Vec box = m_config->box;
 
-		rbs.emplace_back(ls, 1.);
-		rbs.back().set_velocity(Vec(0, 0, 1.e-1), Vec(0, 0, 0));
+		const Scalar L = box[2] * (0.9);
+		const Scalar W = 2 * m_config->typicalLength();
+		Vec doorBox = Vec(W, 0.6 * box[1], 0.5 * L);
+
+		LevelSet::Ptr ls = LevelSet::make_box(doorBox);
+		ls->set_origin(Vec(0.5*box[0] + W, box[1] * 0.5, .1 * box[2] - L * 0.5));
+		rbs.emplace_back(ls, 1.e99);
+
+
 	}
+
+
+Eigen::Matrix<Scalar, 2, Eigen::Dynamic> bezier;
+	Scalar R;
+	Scalar H;
+	Scalar S;
 };
 
 struct ImpactScenarlhe : public Scenario

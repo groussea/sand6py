@@ -62,7 +62,7 @@ t=time.time()
 
 door='with'
 
-for j in range(7,8 ): 
+for j in range(0,1 ): 
 #    plt.close('all')
 #for j in range(0,8):
     sE=lExp[j] #Selected exeperiment
