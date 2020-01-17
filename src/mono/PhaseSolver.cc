@@ -222,18 +222,18 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	//         c.delta_mu_start / ( 1. + ((I0_start_bar / stepData.inertia.max(1.e-12))*stepData.pressurePowQuarter.max(1.e-12)/P0PowQuarter)) + c.delta_mu / ( 1. + I0bar / stepData.inertia.max(1.e-12) );
 
 
-	pbData.mu.segment(0,stepData.nDualNodes()).array() = c.mu -
-	        c.delta_mu_start / ( 1. + ((I0_start_bar / stepData.inertia.max(1.e-12)))) + c.delta_mu / ( 1. + I0bar / stepData.inertia.max(1.e-12) );
+	// pbData.mu.segment(0,stepData.nDualNodes()).array() = c.mu -
+	//         c.delta_mu_start / ( 1. + ((I0_start_bar / stepData.inertia.max(1.e-12)))) + c.delta_mu / ( 1. + I0bar / stepData.inertia.max(1.e-12) );
 
 // with a ramp
 for( unsigned k = 0 ; k < stepData.inertia.size() ; ++k ) {
-	if (stepData.inertia[k]*( c.grainDiameter * std::sqrt( c.volMass ))<c.I0_start){
+	if (stepData.inertia[k]<I0_start_bar){
 pbData.mu[k]= c.mu;
+// pbData.mu[k]= c.mu + stepData.inertia[k]/I0_start_bar*(- c.delta_mu_start + c.delta_mu / ( 1. + I0bar / I0_start_bar));
 	}
 	else {
 	pbData.mu[k] = c.mu - c.delta_mu_start + c.delta_mu / ( 1. + I0bar / std::max(stepData.inertia[k],1.e-12) );
 	};
-
 }
 
 
@@ -271,8 +271,8 @@ pbData.mu[k]= c.mu;
 
 		DynVec intBeta_s ( DynVec::Zero( pbData.n() * SD ) ) ;
 		component< SD >( intBeta_s, 0 ).head( stepData.nDualNodes() ).array() = intBeta  * s_sqrt_2_d / dt  ;
-
 		pbData.w += ( stepData.forms.S.inv_sqrt * intBeta_s ).cwiseMax(0) ;
+
 	}
 
 	// Warm-start stresses

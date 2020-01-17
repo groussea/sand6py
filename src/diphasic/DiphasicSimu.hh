@@ -15,7 +15,7 @@ struct FluidPhase ;
 class DiphasicSimu : public Simu {
 
 public:
-	DiphasicSimu( const Config& config, const char* base_dir ) ;
+	DiphasicSimu(Config& config, const char* base_dir ) ;
 	virtual ~DiphasicSimu() ;
 
 	const PhaseMeshes& meshes() const { return m_meshes ;  }

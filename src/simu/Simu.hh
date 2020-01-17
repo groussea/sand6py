@@ -36,7 +36,7 @@ class Simu {
 
 public:
 
-	explicit Simu( const Config& config, const char* base_dir ) ;
+	explicit Simu(Config& config, const char* base_dir ) ;
 	virtual ~Simu() ;
 
 	//! Runs the simulation
@@ -71,7 +71,7 @@ private:
 
 protected:
 
-	const Config& m_config ;
+	Config& m_config ;
 	const char* m_base_dir ;
 
 	Stats		  m_stats ;

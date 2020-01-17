@@ -11,19 +11,13 @@ readconfigFile(configFile) return a disctionary with 18 firs lines of the config
 """
 #%%
 import numpy as np  
-np.array([10,10])
 import json
 import sys, os
-import subprocess
 driveFolder='/scratch/garousse/'
 # driveFolder='/media/gauthier/Gauthier_Backup/'
 sys.path.append(driveFolder+'TAF/TAF_EPFL/current_work/OPyF-Project/github/opyFlow/')
 sys.path.append(driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/python-essentials/Essentials OpenCV')
-#import trackandinterpolate
- 
- #the path where all the videos are
 
-vidPath=driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/Video_src' 
  # the genarated dictionnary-json path
 JSONpath=driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/Video_src/dictExp.json'
 
@@ -62,7 +56,7 @@ t=time.time()
 
 door='with'
 
-for j in range(0,1 ): 
+for j in range(7,8 ): 
 #    plt.close('all')
 #for j in range(0,8):
     sE=lExp[j] #Selected exeperiment
@@ -76,19 +70,18 @@ for j in range(0,1 ):
     L=sdictE['L']    
     Lmod=sdictE['Ltot']
     nFrames=sdictE['nFrames']
-    nFrames=1
     
     if (sdictE['camType']=='BW') & (sdictE['Slope']==15. or sdictE['Slope']==20.):
         Lmod=sdictE['Ltot']+0.5
 
-    delta_mu=0.2
+    delta_mu=0.
     I0=0.3
-    I0_start=0.003
-    delta_mu_start=0.07
+    I0_start=0.005
+    delta_mu_start=0.05
     muRigid=0.18
     P0=1.
     
-    Hmod=(sdictE['H']+0.005)/fracH
+    Hmod=(np.round(sdictE['H'],3)+0.003)/fracH
     
     if door=='with':
         ts=0
@@ -102,15 +95,11 @@ for j in range(0,1 ):
     if prop=='low':
         mu=sdictE['mu']-0.05
     
-    if prop=='inscrit':
-        mu=mu/(1+1/3*mu**2)
-
-    prop='Test_P0'   
     
     if door=='with':
-        runName=str('Run_'+format(j,'02.0f')+'_3D_Door_muRigid='+str(muRigid)+'_'+sdictE['grainType']+'_Slope='+format(sdictE['Slope'],'.0f')+'deg_H='+format(sdictE['H'],'.3f')+'m_L='+format(sdictE['L'],'.3f')+'_delta_mu='+format(delta_mu,'.3f')+'_substeps_'+str(substeps)+'_fracH='+str(fracH)+'_I0_start='+format(I0_start,'.4f')+'_delta_mu_start='+format(delta_mu_start,'.4f')+'_P0='+format(P0,'.4f')+prop)    
+        runName=str('Run_'+format(j,'02.0f')+'_3D_Door_muRigid='+str(muRigid)+'_H_'+format(Hmod*100,'.2f')+'cm_'+sdictE['grainType']+'_Slope='+format(sdictE['Slope'],'.0f')+'deg_delta_mu='+format(delta_mu,'.3f')+'_substeps_'+str(substeps)+'_fracH='+str(fracH)+'_I0_start='+format(I0_start,'.4f')+'_delta_mu_start='+format(delta_mu_start,'.4f')+'_P0='+format(P0,'.4f')+prop)    
     else:
-        runName=str('Run_'+format(j,'02.0f')+'_3D_no_Door_start_at_0.13_s_'+sdictE['grainType']+'_Slope='+format(sdictE['Slope'],'.0f')+'deg_H='+format(sdictE['H'],'.3f')+'m_L='+format(sdictE['L'],'.3f')+'_delta_mu='+format(delta_mu,'.3f')+'_substeps_'+str(substeps)+'_fracH='+str(fracH)+'_I0_start='+format(I0_start,'.4f')+'_delta_mu_start='+format(delta_mu_start,'.4f')+'_P0='+format(P0,'.4f')+prop)      
+        runName=str('Run_'+format(j,'02.0f')+'_3D_no_Door_start_at_0.13_s_'+sdictE['grainType']+'_Slope='+format(sdictE['Slope'],'.0f')+'deg_delta_mu='+format(delta_mu,'.3f')+'_substeps_'+str(substeps)+'_fracH='+str(fracH)+'_I0_start='+format(I0_start,'.4f')+'_delta_mu_start='+format(delta_mu_start,'.4f')+'_P0='+format(P0,'.4f')+prop)      
        
      
     d6OutFolder=driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/outputs/Tests/'+runName
@@ -131,7 +120,7 @@ for j in range(0,1 ):
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'delta_mu',[delta_mu])
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'delta_mu_start',[delta_mu_start])
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'I0_start',[I0_start])
-    d6py.modifyConfigFile(newConfigFile,newConfigFile,'P0',[P0])
+    # d6py.modifyConfigFile(newConfigFile,newConfigFile,'P0',[P0])
     if door=='with':
         if j<=3:
             d6py.modifyConfigFile(newConfigFile,newConfigFile,'scenario','collapselhedoor taudoor:0.06 veldoor:0.8 ts:'+format(ts,'1.0f')+' frac_h:'+format(fracH,'1.1f')+' column_length:'+str(L))
@@ -142,7 +131,7 @@ for j in range(0,1 ):
 
     
     TypicalLength=0.005
-    d6py.modifyConfigFile(newConfigFile,newConfigFile,'res',[Lmod//TypicalLength,0.06//TypicalLength,np.round(Hmod/TypicalLength/10)*10]) #pour avoir un réolution divisible par 10 selon Y
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'res',[Lmod//TypicalLength,0.06//TypicalLength,Hmod//TypicalLength]) #pour avoir un réolution divisible par 10 selon Y
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'I0',[I0]) 
       
     #load the final config file dictionnary    
@@ -154,7 +143,7 @@ for j in range(0,1 ):
      
     #proc =subprocess.Popen('rm -rf  ' + d6OutFolder +'/*' , shell=True,stdout=subprocess.PIPE)
     #(out, err) = proc.communicate()    
-    # d6py.d6run(d6OutFolder,newConfigFile)
+    d6py.d6run(d6OutFolder,newConfigFile)
     
     d6py.d62vtk(d6OutFolder,allF=True,particles=True)
 

@@ -38,7 +38,7 @@
 namespace d6 {
 
 
-Simu::Simu(const Config &config, const char *base_dir)
+Simu::Simu(Config &config, const char *base_dir)
 	: m_config(config), m_base_dir( base_dir ),
 	  m_stats( m_base_dir ),
 	  m_scenario( Scenario::parse( config ) )
@@ -60,7 +60,9 @@ void Simu::run()
 		dump_fields( 0 ) ;
 	}
 	m_particles.events().start();
-
+	Scalar const alpha=std::asin(m_config.gravity[0]/(9.81*m_config.units().fromSI( Units::Acceleration ))); 
+	std::cout << alpha << std::endl;
+	Scalar omega=0.03/m_config.units().fromSI( Units::Time ) ;
 	for( unsigned frame = 0 ; frame < m_config.nFrames ; ++ frame ) {
 		bogus::Timer timer ;
 		Log::Info() << "Starting frame " << (frame+1) << std::endl ;
@@ -69,6 +71,8 @@ void Simu::run()
 		if( substeps == 0 ) { //Adaptative timestepping
 			substeps = std::ceil( std::max(1., m_stats.maxVelocity) / m_config.fps ) ;
 		}
+		
+
 
 		for( unsigned s = 0 ; s < substeps ; ++ s ) {
 
@@ -79,7 +83,15 @@ void Simu::run()
 			Log::Verbose() << arg3( "Step %1/%2 \t t=%3 s",
 									s+1, substeps,
 									t * m_config.units().toSI( Units::Time ) ) << std::endl ;
+			// test the change a gravity value during the simulation
+			
+			// Scalar stepT_in_sec=4;
+			// Scalar stepT= stepT_in_sec*m_config.units().fromSI( Units::Time ) ;
+			// if ((t * m_config.units().toSI( Units::Time )  > stepT_in_sec) and (t * m_config.units().toSI( Units::Time )  < stepT_in_sec + 0.04/0.03)){
+			// 	m_config.gravity=Vec(9.81*std::sin(alpha+omega*(t-stepT)),0,-9.81*std::cos(alpha+omega*(t-stepT)))*m_config.units().fromSI( Units::Acceleration ) ;
+			// }
 			// Update external objects (moving boundaries,...)
+
 			m_scenario->update( *this, t, m_stats.delta_t ) ;
 
 			adapt_meshes();

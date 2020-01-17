@@ -40,7 +40,7 @@
 namespace d6
 {
 
-MonoSimu::MonoSimu(const Config &config, const char *base_dir)
+MonoSimu::MonoSimu(Config &config, const char *base_dir)
     : Simu( config, base_dir ),
       m_meshes{ std::unique_ptr<PrimalMesh>(new PrimalMesh( m_config.box, m_config.res, &m_particles.geo() )),
                 std::unique_ptr<  DualMesh>(new   DualMesh( m_config.box, m_config.res, &m_particles.geo() ))

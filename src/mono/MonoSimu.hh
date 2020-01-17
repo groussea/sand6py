@@ -33,7 +33,7 @@ class MonoSimu : public Simu
 
 public:
 
-	MonoSimu( const Config& config, const char* base_dir ) ;
+	MonoSimu(Config& config, const char* base_dir ) ;
 	virtual ~MonoSimu() ;
 
 	const PhaseMeshes& meshes() const { return m_meshes ;  }

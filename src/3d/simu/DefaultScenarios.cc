@@ -141,7 +141,7 @@ struct RbPlaneTestScenar : public Scenario
 
 		Scalar particle_density(const Vec &x) const override
 	{
-		return ((x[0] < .5 * m_config->box[0] || x[2] < 0. * m_config->box[2]) && (x[2] < 0.3* m_config->box[2])) ? 1. : 0.;
+		return ((x[0] < 0.9 * m_config->box[0] || x[2] < 0. * m_config->box[2]) && (x[2] < 0.5* m_config->box[2])) ? 1. : 0.;
 	}
 
 	void init(const Params &params) override
@@ -154,6 +154,7 @@ struct RbPlaneTestScenar : public Scenario
 
 	}
 
+
 	void add_rigid_bodies(std::vector<RigidBody> &rbs) const override
 	{
 		Vec box = m_config->box;
@@ -163,10 +164,29 @@ struct RbPlaneTestScenar : public Scenario
 		Vec doorBox = Vec(W, 0.6 * box[1], 0.5 * L);
 
 		LevelSet::Ptr ls = LevelSet::make_box(doorBox);
-		ls->set_origin(Vec(0.5*box[0] + W, box[1] * 0.5, .1 * box[2] - L * 0.5));
+		ls->set_origin(Vec(0.9*box[0] + W, box[1] * 0.5, -0.1 * box[2] - L * 0.5));
 		rbs.emplace_back(ls, 1.e99);
 
 
+	}
+
+	void update(Simu &simu, Scalar time, Scalar dt) const override
+	{
+		Vec box = m_config->box;
+		const Scalar L = box[2] * (0.9);
+		const Scalar W = 2 * m_config->typicalLength();
+		if (time*m_config->units().toSI( Units::Time )>4){
+					for (RigidBody &rb : simu.rigidBodies())
+		{
+			if (time*m_config->units().toSI( Units::Time )<6){
+					rb.move_to(Vec(0.9*box[0] + W, box[1] * 0.5, 0.4 * box[2] + L * 0.5));
+			} else if(time*m_config->units().toSI( Units::Time )>6 and time*m_config->units().toSI( Units::Time )<6.1) {
+				rb.move_to(Vec(1*box[0] - W, box[1] * 0.5, 0.1 * box[2] + L * 0.5));
+			}
+		rb.set_velocity(Vec(0,0,0.5*m_config->units().toSI( Units::Velocity )), Vec::Zero());
+		}
+
+		} 
 	}
 
 
@@ -174,6 +194,7 @@ Eigen::Matrix<Scalar, 2, Eigen::Dynamic> bezier;
 	Scalar R;
 	Scalar H;
 	Scalar S;
+
 };
 
 struct ImpactScenarlhe : public Scenario

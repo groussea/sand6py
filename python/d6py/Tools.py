@@ -423,7 +423,7 @@ def findOutSand6Paths(main,N):
         currentNumRun=NumericalRun(p)
         currentNumRun.dConfig['folder']=f
         currentNumRun.dConfig['path']=p
-        currentNumRun.dConfig['runNumber']=int( currentNumRun.dConfig['folder'][5])
+        currentNumRun.dConfig['runNumber']=int(currentNumRun.dConfig['folder'][5])
         listDictConf.append(currentNumRun.dConfig)  
         listNumericalRuns.append(currentNumRun)
     return outPaths,outFolders,listDictConf,listNumericalRuns

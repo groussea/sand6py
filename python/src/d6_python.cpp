@@ -21,6 +21,9 @@
 
 #include <iostream>
 
+
+
+
 void dump_frame( const d6::Offline& offline, bool particles,
                  const char* base_dir, unsigned frame )
 {
@@ -108,11 +111,14 @@ PYBIND11_MODULE(d6_python, m) {
 
     d6::Config config ;
     config.from_file(config_file);
+
+
 	//write base_dir on config
 	config.from_string("base_dir", base_dir);
 	// Save copy of final configuration and convert to interal units
 	d6::FileInfo outDir ( base_dir ) ;
 	if( !outDir.exists() ) outDir.makeDir() ;
+	config.dump( outDir.filePath("config"), "config_out" );
 	config.internalize();
 
 	d6::Log::Debug() << "Typical length = " << config.units().toSI(d6::Units::Length) << " m"<< std::endl ;
