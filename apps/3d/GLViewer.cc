@@ -9,6 +9,9 @@
 #include "geo/LevelSet.hh"
 
 #include "utils/Log.hh"
+#include "utils/File.hh"
+
+#include <iomanip>
 
 #define fb_width  (2*2560)
 #define fb_height (2*1440)
@@ -22,6 +25,7 @@ GLViewer::GLViewer(const Offline &offline,
     : m_offline(offline), m_width(width), m_height(height),
       m_drawParticles( 0 == nSamples ), 
       m_grainsRenderer( offline, m_shapeRenderer, nSamples )
+
 {
 }
 
@@ -31,10 +35,9 @@ void GLViewer::init()
     glGetIntegerv(GL_SAMPLE_BUFFERS, &bufs);
     glGetIntegerv(GL_SAMPLES, &samples);
     Log::Debug() << "Using " << bufs << " buffers and " << samples << " samples" << std::endl;
-
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-
+    glClearColor(0.f, 0.f, 0.f, 1.f);
     frameAll();
+
 
 	if( m_grainsRenderer.sampler().mode() == Sampler::VelocityCut ) {
         // TODO set orthographic
@@ -84,7 +87,7 @@ void GLViewer::config_shaders()
 
 	m_testShader.add_attribute("vertex") ;
 	m_testShader.add_uniform("in_texture");
-	//m_testShader.load("textest_vertex","textest_fragment") ;
+	// m_testShader.load("textest_vertex","textest_fragment") ;
 }
 
 void GLViewer::update_buffers()
@@ -116,7 +119,7 @@ void GLViewer::update_buffers()
 
                 const Vec ev = es.eigenvalues().array().max(0).sqrt();
 
-                mat.block<3, 3>(0, 0) = (es.eigenvectors() * ev.asDiagonal()).cast<GLfloat>() * .5 * std::pow(p.volumes()[i], 1. / 3);
+                mat.block<3, 3>(0, 0) = (es.eigenvectors() * ev.asDiagonal()).cast<GLfloat>() * 1. * std::pow(p.volumes()[i], 1. / 3);
                 mat.block<3, 1>(0, 3) = p.centers().col(i).cast<GLfloat>();
 
                 m_densities[i] = p.volumes()[i];
@@ -218,7 +221,7 @@ void GLViewer::draw() const
 		glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
 
-	bool shadowed = false ;
+	bool shadowed = true;
 
 	if( m_drawParticles )
 	{
@@ -290,6 +293,8 @@ void GLViewer::draw() const
 		}
 
 		if(0){
+
+
 			UsingShader sh( m_testShader ) ;
 
 			UsingTexture tx( m_depthTexture ) ;
@@ -323,8 +328,37 @@ void GLViewer::draw() const
 
 }
 
-void GLViewer::snap()
+void GLViewer::snap(unsigned m_currentFrame)
 {
+
+
+
+        //Snaps
+	FileInfo snap_dir( FileInfo( m_offline.base_dir() ).filePath("snaps") ) ;
+	FileInfo snap_file( snap_dir.filePath("qgl-%1.bmp") ) ;
+	snap_file.makePath() ;
+
+	std::stringstream num ;
+    num << std::setfill('0') << std::setw(4) <<  m_currentFrame ;
+    const std::string fileName = arg(snap_file.path(),  num.str() ) ;
+
+    unsigned char* pixels = new unsigned char[3*m_width*m_height];
+    GLint m_viewport[4];
+
+    glGetIntegerv( GL_VIEWPORT, m_viewport );
+    glReadPixels(0, 0, m_width, m_height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+    GImage image(m_width,m_height);
+    for(uint i=0;i<m_width;i++)
+        for(uint j=0;j<m_height;j++)
+        {
+            image.setPixel(i,m_height-j-1,pixels+3*(j*m_width+i));
+        }
+
+
+    image.save(fileName);
+    std::cout << "Frame saved" << std::endl;
+    delete [] pixels;
+
 }
 
 
@@ -337,7 +371,7 @@ void GLViewer::frameAll()
     {
         Eigen::Vector3f position;
         position[0] = 0.5 * box[0];
-        position[1] = 3 * box[1];
+        position[1] = -2 * box[1];
         position[2] = 0.5 * box[2];
         m_camera.lookAt(position, 0.5 * box, Eigen::Vector3f(0, 0, 1));
         m_camera.setPerspective(M_PI/3, m_width / (float)m_height, 0.1*box.norm(), 10 * box.norm());
@@ -349,6 +383,8 @@ void GLViewer::frameAll()
 
     m_camera.apply();
 }
+
+
 
 void GLViewer::rotate(float xAmount, float yAmount)
 {

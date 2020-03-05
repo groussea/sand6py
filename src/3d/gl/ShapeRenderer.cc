@@ -476,13 +476,14 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 		get_ls_matrix( ls, mat ) ;
 		Eigen::Matrix4f completeDepthMVP = depthProjection * depthModelView * mat ;
 
-		//glColor4f(1., 0., .8, 1);
+		glColor4f(1., 0., .8, 1);
 		Eigen::Matrix4f finalModelView = modelView * mat; 
 
 		const Eigen::Vector3f objLight = rotation.inverse() / ls.scale() * (lightPos - translation) ;
 
 			auto dataIt = m_solidData.find(&ls);
-			Eigen::Vector3f color(0.3, 0.15, 0.1);
+			// Eigen::Vector3f color(0.3, 0.15, 0.1);
+			Eigen::Vector3f color(0.4, 0.15, 0.8);
 
 			if (m_solidShader.ok() && dataIt != m_solidData.end())
 			{

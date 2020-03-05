@@ -36,13 +36,14 @@ class Appli
 {
 
 public:
-	Appli( d6::Offline& offline, unsigned frame,
+	Appli(
+      d6::Offline& offline, unsigned frame,
 	  	const int nSamples,
-	       const int width, const int height ) :
+	       const int width, const int height , bool snaps, bool run) :
 	    m_pWindow( NULL ),
 	    m_offline(offline), m_viewer( offline, nSamples, width, height ),
 	    m_currentFrame( frame ),
-	    m_running( false ), m_snapshotting( false ),
+	    m_running( run ), m_snapshotting( snaps ), m_anim(false),
 	    m_mouseX( 0 ), m_mouseY( 0 )
 	{
 		assert( ! s_instance ) ;
@@ -58,10 +59,12 @@ public:
 
 	void set_frame( unsigned frame ) {
 		if( m_offline.load_frame( frame ) ) {
+			std::cout << m_offline.particles().count() << std::endl;
 			m_currentFrame = frame ;
 			m_viewer.update_buffers();
 		}
 	}
+
 
 	bool next_frame() {
 		unsigned nextFrame = m_currentFrame + 1  ;
@@ -76,16 +79,20 @@ public:
 	}
 
 	int run( )
-	{
+	{ 
+		m_viewer.frameAll();
 		do {
 			if( m_running && !next_frame() ) {
 				m_running = false ;
 			}
-
+			if (m_anim ) {
+				m_viewer.rotate(4.,0.5 ) ;
+				m_viewer.zoom(0.995) ;}
 			m_viewer.draw( ) ;
 
+
 			if( m_running && m_snapshotting ) {
-				m_viewer.snap();
+				m_viewer.snap(m_currentFrame);
 			}
 
 			glfwSwapBuffers( m_pWindow);
@@ -213,7 +220,7 @@ private:
 			set_frame(0);
 			break;
 		case GLFW_KEY_PERIOD:
-			m_viewer.snap() ;
+			m_viewer.snap(m_currentFrame ) ;
 			break ;
 		}
 
@@ -265,6 +272,7 @@ private:
 	unsigned m_currentFrame ;
 	bool m_running ;
 	bool m_snapshotting ;
+	bool m_anim ;
 
 	static Appli* s_instance ;
 
@@ -299,11 +307,14 @@ int main( int argc, const char * argv[] )
 	const char * base_dir = "out" ;
 	unsigned frame = 0 ;
 
-	unsigned width  = 0 ;
-	unsigned height = 0 ;
+	unsigned width  = 1000 ;
+	unsigned height = 1000 ;
 	unsigned nSamples = 0;
 
 	bool discs  = false ;
+	bool colVel = false;
+	bool sn = false;
+	bool run = false;
 	float grainSizeFactor = 1 ;
 
 	for( int i = 1 ; i < argc ; ++i )
@@ -332,9 +343,18 @@ int main( int argc, const char * argv[] )
 			case 'd':
 				discs = true ;
 				break;
+			case 'v':
+				colVel=true;
+				break;
 			case 'g':
 				if( ++i == argc ) break ;
 				grainSizeFactor = d6::to_float( argv[i] ) ;
+				break;
+			case 'p':
+				sn=true;
+				break;
+			case 'r':
+				run=true;
 				break;
 			}
 		} else {
@@ -350,9 +370,11 @@ int main( int argc, const char * argv[] )
 		width = height * a ;
 	}
 
-	d6::Appli appli( offline, frame, nSamples, width, height );
+	d6::Appli appli( offline, frame, nSamples, width, height , sn, run);
 	if (discs)
 		appli.viewer().grainsRenderer().useDiscs();
+	if (colVel)
+		appli.viewer().grainsRenderer().cutAndColorVelocities();
 	appli.viewer().grainsRenderer().setGrainSizeFactor( grainSizeFactor );
 
 	appli.init();

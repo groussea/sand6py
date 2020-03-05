@@ -453,16 +453,21 @@ struct BunnyScenar : public Scenario
 
 	Scalar particle_density(const Vec &x) const override
 	{
+		// std::cout<<"init"<<std::endl;
+
 		return (bunny_ls2->eval_at(x) < 0 &&
-				x[2] * 5 > m_config->box[0])
+				x[2] * 5 < m_config->box[0])
 				   ? 1
 				   : 0;
 	}
 
 	void init(const Params &params) override
 	{
-		const std::string &meshname = string_param(params, "mesh", "../scenes/testvall_tri.obj");
+		std::cout<<"init"<<std::endl;
+		const std::string &meshname = string_param(params, "mesh", "../scenes/bunny.obj");
+		// const std::string &meshname = string_param(params, "mesh", "../scenes/testVall.obj");
 		bunny_ls = LevelSet::from_mesh(meshname.c_str());
+
 
 		const Scalar S = m_config->box[0];
 
@@ -472,19 +477,25 @@ struct BunnyScenar : public Scenario
 			.set_origin(S * Vec(.5, .25, -.5));
 		bunny_ls->compute();
 
-		bunny_ls2 = LevelSet::from_mesh(meshname.c_str());
+		const std::string &meshname2 =  "../scenes/bunny.obj";
+		// const std::string &meshname = string_param(params, "mesh", "../scenes/testVall.obj");
+		bunny_ls2 = LevelSet::from_mesh(meshname2.c_str());
 
-		bunny_ls2->scale(S)
+
+		bunny_ls2->scale(S * 4)
 			.rotate(Vec(0, 1, 0), M_PI / 4)
 			.rotate(Vec(1, 0, 0), M_PI / 4)
 			.set_origin(S * Vec(.5, .25, -.5));
 		bunny_ls2->compute();
 
+
 	}
 
 	void add_rigid_bodies(std::vector<RigidBody> &rbs) const override
 	{
-		rbs.emplace_back(bunny_ls, 1.e99);
+		if(bunny_ls==nullptr)throw "add rigid bodies";
+		
+		rbs.push_back(RigidBody{bunny_ls, 1.e99});
 	}
 
 	void update(Simu &simu, Scalar time, Scalar /*dt*/) const override
@@ -503,14 +514,13 @@ struct BunnyScenar : public Scenario
 		// 	}
 		// }
 
-		// for (RigidBody &rb : simu.rigidBodies())
-		// {
-		// 	rb.set_velocity(vel, Vec::Zero());
-		// }
+		for (RigidBody &rb : simu.rigidBodies())
+		{
+			rb.set_velocity(vel, Vec::Zero());
+		}
 	}
-private:
+
 	mutable LevelSet::Ptr bunny_ls;
-	mutable LevelSet::Ptr bunny_ls2;
 };
 
 struct WritingScenar : public Scenario

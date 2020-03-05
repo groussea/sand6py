@@ -63,7 +63,6 @@ MonoSimu::MonoSimu(Config &config, const char *base_dir)
 	m_grains->spi_grad.set_zero();
 	m_grains->geo_proj.set_zero();
 
-
 	m_solver.reset( new PhaseSolver(m_particles) );
 
 }

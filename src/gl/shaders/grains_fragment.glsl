@@ -57,7 +57,7 @@ void main (void)
 	float mat_2 = clamp( 1 - 2*(material-1.0), 0.0, 1.0 ) ;
 
 	ambientMat += mat_0*vec4( vec3(0.2,0.3, 0.1), 1. );
-	diffuseMat += mat_0*vec4( vec3(.2 , .3, 0.1), 1. );
+	diffuseMat += mat_0*vec4( vec3(.4 , .3, 0.2), 1. );
 
 	ambientMat += mat_1*vec4( vec3(0.3,0.2, 0.1), 1. );
 	diffuseMat += mat_1*vec4( vec3(.3 , .2, 0.1), 1. );
@@ -76,5 +76,5 @@ void main (void)
 	color = 0.5 * ambientMat ;
 	color += alpha * diffuse;
 
-	color.a = 1. ;
+	color.a = 0.5 ;
 }

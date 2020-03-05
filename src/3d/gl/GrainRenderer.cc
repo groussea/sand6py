@@ -54,7 +54,7 @@ void GrainRenderer::draw_grains ( const Shader &shader, const float pixelSize,
 	//vertices
 	if( instanced )
 	{
-		glDrawArraysInstanced( GL_TRIANGLES, 0, m_shapeRenderer.squareVertices().size(), m_grainVertices.size() );
+		glDrawArraysInstanced( GL_TRIANGLES, 0, m_shapeRenderer.squareVertices().size(), m_grainVertices.size());
 	} else {
 
 		if( pixelSize > 0 )
@@ -64,7 +64,7 @@ void GrainRenderer::draw_grains ( const Shader &shader, const float pixelSize,
 			glPointSize( m_grainSizeFactor ) ;
 		}
 
-		glDrawArrays( GL_POINTS, 0, m_grainVertices.size() );
+		glDrawArrays( GL_POINTS, 0, m_grainVertices.size());
 		glDisable( GL_PROGRAM_POINT_SIZE ) ;
 	}
 

@@ -48,7 +48,7 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box ) const
     mat.block<2,2>(0,0) = rotation * ls.scale() ;
     mat.block<2,1>(0,3) = translation ;
 
-    glColor4f(1., 0., .8, 1);
+    glColor4f(0., 0., .8, 0.5);
 
     glPushMatrix();
     glMultMatrixf( mat.data() );

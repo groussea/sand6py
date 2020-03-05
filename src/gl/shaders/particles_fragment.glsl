@@ -31,7 +31,7 @@ out vec4 color ;
 void main (void)
 {
     vec4 ambientMat = vec4(0.3,0.2, 0.1, 1. );
-    vec4 diffuseMat = vec4(.7 , .6, .2, 1. );
+    vec4 diffuseMat = vec4(0.6, 0.43, 0.38, 1. );
     vec4 specMat    = vec4(1. , 1., 1., 1. );
     float specPow = 15.0;
 
@@ -50,4 +50,5 @@ void main (void)
 
     color = ambient + diffuse + spec;
     color.a = alpha ;
+
 }

@@ -12,6 +12,7 @@
 #include "gl/GrainRenderer.hh"
 #include "gl/ShapeRenderer.hh"
 #include "gl/Texture.hh"
+#include "gl/gImage.hh"
 
 #include <Eigen/Eigenvalues>
 
@@ -38,7 +39,7 @@ public:
 
     void draw() const;
 
-    void snap();
+    void snap(unsigned  m_currentFrame);
     void frameAll();
 
     void rotate(float xAmount, float yAmount);
@@ -67,10 +68,11 @@ private:
     int m_height;
 
 	bool 	 m_drawParticles  = true;
-	bool 	 m_enableBending  = false;
+	bool 	 m_enableBending  = true;
 	bool	 m_fastDraw  = false;
 	bool 	 m_drawObjects = true;
-	bool 	 m_drawOrientations  = false ;
+	bool 	 m_drawOrientations  = true ;
+
 
     Eigen::Vector3f m_lightDirection = Eigen::Vector3f(0.5, 0.5, 1);
 

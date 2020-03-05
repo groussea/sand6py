@@ -31,6 +31,7 @@ out vec3 normal_eye ;
 out vec3 vertex_eye ;
 out vec3 tex_coord ;
 out vec4 shadow_coord  ;
+out float alpha ;
 
 void main()
 {
@@ -42,4 +43,5 @@ void main()
 
     tex_coord = uv ;
 	shadow_coord = ( depth_mvp * vec4( vertex, 1 ) ) ;
+    alpha = 0.2 ;
 }

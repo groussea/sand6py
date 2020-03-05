@@ -12,6 +12,7 @@ class GImage
 public:
   GImage(unsigned int width, unsigned int height);
   void setPixel(unsigned int x,unsigned int y,std::array<unsigned int,3> color);
+  void setPixel(unsigned int x,unsigned int y,unsigned char* color);
   std::array<unsigned int,3> getPixel(unsigned int x,unsigned int y) const;
   unsigned int getWidth() const;
   unsigned int getHeight() const;
@@ -19,7 +20,7 @@ public:
 private:
   unsigned int width;
   unsigned int height;
-  std::vector<unsigned char> data;
+  unsigned char *data = NULL;
 };
 
 
