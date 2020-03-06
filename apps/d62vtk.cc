@@ -70,7 +70,7 @@ void dump_frame( const d6::Offline& offline, bool particles,
 		if( offline.config().exportAllFields )
 		{
 			fieldWriter.dump( "forces", offline.grains().fcontact ) ;
-
+			fieldWriter.dump( "mu", offline.grains().mu ) ;
 			d6::PrimalTensorField tau = offline.grains().stresses.interpolate<d6::PrimalShape>(
 			            offline.meshes().primal()) ;
 			fieldWriter.dump("stresses", tau ) ;

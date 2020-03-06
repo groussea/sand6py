@@ -30,6 +30,7 @@ namespace d6 {
 
 Phase::Phase( const PhaseMeshes & meshes, const Phase& src )
 	: fraction(src.fraction.interpolate<PrimalShape>(meshes.primal())),
+	  mu(src.mu.interpolate<PrimalShape>(meshes.primal())),
 	  velocity(src.velocity.interpolate<PrimalShape>(meshes.primal())),
 	  stresses(src.stresses.interpolate<  DualShape>(meshes.  dual())),
 	  sym_grad(src.sym_grad.interpolate<  DualShape>(meshes.  dual())),

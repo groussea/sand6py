@@ -35,6 +35,7 @@ struct Phase
 
 
 	PrimalScalarField fraction ;
+	PrimalScalarField mu ;
 	PrimalVectorField velocity ;
 
 	DualTensorField stresses ;
@@ -46,7 +47,7 @@ struct Phase
 	PrimalVectorField fcontact ;
 
 	Phase( const PhaseMeshes & meshes )
-		: fraction(meshes.primal()), velocity(meshes.primal()),
+		: fraction(meshes.primal()), mu(meshes.primal()),  velocity(meshes.primal()),
 		  stresses(meshes.  dual()), sym_grad(meshes.  dual()),
 		  spi_grad(meshes.  dual()), grad_phi(meshes.primal()),
 		  geo_proj(meshes.primal()), fcontact(meshes.primal()),
@@ -62,7 +63,8 @@ struct Phase
 	void serialize( Archive &ar, unsigned int ) {
 		ar & m_serializeAllFields ;
 		ar & fraction ;
-		ar & velocity ;
+		ar & mu;
+		ar &velocity;
 		ar & grad_phi ;
 
 		if (m_serializeAllFields) {

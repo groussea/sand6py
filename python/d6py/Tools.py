@@ -39,6 +39,7 @@ def extractInfoVTK(filename):
     
     return npvelArr, npvolArr, nppointsArr
 
+filename='/media/gauthier/Gauthier_Backup/TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/outputs/Tests/Run_07_3D_Door_muRigid=0.18_H_14.25cm_glass-beads-0.47mm_Slope=15deg_delta_mu=0.000_substeps_10_fracH=0.8_I0_start=0.0050_delta_mu_start=0.0500_P0=1.0000fps=15/vtk/primal-fields-0.vtk'
 def extractInfoVTKprimalfields(filename):  
     reader = vtk.vtkDataSetReader()
     #required to read all file datas
@@ -63,16 +64,20 @@ def extractInfoVTKprimalfields(filename):
 
     if N_array>3:
                 #convert forces
-        np_forces=vtk_to_numpy(pdata.GetArray(pdata.GetArrayName(3))) 
+        np_forces=vtk_to_numpy(pdata.GetArray('forces')) 
         #Convert stresses into Numpy Array
-        np_stresses=vtk_to_numpy(pdata.GetArray(pdata.GetArrayName(4)))     
+        if pdata.GetArray('mu') is not None:
+            np_mu=vtk_to_numpy(pdata.GetArray('mu')) 
+        else:
+            np_mu=None
+        np_stresses=vtk_to_numpy(pdata.GetArray('stresses'))     
     
     else:
         # vtk file is in mode 'extractAllField=False'
         np_stresses=None        
         np_forces=None
     
-    return  np_points, np_phi, np_vel,  np_stresses, np_d_phi, np_forces, N_array
+    return  np_points, np_phi, np_vel,  np_stresses, np_d_phi, np_forces, np_mu, N_array
 
 
 
@@ -235,7 +240,7 @@ def fromVTKtoscaledDataParticles2D(VTKfilename,dConfig):
 def fromVTKtoscaledDataFields3D(VTKfilename,dConfig):        
 
     Ratio, Orx, Ory=RatioAndOrigin(dConfig)
-    np_points, np_phi, np_vel,  np_stresses, np_d_phi, np_forces, N_array =extractInfoVTKprimalfields(VTKfilename)
+    np_points, np_phi, np_vel,  np_stresses, np_d_phi, np_forces, np_mu ,N_array =extractInfoVTKprimalfields(VTKfilename)
     
     np_points=np_points*dConfig['gridScale']
     points_grid=np.zeros_like(np_points)             
@@ -268,7 +273,7 @@ def fromVTKtoscaledDataFields3D(VTKfilename,dConfig):
 def fromVTKtoscaledDataFields2D(VTKfilename,dConfig):        
 #    npvelArr, npPhiArr, npStressesArr, nppointsArr=tools.extractInfoVTKprimalfields(VTKfilename)
     Ratio, Orx, Ory=RatioAndOrigin(dConfig,dim=2)
-    np_points, np_phi, np_vel,  np_stresses, np_d_phi, np_forces, N_array =extractInfoVTKprimalfields(VTKfilename)
+    np_points, np_phi, np_vel,  np_stresses, np_d_phi, np_forces, np_mu,N_array =extractInfoVTKprimalfields(VTKfilename)
     
     np_points=np_points*dConfig['gridScale']
     points_grid=np.zeros_like(np_points)             
@@ -531,12 +536,17 @@ class NumericalRun():
             self.CS=ax.contour(self.grid_x[:,6,:]/self.scaleLength,self.grid_z[:,6,:]/self.scaleLength,self.reshaped_Phi[:,6,:],**args)
         if self.dimSim==2:
             self.CS=ax.contour(self.grid_x/self.scaleLength,self.grid_y/self.scaleLength,self.reshaped_Phi,**args)
+ 
+   
+    
     def calculatePressure(self):
         
         if self.dimSim==2:
             self.P=np.flipud(1/2*(self.np_stresses_reshaped[:,:,0]+self.np_stresses_reshaped[:,:,4]).T)
+            self.P_cont=1/2*(self.np_stresses_reshaped[:,:,0]+self.np_stresses_reshaped[:,:,4])
         if self.dimSim==3:
             self.P=np.flipud(1/3*(self.np_stresses_reshaped[:,:,:,0]+self.np_stresses_reshaped[:,:,:,4]+self.np_stresses_reshaped[:,:,:,8]).T)
+            self.P_cont=1/3*(self.np_stresses_reshaped[:,:,:,0]+self.np_stresses_reshaped[:,:,:,4]+self.np_stresses_reshaped[:,:,:,8])
         self.pressureCalculated=True
         
     def calculateStrainRate(self):
@@ -575,7 +585,19 @@ class NumericalRun():
             self.calculateNormVelocity()
         self.IMvel=np.flipud(self.normV.T)
         if self.dimSim==2:
-            ax.imshow(self.P,extent=self.extentR,**args)
+            ax.imshow(self.IMvel*(self.phiT>0.5),extent=self.extentR,**args)
+        if self.dimSim==3:
+            ax.imshow(self.IMvel[:,6,:]*(self.phiT[:,6,:]>0.5),extent=self.extentR,**args)        
+    
+    def plotContourVel(self,ax,**args):
+        if self.velocityCalculated==False:
+            self.calculateNormVelocity()
+        if self.dimSim==3: 
+            self.CS=ax.contour(self.grid_x[:,6,:]/self.scaleLength,self.grid_z[:,6,:]/self.scaleLength,self.normV[:,6,:],**args)
+        if self.dimSim==2:
+            self.CS=ax.contour(self.grid_x/self.scaleLength,self.grid_y/self.scaleLength,self.normV,**args)
+   
+
 
     def plotStrainRate(self,ax,**args):
         if self.strainRateCalculated==False:
@@ -616,6 +638,23 @@ class NumericalRun():
                 self.IMgamma=np.flipud(self.gammaN[:,6,:].T)
                 ax.imshow(self.IMgamma*self.dConfig['grainDiameter']/(self.P[:,6,:]/self.dConfig['volMass'])*(self.phiT[:,6,:]>0.5),extent=self.extentR,**args)
             
+    def plotContourI(self,ax,**args):
+        
+        if self.pressureCalculated==False:
+            if self.np_stresses_reshaped is not None:
+                self.calculatePressure() 
+            else:
+                print('Warning : it is impossible to calculate the pressure from the sand6 outputs (set exportAllFields in the config file to 1 before the simulation if you wish to export stresses and deduce pressure)')
+                
+        if self.strainRateCalculated==False:
+            self.calculateStrainRate()
+
+        if self.dimSim==3: 
+            self.CS=ax.contour(self.grid_x[:,6,:]/self.scaleLength,self.grid_z[:,6,:]/self.scaleLength,self.gammaN[:,6,:]*self.dConfig['grainDiameter']/(self.P_cont[:,6,:]/self.dConfig['volMass']),**args)
+        if self.dimSim==2:
+            self.CS=ax.contour(self.grid_x/self.scaleLength,self.grid_y/self.scaleLength,self.gammaN[:,:]*self.dConfig['grainDiameter']/(self.P_cont[:,:]/self.dConfig['volMass']),**args)
+   
+    
     
     def plotPoints(self,ax,**args):
         if self.dimSim==3: 

@@ -612,13 +612,15 @@ void DiphasicStepData::compute(const DynParticles& particles,
 	// Not used, but required by particle interface
 	DualScalarField intPhiDual    ( dShape ) ;
 	DualScalarField intPhiInertia ( dShape ) ;
+	DualScalarField intPressure( dShape ) ;
+	DualScalarField intDuT( dShape ) ;
 	DualScalarField intPhiCohesion( dShape ) ;
 	DualTensorField intPhiOrient  ( dShape ) ;
 
 	std::vector< bool > activeCells ;
 
 	particles.integratePrimal( activeCells, intPhiPrimal, intPhiVel ) ;
-	particles.integrateDual( intPhiDual, intPhiInertia, intPhiOrient, intPhiCohesion ) ;
+	particles.integrateDual( intPhiDual, intPhiInertia, intPressure, intDuT,  intPhiOrient, intPhiCohesion ) ;
 
 	// Compute phi and grad_phi (for visualization purposes )
 	PhaseStepData::computePhiAndGradPhi( intPhiPrimal, phase.fraction, phase.grad_phi ) ;
@@ -640,9 +642,10 @@ void DiphasicStepData::compute(const DynParticles& particles,
 	// Cohesion inertia
 	intPhiCohesion.divide_by_positive( intPhiDual ) ;
 	intPhiInertia .divide_by_positive( intPhiDual ) ;
+	intPressurePowQuarter .divide_by_positive( intPressurePowQuarter ) ;
 	dualNodes.field2var( intPhiCohesion, cohesion ) ;
 	dualNodes.field2var( intPhiInertia , inertia  ) ;
-
+	dualNodes.field2var( intPressurePowQuarter , pressurePowQuarter  ) ;
 	// Volumes
 	{
 		DualScalarField volumes ( dShape ) ;

@@ -71,8 +71,9 @@ bool PrimalData::load(const char *file)
 
 bool PrimalData::dump(const char *file) const
 {
-	std::ofstream ofs( file );
 
+	std::ofstream ofs( file );
+	
 	if(!ofs) {
 		Log::Error() << "Cannot write " << file << std::endl ;
 		return false ;

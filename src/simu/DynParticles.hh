@@ -43,7 +43,7 @@ public:
 			   PrimalScalarField &phi,    PrimalVectorField &phiVel ) const ;
 
 	void integrateDual(
-			   DualScalarField &phi,      DualScalarField &phiInertia,
+			   DualScalarField &phi,      DualScalarField &phiInertia, DualScalarField &phiPressure,DualScalarField &phiDuT,
 			   DualTensorField &phiOrient,DualScalarField &phiCohesion
 			   ) const ;
 
@@ -62,6 +62,7 @@ public:
 	}
 
 	const Particles::Data< 1 >::Type&  inertia() const { return m_inertia ; }
+	const Particles::Data< 1 >::Type&  pressure() const { return m_pressurePowerFouth ; }
 	const Particles::Data< 1 >::Type& cohesion() const { return m_cohesion ; }
 
 private:
@@ -78,6 +79,7 @@ private:
 
 	Particles::Data< WD*WD >::Type m_affine ;
 	Particles::Data< 1 >::Type m_inertia ;
+	Particles::Data< 1 >::Type m_pressurePowerFouth;
 	Particles::Data< 1 >::Type m_cohesion ;
 
 };

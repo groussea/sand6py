@@ -75,6 +75,8 @@ struct DiphasicStepData {
 
 	DynArr cohesion ;   //!< interpolated cohesivity
 	DynArr inertia  ;   //!< interpolated inertial number
+	DynArr int_pressure  ;
+	DynArr DuT;
 
 	Index nPrimalNodes() const
 	{

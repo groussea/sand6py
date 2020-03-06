@@ -81,6 +81,9 @@ struct PhaseStepData {
 
 	DynArr cohesion ;   //!< interpolated cohesivity
 	DynArr inertia  ;   //!< interpolated inertial number
+	DynArr int_pressure ; 	//!< interpolated pressure
+	DynArr DuT ; 	//!< interpolated DuT
+
 
 	typename FormMat<SD,SD>::SymType Aniso ; //!< Anisotropy linear operator (N^{-1})
 

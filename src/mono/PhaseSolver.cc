@@ -212,7 +212,11 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	pbData.mu.resize( pbData.n() ) ;
 
 	// Inertia, mu(I) = \delta_mu * (1./ (1 + I0/I) ), I = dp * sqrt( rho ) * inertia, inertia = |D(U)|/sqrt(p)
-	const Scalar I0bar = c.I0 / ( c.grainDiameter * std::sqrt( c.volMass )) ;
+	// mu_s+delta_mu_start/(1+I00/I)+\delta_mu*I/I0
+
+	const Scalar I0_start_bar = c.I0_start / ( c.grainDiameter * std::sqrt( c.volMass/0.6 )) ;
+	const Scalar I0bar = c.I0 / ( c.grainDiameter * std::sqrt( c.volMass/0.6 )) ;
+	const Scalar I0_noise_bar= 0.001 / ( c.grainDiameter * std::sqrt( c.volMass/0.6 )) ;
 	const Scalar P0PowQuarter = std::pow(c.P0, 0.25) ;
 
 	// pbData.mu.segment(0,stepData.nDualNodes()).array() = c.mu -
@@ -226,14 +230,28 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	//         c.delta_mu_start / ( 1. + ((I0_start_bar / stepData.inertia.max(1.e-12)))) + c.delta_mu / ( 1. + I0bar / stepData.inertia.max(1.e-12) );
 
 // with a ramp
-for( unsigned k = 0 ; k < stepData.inertia.size() ; ++k ) {
-	if (stepData.inertia[k]<I0_start_bar){
-pbData.mu[k]= c.mu;
-// pbData.mu[k]= c.mu + stepData.inertia[k]/I0_start_bar*(- c.delta_mu_start + c.delta_mu / ( 1. + I0bar / I0_start_bar));
-	}
-	else {
-	pbData.mu[k] = c.mu - c.delta_mu_start + c.delta_mu / ( 1. + I0bar / std::max(stepData.inertia[k],1.e-12) );
-	};
+
+	// DynVec DuTU = stepData.DuT * c.units().toSI(Units::Velocity) / c.units().toSI(Units::Length);
+	// DynVec inertiaLocal = stepData.DuT/stepData.int_pressure.pow(0.5);
+	for (unsigned k = 0; k < stepData.inertia.size(); ++k)
+	{
+		if (stepData.inertia[k]/(I0_noise_bar) < 1.0)
+		{
+				pbData.mu[k] = c.mu ;
+
+
+		
+			// pbData.mu[k]= c.mu + stepData.inertia[k]/I0_start_bar*(- c.delta_mu_start + c.delta_mu / ( 1. + I0bar / I0_start_bar));
+		}
+					else if ((stepData.inertia[k]/(I0_start_bar) < 1.0) && (stepData.inertia[k]/(I0_noise_bar) > 1.0) )
+			{
+				pbData.mu[k] = c.mu - (stepData.inertia[k]/I0_start_bar)*c.delta_mu_start ;
+			}
+			
+		else
+		{
+			pbData.mu[k] = c.mu - c.delta_mu_start + c.delta_mu / (1. + I0bar / std::max(stepData.inertia[k], 1.e-12));
+		};
 }
 
 
@@ -286,7 +304,9 @@ pbData.mu[k]= c.mu;
 
 	// Dump problem data if requested
 	if( c.dumpPrimalData > 0 && (++s_stepId % c.dumpPrimalData) == 0 ) {
-		pbData.dump( arg("primal-%1.d6", s_stepId).c_str() ) ;
+		FileInfo dir( FileInfo(c.base_dir) )  ;
+		std::cout << s_stepId << std::endl;
+		pbData.dump((dir.filePath(arg("primal-%1.d6", s_stepId))).c_str());
 	}
 
 	// Proper solving
@@ -324,6 +344,8 @@ pbData.mu[k]= c.mu;
 
 	// Save stresses for warm-starting next step
 	stepData.dualNodes.var2field( x, phase.stresses ) ;
+
+
 	for( unsigned k = 0 ; k < rbData.size() ; ++k ) {
 		RigidBodyData& rb = rbData[k] ;
 		rb.nodes.var2field( x, rb.stresses ) ;
@@ -335,6 +357,11 @@ pbData.mu[k]= c.mu;
 		const VecS forces = pbData.jacobians[k].transpose() * x ;
 		rb.rb.integrate_forces( dt, forces );
 	}
+
+	/// Save mu values
+	stepData.dualNodes.var2field( pbData.mu, phase.mu ) ;
+	
+
 
 }
 

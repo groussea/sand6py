@@ -176,7 +176,7 @@ void Simu::dump_particles( unsigned frame ) const
 		}
 	}
 
-	// Log -- save at prevbious frame
+	// Log -- save at previous frame
 	if( frame > 0 ) {
 		FileInfo dir( FileInfo(m_base_dir).filePath( arg("frame-%1", frame-1 ) ) );
 		std::ofstream ofs( dir.filePath("log") );

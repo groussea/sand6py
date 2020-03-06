@@ -453,24 +453,33 @@ struct BunnyScenar : public Scenario
 
 	Scalar particle_density(const Vec &x) const override
 	{
-		return (bunny_ls->eval_at(x) < 0 &&
-				x[2] * 5 < m_config->box[0])
+		return (bunny_ls2->eval_at(x) < 0 &&
+				x[2] * 5 > m_config->box[0])
 				   ? 1
 				   : 0;
 	}
 
 	void init(const Params &params) override
 	{
-		const std::string &meshname = string_param(params, "mesh", "../scenes/bunny.obj");
+		const std::string &meshname = string_param(params, "mesh", "../scenes/testvall_tri.obj");
 		bunny_ls = LevelSet::from_mesh(meshname.c_str());
 
 		const Scalar S = m_config->box[0];
 
-		bunny_ls->scale(S * 4)
+		bunny_ls->scale(S )
 			.rotate(Vec(0, 1, 0), M_PI / 4)
 			.rotate(Vec(1, 0, 0), M_PI / 4)
 			.set_origin(S * Vec(.5, .25, -.5));
 		bunny_ls->compute();
+
+		bunny_ls2 = LevelSet::from_mesh(meshname.c_str());
+
+		bunny_ls2->scale(S)
+			.rotate(Vec(0, 1, 0), M_PI / 4)
+			.rotate(Vec(1, 0, 0), M_PI / 4)
+			.set_origin(S * Vec(.5, .25, -.5));
+		bunny_ls2->compute();
+
 	}
 
 	void add_rigid_bodies(std::vector<RigidBody> &rbs) const override
@@ -480,27 +489,28 @@ struct BunnyScenar : public Scenario
 
 	void update(Simu &simu, Scalar time, Scalar /*dt*/) const override
 	{
-		const Scalar speed = m_config->units().toSI(Units::Time);
+		// const Scalar speed = m_config->units().toSI(Units::Time);
 
-		const Scalar tw = time * speed;
-		Vec vel = Vec::Zero();
+		// const Scalar tw = time * speed;
+		// Vec vel = Vec::Zero();
 
-		if (tw > .5)
-		{
-			const Scalar t = tw - .5;
-			if (t < 1)
-			{
-				vel = Vec(0, 0, 6 * (t - t * t)) * speed * (.3 * m_config->box[0]);
-			}
-		}
+		// if (tw > .5)
+		// {
+		// 	const Scalar t = tw - .5;
+		// 	if (t < 1)
+		// 	{
+		// 		vel = Vec(0, 0, 6 * (t - t * t)) * speed * (.3 * m_config->box[0]);
+		// 	}
+		// }
 
-		for (RigidBody &rb : simu.rigidBodies())
-		{
-			rb.set_velocity(vel, Vec::Zero());
-		}
+		// for (RigidBody &rb : simu.rigidBodies())
+		// {
+		// 	rb.set_velocity(vel, Vec::Zero());
+		// }
 	}
-
+private:
 	mutable LevelSet::Ptr bunny_ls;
+	mutable LevelSet::Ptr bunny_ls2;
 };
 
 struct WritingScenar : public Scenario

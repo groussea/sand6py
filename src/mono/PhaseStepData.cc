@@ -519,6 +519,8 @@ void PhaseStepData::compute(const DynParticles& particles,
 
 	DualScalarField intPhiDual    ( dShape ) ;
 	DualScalarField intPhiInertia ( dShape ) ;
+	DualScalarField intPressure ( dShape ) ;
+	DualScalarField intDuT ( dShape ) ;
 	DualScalarField intPhiCohesion( dShape ) ;
 	DualTensorField intPhiOrient  ( dShape ) ;
 
@@ -529,12 +531,13 @@ void PhaseStepData::compute(const DynParticles& particles,
 	dShape.compute_lumped_mass( intPhiDual  .flatten() ) ;
 	intPhiVel.set_zero() ;
 	intPhiInertia.set_zero() ;
+	intPressurePowQuarter.set_zero() ;
 	intPhiCohesion.set_zero() ;
 	intPhiOrient.set_zero() ;
 	activeCells.assign( pShape.mesh().nCells(), true ) ;
 #else
 	particles.integratePrimal( activeCells, intPhiPrimal, intPhiVel ) ;
-	particles.integrateDual( intPhiDual, intPhiInertia, intPhiOrient, intPhiCohesion ) ;
+	particles.integrateDual( intPhiDual, intPhiInertia, intPressurePowQuarter, intPhiOrient, intPhiCohesion ) ;
 #endif
 
 	// Compute phi and grad_phi (for visualization purposes )
@@ -559,10 +562,12 @@ void PhaseStepData::compute(const DynParticles& particles,
 	DynVec orientation ;
 	intPhiCohesion.divide_by_positive( intPhiDual ) ;
 	intPhiInertia .divide_by_positive( intPhiDual ) ;
+	intPressurePowQuarter .divide_by_positive( intPhiDual ) ;
 	intPhiOrient  .divide_by_positive( intPhiDual ) ;
 
 	dualNodes.field2var( intPhiCohesion, cohesion ) ;
 	dualNodes.field2var( intPhiInertia , inertia  ) ;
+	dualNodes.field2var( intPressurePowQuarter , pressurePowQuarter ) ;
 	dualNodes.field2var( intPhiOrient  , orientation  ) ;
 
 	computeAnisotropy( orientation, config, Aniso );

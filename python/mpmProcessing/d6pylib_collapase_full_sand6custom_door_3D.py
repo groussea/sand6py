@@ -13,8 +13,8 @@ readconfigFile(configFile) return a disctionary with 18 firs lines of the config
 import numpy as np  
 import json
 import sys, os
-driveFolder='/scratch/garousse/'
-# driveFolder='/media/gauthier/Gauthier_Backup/'
+# driveFolder='/scratch/garousse/'
+driveFolder='/media/gauthier/Gauthier_Backup/'
 sys.path.append(driveFolder+'TAF/TAF_EPFL/current_work/OPyF-Project/github/opyFlow/')
 sys.path.append(driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/python-essentials/Essentials OpenCV')
 
@@ -24,7 +24,7 @@ JSONpath=driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/Video_src/dictE
     # the d6 soft path
 d6Path=driveFolder+'TAF/TAF_inria/Sand6/epfl_lhe_2d_and_3d/build_fast'
 d6Path='/media/gauthier/Data-Gauthier/programs/gitLab/sand6/build'
-d6Path='/scratch/garousse/TAF/TAF_inria/INRIA_current_work/GitLab/sand6/build'
+# d6Path='/scratch/garousse/TAF/TAF_inria/INRIA_current_work/GitLab/sand6/build'
 #d6Path=driveFolder+'TAF/TAF_inria/GitLab/sand6cohesive/build_julien'
 #d6Path='/home/gauthier/programs/epfl_lhe/build2d'
 d6OutFolder='out'
@@ -37,7 +37,92 @@ sys.path.append(d6Path+'/../python')
 
 import d6py
 #%%
+def rund6py(sdictE,**args):
 
+    fracH=0.8
+    
+    if sdictE['camType']=='Phantom':
+        sdictE['L']=sdictE['L']+0.1
+        sdictE['Ltot']=sdictE['Ltot']+0.1
+    #We Consider a 1 meter simu
+    L=sdictE['L']    
+    Lmod=sdictE['Ltot']
+    nFrames=sdictE['nFrames']
+    nFrames=22
+    
+    if (sdictE['camType']=='BW') & (sdictE['Slope']==15. or sdictE['Slope']==20.):
+        Lmod=sdictE['Ltot']+0.5
+
+    delta_mu=args.get('delta_mu',0)
+    I0=args.get('I0',0.3)
+    I0_start=args.get('I0_start',0.005)
+    delta_mu_start=args.get('delta_mu_start',0.05)
+    muRigid=args.get('muRigid',0.18)
+    mu=args.get('mu',sdictE['mu'])
+    
+    P0=1.
+    
+    Hmod=(np.round(sdictE['H'],3)+0.003)/fracH
+    
+    if door=='with':
+        ts=0
+    else:
+        ts=20
+    substeps=10
+
+
+    prop='for_comp_test'
+    
+    if door=='with':
+        runName=str('Run_'+format(j,'02.0f')+'_3D_Door_mu='+str(mu)+'_muRigid='+str(muRigid)+'_H_'+format(Hmod*100,'.2f')+'cm_'+sdictE['grainType']+'_Slope='+format(sdictE['Slope'],'.0f')+'deg_delta_mu='+format(delta_mu,'.3f')+'_substeps_'+str(substeps)+'_fracH='+str(fracH)+'_I0_start='+format(I0_start,'.4f')+'_delta_mu_start='+format(delta_mu_start,'.4f')+'_P0='+format(P0,'.4f')+prop)    
+    else:
+        runName=str('Run_'+format(j,'02.0f')+'_3D_no_Door_start_at_0.13_s_'+sdictE['grainType']+'_Slope='+format(sdictE['Slope'],'.0f')+'deg_delta_mu='+format(delta_mu,'.3f')+'_substeps_'+str(substeps)+'_fracH='+str(fracH)+'_I0_start='+format(I0_start,'.4f')+'_delta_mu_start='+format(delta_mu_start,'.4f')+'_P0='+format(P0,'.4f')+prop)      
+       
+     
+    d6OutFolder=driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/outputs/Tests/'+runName
+    d6py.mkdir2(d6OutFolder) 
+    
+    newConfigFile=d6OutFolder+'/collapse.3d_'+runName+'m.conf'
+    configFilein=d6Path+'/../scenes/collapse.3d.LHE.Door.conf'
+
+    d6py.modifyConfigFile(configFilein,newConfigFile,'box',[Lmod, 0.06,Hmod])
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'fps',[15])
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'gravity',[+9.81*np.sin(sdictE['Slope']*np.pi/180), 0,-9.81*np.cos(sdictE['Slope']*np.pi/180)])
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'nFrames',[nFrames+ts])
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'randomize',[0])
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'substeps',[substeps])
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'grainDiameter',[sdictE['grainDiameter']])
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'mu',[mu])
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'muRigid',[muRigid]) #mu Door
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'delta_mu',[delta_mu])
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'delta_mu_start',[delta_mu_start])
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'I0_start',[I0_start])
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'P0',[P0])
+    if door=='with':
+        if j<=3:
+            d6py.modifyConfigFile(newConfigFile,newConfigFile,'scenario','collapselhedoor taudoor:0.06 veldoor:0.8 ts:'+format(ts,'1.0f')+' frac_h:'+format(fracH,'1.1f')+' column_length:'+str(L))
+        else:
+            d6py.modifyConfigFile(newConfigFile,newConfigFile,'scenario','collapselhedoor taudoor:0.13 veldoor:0.7 ts:'+format(ts,'1.0f')+' frac_h:'+format(fracH,'1.1f')+' column_length:'+str(L))
+    else:
+        d6py.modifyConfigFile(newConfigFile,newConfigFile,'scenario','collapselhedoor taudoor:0.0001 veldoor:100 ts:'+format(ts,'1.0f')+' frac_h:'+format(fracH,'1.1f')+' column_length:'+str(L))
+
+    
+    TypicalLength=0.005
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'res',[Lmod//TypicalLength,0.06//TypicalLength,Hmod//TypicalLength]) #pour avoir un réolution divisible par 10 selon Y
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'I0',[I0]) 
+      
+    #load the final config file dictionnary    
+        
+    dConfigmod=d6py.readConfigFile(newConfigFile)
+    #% 
+
+    d6py.d6run(d6OutFolder,newConfigFile)
+    
+    d6py.d62vtk(d6OutFolder,allF=True,particles=True)
+
+
+
+#%%
 
 #%
 # Load the contents from the file, which creates a new dictionary with all experimental infos
@@ -59,93 +144,17 @@ door='with'
 for j in range(7,8 ): 
 #    plt.close('all')
 #for j in range(0,8):
+    
     sE=lExp[j] #Selected exeperiment
     sdictE=dictExp[sE]
-    fracH=0.8
+    for I0_start in [0.004]:
+        for dmu in [-0.05,0.,0.02]:
+                rund6py(sdictE,I0_start=I0_start,delta_mu=0.,delta_mu_start=0,mu=np.round(sdictE['mu']+dmu,2))
     
-    if sdictE['camType']=='Phantom':
-        sdictE['L']=sdictE['L']+0.1
-        sdictE['Ltot']=sdictE['Ltot']+0.1
-    #We Consider a 1 meter simu
-    L=sdictE['L']    
-    Lmod=sdictE['Ltot']
-    nFrames=sdictE['nFrames']
-    
-    if (sdictE['camType']=='BW') & (sdictE['Slope']==15. or sdictE['Slope']==20.):
-        Lmod=sdictE['Ltot']+0.5
+#%%
 
-    delta_mu=0.
-    I0=0.3
-    I0_start=0.005
-    delta_mu_start=0.05
-    muRigid=0.18
-    P0=1.
-    
-    Hmod=(np.round(sdictE['H'],3)+0.003)/fracH
-    
-    if door=='with':
-        ts=0
-    else:
-        ts=20
-    substeps=1
-    sdictE['delta_mu']=delta_mu
 
-    mu=sdictE['mu']
-    prop=''
-    if prop=='low':
-        mu=sdictE['mu']-0.05
-    
-    
-    if door=='with':
-        runName=str('Run_'+format(j,'02.0f')+'_3D_Door_muRigid='+str(muRigid)+'_H_'+format(Hmod*100,'.2f')+'cm_'+sdictE['grainType']+'_Slope='+format(sdictE['Slope'],'.0f')+'deg_delta_mu='+format(delta_mu,'.3f')+'_substeps_'+str(substeps)+'_fracH='+str(fracH)+'_I0_start='+format(I0_start,'.4f')+'_delta_mu_start='+format(delta_mu_start,'.4f')+'_P0='+format(P0,'.4f')+prop)    
-    else:
-        runName=str('Run_'+format(j,'02.0f')+'_3D_no_Door_start_at_0.13_s_'+sdictE['grainType']+'_Slope='+format(sdictE['Slope'],'.0f')+'deg_delta_mu='+format(delta_mu,'.3f')+'_substeps_'+str(substeps)+'_fracH='+str(fracH)+'_I0_start='+format(I0_start,'.4f')+'_delta_mu_start='+format(delta_mu_start,'.4f')+'_P0='+format(P0,'.4f')+prop)      
-       
-     
-    d6OutFolder=driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/outputs/Tests/'+runName
-    d6py.mkdir2(d6OutFolder) 
-    
-    newConfigFile=d6OutFolder+'/collapse.3d_'+runName+'m.conf'
-    configFilein=d6Path+'/../scenes/collapse.3d.LHE.Door.conf'
 
-    d6py.modifyConfigFile(configFilein,newConfigFile,'box',[Lmod, 0.06,Hmod])
-    d6py.modifyConfigFile(newConfigFile,newConfigFile,'fps',[150])
-    d6py.modifyConfigFile(newConfigFile,newConfigFile,'gravity',[+9.81*np.sin(sdictE['Slope']*np.pi/180), 0,-9.81*np.cos(sdictE['Slope']*np.pi/180)])
-    d6py.modifyConfigFile(newConfigFile,newConfigFile,'nFrames',[nFrames+ts])
-    d6py.modifyConfigFile(newConfigFile,newConfigFile,'randomize',[0])
-    d6py.modifyConfigFile(newConfigFile,newConfigFile,'substeps',[substeps])
-    d6py.modifyConfigFile(newConfigFile,newConfigFile,'grainDiameter',[sdictE['grainDiameter']])
-    d6py.modifyConfigFile(newConfigFile,newConfigFile,'mu',[mu])
-    d6py.modifyConfigFile(newConfigFile,newConfigFile,'muRigid',[muRigid]) #mu Door
-    d6py.modifyConfigFile(newConfigFile,newConfigFile,'delta_mu',[delta_mu])
-    d6py.modifyConfigFile(newConfigFile,newConfigFile,'delta_mu_start',[delta_mu_start])
-    d6py.modifyConfigFile(newConfigFile,newConfigFile,'I0_start',[I0_start])
-    # d6py.modifyConfigFile(newConfigFile,newConfigFile,'P0',[P0])
-    if door=='with':
-        if j<=3:
-            d6py.modifyConfigFile(newConfigFile,newConfigFile,'scenario','collapselhedoor taudoor:0.06 veldoor:0.8 ts:'+format(ts,'1.0f')+' frac_h:'+format(fracH,'1.1f')+' column_length:'+str(L))
-        else:
-            d6py.modifyConfigFile(newConfigFile,newConfigFile,'scenario','collapselhedoor taudoor:0.13 veldoor:0.7 ts:'+format(ts,'1.0f')+' frac_h:'+format(fracH,'1.1f')+' column_length:'+str(L))
-    else:
-        d6py.modifyConfigFile(newConfigFile,newConfigFile,'scenario','collapselhedoor taudoor:0.0001 veldoor:100 ts:'+format(ts,'1.0f')+' frac_h:'+format(fracH,'1.1f')+' column_length:'+str(L))
-
-    
-    TypicalLength=0.005
-    d6py.modifyConfigFile(newConfigFile,newConfigFile,'res',[Lmod//TypicalLength,0.06//TypicalLength,Hmod//TypicalLength]) #pour avoir un réolution divisible par 10 selon Y
-    d6py.modifyConfigFile(newConfigFile,newConfigFile,'I0',[I0]) 
-      
-    #load the final config file dictionnary    
-        
-    dConfigmod=d6py.readConfigFile(newConfigFile)
-    #% 
-
-    ################# Execute Different sytem commands ###############     
-     
-    #proc =subprocess.Popen('rm -rf  ' + d6OutFolder +'/*' , shell=True,stdout=subprocess.PIPE)
-    #(out, err) = proc.communicate()    
-    d6py.d6run(d6OutFolder,newConfigFile)
-    
-    d6py.d62vtk(d6OutFolder,allF=True,particles=True)
 
     # cmd = str('./apps/d6 ' +d6OutFolder+ ' -i '+ newConfigFile)
     
