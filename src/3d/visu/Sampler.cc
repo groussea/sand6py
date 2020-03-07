@@ -155,14 +155,14 @@ void Sampler::compute_absolute()
                 m_normals.col(i).setZero() ;
         }
 
-        if( m_mode == VelocityCut && m_positions.col(i)[1] < m_offline.config().box[1] * .5 )
+        if( m_mode == VelocityCut && m_positions.col(i)[1] > m_offline.config().box[1] * .5 )
         {
             m_visibility(i) = -1 ;
         }
 
         if( m_visibility(i) >= 0 ) {
             if ( m_mode == VelocityCut ) {
-                m_visibility(i) = particles.velocities().col(pid).norm();
+                m_visibility(i) = particles.inertia().col(pid).norm();
             } else {
                 m_visibility(i) = std::max( 0., std::min( 1., 1. - grains.fraction(pos_loc) ) ) ;
             }

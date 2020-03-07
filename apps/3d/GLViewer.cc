@@ -7,11 +7,14 @@
 #include "geo/Tensor.hh"
 #include "geo/MeshImpl.hh"
 #include "geo/LevelSet.hh"
-
+#include "geo/LevelSet.io.hh"
 #include "utils/Log.hh"
 #include "utils/File.hh"
 
 #include <iomanip>
+
+
+
 
 #define fb_width  (2*2560)
 #define fb_height (2*1440)
@@ -35,7 +38,7 @@ void GLViewer::init()
     glGetIntegerv(GL_SAMPLE_BUFFERS, &bufs);
     glGetIntegerv(GL_SAMPLES, &samples);
     Log::Debug() << "Using " << bufs << " buffers and " << samples << " samples" << std::endl;
-    glClearColor(0.f, 0.f, 0.f, 1.f);
+    glClearColor(0.94f, 0.98f, 0.94f, 1.f);
     frameAll();
 
 
@@ -68,6 +71,12 @@ void GLViewer::init()
 	}
 
 	update_buffers();
+
+// Create axes
+    LevelSet::Ptr line = LevelSet::make_cylinder(Scalar(1.));
+    m_levelSet = std::move(line);
+    // m_axes.emplace_back(m_levelSet);
+    // LevelSet::Ptr m_axes = LevelSet::make_sphere();
 }
 
 void GLViewer::config_shaders()
@@ -184,11 +193,15 @@ void GLViewer::update_vaos()
     for( const LevelSet::Ptr& ls: m_offline.levelSets() ) {
         m_shapeRenderer.setup_buffers(*ls, m_offline.box().cast<float>());
     }
+    // for( const LevelSet::Ptr& ls: axes() ) {
+    //     m_shapeRenderer.setup_buffers(*ls, m_offline.box().cast<float>());
+    // }
+
 }
 
 Eigen::Vector3f GLViewer::lightPosition() const
 {
-	return ( m_offline.box() / 2 ).cast< float >() + 3 * m_offline.box().norm() * m_lightDirection.normalized() ;
+	return ( m_offline.box()*2).cast< float >() + 3 * m_offline.box().norm() * m_lightDirection.normalized() ;
 }
 
 void GLViewer::draw() const
@@ -254,7 +267,7 @@ void GLViewer::draw() const
         const Eigen::Vector3f &light_pos = lightPosition();
         Eigen::Vector3f box = m_offline.box().cast<float>();
 
-        const Eigen::Vector3f sceneCenter = 0.5f*box;
+        const Eigen::Vector3f sceneCenter = m_camera.target;
         const float centerDepth = (light_pos - sceneCenter).norm(); 
 		depthCam.lookAt(light_pos, sceneCenter, depthCam.up);
         float fov = std::atan2(box.norm(), centerDepth);
@@ -277,7 +290,7 @@ void GLViewer::draw() const
 
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-			const Scalar pixelSize = false /*cam.type() == qglviewer::Camera::ORTHOGRAPHIC*/
+			const Scalar pixelSize = true/*cam.type() == qglviewer::Camera::ORTHOGRAPHIC*/
 			        ? 0
 			        : fb_height / std::tan(depthCam.fieldOfView / 2)  ;
 
@@ -289,7 +302,7 @@ void GLViewer::draw() const
 				}
 			}
 
-			shadowed = true ;
+			// shadowed = false ;
 		}
 
 		if(0){
@@ -321,16 +334,62 @@ void GLViewer::draw() const
 
 	if(m_drawObjects) {
 		for( const LevelSet::Ptr& ls: m_offline.levelSets() ) {
-			m_shapeRenderer.draw( *ls, m_offline.box(), lightPosition(), shadowed, m_depthTexture, 
-            viewCam.viewMatrix, viewCam.projectionMatrix, depthCam.viewMatrix, depthCam.projectionMatrix );
-		}
+
+            m_shapeRenderer.draw(*ls, m_offline.box(), lightPosition(), shadowed, m_depthTexture,
+                                 viewCam.viewMatrix, viewCam.projectionMatrix, depthCam.viewMatrix, depthCam.projectionMatrix);
+        }
+
+    if(m_drawAxis) {
+
+           m_shapeRenderer.drawLine(m_offline.box(), lightPosition(), shadowed, m_depthTexture,
+                                 viewCam.viewMatrix, viewCam.projectionMatrix, depthCam.viewMatrix, depthCam.projectionMatrix);
+
+           glLineWidth(40.0f);
+           UsingShader sh(m_pointShader);
+
+           // Model-view
+           sh.bindMVP(m_camera.viewMatrix.data(), m_camera.projectionMatrix.data());
+
+           //Vertices
+           gl::ArrayObject::Using vao(m_pointArrays);
+           glDrawArrays(GL_LINE, 0, m_centers.size());
+           // const Eigen::Vector3f translation ;
+
+           // glUniform1f( shader.uniform("radius"), ls.scale() ) ;
+           ;
+           // glUniform3fv( shader.uniform("center"), 1, translation.data() ) ;
+
+           //Vertices
+           // gl::ArrayObject::Using vao(billboardArrays);
+           // glDrawArrays( GL_TRIANGLES, 0, 6) ;
+
+           // glPushMatrix();
+           // glBegin(GL_LINES);
+
+           // glColor3f (0.0, 0.0, 1.0);
+           // glVertex3f(0.0, 0.0, 0.0);
+           // glVertex3f(40.0, 0.0, 0.0);
+
+           // glColor3f (1.0, 0.0, 0.0);
+           // glVertex3f(0.0, 0.0, 0.0);
+           // glVertex3f(0.0, 40.0, 0.0);
+
+           // glColor3f (0.0, 1.0, 0.0);
+           // glVertex3f(0.0, 0.0, 0.0);
+           // glVertex3f(0.0, 0.0, 40.0);
+           // glEnd();
+
+           // glPopMatrix();
+
+
+    }
+
 	}
 
 }
 
 void GLViewer::snap(unsigned m_currentFrame)
 {
-
 
 
         //Snaps
@@ -370,10 +429,14 @@ void GLViewer::frameAll()
     if (!m_camera.valid())
     {
         Eigen::Vector3f position;
-        position[0] = 0.5 * box[0];
-        position[1] = -2 * box[1];
+        position[0] = 0.6 * box[0];
+        position[1] = 2.5 * box[1];
         position[2] = 0.5 * box[2];
-        m_camera.lookAt(position, 0.5 * box, Eigen::Vector3f(0, 0, 1));
+        Eigen::Vector3f lookPos;
+        lookPos[0]=0.1 * box[0];
+        lookPos[1]=0.1 * box[1];
+        lookPos[2]=0.1 * box[2];
+        m_camera.lookAt(position, lookPos, Eigen::Vector3f(0, 0, 1));
         m_camera.setPerspective(M_PI/3, m_width / (float)m_height, 0.1*box.norm(), 10 * box.norm());
     }
     else
@@ -403,5 +466,21 @@ void GLViewer::zoom(float amount)
     m_camera.zoom(amount);
     m_camera.apply();
 }
+
+void GLViewer::look_at(Eigen::Vector3f lookPos)
+{
+
+    m_camera.lookAt(m_camera.position, lookPos, Eigen::Vector3f(0, 0, 1));
+    m_camera.apply();
+}
+
+void GLViewer::cam_pos(Eigen::Vector3f camPos)
+{
+ 
+    m_camera.lookAt(camPos, m_camera.target , Eigen::Vector3f(0, 0, 1));
+    m_camera.apply();
+}
+
+
 
 } // namespace d6

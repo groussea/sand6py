@@ -53,13 +53,21 @@ void main (void)
 
 	vec4 ambientMat  = vec4(0,0,0,0) ;
 	vec4 diffuseMat  = vec4(0,0,0,0) ;
-
+//coins
+	// if( material < .4 )
+	// 	ambientMat = vec4( 212,175,55, 255.)/255;
+	// else if( material < .7 )
+	// 	ambientMat = vec4( 192,192,192, 255.)/255;
+	// else
+	// 	ambientMat = vec4( 200,117,51, 255.)/255;
+// red soils
 	if( material < .4 )
-		ambientMat = vec4( 212,175,55, 255.)/255;
+		ambientMat = vec4( 131.,063.,50., 255.)/255;
 	else if( material < .7 )
-		ambientMat = vec4( 192,192,192, 255.)/255;
+		ambientMat = vec4( 174.,102.,087., 255.)/255;
 	else
-		ambientMat = vec4( 200,117,51, 255.)/255;
+		ambientMat = vec4( 160.,092.,069., 255.)/255;
+
 
 	diffuseMat = ambientMat ;
 	vec4 specMat    = vec4( .8, .8, .8, 1. );

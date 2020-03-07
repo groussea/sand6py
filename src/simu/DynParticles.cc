@@ -364,6 +364,7 @@ void DynParticles::splitMerge( const MeshType & mesh )
 					m_geo.m_centers.col(i) = m_geo.m_centers.col(i) + ev[kMax] * es.eigenvectors().col(kMax).normalized() ;
 
 					m_geo.m_velocities.col(j) = m_geo.m_velocities.col(i) ;
+					m_geo.m_inertia.col(j) = m_geo.m_inertia.col(i) ;
 					m_geo.m_orient.col(j) = m_geo.m_orient.col(i) ;
 					m_affine.col(j) = m_affine.col(i) ;
 					m_inertia(j) = m_inertia(i) ;
@@ -520,6 +521,7 @@ void DynParticles::remove(size_t j)
 		m_geo.m_volumes[j] = m_geo.m_volumes[src] ;
 		m_geo.m_centers.col(j) = m_geo.m_centers.col(src) ;
 		m_geo.m_velocities.col(j) = m_geo.m_velocities.col(src) ;
+		m_geo.m_inertia.col(j) = m_geo.m_inertia.col(src) ;
 		m_geo.m_orient.col(j) = m_geo.m_orient.col(src) ;
 		m_geo.m_frames.col(j) = m_geo.m_frames.col(src) ;
 

@@ -48,7 +48,7 @@ def rund6py(sdictE,**args):
     L=sdictE['L']    
     Lmod=sdictE['Ltot']
     nFrames=sdictE['nFrames']
-    nFrames=22
+    nFrames=220
     
     if (sdictE['camType']=='BW') & (sdictE['Slope']==15. or sdictE['Slope']==20.):
         Lmod=sdictE['Ltot']+0.5
@@ -68,10 +68,10 @@ def rund6py(sdictE,**args):
         ts=0
     else:
         ts=20
-    substeps=10
+    substeps=1
 
 
-    prop='for_comp_test'
+    prop='high_fps2'
     
     if door=='with':
         runName=str('Run_'+format(j,'02.0f')+'_3D_Door_mu='+str(mu)+'_muRigid='+str(muRigid)+'_H_'+format(Hmod*100,'.2f')+'cm_'+sdictE['grainType']+'_Slope='+format(sdictE['Slope'],'.0f')+'deg_delta_mu='+format(delta_mu,'.3f')+'_substeps_'+str(substeps)+'_fracH='+str(fracH)+'_I0_start='+format(I0_start,'.4f')+'_delta_mu_start='+format(delta_mu_start,'.4f')+'_P0='+format(P0,'.4f')+prop)    
@@ -86,7 +86,7 @@ def rund6py(sdictE,**args):
     configFilein=d6Path+'/../scenes/collapse.3d.LHE.Door.conf'
 
     d6py.modifyConfigFile(configFilein,newConfigFile,'box',[Lmod, 0.06,Hmod])
-    d6py.modifyConfigFile(newConfigFile,newConfigFile,'fps',[15])
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'fps',[150])
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'gravity',[+9.81*np.sin(sdictE['Slope']*np.pi/180), 0,-9.81*np.cos(sdictE['Slope']*np.pi/180)])
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'nFrames',[nFrames+ts])
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'randomize',[0])
@@ -141,7 +141,7 @@ t=time.time()
 
 door='with'
 
-for j in range(7,8 ): 
+for j in range(0,1 ): 
 #    plt.close('all')
 #for j in range(0,8):
     

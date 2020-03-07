@@ -15,18 +15,28 @@
 #include "gl/gImage.hh"
 
 #include <Eigen/Eigenvalues>
+#include "geo/LevelSet.hh"
+#include "geo/LevelSet.io.hh"
+
+#include <memory>
 
 namespace d6
 {
 class Offline;
+class LevelSet ;
 
 class GLViewer
 {
 
 public:
-    GLViewer(const Offline &offline,
+    
+    explicit GLViewer(const Offline &offline,
              const int nSamples,
              const int width, const int height);
+        GLViewer(const GLViewer&) = delete;
+        GLViewer& operator=(const GLViewer&) = delete;
+        ~GLViewer() = default;
+
 
     int width() const { return m_width; }
     int height() const { return m_height; }
@@ -45,8 +55,10 @@ public:
     void rotate(float xAmount, float yAmount);
     void translate(float xAmount, float yAmount);
     void zoom(float amount);
-
-    void setFastDraw(bool enable) {
+    void look_at(Eigen::Vector3f lookPos);
+    void cam_pos(Eigen::Vector3f camPos);
+    void setFastDraw(bool enable)
+    {
         m_fastDraw = enable;
     }
     void toggleFastDraw() {
@@ -59,10 +71,26 @@ public:
 
 	GrainRenderer& grainsRenderer() { return m_grainsRenderer ;}
 
+	// const std::vector< std::unique_ptr< LevelSet > >& axes() const
+	// {
+	// 	return m_axes ;
+	// }
+
+
 private:
     Eigen::Vector3f lightPosition() const;
 
     const Offline &m_offline;
+
+    const LevelSet& levelSet() const
+	{ return *m_levelSet ; }
+	const LevelSet* levelSetPtr() const
+	{ return m_levelSet.get() ; }
+
+    std::unique_ptr< LevelSet > m_levelSet ;
+
+	std::vector< std::unique_ptr< LevelSet > >  m_axes ;
+    // std::unique_ptr< LevelSet >  m_axes;
 
     int m_width;
     int m_height;
@@ -71,8 +99,8 @@ private:
 	bool 	 m_enableBending  = true;
 	bool	 m_fastDraw  = false;
 	bool 	 m_drawObjects = true;
-	bool 	 m_drawOrientations  = true ;
-
+	bool 	 m_drawOrientations  = false ;
+    bool     m_drawAxis = true;
 
     Eigen::Vector3f m_lightDirection = Eigen::Vector3f(0.5, 0.5, 1);
 

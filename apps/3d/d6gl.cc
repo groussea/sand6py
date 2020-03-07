@@ -39,11 +39,11 @@ public:
 	Appli(
       d6::Offline& offline, unsigned frame,
 	  	const int nSamples,
-	       const int width, const int height , bool snaps, bool run) :
+	       const int width, const int height , bool snaps, bool run, bool anim) :
 	    m_pWindow( NULL ),
 	    m_offline(offline), m_viewer( offline, nSamples, width, height ),
 	    m_currentFrame( frame ),
-	    m_running( run ), m_snapshotting( snaps ), m_anim(false),
+	    m_running( run ), m_snapshotting( snaps ), m_anim(anim),
 	    m_mouseX( 0 ), m_mouseY( 0 )
 	{
 		assert( ! s_instance ) ;
@@ -62,8 +62,10 @@ public:
 			std::cout << m_offline.particles().count() << std::endl;
 			m_currentFrame = frame ;
 			m_viewer.update_buffers();
+
+			}
 		}
-	}
+	
 
 
 	bool next_frame() {
@@ -81,19 +83,30 @@ public:
 	int run( )
 	{ 
 		m_viewer.frameAll();
-		do {
+		Eigen::Vector3f lookPos;
+		Eigen::Vector3f box = m_offline.box().cast<float>();
+        lookPos[0]=0.4 * box[0];
+        lookPos[1]=0.5 * box[1];
+        lookPos[2]=0.5* box[2];
+		m_viewer.look_at(lookPos);
+        Eigen::Vector3f position;
+        position[0] = 0.5 * box[0];
+        position[1] = 6 * box[1];
+        position[2] = 0.5 * box[2];
+		m_viewer.cam_pos(position);
+
+
+		do
+		{
 			if( m_running && !next_frame() ) {
 				m_running = false ;
 			}
-			if (m_anim ) {
-				m_viewer.rotate(4.,0.5 ) ;
-				m_viewer.zoom(0.995) ;}
+			if (m_anim ) {	
+				m_viewer.rotate(0.1,0.05 ) ;
+				m_viewer.zoom(0.999) ;}
 			m_viewer.draw( ) ;
-
-
-			if( m_running && m_snapshotting ) {
-				m_viewer.snap(m_currentFrame);
-			}
+		if(  m_snapshotting ) {
+				m_viewer.snap(m_currentFrame);}
 
 			glfwSwapBuffers( m_pWindow);
 			glfwPollEvents();
@@ -222,6 +235,19 @@ private:
 		case GLFW_KEY_PERIOD:
 			m_viewer.snap(m_currentFrame ) ;
 			break ;
+		case GLFW_KEY_LEFT:
+			m_viewer.translate(10., 0.);
+			break ;	
+		case GLFW_KEY_RIGHT:
+			m_viewer.translate(-10., 0.);
+			break ;	
+		case GLFW_KEY_UP:
+			m_viewer.translate(0, 10.);
+			break ;	
+		case GLFW_KEY_DOWN:
+			m_viewer.translate(0, -10.);
+			break ;	
+
 		}
 
 	}
@@ -315,7 +341,8 @@ int main( int argc, const char * argv[] )
 	bool colVel = false;
 	bool sn = false;
 	bool run = false;
-	float grainSizeFactor = 1 ;
+	bool anim = false;
+	float grainSizeFactor = 1;
 
 	for( int i = 1 ; i < argc ; ++i )
 	{
@@ -350,11 +377,14 @@ int main( int argc, const char * argv[] )
 				if( ++i == argc ) break ;
 				grainSizeFactor = d6::to_float( argv[i] ) ;
 				break;
-			case 'p':
+			case 'S':
 				sn=true;
 				break;
 			case 'r':
 				run=true;
+				break;
+			case 'A':
+				anim = true;
 				break;
 			}
 		} else {
@@ -370,7 +400,7 @@ int main( int argc, const char * argv[] )
 		width = height * a ;
 	}
 
-	d6::Appli appli( offline, frame, nSamples, width, height , sn, run);
+	d6::Appli appli( offline, frame, nSamples, width, height , sn, run,anim);
 	if (discs)
 		appli.viewer().grainsRenderer().useDiscs();
 	if (colVel)

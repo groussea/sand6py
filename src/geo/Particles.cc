@@ -114,7 +114,7 @@ void Particles::generate(const ScalarExpr &expr, const unsigned nSamples,
 	}
 
 	m_velocities.leftCols( count() ).setZero() ;
-
+	m_inertia.leftCols( count() ).setZero() ;
 	VecS oriCoeffs ;
 	{
 		Mat oriTensor = Mat::Zero() ;
@@ -133,7 +133,7 @@ void Particles::resize(size_t n)
 
 	m_centers.resize( WD, n);
 	m_velocities.resize( WD, n);
-
+	m_inertia.resize( WD, n);
 	m_frames.resize( SD, n);
 	m_orient.resize( SD, n);
 }

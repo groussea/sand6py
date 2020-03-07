@@ -378,10 +378,11 @@ void ShapeRenderer::setup_vaos()
 		std::vector<GLuint> triIndices;
 		genSphere(5, 8, sphereVertices, triIndices);
 		m_sphereVertices.reset(sphereVertices.cols(), sphereVertices.data(), GL_STATIC_DRAW);
-		
+
 		// Bind tri indices to array object
 		gl::ArrayObject::Using vao(m_sphereVertexArrays);
-		m_sphereTriIndices.reset( triIndices.size(), triIndices.data() );
+
+		 m_sphereTriIndices.reset( triIndices.size(), triIndices.data() );
 	}
 
 	{
@@ -438,7 +439,11 @@ void ShapeRenderer::compute_shadow( const LevelSet &ls,
 		sh.bindMVP(depthModelView.data(), depthProjection.data());
 	
 		draw_fake_ball( ls, m_ballDepthShader, m_billboardArrays ) ;
-	} else {
+		} else if( dynamic_cast<const PlaneLevelSet*>(&ls)) {
+
+
+	}
+	else {
 		// Solid shader
 		Eigen::Matrix4f mat ;
 		get_ls_matrix( ls, mat ) ;
@@ -471,19 +476,24 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 		sh.bindMVP(modelView.data(), projection.data()) ;
 
 		draw_fake_ball( ls, m_ballShader, m_billboardArrays ) ;
-	} else {
+	} else if( dynamic_cast<const PlaneLevelSet*>(&ls)) {
+
+
+	}
+	
+	else {
 		Eigen::Matrix4f mat ;
 		get_ls_matrix( ls, mat ) ;
 		Eigen::Matrix4f completeDepthMVP = depthProjection * depthModelView * mat ;
 
-		glColor4f(1., 0., .8, 1);
+		glColor4f(1., 0., .8, 0.2);
 		Eigen::Matrix4f finalModelView = modelView * mat; 
 
 		const Eigen::Vector3f objLight = rotation.inverse() / ls.scale() * (lightPos - translation) ;
 
 			auto dataIt = m_solidData.find(&ls);
 			// Eigen::Vector3f color(0.3, 0.15, 0.1);
-			Eigen::Vector3f color(0.4, 0.15, 0.8);
+			Eigen::Vector3f color(0.2, 0.15, 0.6);
 
 			if (m_solidShader.ok() && dataIt != m_solidData.end())
 			{
@@ -506,5 +516,128 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 
 
 }
+
+void ShapeRenderer::drawLine( const Vec &box, const Eigen::Vector3f& lightPos,
+		bool shadowed, const Texture& depthTexture, 
+		const Eigen::Matrix4f& modelView, const Eigen::Matrix4f& projection,
+		const Eigen::Matrix4f& depthModelView, const Eigen::Matrix4f& depthProjection ) const {
+	LevelSet::Ptr ls = LevelSet::make_cylinder(Scalar(1.));
+
+
+	// const Eigen::Matrix3f rotation = ls.rotation().matrix().cast < GLfloat >() ;
+	// const Eigen::Vector3f translation = ls.origin().cast < GLfloat >() ;
+
+	// if( dynamic_cast<const SphereLevelSet*>(&ls) )
+	// {
+	// 	UsingShader sh( m_ballShader ) ;
+	// 	// Model-view
+	// 	sh.bindMVP(modelView.data(), projection.data()) ;
+
+	// 	draw_fake_ball( ls, m_ballShader, m_billboardArrays ) ;
+	// } else if( dynamic_cast<const PlaneLevelSet*>(&ls)) {
+
+
+	// }
+	
+	// else {
+	// 	Eigen::Matrix4f mat ;
+	// 	get_ls_matrix( ls, mat ) ;
+	// 	Eigen::Matrix4f completeDepthMVP = depthProjection * depthModelView * mat ;
+
+	// 	glColor4f(1., 0., .8, 0.2);
+	// 	Eigen::Matrix4f finalModelView = modelView * mat; 
+
+	// 	const Eigen::Vector3f objLight = rotation.inverse() / ls.scale() * (lightPos - translation) ;
+
+	// 		auto dataIt = m_solidData.find(&ls);
+	// 		// Eigen::Vector3f color(0.3, 0.15, 0.1);
+	// 		Eigen::Vector3f color(0.2, 0.15, 0.6);
+
+	// 		if (m_solidShader.ok() && dataIt != m_solidData.end())
+	// 		{
+	// 			UsingShader sh(m_solidShader);
+	// 			sh.bindMVP(finalModelView.data(), projection.data());
+
+	// 			glUniform3fv(m_solidShader.uniform("light_pos"), 1, objLight.data());
+	// 			glUniform3fv(m_solidShader.uniform("ambient"), 1, color.data());
+
+	// 			UsingTexture tx(depthTexture);
+	// 			if (shadowed)
+	// 			{
+	// 				tx.bindUniform(m_solidShader.uniform("depth_texture"));
+	// 				glUniformMatrix4fv(m_solidShader.uniform("depth_mvp"), 1, GL_FALSE, completeDepthMVP.data());
+	// 			}
+
+	// 			dataIt->second.draw();
+
+
+
+
+	// const MeshLevelSet *mesh = dynamic_cast<const MeshLevelSet *>(&line);
+	// MeshDrawData dataL;
+	// Eigen::Matrix3Xf cylVertices, cylNormals, cylUVs;
+	// std::vector<GLuint> triIndices;
+	// genBox(Vec3(1.,1.,1.),cylVertices, cylNormals, cylUVs,triIndices );
+	// gl::ArrayObject::Using vao(dataL.vertexArrays);
+	// glDrawElements(GL_TRIANGLES, triIndices.size(), GL_UNSIGNED_INT, 0);
+	// dataL.vertices.reset(cylVertices.cols(), cylVertices.data(), GL_STATIC_DRAW);
+	// dataL.normals.reset(cylNormals.cols(), cylNormals.data(), GL_STATIC_DRAW);
+	// dataL.uvs.reset(cylUVs.cols(), cylUVs.data(), GL_STATIC_DRAW);
+	// dataL.triIndices.reset(triIndices.size(), triIndices.data());
+
+	// gl::VertexAttribPointer vap(dataL.vertices, m_solidShader.attribute("vertex"));
+	// gl::VertexAttribPointer nap(dataL.normals, m_solidShader.attribute("normal"));
+	// gl::VertexAttribPointer uap(dataL.uvs, m_solidShader.attribute("uv"));
+
+	// Eigen::Matrix4f mat ;
+	// Eigen::Vector3f translation= Eigen::Vector3f(0, 0, 1);
+	// Eigen::Matrix3f rotation;
+	// rotation.setIdentity();
+	// mat.setIdentity();
+	// Scalar scale = 10.;
+	// mat.block<3,3>(0,0) = rotation * scale ;
+	// mat.block<3,1>(0,3) = Eigen::Vector3f(0, 0, 1) ;
+	// Eigen::Matrix4f completeDepthMVP = depthProjection * depthModelView * mat ;
+
+	// glColor4f(1., 0., .8, 0.2);
+	// Eigen::Matrix4f finalModelView = modelView * mat; 
+
+	// const Eigen::Vector3f objLight = rotation.inverse() / scale * (lightPos - translation) ;
+
+	//  Eigen::Vector3f color(0.3, 0.15, 0.1);
+
+	// if (m_solidShader.ok())
+	// 		{
+	// 			UsingShader sh(m_solidShader);
+	// 			sh.bindMVP(finalModelView.data(), projection.data());
+
+	// 			glUniform3fv(m_solidShader.uniform("light_pos"), 1, objLight.data());
+	// 			glUniform3fv(m_solidShader.uniform("ambient"), 1, color.data());
+
+	// 			UsingTexture tx(depthTexture);
+	// 			if (shadowed)
+	// 			{
+	// 				tx.bindUniform(m_solidShader.uniform("depth_texture"));
+	// 				glUniformMatrix4fv(m_solidShader.uniform("depth_mvp"), 1, GL_FALSE, completeDepthMVP.data());
+	// 			}
+
+	// 			dataL.draw();
+	// 		}
+
+			
+	// 	UsingShader sh( m_ballShader ) ;
+	// 	// Model-view
+	// 	sh.bindMVP(modelView.data(), projection.data()) ;
+
+	// // const Eigen::Vector3f translation = box;
+
+	// glUniform1f( m_ballShader.uniform("radius"), 10. ) ;
+	// // glUniformMatrix3fv( shader.uniform("rotation"), 1, GL_FALSE, rotation.data() ) ;
+	// glUniform3fv( m_ballShader .uniform("center"), 1, Eigen::Vector3f(0, 0, 1).data() ) ;
+	
+	// // glLin(40.0f);
+	// 	gl::ArrayObject::Using vao(m_billboardArrays);
+	// 	glDrawArrays( GL_LINES, 0, 6) ;
+		}
 
 } // d6

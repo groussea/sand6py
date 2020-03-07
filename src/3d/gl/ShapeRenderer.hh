@@ -49,6 +49,10 @@ public:
 		bool shadowed, const Texture& depthTexture,
 		const Eigen::Matrix4f& modelView, const Eigen::Matrix4f& projection, 
 		const Eigen::Matrix4f& depthModelView, const Eigen::Matrix4f& depthProjection ) const ;
+	void drawLine(const Vec &box, const Eigen::Vector3f &lightPos,
+		bool shadowed, const Texture& depthTexture,
+		const Eigen::Matrix4f& modelView, const Eigen::Matrix4f& projection, 
+		const Eigen::Matrix4f& depthModelView, const Eigen::Matrix4f& depthProjection ) const ;
 
 
 	const gl::VertexBuffer3f& sphereVertices() const
