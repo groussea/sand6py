@@ -119,7 +119,7 @@ void Sampler::compute_absolute()
 //	std::cerr << particles.count() << " vs " << m_particlesCount << std::endl ;
 
     const Index n = count() ;
-
+    
 #pragma omp parallel for
     for( Index i = 0 ; i < n ; ++i) {
         const unsigned pid = m_particleIds[i] ;
@@ -161,8 +161,13 @@ void Sampler::compute_absolute()
         }
 
         if( m_visibility(i) >= 0 ) {
+           
             if ( m_mode == VelocityCut ) {
-                m_visibility(i) = particles.inertia().col(pid).norm();
+                Scalar velocity =particles.velocities().col(pid).norm()*m_offline.config().units().toSI(Units::Velocity);
+                m_visibility(i) = std::min(velocity,2.)/10;
+
+                // Scalar inertia = particles.inertia().col(pid).norm() * (m_offline.config().grainDiameter * std::sqrt(m_offline.config().volMass / 0.6));
+                // m_visibility(i) = std::min(inertia,0.1);
             } else {
                 m_visibility(i) = std::max( 0., std::min( 1., 1. - grains.fraction(pos_loc) ) ) ;
             }

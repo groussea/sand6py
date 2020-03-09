@@ -90,11 +90,11 @@ public:
         lookPos[2]=0.5* box[2];
 		m_viewer.look_at(lookPos);
         Eigen::Vector3f position;
-        position[0] = 0.5 * box[0];
-        position[1] = 6 * box[1];
-        position[2] = 0.5 * box[2];
-		m_viewer.cam_pos(position);
-
+        position[0] = 0.7 * box[0];
+        position[1] = -3. * box[1];
+        position[2] = 0.4 * box[2];
+		m_viewer.set_cam_pos(position);
+		m_viewer.zoom(0.7) ;
 
 		do
 		{
@@ -260,6 +260,8 @@ private:
 		else
 			m_viewer.rotate(x - m_mouseX, y - m_mouseY);
 		m_mouseX = x ; m_mouseY = y ;
+		Eigen::Vector3f const  pos = m_viewer.get_cam_pos();
+		std::cout << "pos_cam: "<< pos << std::endl;
 	}
 
 	void process_mouse_click( int button, int action )
@@ -278,6 +280,8 @@ private:
 			glfwSetCursorPosCallback( m_pWindow, NULL ) ;
 			m_viewer.setFastDraw(false);
 		}
+
+
 
 	}
 
@@ -333,8 +337,8 @@ int main( int argc, const char * argv[] )
 	const char * base_dir = "out" ;
 	unsigned frame = 0 ;
 
-	unsigned width  = 1000 ;
-	unsigned height = 1000 ;
+	unsigned width  = 1600 ;
+	unsigned height = 900 ;
 	unsigned nSamples = 0;
 
 	bool discs  = false ;
@@ -386,6 +390,7 @@ int main( int argc, const char * argv[] )
 			case 'A':
 				anim = true;
 				break;
+			
 			}
 		} else {
 			base_dir = argv[i] ;

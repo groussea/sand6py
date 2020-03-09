@@ -35,6 +35,7 @@ namespace d6 {
 	STAT_FIELD( nDualNodes				, unsigned		, "duaNds"  ) \
 	STAT_FIELD( nCouplingNodes			, unsigned		, "cplNds" ) \
 	STAT_FIELD( maxVelocity				, Scalar		, "maxVel"	) \
+	STAT_FIELD( maxInertia				, Scalar		, "maxIner"	) \
 	STAT_FIELD( frictionError			, Scalar		, "slvErr"	) \
 	STAT_FIELD( frictionIterations		, unsigned		, "slvIter"	) \
 	STAT_FIELD( assemblyTime			, Scalar		, "asmTime"	) \

@@ -133,7 +133,7 @@ void GrainRenderer::init()
 	switch( m_sampler.mode() ){
 	case Sampler::VelocityCut:
 		m_grainsShader.load("grains_vertex","grains_vel_fragment") ;
-		m_depthShader.load("grains_depth_vertex","grain_depth_fragment") ;
+		m_depthShader.load("grain_depth_vertex","grain_depth_fragment") ;
 		break ;
 	case Sampler::Discs:
 		m_grainsShader.load("coins_vertex","coins_fragment") ;

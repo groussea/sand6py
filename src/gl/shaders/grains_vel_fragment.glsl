@@ -110,7 +110,7 @@ void main (void)
 	ambientMat += mat_1*vec4( vec3(0.0, 0.8, 0.0), 1. );
 	ambientMat += mat_2*vec4( vec3(0.0, 0.0, 0.8), 1. );
 
-	ambientMat = colormap(vis / 3);
+	ambientMat = colormap(vis*10. );
 	ambientMat *= 1 + 0.25 * (material - 0.5);
 	//    diffuseMat = 1.1 * ambientMat;
 

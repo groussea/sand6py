@@ -133,7 +133,7 @@ void Particles::resize(size_t n)
 
 	m_centers.resize( WD, n);
 	m_velocities.resize( WD, n);
-	m_inertia.resize( WD, n);
+	m_inertia.resize( n);
 	m_frames.resize( SD, n);
 	m_orient.resize( SD, n);
 }

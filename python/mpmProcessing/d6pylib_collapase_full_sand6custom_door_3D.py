@@ -48,7 +48,7 @@ def rund6py(sdictE,**args):
     L=sdictE['L']    
     Lmod=sdictE['Ltot']
     nFrames=sdictE['nFrames']
-    nFrames=220
+    nFrames=240
     
     if (sdictE['camType']=='BW') & (sdictE['Slope']==15. or sdictE['Slope']==20.):
         Lmod=sdictE['Ltot']+0.5
@@ -71,7 +71,7 @@ def rund6py(sdictE,**args):
     substeps=1
 
 
-    prop='high_fps2'
+    prop='high_fps_no_merge_no_split'
     
     if door=='with':
         runName=str('Run_'+format(j,'02.0f')+'_3D_Door_mu='+str(mu)+'_muRigid='+str(muRigid)+'_H_'+format(Hmod*100,'.2f')+'cm_'+sdictE['grainType']+'_Slope='+format(sdictE['Slope'],'.0f')+'deg_delta_mu='+format(delta_mu,'.3f')+'_substeps_'+str(substeps)+'_fracH='+str(fracH)+'_I0_start='+format(I0_start,'.4f')+'_delta_mu_start='+format(delta_mu_start,'.4f')+'_P0='+format(P0,'.4f')+prop)    
@@ -118,7 +118,7 @@ def rund6py(sdictE,**args):
 
     d6py.d6run(d6OutFolder,newConfigFile)
     
-    d6py.d62vtk(d6OutFolder,allF=True,particles=True)
+    # d6py.d62vtk(d6OutFolder,allF=True,particles=True)
 
 
 
@@ -141,15 +141,15 @@ t=time.time()
 
 door='with'
 
-for j in range(0,1 ): 
+for j in range(7,8 ): 
 #    plt.close('all')
 #for j in range(0,8):
     
     sE=lExp[j] #Selected exeperiment
     sdictE=dictExp[sE]
     for I0_start in [0.004]:
-        for dmu in [-0.05,0.,0.02]:
-                rund6py(sdictE,I0_start=I0_start,delta_mu=0.,delta_mu_start=0,mu=np.round(sdictE['mu']+dmu,2))
+        for dmu in [0.,0.1]:
+                rund6py(sdictE,I0_start=I0_start,delta_mu=0.,delta_mu_start=0.1-dmu,mu=np.round(sdictE['mu']-dmu,2))
     
 #%%
 

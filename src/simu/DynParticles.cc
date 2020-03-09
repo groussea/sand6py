@@ -34,7 +34,7 @@
 
 #include <random>
 
-#define SPLIT
+// #define SPLIT
 // #define MERGE
 
 //#define GRAD_FROM_VEL
@@ -167,8 +167,10 @@ void DynParticles::update(const Config &config, const Scalar dt, const Phase &ph
 		// Inertia
 		{
 			const Scalar DuT = ( Du - 1./WD * Du.trace() * Mat::Identity() ).norm()  ;
-			m_inertia(i) = DuT / std::sqrt( std::max( 1.e-16, phase.stresses(d0loc)[0] ) ) ;
-			m_pressurePowerFouth(i) =   std::max( 1.e-16, std::pow( phase.stresses(d0loc)[0],0.25))  ;
+			m_inertia(i) = DuT / std::sqrt( std::max( 1.e-19, phase.stresses(d0loc)[0] ) ) ;
+			m_geo.m_inertia[i] = DuT / std::sqrt( std::max( 1.e-19, phase.stresses(d0loc)[0] ) ) ;
+			m_pressure(i) =  std::max( 1.e-19, phase.stresses(d0loc)[0] ) ;
+			m_DuT(i) =   DuT  ;
 		}
 
 		// Frame
@@ -364,7 +366,7 @@ void DynParticles::splitMerge( const MeshType & mesh )
 					m_geo.m_centers.col(i) = m_geo.m_centers.col(i) + ev[kMax] * es.eigenvectors().col(kMax).normalized() ;
 
 					m_geo.m_velocities.col(j) = m_geo.m_velocities.col(i) ;
-					m_geo.m_inertia.col(j) = m_geo.m_inertia.col(i) ;
+					m_geo.m_inertia[j] = m_geo.m_inertia[i] ;
 					m_geo.m_orient.col(j) = m_geo.m_orient.col(i) ;
 					m_affine.col(j) = m_affine.col(i) ;
 					m_inertia(j) = m_inertia(i) ;
@@ -521,7 +523,7 @@ void DynParticles::remove(size_t j)
 		m_geo.m_volumes[j] = m_geo.m_volumes[src] ;
 		m_geo.m_centers.col(j) = m_geo.m_centers.col(src) ;
 		m_geo.m_velocities.col(j) = m_geo.m_velocities.col(src) ;
-		m_geo.m_inertia.col(j) = m_geo.m_inertia.col(src) ;
+		m_geo.m_inertia[j] = m_geo.m_inertia[src] ;
 		m_geo.m_orient.col(j) = m_geo.m_orient.col(src) ;
 		m_geo.m_frames.col(j) = m_geo.m_frames.col(src) ;
 
@@ -538,7 +540,8 @@ void DynParticles::resize( size_t n )
 {
 	m_affine.resize( WD*WD, n );
 	m_inertia.resize( 1, n );
-	m_pressurePowerFouth.resize( 1, n );
+	m_pressure.resize(1, n);
+	m_DuT.resize( 1, n );
 	m_cohesion.resize( 1, n );
 }
 

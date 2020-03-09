@@ -18,6 +18,8 @@
 #include "geo/LevelSet.hh"
 #include "geo/LevelSet.io.hh"
 
+#include "visu/Axes.hh"
+
 #include <memory>
 
 namespace d6
@@ -56,7 +58,8 @@ public:
     void translate(float xAmount, float yAmount);
     void zoom(float amount);
     void look_at(Eigen::Vector3f lookPos);
-    void cam_pos(Eigen::Vector3f camPos);
+    void set_cam_pos(Eigen::Vector3f camPos);
+    Eigen::Vector3f  get_cam_pos() const;
     void setFastDraw(bool enable)
     {
         m_fastDraw = enable;
@@ -71,10 +74,7 @@ public:
 
 	GrainRenderer& grainsRenderer() { return m_grainsRenderer ;}
 
-	// const std::vector< std::unique_ptr< LevelSet > >& axes() const
-	// {
-	// 	return m_axes ;
-	// }
+
 
 
 private:
@@ -89,7 +89,7 @@ private:
 
     std::unique_ptr< LevelSet > m_levelSet ;
 
-	std::vector< std::unique_ptr< LevelSet > >  m_axes ;
+	std::vector< Axes >  m_axes ;
     // std::unique_ptr< LevelSet >  m_axes;
 
     int m_width;

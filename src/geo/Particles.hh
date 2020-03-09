@@ -103,7 +103,7 @@ public:
 	const typename Data< 1  >::Type&    volumes() const { return    m_volumes ; }
 	const typename Data< WD >::Type&    centers() const { return    m_centers ; }
 	const typename Data< WD >::Type& 	velocities() const { return m_velocities ; }
-	const typename Data< WD >::Type& 	inertia() const { return m_inertia ; }
+	const typename Data< 1 >::Type& 	inertia() const { return m_inertia ; }
 	const typename Data< SD >::Type&     frames() const { return     m_frames ; }
 	const typename Data< SD >::Type&     orient() const { return     m_orient ; }
 
@@ -112,11 +112,11 @@ private:
 
 	std::size_t m_count ;
 
-	typename Data< 1  >::Type m_volumes ;
+	typename Data< 1 >::Type m_volumes ;
 
 	typename Data< WD >::Type m_centers ;
 	typename Data< WD >::Type m_velocities ;
-	typename Data< WD >::Type m_inertia ;
+	typename Data< 1 >::Type m_inertia ;
 	typename Data< SD >::Type m_frames ;
 	typename Data< SD >::Type m_orient ; // Aniso
 

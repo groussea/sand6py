@@ -95,7 +95,8 @@ void Simu::run()
 			m_scenario->update( *this, t, m_stats.delta_t ) ;
 
 			adapt_meshes();
-
+			m_stats.maxInertia = m_particles.geo().inertia().lpNorm< Eigen::Infinity >() ;
+			Log::Debug() << "Max particle inertia: " << m_particles.geo().inertia().lpNorm< Eigen::Infinity >() << std::endl ;
 			// Dump particles at last substep of each frame
 			if( m_config.output && substeps == s+1 ) {
 				dump_particles( frame+1 ) ;
@@ -108,8 +109,9 @@ void Simu::run()
 
 			// Log max particle velocity (useful for adaptative timestep )
 			m_stats.maxVelocity = m_particles.geo().velocities().leftCols(m_particles.count()).lpNorm< Eigen::Infinity >() ;
+			m_stats.maxInertia = m_particles.geo().inertia().leftCols(m_particles.count()).lpNorm< Eigen::Infinity >() ;
 			Log::Debug() << "Max particle vel: " << m_stats.maxVelocity << std::endl ;
-
+			Log::Debug() << "Max particle inertia: " << m_stats.maxInertia << std::endl ;
 			m_stats.dump();
 		}
 

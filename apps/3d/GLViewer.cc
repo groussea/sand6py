@@ -38,7 +38,7 @@ void GLViewer::init()
     glGetIntegerv(GL_SAMPLE_BUFFERS, &bufs);
     glGetIntegerv(GL_SAMPLES, &samples);
     Log::Debug() << "Using " << bufs << " buffers and " << samples << " samples" << std::endl;
-    glClearColor(0.94f, 0.98f, 0.94f, 1.f);
+    glClearColor(0.96f, 0.99f, 0.96f, 1.f);
     frameAll();
 
 
@@ -71,11 +71,27 @@ void GLViewer::init()
 	}
 
 	update_buffers();
+    Eigen::Vector3f box = m_offline.box().cast<float>();
+    Scalar one_meter = m_offline.config().units().fromSI(Units::Length);
+    // Create axes
+    Vec3 origin = Vec3(box[0]/4, box[1], box[2]/4);
+    Scalar scaleA =  Scalar(0.3);
+    Scalar height = Scalar(one_meter*0.06/scaleA );
 
-// Create axes
-    LevelSet::Ptr line = LevelSet::make_cylinder(Scalar(1.));
-    m_levelSet = std::move(line);
-    // m_axes.emplace_back(m_levelSet);
+    LevelSet::Ptr line1 = LevelSet::make_cylinder(height);
+    line1->scale(scaleA).set_origin(origin);
+    line1->set_origin(origin + Vec3(0., 0., height * scaleA /2.));
+    m_axes.emplace_back(line1);
+    LevelSet::Ptr line2 = LevelSet::make_cylinder(height);
+    line2->rotate(Vec(1, 0, 0), M_PI_2);
+    line2->scale(scaleA).set_origin(origin);
+    line2->set_origin(origin + Vec3(0., height * scaleA /2., 0.));
+    m_axes.emplace_back(line2);
+    LevelSet::Ptr line3 = LevelSet::make_cylinder(height);
+    line3->rotate(Vec(0, 1, 0), M_PI_2);
+    line3->scale(scaleA).set_origin(origin);
+    line3->set_origin(origin + Vec3(height * scaleA /2., 0., 0.));
+    m_axes.emplace_back(line3);
     // LevelSet::Ptr m_axes = LevelSet::make_sphere();
 }
 
@@ -193,9 +209,11 @@ void GLViewer::update_vaos()
     for( const LevelSet::Ptr& ls: m_offline.levelSets() ) {
         m_shapeRenderer.setup_buffers(*ls, m_offline.box().cast<float>());
     }
-    // for( const LevelSet::Ptr& ls: axes() ) {
-    //     m_shapeRenderer.setup_buffers(*ls, m_offline.box().cast<float>());
-    // }
+
+
+    for( const Axes & ax: m_axes ) {
+        m_shapeRenderer.setup_buffers(ax.levelSet(), m_offline.box().cast<float>());
+    }
 
 }
 
@@ -320,7 +338,7 @@ void GLViewer::draw() const
 		}
 
 		if(1){
-			const Scalar pixelSize = false /*cam.type() == qglviewer::Camera::ORTHOGRAPHIC*/
+			const Scalar pixelSize = true /*cam.type() == qglviewer::Camera::ORTHOGRAPHIC*/
 			        ? 0
 			        : m_height / std::tan(viewCam.fieldOfView / 2)  ;
 
@@ -341,18 +359,24 @@ void GLViewer::draw() const
 
     if(m_drawAxis) {
 
-           m_shapeRenderer.drawLine(m_offline.box(), lightPosition(), shadowed, m_depthTexture,
+
+    for(const Axes & ax: m_axes ) {
+        m_shapeRenderer.draw(ax.levelSet(), m_offline.box(), lightPosition(), shadowed, m_depthTexture,
                                  viewCam.viewMatrix, viewCam.projectionMatrix, depthCam.viewMatrix, depthCam.projectionMatrix);
+    }
 
-           glLineWidth(40.0f);
-           UsingShader sh(m_pointShader);
+        //    m_shapeRenderer.drawLine(m_offline.box(), lightPosition(), shadowed, m_depthTexture,
+        //                          viewCam.viewMatrix, viewCam.projectionMatrix, depthCam.viewMatrix, depthCam.projectionMatrix);
 
-           // Model-view
-           sh.bindMVP(m_camera.viewMatrix.data(), m_camera.projectionMatrix.data());
+        //    glLineWidth(40.0f);
+        //    UsingShader sh(m_pointShader);
 
-           //Vertices
-           gl::ArrayObject::Using vao(m_pointArrays);
-           glDrawArrays(GL_LINE, 0, m_centers.size());
+        //    // Model-view
+        //    sh.bindMVP(m_camera.viewMatrix.data(), m_camera.projectionMatrix.data());
+
+        //    //Vertices
+        //    gl::ArrayObject::Using vao(m_pointArrays);
+        //    glDrawArrays(GL_LINE, 0, m_centers.size());
            // const Eigen::Vector3f translation ;
 
            // glUniform1f( shader.uniform("radius"), ls.scale() ) ;
@@ -394,7 +418,7 @@ void GLViewer::snap(unsigned m_currentFrame)
 
         //Snaps
 	FileInfo snap_dir( FileInfo( m_offline.base_dir() ).filePath("snaps") ) ;
-	FileInfo snap_file( snap_dir.filePath("qgl-%1.bmp") ) ;
+	FileInfo snap_file( snap_dir.filePath("vel-%1.bmp") ) ;
 	snap_file.makePath() ;
 
 	std::stringstream num ;
@@ -474,11 +498,16 @@ void GLViewer::look_at(Eigen::Vector3f lookPos)
     m_camera.apply();
 }
 
-void GLViewer::cam_pos(Eigen::Vector3f camPos)
+void GLViewer::set_cam_pos(Eigen::Vector3f camPos)
 {
  
     m_camera.lookAt(camPos, m_camera.target , Eigen::Vector3f(0, 0, 1));
     m_camera.apply();
+}
+
+Eigen::Vector3f  GLViewer::get_cam_pos() const
+{
+    return m_camera.position;
 }
 
 
