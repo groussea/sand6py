@@ -55,8 +55,8 @@ def rund6py(sdictE,**args):
 
     delta_mu=args.get('delta_mu',0)
     I0=args.get('I0',0.3)
-    I0_start=args.get('I0_start',0.005)
-    delta_mu_start=args.get('delta_mu_start',0.05)
+    I0_start=args.get('I0_start',0.000)
+    delta_mu_start=args.get('delta_mu_start',0.00)
     muRigid=args.get('muRigid',0.18)
     mu=args.get('mu',sdictE['mu'])
     

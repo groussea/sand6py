@@ -61,7 +61,7 @@ def extractInfoVTKprimalfields(filename):
 
         #Convert d_phi into Numpy Array
     np_d_phi=vtk_to_numpy(pdata.GetArray(pdata.GetArrayName(2)))   
-
+    np_mu=None
     if N_array>3:
                 #convert forces
         np_forces=vtk_to_numpy(pdata.GetArray('forces')) 
