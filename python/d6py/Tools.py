@@ -10,6 +10,7 @@ import numpy as np
 import json
 import csv
 import vtk
+from d6py import d6_python 
 from vtk.util.numpy_support import vtk_to_numpy
 
 
@@ -39,7 +40,6 @@ def extractInfoVTK(filename):
     
     return npvelArr, npvolArr, nppointsArr
 
-filename='/media/gauthier/Gauthier_Backup/TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/outputs/Tests/Run_07_3D_Door_muRigid=0.18_H_14.25cm_glass-beads-0.47mm_Slope=15deg_delta_mu=0.000_substeps_10_fracH=0.8_I0_start=0.0050_delta_mu_start=0.0500_P0=1.0000fps=15/vtk/primal-fields-0.vtk'
 def extractInfoVTKprimalfields(filename):  
     reader = vtk.vtkDataSetReader()
     #required to read all file datas
@@ -217,6 +217,7 @@ def fromVTKtoscaledDataParticles3D(VTKfilename,dConfig):
     
     pointsp=np.zeros_like(points)
     pointsp[:,0]=points[:,0]-Orx
+    pointsp[:,1]=points[:,1]
     pointsp[:,2]=points[:,2]-Ory   
 
 
@@ -471,6 +472,19 @@ def whereSand6OutFromParms(listRuns,**params):
         
     return listRunsOut, listDictOut
 
+def whereSand6OutFromFolder2(listRuns,folder):
+    listRunsOut=listRuns.copy()
+    for d in listRunsOut:
+        if d.dConfig['folder']==folder:
+            Run=d
+
+    print('')
+    print('Run ' + Run.dConfig['folder'])
+#        for keys,values in r.dConfig.items():
+#            print(keys,':',values)
+        
+    return Run
+
 
 #%%            
 
@@ -489,15 +503,23 @@ class NumericalRun():
         else:
             self.Ratio, self.Orx, self.Ory=RatioAndOrigin(self.dConfig,dim=2)
             self.Ldoor=float(self.dConfig['box'][1])*0.9
-#        if doorFolder is not None:
-#            self.headerDatas,self.datas=readDoorFile(doorFolder+'/Run_O'+str(runNumber)+'_door.txt') 
-#            self.datas[:,3]=self.datas[:,3]-self.Orx
-#            self.datas[:,5]=self.datas[:,5]-self.Ory
+        try:
+            self.headerDatas, self.datas = readDoorFile(d6OutFolder + '/door.txt')
+            if dimSim==3:
+                self.datas[:,2]=self.datas[:,2]-self.Orx
+                self.datas[:, 4] = self.datas[:, 4] - self.Ory
+            if dimSim==2:
+                self.datas[:,3]=self.datas[:,3]-self.Orx
+                self.datas[:, 4] = self.datas[:, 4] - self.Ory            
+        except:
+            print('no door file')
+            
         self.d6OutFolder=d6OutFolder
         self.dimSim=dimSim
         self.H=self.Ldoor
         self.vecxMax=np.array([2,2.5,3,3,2.5,3,4,6])*self.H
-
+        self.resY=self.dConfig['res'][1]
+        self.nYplot=int(self.resY/2)
 #        self.runNumber=runNumber
 #        self.dConfig['runNunmber']=runNumber
 #        self.xmax=self.vecxMax[self.runNumber]
@@ -505,24 +527,41 @@ class NumericalRun():
         self.strainRateCalculated=False
         self.pressureCalculated=False
         self.velocityCalculated=False
+        self.pointsLayer=[]
         
     def loadVTK(self, ifile):
         self.ifile=ifile
         self.strainRateCalculated=False
         self.pressureCalculated=False
         self.velocityCalculated=False
+        self.pointsLayer=[]
         VTKfilename_part = self.d6OutFolder+'/vtk/particles-'+ str(ifile) +'.vtk'  
         VTKfilename= self.d6OutFolder+'/vtk/primal-fields-'+ str(ifile) +'.vtk' 
-        if self.dimSim==3: 
-           [self.grid_x, self.grid_y, self.grid_z], [self.velx,self.vely,self.velz],self.reshaped_Phi, self.np_d_phi_reshaped, self.np_stresses_reshaped, self.np_forces_reshaped=fromVTKtoscaledDataFields3D(VTKfilename,self.dConfig)   
-           self.pointsp,self.vel,self.vol =fromVTKtoscaledDataParticles3D(VTKfilename_part,self.dConfig)
+        if self.dimSim == 3:
+            try:
+                [self.grid_x, self.grid_y, self.grid_z], [self.velx,self.vely,self.velz],self.reshaped_Phi, self.np_d_phi_reshaped, self.np_stresses_reshaped, self.np_forces_reshaped=fromVTKtoscaledDataFields3D(VTKfilename,self.dConfig)   
+            except:
+                print('[info] Loading vtk files fail, trying to generate vtk')
+                d6_python.d62vtk(self.d6OutFolder+'/',frame = ifile, particles = True)
+                [self.grid_x, self.grid_y, self.grid_z], [self.velx,self.vely,self.velz],self.reshaped_Phi, self.np_d_phi_reshaped, self.np_stresses_reshaped, self.np_forces_reshaped=fromVTKtoscaledDataFields3D(VTKfilename,self.dConfig)   
+            self.pointsp,self.vel,self.vol =fromVTKtoscaledDataParticles3D(VTKfilename_part,self.dConfig)
+            self.dx=np.absolute(self.grid_x[0,0,0]-self.grid_x[1,0,0])
+            self.dy=np.absolute(self.grid_y[0,0,0]-self.grid_y[0,1,0])
+            self.dz=np.absolute(self.grid_z[0,0,0]-self.grid_z[0,0,1])
+            self.extentR=np.array([self.grid_x[0,0,0]-self.dx/2,self.grid_x[-1,0,0]+self.dx/2,self.grid_z[0,0,0]-self.dz/2,self.grid_z[0,0,-1]+self.dz/2])/self.scaleLength
 
-        if self.dimSim==2:
-            [self.grid_x, self.grid_y], [self.velx,self.vely],self.reshaped_Phi,  self.np_d_phi_reshaped, self.np_stresses_reshaped, self.np_forces_reshaped=fromVTKtoscaledDataFields2D(VTKfilename,self.dConfig)
+        if self.dimSim == 2:
+            try:
+                [self.grid_x, self.grid_y], [self.velx,self.vely],self.reshaped_Phi,  self.np_d_phi_reshaped, self.np_stresses_reshaped, self.np_forces_reshaped=fromVTKtoscaledDataFields2D(VTKfilename,self.dConfig)
+            except:
+                print('[info] Loading vtk files fail, trying to generate vtk')
+                d6_python.d62vtk(self.d6OutFolder+'/',frame = ifile, particles = True)
+                [self.grid_x, self.grid_y], [self.velx,self.vely],self.reshaped_Phi,  self.np_d_phi_reshaped, self.np_stresses_reshaped, self.np_forces_reshaped=fromVTKtoscaledDataFields2D(VTKfilename,self.dConfig)
             self.pointsp,self.vel,self.vol =fromVTKtoscaledDataParticles2D(VTKfilename_part,self.dConfig)
-            self.extentR=np.array([self.grid_x[0,0]-self.dx/2,self.grid_x[-1,0]+self.dx/2,self.grid_y[0,0]-self.dy/2,self.grid_y[0,-1]+self.dy/2])/self.scaleLength
             self.dx=np.absolute(self.grid_x[0,0]-self.grid_x[1,0])
             self.dy=np.absolute(self.grid_y[0,0]-self.grid_y[0,1])
+            self.extentR=np.array([self.grid_x[0,0]-self.dx/2,self.grid_x[-1,0]+self.dx/2,self.grid_y[0,0]-self.dy/2,self.grid_y[0,-1]+self.dy/2])/self.scaleLength
+
         self.phiT=np.flipud(self.reshaped_Phi.T)    
         
 
@@ -533,10 +572,22 @@ class NumericalRun():
 
     def plotContour(self,ax,**args):
         if self.dimSim==3: 
-            self.CS=ax.contour(self.grid_x[:,6,:]/self.scaleLength,self.grid_z[:,6,:]/self.scaleLength,self.reshaped_Phi[:,6,:],**args)
+            self.CS=ax.contour(self.grid_x[:,self.nYplot,:]/self.scaleLength,self.grid_z[:,self.nYplot,:]/self.scaleLength,self.reshaped_Phi[:,self.nYplot,:],**args)
         if self.dimSim==2:
             self.CS=ax.contour(self.grid_x/self.scaleLength,self.grid_y/self.scaleLength,self.reshaped_Phi,**args)
+
+    def plotPhi(self,ax,**args):
+        if self.dimSim==2:
+            return ax.imshow(self.phiT,extent=self.extentR,**args)
+        if self.dimSim==3:
+            return ax.imshow(self.phiT[:,self.nYplot,:],extent=self.extentR,**args)        
  
+    
+    def generateDepthProfile(self):
+        self.h=np.zeros(len (self.grid_x[:,self.nYplot,0]))
+        for i in range(len (self.grid_x[:,self.nYplot,0])):
+            self.h[i]=self.grid_z[0,0,np.where(self.reshaped_Phi[i,self.nYplot,:]>0.5)[0][-1]]
+            
    
     
     def calculatePressure(self):
@@ -583,17 +634,17 @@ class NumericalRun():
     def plotVelocity(self,ax,**args):       
         if self.velocityCalculated==False:
             self.calculateNormVelocity()
-        self.IMvel=np.flipud(self.normV.T)
+        self.IMvel = np.flipud(self.normV.T)*self.phiT
         if self.dimSim==2:
-            ax.imshow(self.IMvel*(self.phiT>0.5),extent=self.extentR,**args)
+            return ax.imshow(self.IMvel,extent=self.extentR,**args)
         if self.dimSim==3:
-            ax.imshow(self.IMvel[:,6,:]*(self.phiT[:,6,:]>0.5),extent=self.extentR,**args)        
+            return ax.imshow(self.IMvel[:,self.nYplot,:],extent=self.extentR,**args)        
     
     def plotContourVel(self,ax,**args):
         if self.velocityCalculated==False:
             self.calculateNormVelocity()
         if self.dimSim==3: 
-            self.CS=ax.contour(self.grid_x[:,6,:]/self.scaleLength,self.grid_z[:,6,:]/self.scaleLength,self.normV[:,6,:],**args)
+            self.CS=ax.contour(self.grid_x[:,self.nYplot,:]/self.scaleLength,self.grid_z[:,self.nYplot,:]/self.scaleLength,self.normV[:,self.nYplot,:],**args)
         if self.dimSim==2:
             self.CS=ax.contour(self.grid_x/self.scaleLength,self.grid_y/self.scaleLength,self.normV,**args)
    
@@ -604,9 +655,9 @@ class NumericalRun():
             self.calculateStrainRate()
         self.IMgamma=np.flipud(self.gammaN.T)
         if self.dimSim==2:
-            ax.imshow(self.IMgamma*(self.phiT>0.5),extent=self.extentR,**args)
+            return ax.imshow(self.IMgamma*(self.phiT>0.5),extent=self.extentR,**args)
         if self.dimSim==3:
-            ax.imshow(self.IMgamma[:,6,:]*(self.phiT[:,6,:]>0.5),extent=self.extentR,**args)        
+            return ax.imshow(self.IMgamma[:,self.nYplot,:]*(self.phiT[:,self.nYplot,:]>0.5),extent=self.extentR,**args)        
     
     def plotPressure(self,ax,**args):
         if self.pressureCalculated==False:
@@ -616,9 +667,9 @@ class NumericalRun():
                 print('Warning : it is impossible to calculate the pressure from the sand6 outputs (set exportAllFields in the config file to 1 before the simulation if you wish to export stresses and deduce pressure)')
         if hasattr(self, 'P') :
             if self.dimSim==2:
-                ax.imshow(self.P,extent=self.extentR,**args)
+                return ax.imshow(self.P,extent=self.extentR,**args)
             if self.dimSim==3:
-                ax.imshow(self.P[:,6,:],extent=self.extentR,**args)
+                return ax.imshow(self.P[:,self.nYplot,:],extent=self.extentR,**args)
             
     def plotI(self,ax,**args):
         if self.pressureCalculated==False:
@@ -633,10 +684,10 @@ class NumericalRun():
         if hasattr(self, 'P') and hasattr(self, 'gammaN'):
             if self.dimSim==2:
                 self.IMgamma=np.flipud(self.gammaN[:,:].T)
-                ax.imshow(self.IMgamma*self.dConfig['grainDiameter']/(self.P/self.dConfig['volMass'])*(self.phiT>0.5),extent=self.extentR,**args)
+                return ax.imshow(self.IMgamma*self.dConfig['grainDiameter']/(self.P/self.dConfig['volMass'])*(self.phiT>0.5),extent=self.extentR,**args)
             if self.dimSim==3:
-                self.IMgamma=np.flipud(self.gammaN[:,6,:].T)
-                ax.imshow(self.IMgamma*self.dConfig['grainDiameter']/(self.P[:,6,:]/self.dConfig['volMass'])*(self.phiT[:,6,:]>0.5),extent=self.extentR,**args)
+                self.IMgamma=np.flipud(self.gammaN[:,self.nYplot,:].T)
+                return ax.imshow(self.IMgamma*self.dConfig['grainDiameter']/(self.P[:,self.nYplot,:]/self.dConfig['volMass'])*(self.phiT[:,self.nYplot,:]>0.5),extent=self.extentR,**args)
             
     def plotContourI(self,ax,**args):
         
@@ -650,48 +701,95 @@ class NumericalRun():
             self.calculateStrainRate()
 
         if self.dimSim==3: 
-            self.CS=ax.contour(self.grid_x[:,6,:]/self.scaleLength,self.grid_z[:,6,:]/self.scaleLength,self.gammaN[:,6,:]*self.dConfig['grainDiameter']/(self.P_cont[:,6,:]/self.dConfig['volMass']),**args)
+            self.CS=ax.contour(self.grid_x[:,self.nYplot,:]/self.scaleLength,self.grid_z[:,self.nYplot,:]/self.scaleLength,self.gammaN[:,self.nYplot,:]*self.dConfig['grainDiameter']/(self.P_cont[:,self.nYplot,:]/self.dConfig['volMass']),**args)
         if self.dimSim==2:
             self.CS=ax.contour(self.grid_x/self.scaleLength,self.grid_y/self.scaleLength,self.gammaN[:,:]*self.dConfig['grainDiameter']/(self.P_cont[:,:]/self.dConfig['volMass']),**args)
    
-    
+    def calculatePointsLayer(self):
+         #detect points in the Y layer
+
+        self.selectedInd=[]
+        Ymin =  self.grid_y[0,self.nYplot,0]-self.dy/4
+        Ymax =  self.grid_y[0,self.nYplot,0]+self.dy/4
+        ind=0
+        for p in self.pointsp:
+            if p[1]> Ymin and p[1] < Ymax:
+                self.pointsLayer.append(p)
+                self.selectedInd.append(ind)
+            ind+=1
+        self.pointsLayer=np.array(self.pointsLayer)
     
     def plotPoints(self,ax,**args):
         if self.dimSim==3: 
-            ax.plot(self.pointsp[:,0]/self.scaleLength,self.pointsp[:,2]/self.scaleLength,**args)
+            if len(self.pointsLayer)==0:
+               self.calculatePointsLayer()       
+            ax.plot(self.pointsLayer[:,0]/self.scaleLength,self.pointsLayer[:,2]/self.scaleLength,**args)
         if self.dimSim==2:
             ax.plot(self.pointsp[:,0]/self.scaleLength,self.pointsp[:,1]/self.scaleLength,**args)
 
 
 
-    def plotDoor(self,ax):
-        if self.ifile<100:
-            X=np.array([self.datas[self.ifile,3],self.datas[self.ifile,3]])/self.scaleLength
-            Y=np.array([self.datas[self.ifile,5]+self.Ldoor/2,self.datas[self.ifile,5]-self.Ldoor/2])/self.scaleLength
-            ax.plot(X,Y,'k')
+    def plotDoor(self,ax,**args):
+        if self.ifile / self.dConfig['fps'] < 0.5:
+            if self.dimSim==3:
+                X=np.array([self.datas[self.ifile,2],self.datas[self.ifile,2]])/self.scaleLength
+                Y=np.array([self.datas[self.ifile,4]+self.Ldoor/2,self.datas[self.ifile,4]-self.Ldoor/2])/self.scaleLength
+            if self.dimSim==2:
+                X=np.array([self.datas[self.ifile,3],self.datas[self.ifile,3]])/self.scaleLength
+                Y=np.array([self.datas[self.ifile,4]+self.Ldoor/2,self.datas[self.ifile,4]-self.Ldoor/2])/self.scaleLength
+  
+            ax.plot(X, Y, 'k', **args)
+            
+
+
 
 
     def opyfPointCloudColoredScatter(self,ax,nvec=3000,**args):
-       
-        from matplotlib.colors import Normalize
-        if len(self.pointsp) < nvec:
-            N = len(self.pointsp)
-        else:
-            N = nvec
-            print('only '+str(N)+'vectors plotted because length(X) >' + str(nvec))
+        if self.dimSim==3:      
+            if len(self.pointsLayer)==0:
+                self.calculatePointsLayer() 
+            from matplotlib.colors import Normalize
+            selectedVel = self.vel[self.selectedInd, :]
+            if len(self.pointsLayer) < nvec:
+                N = len(self.pointsLayer)
+            else:
+                N = nvec
+                print('only '+str(N)+'vectors plotted because length(X) >' + str(nvec))
 
-        ind = np.random.choice(np.arange(len(self.pointsp)), N, replace=False)
-        Xc = self.pointsp[ind, :]
-        Vc = self.vel[ind, :]
-        if self.dimSim==3:
+
+            ind = np.random.choice(np.arange(len(self.pointsLayer)), N, replace=False)
+            Xc = self.pointsLayer[ind, :]
+            Vc = selectedVel[ind,:]
+
+
             self.norm_vel=(Vc[:,0]**2+Vc[:,2]**2)**0.5
 
             norm = Normalize()
             norm.autoscale(self.norm_vel)
             self.im = ax.scatter(Xc[:, 0]/self.scaleLength, Xc[:, 2]/self.scaleLength, c=self.norm_vel,**args)
 
+        if self.dimSim == 2:
+            from matplotlib.colors import Normalize       
+            if len(self.pointsLayer) < nvec:
+                N = len(self.pointsp)
+            else:
+                N = nvec
+                print('only '+str(N)+'vectors plotted because length(X) >' + str(nvec))
 
-        
+
+            ind = np.random.choice(np.arange(len(self.pointsp)), N, replace=False)
+            Xc = self.pointsp[ind, :]
+            Vc = selectedVel[ind,:]
+
+
+            self.norm_vel=(Vc[:,0]**2+Vc[:,1]**2)**0.5
+
+            norm = Normalize()
+            norm.autoscale(self.norm_vel)
+            self.im = ax.scatter(Xc[:, 0]/self.scaleLength, Xc[:, 1]/self.scaleLength, c=self.norm_vel,**args)
+
+
+ 
         
       
 class ExperimentalRun():
@@ -713,7 +811,7 @@ class ExperimentalRun():
         self.dictE=self.dictExp[listExp[runNumber]]
         self.typicalTime=(self.dictE['H']/9.81)**0.5
                 
-        self.vecxMax=[2,2.5,3,3,2.5,3,4,6,8]
+        self.vecxMax=[2,2.5,2.8,2.9,2.5,3,4,5.5,7.5]
         self.xmax=self.vecxMax[runNumber]
 
         self.nFrames=int(self.dictExp[listExp[runNumber]]['nFrames'])
@@ -722,7 +820,8 @@ class ExperimentalRun():
             self.Time=self.Time-self.Time[0]
         if loadField==True:
             coordinates, variables=opyf.hdf5_Read(listExpFolders[runNumber]+'/Run_'+format(runNumber,'02.0f')+'_rectilinear_velocity_fields.hdf5')        
-            self.Time=coordinates[0][1]
+            self.Time = coordinates[0][1]
+            self.Time=self.Time-self.Time[0]
             self.X=coordinates[1][1]
             self.Y=coordinates[2][1]
             self.dx=self.dy=self.X[1]-self.X[0]
@@ -765,6 +864,10 @@ class ExperimentalRun():
 #        elif Type=='inertia':
             
 
+
+
+
+
 def setFigure(fig,ax,sL,unit='-'):
     ax.set_aspect('auto')
     ax.set_position([0.15,0.15,0.8,0.8]) 
@@ -780,7 +883,10 @@ def setFigure(fig,ax,sL,unit='-'):
     ax.grid(zorder=-0.)
     fig.show()                               
 
-    
+def toS(number, Ndigit,Nzero=0):
+    return format(number,'0'+str(Nzero)+'.'+str(Ndigit)+'f')  
+
+
 
 #%%
 #def determineZeroVelocityContour():

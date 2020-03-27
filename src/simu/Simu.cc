@@ -46,6 +46,11 @@ Simu::Simu(Config &config, const char *base_dir)
 
 	// Rigid bodies
 	m_scenario->add_rigid_bodies( m_rigidBodies ) ;
+
+
+
+
+
 }
 
 Simu::~Simu()
@@ -57,8 +62,9 @@ void Simu::run()
 
 	if( m_config.output ) {
 		dump_particles( 0 ) ;
-		dump_fields( 0 ) ;
+
 	}
+
 	m_particles.events().start();
 	Scalar const alpha=std::asin(m_config.gravity[0]/(9.81*m_config.units().fromSI( Units::Acceleration ))); 
 	std::cout << alpha << std::endl;
@@ -113,6 +119,14 @@ void Simu::run()
 			Log::Debug() << "Max particle vel: " << m_stats.maxVelocity << std::endl ;
 			Log::Debug() << "Max particle inertia: " << m_stats.maxInertia << std::endl ;
 			m_stats.dump();
+
+// dump initial fields at the end of the first substep (otherwise the field 0 is empty... fixme)
+
+	if( (m_config.output) & (s==0) & (frame ==0)) {
+				dump_fields( 0 ) ;
+	// 	
+	}
+
 		}
 
 		Log::Info() << arg( "Frame done in %1 s", timer.elapsed() ) << std::endl ;

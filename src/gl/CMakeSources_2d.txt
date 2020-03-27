@@ -5,9 +5,9 @@ gl/Shader.hh
 gl/Texture.cc
 gl/Texture.hh
 gl/VertexBuffer.hh
-gl/opengl.hh
-gl/gImage.hh
 gl/gImage.cc
+gl/gImage.hh
+gl/opengl.hh
 gl/shaders/2d/particle_fragment.glsl
 gl/shaders/2d/particle_vertex.glsl
 gl/shaders/2d/tensor_fragment.glsl

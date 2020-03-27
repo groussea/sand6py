@@ -12,7 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 driveFolder='/scratch/garousse/'
 driveFolder='/media/gauthier/Gauthier_Backup/'
-#driveFolder='/media/garousse/Gauthier_Backup/'
+driveFolder='/media/gauthier/Data-Gauthier/Gauthier/TAF'
 sys.path.append(driveFolder+'TAF/TAF_EPFL/current_work/OPyF-Project/github/opyFlow/')
 d6Path='/media/gauthier/Data-Gauthier/programs/gitLab/sand6/build'
 # d6Path='/scratch/garousse/TAF/TAF_inria/INRIA_current_work/GitLab/sand6/build'

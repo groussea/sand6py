@@ -18,14 +18,15 @@ readconfigFile(configFile) return a disctionary with 18 firs lines of the config
 Usage :
 d6pylib.py [writing path] [d6vtk path(by default 'out')]
 
+
 Warning : only used for 2D simulation (modification are needed for 3D)
 If no argments: the csv files are saved in the out folder considering the python file is in the build folder
 
 
 @author: Gauthier
 """
-import cv2
-from shutil import copyfile
+# import cv2
+# from shutil import copyfile
 import os
 import numpy as np  
 import csv
@@ -33,16 +34,16 @@ import matplotlib.pyplot as plt
 import json
 import sys
 import subprocess
-from matplotlib_scalebar.scalebar import ScaleBar
+# from matplotlib_scalebar.scalebar import ScaleBar
 
 driveFolder='/scratch/garousse/'
 driveFolder='/media/gauthier/Gauthier_Backup/'
 sys.path.append(driveFolder+'TAF/TAF_EPFL/OPyF-Project/github/opyFlow')
+sys.path.append('/media/gauthier/Gauthier_Backup/TAF/TAF_EPFL/current_work/OPyF-Project/github/opyFlow')
 import opyf
-
 sys.path.append(driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/python-essentials/Essentials OpenCV')
-from TrackandInterpolate import *
-from vtk.util import numpy_support as VN
+# from TrackandInterpolate import *
+# from vtk.util import numpy_support as VN
 #import trackandinterpolate
 plt.style.use('fivethirtyeight')
 plt.rcParams['axes.edgecolor']='0'
@@ -72,7 +73,7 @@ JSONpath=driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/Video_src/dictE
 
     # the d6 soft path
 d6Path=driveFolder+'TAF/TAF_inria/Sand6/epfl_lhe_2d_and_3d/build_fast'
-d6Path='/media/gauthier/Data-Gauthier/programs/gitLab/sand6/build_2d'
+d6Path='/media/gauthier/Data-Gauthier/programs/gitLab/sand6/build-2d'
 d6OutFolder='out'
 out_Opyf=driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/outputs_opyf/'
 listOutOpyf=['Run_00_gravels-2.7mm_Slope=0deg_H=0.114m_L=0.187',
@@ -113,7 +114,7 @@ for j in range(7,8):
 #for j in range(0,8):
     sE=lExp[j] #Selected exeperiment
     sdictE=dictExp[sE]
-    fracH=0.9
+    fracH=0.8
     
     if sdictE['camType']=='Phantom':
         sdictE['L']=sdictE['L']+0.1
@@ -129,13 +130,13 @@ for j in range(7,8):
 
     muRigid=0.18
     
-    Hmod=(sdictE['H']+0.005)/fracH
+    Hmod=(np.round(sdictE['H'],3)+0.003)/fracH
     delta_mu=0.
     if door=='with':
         ts=0
     else:
         ts=20
-    substeps=4
+    substeps=10
     sdictE['delta_mu']=delta_mu
     prop=''
     if door=='with':
@@ -154,6 +155,7 @@ for j in range(7,8):
     
     d6py.modifyConfigFile(configFilein,newConfigFile,'box',[Lmod, Hmod])
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'gravity',[+9.81*np.sin(sdictE['Slope']*np.pi/180), -9.81*np.cos(sdictE['Slope']*np.pi/180)])
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'fps',[15])
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'nFrames',[nFrames+ts])
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'randomize',[0])
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'substeps',[substeps])
@@ -172,7 +174,7 @@ for j in range(7,8):
     
     TypicalLength=0.005
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'res',[Lmod//TypicalLength,np.round(Hmod/TypicalLength/10)*10]) #pour avoir un réolution divisible par 10 selon Y
-    d6py.modifyConfigFile(newConfigFile,newConfigFile,'I0',[0.279]) 
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'I0',[0.3]) 
        
     #load the final config file dictionnary    
         

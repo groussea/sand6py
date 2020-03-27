@@ -65,6 +65,30 @@ MonoSimu::MonoSimu(Config &config, const char *base_dir)
 
 	m_solver.reset( new PhaseSolver(m_particles) );
 
+
+	// compute the initial fraction from the particle postions
+
+	const PrimalShape& pShape = m_grains->velocity.shape() ;
+
+	// Transfer particles quantities to grid
+	PrimalScalarField intPhiPrimal  ( pShape ) ;
+	PrimalVectorField intPhiVel     ( pShape ) ;
+	std::vector< bool > activeCells ;
+	m_particles.integratePrimal( activeCells, intPhiPrimal, intPhiVel ) ;
+
+
+	PrimalScalarField fraction (pShape) ;
+	// Compute volumes of cells
+	PrimalScalarField volumes (pShape) ;
+
+	intPhiPrimal.shape().compute_tpz_mass( volumes.flatten() );
+
+	m_grains->fraction = intPhiPrimal;
+	// m_grains->fraction.divide_by_positive( volumes ) ;
+
+	
+
+
 }
 
 MonoSimu::~MonoSimu()

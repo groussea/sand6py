@@ -390,7 +390,7 @@ void PhaseSolver::enforceMaxFrac(const Config &c, const PhaseStepData &stepData,
 	}
 
 	pbData.w.segment(0, stepData.nDualNodes() ) =
-	        ( c.volumeCorrection*c.phiMax*stepData.forms.volumes - stepData.forms.fraction - rbIntFraction ) ;
+	        ( c.volumeCorrection*(c.phiMax)*stepData.forms.volumes - stepData.forms.fraction - rbIntFraction ) ;
 
 	DynVec x = DynVec::Zero( pbData.n() ) ;
 	LCP lcp( pbData ) ;

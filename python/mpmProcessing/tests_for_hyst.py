@@ -16,7 +16,7 @@ import json
 import sys, os
 import subprocess
 driveFolder='/scratch/garousse/'
-# driveFolder='/media/gauthier/Gauthier_Backup/'
+driveFolder='/media/gauthier/Gauthier_Backup/'
 sys.path.append(driveFolder+'TAF/TAF_EPFL/current_work/OPyF-Project/github/opyFlow/')
 sys.path.append(driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/python-essentials/Essentials OpenCV')
 #import trackandinterpolate
@@ -30,7 +30,7 @@ JSONpath=driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/Video_src/dictE
     # the d6 soft path
 d6Path=driveFolder+'TAF/TAF_inria/Sand6/epfl_lhe_2d_and_3d/build_fast'
 d6Path='/media/gauthier/Data-Gauthier/programs/gitLab/sand6/build'
-d6Path='/scratch/garousse/TAF/TAF_inria/INRIA_current_work/GitLab/sand6/build'
+# d6Path='/scratch/garousse/TAF/TAF_inria/INRIA_current_work/GitLab/sand6/build'
 #d6Path=driveFolder+'TAF/TAF_inria/GitLab/sand6cohesive/build_julien'
 #d6Path='/home/gauthier/programs/epfl_lhe/build2d'
 d6OutFolder='out'
@@ -42,7 +42,7 @@ sys.path.append(d6Path+'/../python')
 
 import d6py
 #%%
-config='hyst'
+config='no_hyst_low_mu'
 # config='no_hyst_low_mu'
 # config='no_hyst_high_mu'
 runName='test_'+config
