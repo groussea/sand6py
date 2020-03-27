@@ -10,7 +10,16 @@ import numpy as np
 import json
 import csv
 import vtk
-from d6py import d6_python 
+try:
+    from d6py import d6_python
+except:
+    print('d6_python_2D not imported')
+    
+try:    
+    from d6py import d6_python_3D
+except:
+    print('d6_python_3D not imported')    
+
 from vtk.util.numpy_support import vtk_to_numpy
 
 

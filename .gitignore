@@ -9,5 +9,6 @@ build/*
 *.pyc
 /build
 /build_2d
+/build-2d
 /vendor
 *.so
