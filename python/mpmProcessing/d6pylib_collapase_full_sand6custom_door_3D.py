@@ -33,7 +33,9 @@ os.chdir(d6Path)
     #add d6py module pythonpath
 sys.path.append(d6Path+'/../python')
 
+
 import d6py
+from d6py.d6python3D import * # python must be reload if d6python2D was imported
 #%%
 def rund6py(sdictE,**args):
 
@@ -107,7 +109,7 @@ def rund6py(sdictE,**args):
         d6py.modifyConfigFile(newConfigFile,newConfigFile,'scenario','collapselhedoor taudoor:0.0001 veldoor:100 ts:'+format(ts,'1.0f')+' frac_h:'+format(fracH,'1.1f')+' column_length:'+str(L))
 
     
-    TypicalLength=0.01
+    TypicalLength=0.005
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'res',[int(Lmod/TypicalLength),int(0.06/TypicalLength),resZ]) #pour avoir un réolution divisible par 10 selon Y
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'I0',[I0]) 
       
@@ -116,7 +118,7 @@ def rund6py(sdictE,**args):
     # dConfigmod=d6py.readConfigFile(newConfigFile)
     #% 
 
-    d6py.d6run(d6OutFolder,newConfigFile)
+    d6run(d6OutFolder,newConfigFile)
     
     # d6py.d62vtk(d6OutFolder,allF=True,particles=True)
 
@@ -139,6 +141,12 @@ lExp=np.sort(lExp)
 import time
 t=time.time()
 
+for j in range(7,8 ):  
+    sE=lExp[j] #Selected exeperiment
+    sdictE=dictExp[sE]
+    for dmu in [-0.05]:
+        for s,p in zip([20],['test-wrap_res_5_mm']):
+            rund6py(sdictE,delta_mu=0.,mu=np.round(sdictE['mu']+dmu,2),substeps=s,prop=p)
 
 # for j in range(0,9 ): 
 #     sE=lExp[j] #Selected exeperiment
@@ -168,12 +176,6 @@ t=time.time()
 #         for s,p in zip([20],['with_field_at_zero__mu_I_test']):
 #             rund6py(sdictE,delta_mu=0.,muRigid=0.5,mu=np.round(sdictE['mu']+dmu,2),rand=1,substeps=s,prop=p)
 
-for j in range(7,8 ):  
-    sE=lExp[j] #Selected exeperiment
-    sdictE=dictExp[sE]
-    for dmu in [-0.05]:
-        for s,p in zip([5,10,40],['','','']):
-            rund6py(sdictE,delta_mu=0.,mu=np.round(sdictE['mu']+dmu,2),substeps=s,prop=p)
 
 
 

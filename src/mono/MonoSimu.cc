@@ -21,6 +21,7 @@
 
 #include "Phase.hh"
 #include "PhaseSolver.hh"
+#include "PhaseStepData.hh"
 #include "simu/RigidBody.hh"
 
 #include "utils/Log.hh"
@@ -36,6 +37,7 @@
 #include <boost/archive/binary_oarchive.hpp>
 
 #include <bogus/Core/Utils/Timer.hpp>
+#include <bogus/Core/Block.impl.hpp>
 
 namespace d6
 {
@@ -66,13 +68,14 @@ MonoSimu::MonoSimu(Config &config, const char *base_dir)
 	m_solver.reset( new PhaseSolver(m_particles) );
 
 
-	// compute the initial fraction from the particle postions
+	// compute the initial fraction from the particle positions
 
 	const PrimalShape& pShape = m_grains->velocity.shape() ;
 
 	// Transfer particles quantities to grid
 	PrimalScalarField intPhiPrimal  ( pShape ) ;
 	PrimalVectorField intPhiVel     ( pShape ) ;
+	PrimalVectorField  grad_phi ( pShape ) ;
 	std::vector< bool > activeCells ;
 	m_particles.integratePrimal( activeCells, intPhiPrimal, intPhiVel ) ;
 
@@ -81,13 +84,36 @@ MonoSimu::MonoSimu(Config &config, const char *base_dir)
 	// Compute volumes of cells
 	PrimalScalarField volumes (pShape) ;
 
-	intPhiPrimal.shape().compute_tpz_mass( volumes.flatten() );
+// we create a phase step data to compute the initial phi and gradphi for vizualisation purpose
 
-	m_grains->fraction = intPhiPrimal;
-	// m_grains->fraction.divide_by_positive( volumes ) ;
-
+	// PhaseStepData initPSD;
+	// trying to compute initial phi and gradphi from the static function PhaseStepData.computePhiAndGradPhi
+	// initPSD.computePhiAndGradPhi(intPhiPrimal,m_grains->fraction,m_grains->grad_phi);
 	
+	PhaseStepData::computePhiAndGradPhi(intPhiPrimal,m_grains->fraction,m_grains->grad_phi);
+		
+	// intPhiPrimal.shape().compute_tpz_mass( volumes.flatten() );
+	// m_grains->fraction = intPhiPrimal;
+	// m_grains->fraction.divide_by_positive( volumes ) ;
+	// grad_phi.set_zero() ;
 
+	// // FXIME other approxes
+	// typedef FormBuilder< PrimalShape, PrimalShape > Builder ;
+	// Builder builder( shape, shape ) ;
+
+	// typedef const typename PrimalShape::Interpolation& Itp ;
+	// typedef const typename PrimalShape::Derivatives& Dcdx ;
+
+	// builder.integrate_qp( [&]( Scalar w, const Vec&, Itp itp, Dcdx dc_dx, Itp , Dcdx )
+	// {
+	// 	for( Index j = 0 ; j < PrimalShape::NI ; ++j ) {
+	// 		for( Index k = 0 ; k < PrimalShape::NI ; ++k ) {
+	// 			grad_phi[ itp.nodes[j] ] += w * dc_dx.row(k) * itp.coeffs[k] * fraction[ itp.nodes[k] ] ;
+	// 		}
+	// 	}
+	// } ) ;
+
+	// grad_phi.divide_by( volumes ) ;
 
 }
 

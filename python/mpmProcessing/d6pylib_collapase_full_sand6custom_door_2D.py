@@ -32,8 +32,10 @@ out_Opyf=driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/output
 os.chdir(d6Path)
     #add d6py module pythonpath
 sys.path.append(d6Path+'/../python')
-import d6py.d6_python_2D
-# import d6py
+import d6py
+from d6py.d6python2D import * # python must be reload if d6python2D was imported
+
+
 #%%
 def rund6py(sdictE,**args):
 
@@ -116,7 +118,7 @@ def rund6py(sdictE,**args):
     # dConfigmod=d6py.readConfigFile(newConfigFile)
     #% 
 
-    d6py.d6run(d6OutFolder,newConfigFile)
+    d6run(d6OutFolder,newConfigFile)
     
     # d6py.d62vtk(d6OutFolder,allF=True,particles=True)
 
@@ -168,12 +170,12 @@ t=time.time()
 #         for s,p in zip([20],['with_field_at_zero__mu_I_test']):
 #             rund6py(sdictE,delta_mu=0.,muRigid=0.5,mu=np.round(sdictE['mu']+dmu,2),rand=1,substeps=s,prop=p)
 
-for j in range(0,9 ):  
+for j in range(0,1 ):  
     sE=lExp[j] #Selected exeperiment
     sdictE=dictExp[sE]
     for dmu in [-0.05,0]:
-        for s,p in zip([20],['door']):
-            rund6py(sdictE,delta_mu=0.,mu=np.round(sdictE['mu']+dmu,2),door='without',substeps=s,prop=p)
+        for s,p in zip([20],['test-wrap']):
+            rund6py(sdictE,delta_mu=0.,mu=np.round(sdictE['mu']+dmu,2),door='with',substeps=s,prop=p)
 
 
 

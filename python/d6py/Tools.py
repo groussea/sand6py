@@ -10,15 +10,15 @@ import numpy as np
 import json
 import csv
 import vtk
-try:
-    from d6py import d6_python
-except:
-    print('d6_python_2D not imported')
+# try:
+#     from d6py import d6_python
+# except:
+#     print('d6_python_2D not imported')
     
-try:    
-    from d6py import d6_python_3D
-except:
-    print('d6_python_3D not imported')    
+# try:    
+#     from d6py import d6_python_3D
+# except:
+#     print('d6_python_3D not imported')    
 
 from vtk.util.numpy_support import vtk_to_numpy
 
@@ -551,8 +551,12 @@ class NumericalRun():
                 [self.grid_x, self.grid_y, self.grid_z], [self.velx,self.vely,self.velz],self.reshaped_Phi, self.np_d_phi_reshaped, self.np_stresses_reshaped, self.np_forces_reshaped=fromVTKtoscaledDataFields3D(VTKfilename,self.dConfig)   
             except:
                 print('[info] Loading vtk files fail, trying to generate vtk')
-                d6_python.d62vtk(self.d6OutFolder+'/',frame = ifile, particles = True)
-                [self.grid_x, self.grid_y, self.grid_z], [self.velx,self.vely,self.velz],self.reshaped_Phi, self.np_d_phi_reshaped, self.np_stresses_reshaped, self.np_forces_reshaped=fromVTKtoscaledDataFields3D(VTKfilename,self.dConfig)   
+                try:
+                    import d6py.d6python3D
+                    d6py.d6python3D.d62vtk(self.d6OutFolder+'/',frame = ifile, particles = True)
+                except:
+                    print('not able to load d6python3D (impossible toload if d6python2D has been loaded before)')
+                [self.grid_x, self.grid_y, self.grid_z], [self.velx,self.vely,self.velz],self.reshaped_Phi, self.np_d_phi_reshaped, self.np_stresses_reshaped, self.np_forces_reshaped=fromVTKtoscaledDataFields3D(VTKfilename,self.dConfig)                 
             self.pointsp,self.vel,self.vol =fromVTKtoscaledDataParticles3D(VTKfilename_part,self.dConfig)
             self.dx=np.absolute(self.grid_x[0,0,0]-self.grid_x[1,0,0])
             self.dy=np.absolute(self.grid_y[0,0,0]-self.grid_y[0,1,0])
@@ -564,7 +568,12 @@ class NumericalRun():
                 [self.grid_x, self.grid_y], [self.velx,self.vely],self.reshaped_Phi,  self.np_d_phi_reshaped, self.np_stresses_reshaped, self.np_forces_reshaped=fromVTKtoscaledDataFields2D(VTKfilename,self.dConfig)
             except:
                 print('[info] Loading vtk files fail, trying to generate vtk')
-                d6_python.d62vtk(self.d6OutFolder+'/',frame = ifile, particles = True)
+                try:
+                    import d6py.d6python2D
+                    d6py.d6python2D.d62vtk(self.d6OutFolder+'/',frame = ifile, particles = True)
+                except:
+                    print('not able to load d6python2D (impossible toload if d6python3D has been loaded before)')
+                d6py.d6python3D.d62vtk(self.d6OutFolder+'/',frame = ifile, particles = True)
                 [self.grid_x, self.grid_y], [self.velx,self.vely],self.reshaped_Phi,  self.np_d_phi_reshaped, self.np_stresses_reshaped, self.np_forces_reshaped=fromVTKtoscaledDataFields2D(VTKfilename,self.dConfig)
             self.pointsp,self.vel,self.vol =fromVTKtoscaledDataParticles2D(VTKfilename_part,self.dConfig)
             self.dx=np.absolute(self.grid_x[0,0]-self.grid_x[1,0])

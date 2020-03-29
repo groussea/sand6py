@@ -20,7 +20,9 @@ import d6py
 from d6py.Tools import *
 sys.path.append('/media/gauthier/Data-Gauthier/programs/gitHub/opyflow')
 import opyf
-sys.path
+sys.path.append('/media/gauthier/Data-Gauthier/programs/tikzplotlib/tikzplotlib')
+
+import tikzplotlib
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -38,14 +40,14 @@ paths,folders,listDictConf,listNumRun=d6py.findOutSand6Paths(maind6OutFolder,4)
 
 N=7
 
-selectedRuns, selectedDict = d6py.whereSand6OutFromParms(listNumRun,muRigid=0.18,mu=0.38, delta_mu=0, runNumber=N, dimSim=3)
+selectedRuns, selectedDict = d6py.whereSand6OutFromParms(listNumRun,substeps=20,muRigid=0.18,mu=0.38, delta_mu=0, runNumber=N, dimSim=3)
 
 
 
 
 
-selectedRuns = [selectedRuns[2],   selectedRuns[0],selectedRuns[3],  selectedRuns[1]]
-
+# selectedRuns = [selectedRuns[2],   selectedRuns[0],selectedRuns[3],  selectedRuns[1]]
+# selectedRuns =[selectedRuns[0],]
 
 # selectedRuns = [selectedRuns[1], selectedRuns[2]] # 2D
 #%%
@@ -92,7 +94,7 @@ H = (runExp1.dictE['H'] + 0.01) / runExp1.scaleLength
 
 w_fig = (L + runExp1.xmax * runExp1.dictE['H'] / runExp1.scaleLength) / 60 * 8
 
-for ifile in [0,3,nF]:
+for ifile in [0,1,2,3,4,5,nF]:
     fig, [ax, ax1] = plt.subplots(2, 1)
     fig.set_size_inches((w_fig ,4.5))
     kt=0
@@ -120,7 +122,7 @@ for ifile in [0,3,nF]:
             #
             # im= sR.plotPhi(ax,cmap=cmap,vmin=0.9,vmax=2,interpolation='gaussian')
             # sR.plotPoints(ax,ls='',marker='.',markersize=0.2,color='k',alpha=0.7)
-            sR.opyfPointCloudColoredScatter(ax,vmin=0,vmax=0.5,s=4,cmap=cmap,nvec=5000)
+            # sR.opyfPointCloudColoredScatter(ax,vmin=0,vmax=0.5,s=4,cmap=cmap,nvec=5000)
             # sR.plotVelocity(ax,vmin=0,vmax=1,cmap=cmap,interpolation='gaussian')
         # if i==0:
             # sR.opyfPointCloudColoredScatter(ax,vmin=0,vmax=.5,s=4,cmap=cmap,alpha=0.5,nvec=3000)
@@ -176,13 +178,42 @@ for ifile in [0,3,nF]:
     ax1.set_xlim(np.array([-runExp1.dictE['L'],runExp1.xmax*runExp1.dictE['H']])/runExp1.scaleLength)
 
     ax1.text(28,6.5,s='Time='+format(runExp1.Time[np.max([ifile*10-5,0])],'10.2f')+' s', fontsize=8,zorder=2)
+    # tikzplotlib.clean_figure()
+    # tikzplotlib.save("/media/gauthier/Data-Gauthier/Gauthier/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular/doc/article/images/texplots/test-tikzplotlib/mytikz.tex")
+
 
     plt.show()
-    outFolder=listSaveFolders[runExp1.runNumber]+'/'+sR.dConfig['folder']
-    opyf.mkdir2(outFolder)
-    fig.savefig(outFolder+'/test_DeltaT_compMPM_EXP_t='+format(runExp1.Time[ifile],'02.2f')+'.svg')
-    # plt.pause(0.5)
+    # outFolder=listSaveFolders[runExp1.runNumber]+'/'+sR.dConfig['folder']
+    # opyf.mkdir2(outFolder)
+    # fig.savefig(outFolder+'/test_DeltaT_compMPM_EXP_t='+format(runExp1.Time[ifile],'02.2f')+'.svg')
+    plt.pause(0.1)
+
+
+
+
 #%%    
+
+fig = plt.gcf()
+
+ch = fig.get_children()
+ch
+ch1=ch[1].get_children()
+l=ch1[0]
+l
+
+
+#%%
+A=tikzplotlib.get_tikz_code(standalone=True,filepath='/home/gauthier/test.tex')
+
+
+
+
+
+tikzplotlib.clean_figure()
+tikzplotlib.get_tikz_code()
+tikzplotlib.Flavors.latex.preamble()
+
+#%%
 #
 A=selectedRuns1[0]
 

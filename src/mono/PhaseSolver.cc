@@ -214,9 +214,9 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	// Inertia, mu(I) = \delta_mu * (1./ (1 + I0/I) ), I = dp * sqrt( rho ) * inertia, inertia = |D(U)|/sqrt(p)
 	// mu_s+delta_mu_start/(1+I00/I)+\delta_mu*I/I0
 
-	const Scalar I0_start_bar = c.I0_start / ( c.grainDiameter * std::sqrt( c.volMass/0.6 )) ;
-	const Scalar I0bar = c.I0 / ( c.grainDiameter * std::sqrt( c.volMass/0.6 )) ;
-	const Scalar I0_noise_bar= 0.001 / ( c.grainDiameter * std::sqrt( c.volMass/0.6 )) ;
+	const Scalar I0_start_bar = c.I0_start / ( c.grainDiameter * std::sqrt( c.volMass )) ;
+	const Scalar I0bar = c.I0 / ( c.grainDiameter * std::sqrt( c.volMass )) ;
+	const Scalar I0_noise_bar= 0.001 / ( c.grainDiameter * std::sqrt( c.volMass )) ;
 	const Scalar P0PowQuarter = std::pow(c.P0, 0.25) ;
 
 	// pbData.mu.segment(0,stepData.nDualNodes()).array() = c.mu -
@@ -254,6 +254,10 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 		};
 }
 
+	/// Save mu values (only for visualization purpose)
+	stepData.dualNodes.var2field( pbData.mu, phase.mu ) ;
+	
+	
 
 	DynArr rbIntFraction( stepData.nDualNodes() ) ;
 	rbIntFraction.setZero() ;
@@ -358,8 +362,7 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 		rb.rb.integrate_forces( dt, forces );
 	}
 
-	/// Save mu values
-	stepData.dualNodes.var2field( pbData.mu, phase.mu ) ;
+
 	
 
 
