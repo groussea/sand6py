@@ -64,6 +64,7 @@ MonoSimu::MonoSimu(Config &config, const char *base_dir)
 	m_grains->sym_grad.set_zero();
 	m_grains->spi_grad.set_zero();
 	m_grains->geo_proj.set_zero();
+	m_grains->mu.set_zero();
 
 	m_solver.reset( new PhaseSolver(m_particles) );
 
@@ -80,9 +81,9 @@ MonoSimu::MonoSimu(Config &config, const char *base_dir)
 	m_particles.integratePrimal( activeCells, intPhiPrimal, intPhiVel ) ;
 
 
-	PrimalScalarField fraction (pShape) ;
+	// PrimalScalarField fraction (pShape) ;
 	// Compute volumes of cells
-	PrimalScalarField volumes (pShape) ;
+	// PrimalScalarField volumes (pShape) ;
 
 // we create a phase step data to compute the initial phi and gradphi for vizualisation purpose
 
@@ -91,7 +92,9 @@ MonoSimu::MonoSimu(Config &config, const char *base_dir)
 	// initPSD.computePhiAndGradPhi(intPhiPrimal,m_grains->fraction,m_grains->grad_phi);
 	
 	PhaseStepData::computePhiAndGradPhi(intPhiPrimal,m_grains->fraction,m_grains->grad_phi);
-		
+
+	m_grains->mu;
+
 	// intPhiPrimal.shape().compute_tpz_mass( volumes.flatten() );
 	// m_grains->fraction = intPhiPrimal;
 	// m_grains->fraction.divide_by_positive( volumes ) ;

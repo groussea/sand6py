@@ -122,7 +122,6 @@ bool Config::dump(const std::string &file_name, const char *comment) const
 		Log::Error() << "Could not write config file " << file_name << std::endl;
 		return false;
 	}
-
 	if (comment)
 	{
 		out << "# " << comment << std::endl;

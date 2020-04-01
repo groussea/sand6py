@@ -459,7 +459,7 @@ def whereSand6OutFromFolder(listDictConf,folder):
         ind+=1
     return d   
 
-def whereSand6OutFromParms(listRuns,**params):
+def whereSand6OutFromParms(listRuns,mute=False,**params):
     listRunsOut=listRuns.copy()
     for p in params:
         selectedRuns=[]
@@ -468,13 +468,16 @@ def whereSand6OutFromParms(listRuns,**params):
                 if d.dConfig[p]==params[p]:
                     selectedRuns.append(d)
             except:
-                print('The parameter is not in config dictionnary')
+                if mute is not True:
+                    print('The parameter is not in config dictionnary')
         listRunsOut=selectedRuns.copy()
-    listDictOut=[]
-    print('Selected Runs are:')
+    listDictOut = []
+    if mute is not True:
+        print('Selected Runs are:')
     for r in listRunsOut:
-        print('')
-        print('Run ' + r.dConfig['folder'])
+        if mute is not True:
+            print('')
+            print('Run ' + r.dConfig['folder'])
         listDictOut.append(r.dConfig)
 #        for keys,values in r.dConfig.items():
 #            print(keys,':',values)
@@ -762,7 +765,7 @@ class NumericalRun():
 
 
 
-    def opyfPointCloudColoredScatter(self,ax,nvec=3000,**args):
+    def opyfPointCloudColoredScatter(self,ax,nvec=3000,mute=False,**args):
         if self.dimSim==3:      
             if len(self.pointsLayer)==0:
                 self.calculatePointsLayer() 
@@ -772,7 +775,8 @@ class NumericalRun():
                 N = len(self.pointsLayer)
             else:
                 N = nvec
-                print('only '+str(N)+'vectors plotted because length(X) >' + str(nvec))
+                if mute is not True:
+                    print('only '+str(N)+'vectors plotted because length(X) >' + str(nvec))
 
 
             ind = np.random.choice(np.arange(len(self.pointsLayer)), N, replace=False)
@@ -784,9 +788,10 @@ class NumericalRun():
 
             norm = Normalize()
             norm.autoscale(self.norm_vel)
-            self.im = ax.scatter(Xc[:, 0]/self.scaleLength, Xc[:, 2]/self.scaleLength, c=self.norm_vel,**args)
+            return ax.scatter(Xc[:, 0]/self.scaleLength, Xc[:, 2]/self.scaleLength, c=self.norm_vel,**args)
 
-        if self.dimSim == 2:
+
+        elif self.dimSim == 2:
             from matplotlib.colors import Normalize       
             if len(self.pointsLayer) < nvec:
                 N = len(self.pointsp)
@@ -804,7 +809,7 @@ class NumericalRun():
 
             norm = Normalize()
             norm.autoscale(self.norm_vel)
-            self.im = ax.scatter(Xc[:, 0]/self.scaleLength, Xc[:, 1]/self.scaleLength, c=self.norm_vel,**args)
+            return ax.scatter(Xc[:, 0]/self.scaleLength, Xc[:, 1]/self.scaleLength, c=self.norm_vel,**args)
 
 
  
@@ -813,12 +818,12 @@ class NumericalRun():
 class ExperimentalRun():
 
      
-     def __init__(self, runNumber=0,mainFolder='.',loadSurfaceElevation=True,loadPoints=False,loadField=False):
-     # OPYF LIBRARY IS REQUIRED
+    def __init__(self, runNumber=0,mainFolder='.',loadSurfaceElevation=True,loadPoints=False,loadField=False):
+        # OPYF LIBRARY IS REQUIRED
         import opyf  
         self.runNumber=runNumber
-        
-#load json experiment dictionnary        
+
+        #load json experiment dictionnary        
         JSONpath=mainFolder+'/Granular_Collapses_Experimental_Informations.json'
         in_file = open(JSONpath,"r")
         self.dictExp = json.load(in_file) 
@@ -860,17 +865,17 @@ class ExperimentalRun():
             self.h,self.w=self.Ux[0].shape
             
         self.scaleLength=1.
-        
 
+
+
+    def scLength(self,length=1.):
+        #TODO all scalings
+        self.scaleLength=length
         
-     def scLength(self,length=1.):
-         #TODO all scalings
-         self.scaleLength=length
-         
-     def plotDepthProfile(self,ax,ifile,**args):
+    def plotDepthProfile(self,ax,ifile,**args):
         self.l=ax.plot(self.vecXexpD/self.scaleLength,self.expD[ifile]/self.scaleLength,**args)
 
-     def plotField(self,ax,ifile,Type='velocity_norm',**args):
+    def plotField(self,ax,ifile,Type='velocity_norm',**args):
         Xplot=self.X/self.scaleLength
         Yplot=self.Y/self.scaleLength
         dxp=self.dx/self.scaleLength
@@ -879,10 +884,13 @@ class ExperimentalRun():
             self.im=ax.imshow((self.Ux[ifile]**2+self.Uy[ifile]**2)**0.5,extent=[Xplot[0]-dxp/2,Xplot[-1]+dxp/2,Yplot[-1]-dyp/2,Yplot[0]+dyp/2],**args)
         elif Type=='shear_rate':            
             self.im=ax.imshow(self.epsilon21,extent=[Xplot[0]+dxp/2,Xplot[-1]-dxp/2,Yplot[-1]+dyp/2,Yplot[0]-dyp/2],alpha=0.5,**args)
-#        elif Type=='inertia':
-            
+        #        elif Type=='inertia':
 
+    def loadVideo(self, vidPath,**args):
+        import opyf    
+        self.video= opyf.videoAnalyzer(vidPath+self.dictE['videosrc'],imageROI=self.dictE['ROI'],**args)
 
+    
 
 
 

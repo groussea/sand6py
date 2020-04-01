@@ -141,41 +141,33 @@ lExp=np.sort(lExp)
 import time
 t=time.time()
 
+for j in range(0,9 ):  
+    sE=lExp[j] #Selected exeperiment
+    sdictE=dictExp[sE]
+    for dmu in [-0.05,0.0]:
+        for s,p in zip([20],['frame-0']):
+            rund6py(sdictE,delta_mu=0.,mu=np.round(sdictE['mu']+dmu,2),substeps=s,prop=p)
 
-# for j in range(0,9 ): 
-#     sE=lExp[j] #Selected exeperiment
-#     sdictE=dictExp[sE]
-#     for dmu in [-0.05,0]:
-#         for s,p in zip([20],['with_field_at_zero__mu_I_test']):
-#             rund6py(sdictE,delta_mu=0.22,mu=np.round(sdictE['mu']+dmu,2),rand=1,substeps=s,prop=p)
-
-# for j in range(0,9 ):  
-#     sE=lExp[j] #Selected exeperiment
-#     sdictE=dictExp[sE]
-#     for dmu in [-0.05,0]:
-#         for s,p in zip([20],['with_field_at_zero__mu_I_test']):
-#             rund6py(sdictE,delta_mu=0.,mu=np.round(sdictE['mu']+dmu,2),rand=1,substeps=s,prop=p)
-
-# for j in range(0,9 ):  
-#     sE=lExp[j] #Selected exeperiment
-#     sdictE=dictExp[sE]
-#     for dmu in [-0.05,0]:
-#         for s,p in zip([20],['with_field_at_zero__mu_I_test']):
-#             rund6py(sdictE,delta_mu=0.,muRigid=0,mu=np.round(sdictE['mu']+dmu,2),rand=1,substeps=s,prop=p)
-
-# for j in range(0,9 ): 
-#     sE=lExp[j] #Selected exeperiment
-#     sdictE=dictExp[sE]
-#     for dmu in [-0.05,0]:
-#         for s,p in zip([20],['with_field_at_zero__mu_I_test']):
-#             rund6py(sdictE,delta_mu=0.,muRigid=0.5,mu=np.round(sdictE['mu']+dmu,2),rand=1,substeps=s,prop=p)
-
-for j in range(0,1 ):  
+for j in range(0,9 ): 
     sE=lExp[j] #Selected exeperiment
     sdictE=dictExp[sE]
     for dmu in [-0.05,0]:
-        for s,p in zip([20],['test-wrap']):
-            rund6py(sdictE,delta_mu=0.,mu=np.round(sdictE['mu']+dmu,2),door='with',substeps=s,prop=p)
+        for s,p in zip([20],['with_field_at_zero__mu_I_test']):
+            rund6py(sdictE,delta_mu=0.22,mu=np.round(sdictE['mu']+dmu,2),rand=1,substeps=s,prop=p)
+
+for j in range(0,9 ):  
+    sE=lExp[j] #Selected exeperiment
+    sdictE=dictExp[sE]
+    for dmu in [-0.05,0]:
+        for s,p in zip([20],['with_field_at_zero__mu_I_test']):
+            rund6py(sdictE,delta_mu=0.,muRigid=0,mu=np.round(sdictE['mu']+dmu,2),rand=1,substeps=s,prop=p)
+
+for j in range(0,9 ): 
+    sE=lExp[j] #Selected exeperiment
+    sdictE=dictExp[sE]
+    for dmu in [-0.05,0]:
+        for s,p in zip([20],['with_field_at_zero__mu_I_test']):
+            rund6py(sdictE,delta_mu=0.,muRigid=0.5,mu=np.round(sdictE['mu']+dmu,2),rand=1,substeps=s,prop=p)
 
 
 

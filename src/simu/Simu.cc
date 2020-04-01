@@ -62,7 +62,7 @@ void Simu::run()
 
 	if( m_config.output ) {
 		dump_particles( 0 ) ;
-
+		dump_fields(0);
 	}
 
 	m_particles.events().start();
@@ -120,12 +120,7 @@ void Simu::run()
 			Log::Debug() << "Max particle inertia: " << m_stats.maxInertia << std::endl ;
 			m_stats.dump();
 
-// dump initial fields at the end of the first substep (otherwise the field 0 is empty... fixme)
 
-	if( (m_config.output) & (s==0) & (frame ==0)) {
-				dump_fields( 0 ) ;
-	// 	
-	}
 
 		}
 

@@ -79,7 +79,7 @@ f = fopen(filename.c_str(),"wb");
 fwrite(bmpfileheader,1,14,f);
 fwrite(bmpinfoheader,1,40,f);
 
-for(int i=0; i<height; i++)
+for(unsigned int i=0; i<height; i++)
 {
     fwrite(data+(width*(height-i-1)*3),3,width,f);
     fwrite(bmppad,1,(4-(width*3)%4)%4,f);

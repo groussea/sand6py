@@ -92,8 +92,8 @@ private:
 	std::vector< Axes >  m_axes ;
     // std::unique_ptr< LevelSet >  m_axes;
 
-    int m_width;
-    int m_height;
+    unsigned int m_width;
+    unsigned int m_height;
 
 	bool 	 m_drawParticles  = true;
 	bool 	 m_enableBending  = true;

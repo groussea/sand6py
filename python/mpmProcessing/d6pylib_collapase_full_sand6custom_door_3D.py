@@ -68,7 +68,7 @@ def rund6py(sdictE,**args):
         ts = 2 # to change with the fps
         
 
-    substeps=args.get('substeps',40)
+    substeps=args.get('substeps',20)
     resZ=args.get('resZ',30)
 
     prop=args.get('prop','test')
@@ -109,7 +109,7 @@ def rund6py(sdictE,**args):
         d6py.modifyConfigFile(newConfigFile,newConfigFile,'scenario','collapselhedoor taudoor:0.0001 veldoor:100 ts:'+format(ts,'1.0f')+' frac_h:'+format(fracH,'1.1f')+' column_length:'+str(L))
 
     
-    TypicalLength=0.005
+    TypicalLength=0.01
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'res',[int(Lmod/TypicalLength),int(0.06/TypicalLength),resZ]) #pour avoir un réolution divisible par 10 selon Y
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'I0',[I0]) 
       
@@ -132,7 +132,7 @@ in_file = open(JSONpath,"r")
 dictExp = json.load(in_file)   
 
 
-#generate the list of avi files
+#generate the list of  files
 lExp=[]
 for d in dictExp:
     lExp.append(d)        
@@ -141,11 +141,11 @@ lExp=np.sort(lExp)
 import time
 t=time.time()
 
-for j in range(7,8 ):  
+for j in range(0,7 ):  
     sE=lExp[j] #Selected exeperiment
     sdictE=dictExp[sE]
-    for dmu in [-0.05]:
-        for s,p in zip([20],['test-wrap_res_5_mm']):
+    for dmu in [0.05]:
+        for s,p in zip([20],['frame-0']):
             rund6py(sdictE,delta_mu=0.,mu=np.round(sdictE['mu']+dmu,2),substeps=s,prop=p)
 
 # for j in range(0,9 ): 
@@ -154,13 +154,6 @@ for j in range(7,8 ):
 #     for dmu in [-0.05,0]:
 #         for s,p in zip([20],['with_field_at_zero__mu_I_test']):
 #             rund6py(sdictE,delta_mu=0.22,mu=np.round(sdictE['mu']+dmu,2),rand=1,substeps=s,prop=p)
-
-# for j in range(0,9 ):  
-#     sE=lExp[j] #Selected exeperiment
-#     sdictE=dictExp[sE]
-#     for dmu in [0]:
-#         for s,p in zip([20],['with_field_at_zero__mu_I_test']):
-#             rund6py(sdictE,delta_mu=0.,mu=np.round(sdictE['mu']+dmu,2),rand=1,substeps=s,prop=p)
 
 # for j in range(0,9 ):  
 #     sE=lExp[j] #Selected exeperiment
@@ -177,7 +170,7 @@ for j in range(7,8 ):
 #             rund6py(sdictE,delta_mu=0.,muRigid=0.5,mu=np.round(sdictE['mu']+dmu,2),rand=1,substeps=s,prop=p)
 
 
-
+#%%
 
  #%%   
     #    

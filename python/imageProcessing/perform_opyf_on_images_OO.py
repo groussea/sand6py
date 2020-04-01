@@ -10,19 +10,19 @@ import os, sys, json
 import numpy as np
 import cv2
 from Tools_collapses import mask_collapses
-#driveFolder='./'
 
 
+driveFolder='./'
 
 
 import opyf
+
 #If not in the repository, you may download it on https://github.com/groussea/opyflow
 
 
-vidPath=driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/Video_src' 
+vidPath='/media/gauthier/Samsung_T5/MPM_data/Collapse_experiment/Video_src'
 
-
-d6Path=driveFolder+'TAF/TAF_inria/Sand6/epfl_lhe_2d_and_3d/build_fast/'
+driveFolder='/media/gauthier/Data-Gauthier/Gauthier/'
 folder_main=driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/Video_src' 
 os.chdir(folder_main)
 JSONpath=driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/Video_src/dictExp.json'
@@ -39,7 +39,7 @@ lExp=np.sort(lExp)
 for j in range(1,8):
     sE=lExp[j] #Selected exeperiment
     sdictE=dictExp[sE]
-    mainOutPutFolder=driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/outputs_opyf/'
+    mainOutPutFolder=driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/outputs_opyf2/'
     workingFolder=mainOutPutFolder+str('Run_'+format(j,'02.0f')+'_'+sdictE['grainType']+'_Slope='+format(sdictE['Slope'],'.0f')+'deg_H='+format(sdictE['H'],'.3f')+'m_L='+format(sdictE['L'],'.3f'))    
     
     opyf.mkdir2(workingFolder)
@@ -59,9 +59,9 @@ for j in range(1,8):
     
     vidAnalyzer=opyf.videoAnalyzer(vidPath,vlim=[0,30],imageROI=sdictE['ROI'])
     step,shift,Ntot=8,10,int(sdictE['nFrames'])+5
-    vidAnalyzer.setVecTime(starting_frame=int(sdictE['framedeb'])-100,step=step,shift=shift,Ntot=Ntot)
+    vidAnalyzer.set_vecTime(starting_frame=int(sdictE['framedeb'])-100,step=step,shift=shift,Ntot=Ntot)
     
-    vidAnalyzer.setGridToInterpolateOn(stepGrid=4)
+    vidAnalyzer.set_gridToInterpolateOn(stepGrid=4)
 
 #set Good Features To track Params
 
@@ -80,7 +80,7 @@ for j in range(1,8):
     
     filters_params = dict(  RadiusF=20.,
                           minNperRadius=2,
-                          maxDevinRadius=np.inf,
+                          maxDevInRadius=np.inf,
                           wayBackGoodFlag=10.)
     
     vidAnalyzer.set_filtersParams(**filters_params)
@@ -102,7 +102,7 @@ for j in range(1,8):
     vidAnalyzer.reset()
     HEfinal=[]
     for pr,i in zip( vidAnalyzer.prev, vidAnalyzer.vec):
-        vidAnalyzer.runGFTandDisp(pr,i)  
+        vidAnalyzer.stepGoodFeaturesToTrackandOpticalFlow(pr,i)  
         vidAnalyzer.mask,vecXE,HE=mask_collapses(opyf.Tools.convertToGrayScale(vidAnalyzer.vis),OR2,sdictE)
         BWresized = cv2.resize(vidAnalyzer.mask,(vidAnalyzer.Lgrid,vidAnalyzer.Hgrid))  
         vidAnalyzer.gridMask=np.ones(BWresized.shape)
@@ -112,7 +112,7 @@ for j in range(1,8):
             HEfinal.append(HE)
             vidAnalyzer.Xdata.append( vidAnalyzer.X)
             vidAnalyzer.Vdata.append(vidAnalyzer.V)
-            vidAnalyzer.interpolateOnGrid()
+            vidAnalyzer.interpolateOnGrid(vidAnalyzer.X,vidAnalyzer.V)
             vidAnalyzer.UxTot.append(np.reshape(vidAnalyzer.interpolatedVelocities[:,0],(vidAnalyzer.Hgrid,vidAnalyzer.Lgrid)))
             vidAnalyzer.UyTot.append(np.reshape(vidAnalyzer.interpolatedVelocities[:,1],(vidAnalyzer.Hgrid,vidAnalyzer.Lgrid)))                            
             Field=opyf.Render.setField(vidAnalyzer.Ux,vidAnalyzer.Uy,'norme')
