@@ -109,8 +109,8 @@ def rund6py(sdictE,**args):
         d6py.modifyConfigFile(newConfigFile,newConfigFile,'scenario','collapselhedoor taudoor:0.0001 veldoor:100 ts:'+format(ts,'1.0f')+' frac_h:'+format(fracH,'1.1f')+' column_length:'+str(L))
 
     
-    TypicalLength=0.01
-    d6py.modifyConfigFile(newConfigFile,newConfigFile,'res',[int(Lmod/TypicalLength),int(0.06/TypicalLength),resZ]) #pour avoir un réolution divisible par 10 selon Y
+    delta_x_and_delta_y=args.get('delta_x_and_delta_y',0.01)
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'res',[int(Lmod/delta_x_and_delta_y),int(0.06/delta_x_and_delta_y),resZ]) #pour avoir un réolution divisible par 10 selon Y
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'I0',[I0]) 
       
     #load the final config file dictionnary    
@@ -141,12 +141,20 @@ lExp=np.sort(lExp)
 import time
 t=time.time()
 
-for j in range(0,7 ):  
+# for j in range(7,8 ):  
+#     sE=lExp[j] #Selected exeperiment
+#     sdictE=dictExp[sE]
+#     for dmu in [0]:
+#         for r,s,p in zip([0.01],[20],['res-1cm-sub-20-DG_UNSTRUCTURED']):
+#             rund6py(sdictE,delta_mu=0.,mu=np.round(sdictE['mu']+dmu,2),delta_x_and_delta_y=r,substeps=s,prop=p)
+
+
+for j in range(7,8 ):  
     sE=lExp[j] #Selected exeperiment
     sdictE=dictExp[sE]
-    for dmu in [0.05]:
-        for s,p in zip([20],['frame-0']):
-            rund6py(sdictE,delta_mu=0.,mu=np.round(sdictE['mu']+dmu,2),substeps=s,prop=p)
+    for dmu in [0]:
+        for r,s,p in zip([0.01],[20],['res-1cm-sub-20-UNSTRUCTURED']):
+            rund6py(sdictE,delta_mu=0.,mu=np.round(sdictE['mu']+dmu,2),delta_x_and_delta_y=r,substeps=s,prop=p)
 
 # for j in range(0,9 ): 
 #     sE=lExp[j] #Selected exeperiment

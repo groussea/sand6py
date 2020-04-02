@@ -10,5 +10,6 @@ build/*
 /build
 /build_2d
 /build-2d
-/vendor
+/build_DG_UNSTRUCTURED
+/build-UNSTRUCTURED
 *.so

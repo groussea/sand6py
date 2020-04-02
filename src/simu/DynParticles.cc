@@ -167,8 +167,11 @@ void DynParticles::update(const Config &config, const Scalar dt, const Phase &ph
 		// Inertia
 		{
 			const Scalar DuT = ( Du - 1./WD * Du.trace() * Mat::Identity() ).norm()  ;
-			m_inertia(i) = DuT / std::sqrt( phase.fraction(d0loc) *std::max( 1.e-16, phase.stresses(d0loc)[0] ) ) ;
-			m_geo.m_inertia[i] = DuT / std::sqrt( phase.fraction(d0loc) *std::max( 1.e-19, phase.stresses(d0loc)[0] ) ) ;
+			// m_inertia(i) = DuT / std::sqrt( phase.fraction(d0loc) *std::max( 1.e-16, phase.stresses(d0loc)[0] ) ) ;
+			// m_geo.m_inertia[i] = DuT / std::sqrt( phase.fraction(d0loc) *std::max( 1.e-19, phase.stresses(d0loc)[0] ) ) ;
+			m_inertia(i) = DuT / std::sqrt( std::max( 1.e-16, phase.stresses(d0loc)[0] ) ) ;
+			m_geo.m_inertia[i] = DuT / std::sqrt( std::max( 1.e-19, phase.stresses(d0loc)[0] ) ) ;
+			
 			m_pressure(i) =  std::max( 1.e-19, phase.stresses(d0loc)[0] ) ;
 			m_DuT(i) =   DuT  ;
 		}

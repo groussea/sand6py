@@ -730,8 +730,8 @@ class NumericalRun():
          #detect points in the Y layer
 
         self.selectedInd=[]
-        Ymin =  self.grid_y[0,self.nYplot,0]-self.dy/4
-        Ymax =  self.grid_y[0,self.nYplot,0]+self.dy/4
+        Ymin =  self.grid_y[0,self.nYplot,0]-self.dy/2
+        Ymax =  self.grid_y[0,self.nYplot,0]+self.dy/2
         ind=0
         for p in self.pointsp:
             if p[1]> Ymin and p[1] < Ymax:
