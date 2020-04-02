@@ -152,8 +152,8 @@ t=time.time()
 for j in range(7,8 ):  
     sE=lExp[j] #Selected exeperiment
     sdictE=dictExp[sE]
-    for dmu in [0]:
-        for r,s,p in zip([0.01],[20],['res-1cm-sub-20-UNSTRUCTURED']):
+    for dmu in [-0.05,0]:
+        for r,s,p in zip([0.01],[20],['res-1cm-sub-20-split-and-merge']):
             rund6py(sdictE,delta_mu=0.,mu=np.round(sdictE['mu']+dmu,2),delta_x_and_delta_y=r,substeps=s,prop=p)
 
 # for j in range(0,9 ): 

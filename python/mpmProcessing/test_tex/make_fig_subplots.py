@@ -22,7 +22,6 @@ matplotlib.use("Qt5Agg")
 # sys.stdout = open(os.devnull, 'w')
 # intialize font type and size
 plt.rcParams['font.size'] = 8.0
-
 plt.rcParams['xtick.labelsize'] = 8.0
 plt.rcParams['ytick.labelsize'] = 8.0
 plt.rcParams['ytick.labelsize'] = 8.0
@@ -47,8 +46,8 @@ selectedRuns2, selectedDict = d6py.whereSand6OutFromParms(listNumRun,res=[122.0,
 
 
 #%%
-selectedRuns=[Ref[-1],selectedRuns[-1],selectedRuns2[-1]]
-# selectedRuns = [Ref[-1], selectedRuns[-1]]
+# selectedRuns=[Ref[-1],selectedRuns[-1],selectedRuns2[-1]]
+selectedRuns = [Ref[1], selectedRuns[1]]
 
 
 scale = 0.01  # 1cm
@@ -363,7 +362,7 @@ cb.set_label('Velocity norm [m/s]', fontsize=8)
 cbaxes = ax2.set_position([x, y-0.03, X, Y])
 plt.show()
 # fig.savefig("test_savefig_pdf_5_mm.pdf", dpi=300)
-fig.savefig("/media/gauthier/Data-Gauthier/Gauthier/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular.wiki/collapses/Run_07/reference/test_Run07_ref_1_cm.svg", dpi=150)
+fig.savefig("/media/gauthier/Data-Gauthier/Gauthier/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular.wiki/collapses/Run_07/reference/test_Run07_DG_1_cm.svg", dpi=150)
 # sys.stdout = sys.__stdout__
 print(r'\includegraphics{test_savefig_pdf.pdf}')
 

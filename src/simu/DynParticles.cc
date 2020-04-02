@@ -34,8 +34,8 @@
 
 #include <random>
 
-// #define SPLIT
-// #define MERGE
+#define SPLIT
+#define MERGE
 
 //#define GRAD_FROM_VEL
 #define ANALYTIC_FRAME_CONVECTION
