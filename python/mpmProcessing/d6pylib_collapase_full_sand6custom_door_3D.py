@@ -1,3 +1,5 @@
+
+#%%
 #!/usr/bin/env python
 """
 Created on Mon Oct 16 14:35:06 2017
@@ -9,33 +11,41 @@ readconfigFile(configFile) return a disctionary with 18 firs lines of the config
 
 @author: Gauthier
 """
-#%%
+
 import numpy as np  
 import json
 import sys, os
-# driveFolder='/scratch/garousse/'
-driveFolder='/media/gauthier/Gauthier_Backup/'
-driveFolder='/media/gauthier/Data-Gauthier/Gauthier/'
- # the genarated dictionnary-json path
-JSONpath=driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/Video_src/dictExp.json'
 
-    # the d6 soft path
-d6Path=driveFolder+'TAF/TAF_inria/Sand6/epfl_lhe_2d_and_3d/build_fast'
-d6Path='/media/gauthier/Data-Gauthier/programs/gitLab/sand6/build'
-# d6Path='/scratch/garousse/TAF/TAF_inria/INRIA_current_work/GitLab/sand6/build'
-#d6Path=driveFolder+'TAF/TAF_inria/GitLab/sand6cohesive/build_julien'
-#d6Path='/home/gauthier/programs/epfl_lhe/build2d'
-d6OutFolder='out'
-out_Opyf=driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/outputs_opyf/'
+
+fileDir = os.path.dirname(os.path.abspath(__file__))
+
+print(fileDir)
+
+d6Path=fileDir+'/../../build'
+
+
+
+mainOutFolder=d6Path+'/out'
+
+
+
+JSONpath=fileDir+'/../Granular_Collapses_Experimental_Informations.json'
 
 
 os.chdir(d6Path)
-    #add d6py module pythonpath
+#add d6py module pythonpath
 sys.path.append(d6Path+'/../python')
+
 
 
 import d6py
 from d6py.d6python3D import * # python must be reload if d6python2D was imported
+
+#% by default, omainOutPut folder is in the build folder but it is highly recommended to set your own mainOutPut folder since outputs are generally large
+mainOutFolder=d6Path+'/out'
+
+d6py.mkdir2(mainOutFolder) 
+
 #%%
 def rund6py(sdictE,**args):
 
@@ -82,8 +92,8 @@ def rund6py(sdictE,**args):
     else:
         runName=str('Run_'+format(j,'02.0f')+'_3D_no_Door_start_at_0.13_s_'+sdictE['grainType']+'_Slope='+format(sdictE['Slope'],'.0f')+'deg_delta_mu='+format(delta_mu,'.3f')+'_substeps_'+str(substeps)+'_fracH='+str(fracH)+'_I0_start='+format(I0_start,'.4f')+'_delta_mu_start='+format(delta_mu_start,'.2f')+prop)      
        
-     
-    d6OutFolder='/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/'+runName
+
+    d6OutFolder=mainOutFolder+'/'+runName
     d6py.mkdir2(d6OutFolder) 
     
     newConfigFile=d6OutFolder+'/collapse.3d_'+runName+'m.conf'
@@ -116,14 +126,9 @@ def rund6py(sdictE,**args):
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'res',[int(Lmod/delta_x_and_delta_y),int(W/delta_x_and_delta_y),resZ]) #pour avoir un réolution divisible par 10 selon Y
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'I0',[I0]) 
       
-    #load the final config file dictionnary    
-        
-    # dConfigmod=d6py.readConfigFile(newConfigFile)
-    #% 
+
 
     d6run(d6OutFolder,newConfigFile)
-    
-    # d6py.d62vtk(d6OutFolder,allF=True,particles=True)
 
 
 
@@ -151,34 +156,9 @@ for j in [7,8]:
     sE=lExp[j] #Selected exeperiment
     sdictE=dictExp[sE]
 
-#FOr rendering 
-    # for dmu,dmus in zip([0.05],[0.1]):
-    #     rund6py(sdictE, delta_mu=0.0,muRigid=0.05,mu=np.round(sdictE['mu']+dmu,2),prop='continuous_test_mu_R_render',fps=150,nFrames=int(sdictE['nFrames']),nSamples=2,I0_start=0.004,delta_mu_start=dmus,rand=1,substeps=4)
-    # for dmu,dmus in zip([0.],[0.]):
-    #     rund6py(sdictE, delta_mu=0., muRigid=0., mu=np.round(sdictE['mu'] + dmu, 2), prop='test-door', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=dmus, rand=1, substeps=40)
-    # for dmu,dmus in zip([0.],[0.]):
-    #     rund6py(sdictE, delta_mu=0., muRigid=0.18, mu=np.round(sdictE['mu'] + dmu, 2), prop='test-door', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=dmus, rand=1, substeps=40)
-    # for dmu,dmus in zip([0.0],[0.05]):
-    #     rund6py(sdictE, delta_mu=0., muRigid=0., mu=np.round(sdictE['mu'] + dmu, 2), prop='test-door', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.005, delta_mu_start=dmus, rand=1, substeps=40)
-    # for dmu,dmus in zip([0.0],[0.05]):
-    #     rund6py(sdictE, delta_mu=0., muRigid=0.11, mu=np.round(sdictE['mu'] + dmu, 2), prop='test-door', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.005, delta_mu_start=dmus, rand=1, substeps=40)
 
-
-## runs from 4 to 8
-    for dmu,dmus in zip([0.2],[0.]):
-        rund6py(sdictE, delta_mu=0., muRigid=0.18, mu=np.round(sdictE['mu'] + dmu, 2), prop='test-door', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=dmus, rand=1, substeps=40)
-
-    # for dmu,dmus in zip([-0.05],[0.]):
-    #     rund6py(sdictE, delta_mu=0.22, muRigid=0.18, mu=np.round(sdictE['mu'] + dmu, 2), prop='test-scaling', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=dmus, rand=1, substeps=60)
-
-    # for dmu,dmus in zip([0.05],[0.]):
-    #     rund6py(sdictE, delta_mu=0.26, muRigid=0.18, mu=np.round(sdictE['mu'] + dmu, 2), prop='test-scaling', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=dmus, rand=1, substeps=60)
-
-# simulations with a varying flume width
-    # for muR in [0.05,10**6]:
-    #     rund6py(sdictE, delta_mu=0.26, muRigid=muR, mu=np.round(sdictE['mu'] + 0.05, 2), prop='test-scaling', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=0, rand=1, substeps=80,W=0.08)
-    # for w in [0.8]:
-    #     rund6py(sdictE, delta_mu=0., muRigid=0., mu=np.round(sdictE['mu'] + 0.02, 2), prop='test-runout1', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=0, rand=1, substeps=40,W=w,wsw=0.01)
+    for w in [0.1]:
+        rund6py(sdictE, delta_mu=0., muRigid=0., mu=np.round(sdictE['mu'] + 0.05, 2), prop='test-runout', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=0, rand=1, substeps=40,W=w,wsw=0.01)
 
     # for dmu,dmus in zip([0.05],[0.]):
     #     rund6py(sdictE, delta_mu=0.26, muRigid=0.18, mu=np.round(sdictE['mu'] + dmu, 2), prop='test-scaling', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=dmus, rand=1, substeps=80)

@@ -1,0 +1,326 @@
+{
+    "Run_00_gravels-2.7mm_Slope=0deg_H=0.114m_L=0.187": {
+        "camType": "Phantom",
+        "date": "20170713",
+        "videosrc": "/Phantom/20170713/3_0deg_Essai1_Epaisseur2.avi",
+        "Expfile": "3_0deg_Essai1_Epaisseur2.avi_info.txt",
+        "ROI": [
+            15,
+            12,
+            769,
+            251
+        ],
+        "OR": [
+            302,
+            225
+        ],
+        "OR2": [
+            287,
+            213
+        ],
+        "scale": 0.0006185726436248357,
+        "framedeb": 330.0,
+        "Slope": 0.0,
+        "Hpx": 184.0,
+        "H": 0.11381736642696977,
+        "Lpx": 302.0,
+        "L": 0.18680893837470036,
+        "Ltotpx": 1000.0,
+        "Ltot": 0.6185726436248357,
+        "fps": 1500,
+        "mu": 0.65,
+        "density": 1517,
+        "grainType": "gravels-2.7mm",
+        "grainDiameter": 0.0027,
+        "nFrames": 100.0,
+        "maskTh": 0.7
+    },
+    "Run_01_gravels-2.7mm_Slope=5deg_H=0.124m_L=0.198": {
+        "camType": "Phantom",
+        "date": "20170713",
+        "videosrc": "/Phantom/20170713/5_5deg_Essai1_Epaisseur2.avi",
+        "Expfile": "5_5deg_Essai1_Epaisseur2.avi_info.txt",
+        "ROI": [
+            8,
+            12,
+            769,
+            242
+        ],
+        "OR": [
+            322,
+            224
+        ],
+        "OR2": [
+            314,
+            212
+        ],
+        "scale": 0.0006185726436248357,
+        "framedeb": 220.0,
+        "Slope": 5.0,
+        "Hpx": 201.0,
+        "H": 0.12433310136859198,
+        "Lpx": 320.0,
+        "L": 0.19794324595994742,
+        "Ltotpx": 1000.0,
+        "Ltot": 0.6185726436248357,
+        "fps": 1500,
+        "mu": 0.65,
+        "density": 1517,
+        "grainType": "gravels-2.7mm",
+        "grainDiameter": 0.0027,
+        "nFrames": 115.0,
+        "maskTh": 0.7
+    },
+    "Run_02_gravels-2.7mm_Slope=10deg_H=0.115m_L=0.279": {
+        "camType": "Phantom",
+        "date": "20170713",
+        "videosrc": "/Phantom/20170713/7_10deg_Essai2_Epaisseur2.avi",
+        "Expfile": "7_10deg_Essai2_Epaisseur2.avi_info.txt",
+        "ROI": [
+            8,
+            3,
+            788,
+            207
+        ],
+        "OR": [
+            372,
+            171
+        ],
+        "OR2": [
+            364,
+            168
+        ],
+        "scale": 0.0007518796992481203,
+        "framedeb": 168.0,
+        "Slope": 10.0,
+        "Hpx": 153.0,
+        "H": 0.11503759398496241,
+        "Lpx": 371.0,
+        "L": 0.27894736842105267,
+        "Ltotpx": 1000.0,
+        "Ltot": 0.7518796992481204,
+        "fps": 1500,
+        "mu": 0.65,
+        "density": 1517,
+        "grainType": "gravels-2.7mm",
+        "grainDiameter": 0.0027,
+        "nFrames": 130.0,
+        "maskTh": 0.8
+    },
+    "Run_03_gravels-2.7mm_Slope=15deg_H=0.117m_L=0.268": {
+        "camType": "Phantom",
+        "date": "20170713",
+        "videosrc": "/Phantom/20170713/8_15deg_Essai1_Epaisseur2.avi",
+        "Expfile": "8_15deg_Essai1_Epaisseur2.avi_info.txt",
+        "ROI": [
+            8,
+            3,
+            788,
+            207
+        ],
+        "OR": [
+            351,
+            176
+        ],
+        "OR2": [
+            343,
+            173
+        ],
+        "scale": 0.0007604562737642586,
+        "framedeb": 400.0,
+        "Slope": 15.0,
+        "Hpx": 154.0,
+        "H": 0.11711026615969583,
+        "Lpx": 352.0,
+        "L": 0.26768060836501906,
+        "Ltotpx": 1000.0,
+        "Ltot": 0.7604562737642586,
+        "fps": 1500,
+        "mu": 0.65,
+        "density": 1517,
+        "grainType": "gravels-2.7mm",
+        "grainDiameter": 0.0027,
+        "nFrames": 145.0,
+        "maskTh": 0.7
+    },
+    "Run_04_glass-beads-0.47mm_Slope=0deg_H=0.119m_L=0.223": {
+        "camType": "BW",
+        "date": "20170724",
+        "videosrc": "/BW/20170724/3_0deg.avi",
+        "Expfile": "3_0deg.avi_info.txt",
+        "ROI": [
+            35,
+            0,
+            1196,
+            315
+        ],
+        "OR": [
+            466,
+            250
+        ],
+        "OR2": [
+            431,
+            250
+        ],
+        "scale": 0.0005058680696074464,
+        "framedeb": 760.0,
+        "Slope": 0.0,
+        "Hpx": 236.0,
+        "H": 0.11938486442735734,
+        "Lpx": 441.0,
+        "L": 0.22308781869688385,
+        "Ltotpx": 1260.0,
+        "Ltot": 0.6373937677053824,
+        "fps": 1500,
+        "mu": 0.43,
+        "density": 1473,
+        "grainType": "glass-beads-0.47mm",
+        "grainDiameter": 0.00047,
+        "nFrames": 130.0,
+        "maskTh": 0.8
+    },
+    "Run_05_glass-beads-0.47mm_Slope=5deg_H=0.111m_L=0.223": {
+        "camType": "BW",
+        "date": "20170725",
+        "videosrc": "/BW/20170725/1_5deg_1500fps_650micros.avi",
+        "Expfile": "1_5deg_1500fps_650micros.avi_info.txt",
+        "ROI": [
+            21,
+            1,
+            1242,
+            271
+        ],
+        "OR": [
+            413,
+            210
+        ],
+        "OR2": [
+            392,
+            209
+        ],
+        "scale": 0.0005739514348785872,
+        "framedeb": 390.0,
+        "Slope": 5.0,
+        "Hpx": 193.0,
+        "H": 0.11077262693156732,
+        "Lpx": 388.0,
+        "L": 0.22269315673289183,
+        "Ltotpx": 1260.0,
+        "Ltot": 0.7231788079470198,
+        "fps": 1500,
+        "mu": 0.43,
+        "density": 1473,
+        "grainType": "glass-beads-0.47mm",
+        "grainDiameter": 0.00047,
+        "nFrames": 166.66666666666666,
+        "maskTh": 0.8
+    },
+    "Run_06_glass-beads-0.47mm_Slope=10deg_H=0.111m_L=0.224": {
+        "camType": "BW",
+        "date": "20170725",
+        "videosrc": "/BW/20170725/2_10deg_1500fps_650micros.avi",
+        "Expfile": "2_10deg_1500fps_650micros.avi_info.txt",
+        "ROI": [
+            28,
+            1,
+            1252,
+            276
+        ],
+        "OR": [
+            418,
+            213
+        ],
+        "OR2": [
+            390,
+            212
+        ],
+        "scale": 0.0005739514348785872,
+        "framedeb": 490.0,
+        "Slope": 10.0,
+        "Hpx": 193.0,
+        "H": 0.11077262693156732,
+        "Lpx": 390.0,
+        "L": 0.223841059602649,
+        "Ltotpx": 1260.0,
+        "Ltot": 0.7231788079470198,
+        "fps": 1500,
+        "mu": 0.43,
+        "density": 1473,
+        "grainType": "glass-beads-0.47mm",
+        "grainDiameter": 0.00047,
+        "nFrames": 203.33333333333331,
+        "maskTh": 0.8
+    },
+    "Run_07_glass-beads-0.47mm_Slope=15deg_H=0.111m_L=0.224": {
+        "camType": "BW",
+        "date": "20170725",
+        "videosrc": "/BW/20170725/6_15deg_1500fps_600micros.avi",
+        "Expfile": "6_15deg_1500fps_600micros.avi_info.txt",
+        "ROI": [
+            15,
+            4,
+            1265,
+            263
+        ],
+        "OR": [
+            406,
+            211
+        ],
+        "OR2": [
+            391,
+            207
+        ],
+        "scale": 0.0005739514348785872,
+        "framedeb": 740.0,
+        "Slope": 15.0,
+        "Hpx": 193.0,
+        "H": 0.11077262693156732,
+        "Lpx": 391.0,
+        "L": 0.2244150110375276,
+        "Ltotpx": 1260.0,
+        "Ltot": 0.7231788079470198,
+        "fps": 1500,
+        "mu": 0.43,
+        "density": 1473,
+        "grainType": "glass-beads-0.47mm",
+        "grainDiameter": 0.00047,
+        "nFrames": 240.0,
+        "maskTh": 0.8
+    },
+    "Run_08_glass-beads-0.47mm_Slope=20deg_H=0.111m_L=0.224": {
+        "camType": "BW",
+        "date": "20170725",
+        "videosrc": "/BW/20170725/9_20deg_1500fps_550micros.avi",
+        "Expfile": "9_20deg_1500fps_550micros.avi_info.txt",
+        "ROI": [
+            21,
+            2,
+            1265,
+            263
+        ],
+        "OR": [
+            409,
+            223
+        ],
+        "OR2": [
+            394,
+            219
+        ],
+        "scale": 0.0005739514348785872,
+        "framedeb": 726.0,
+        "Slope": 20.0,
+        "Hpx": 193.0,
+        "H": 0.11077262693156732,
+        "Lpx": 391.0,
+        "L": 0.2244150110375276,
+        "Ltotpx": 1260.0,
+        "Ltot": 0.7231788079470198,
+        "fps": 1500,
+        "mu": 0.43,
+        "density": 1473,
+        "grainType": "glass-beads-0.47mm",
+        "grainDiameter": 0.00047,
+        "nFrames": 276.66666666666663,
+        "maskTh": 0.8
+    }
+}
