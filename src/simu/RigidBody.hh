@@ -83,12 +83,25 @@ public:
 
 	void move_to( const Vec& pos ) const ;
 
+	void set_mu( const Scalar mu )
+	{
+		muR =mu;
+	}
+
+	Scalar mu() const
+	{
+		return muR ;
+	}
 private:
 	std::unique_ptr< LevelSet > m_levelSet ;
 
 	Scalar m_volumicMass ;
 
 	Dofs m_velocity ;
+
+//  if muR is -99, the friction given in the config file is given
+
+	Scalar muR = -99;
 
 } ;
 

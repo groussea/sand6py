@@ -219,7 +219,8 @@ void GLViewer::update_vaos()
 
 Eigen::Vector3f GLViewer::lightPosition() const
 {
-	return ( m_offline.box()*2).cast< float >() + 3 * m_offline.box().norm() * m_lightDirection.normalized() ;
+    // (m_offline.box()).cast< float >() +
+	return    m_offline.box().norm() * m_lightDirection.normalized() ;
 }
 
 void GLViewer::draw() const

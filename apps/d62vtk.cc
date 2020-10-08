@@ -56,7 +56,10 @@ void dump_frame( const d6::Offline& offline, bool particles,
 	if(particles) {
 		d6::VTKParticlesWriter particlesWriter( base_dir, offline.particles() ) ;
 		particlesWriter.startFile( "particles", frame ) ;
+
 		particlesWriter.dump_all() ;
+
+
 	}
 
 	{
@@ -93,7 +96,7 @@ void dump_frame( const d6::Offline& offline, bool particles,
 		fieldWriter.dump(    "p", p ) ;
 		fieldWriter.dump(   "dh", dh ) ;
 		fieldWriter.dump( "taun", taun ) ;
-		//	fieldWriter.dump( "lambda", offline.grains().stresses ) ;
+		fieldWriter.dump( "lambda", offline.grains().stresses ) ;
 	}
 
 }

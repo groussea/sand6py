@@ -3,6 +3,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #  Author : Gauthier Rousseau
+import sys
 import opyf  # from opyflow library some rendering function may be employed
 sys.path.append(
     '/media/gauthier/Data-Gauthier/programs/gitLab/sand6/python/imageProcessing')
@@ -11,11 +12,11 @@ import matplotlib.pyplot as plt
 from d6py.Tools import *
 import d6py
 # intialize exteral packages
-import sys
+
 import os
 import numpy as np
 import matplotlib
-matplotlib.use("Qt5Agg")
+%matplotlib qt5
 # sys.path.append('/media/gauthier/Data-Gauthier/programs/gitLab/sand6/python')
 # sys.path.append('/media/gauthier/Data-Gauthier/programs/gitHub/opyflow')
 
@@ -28,29 +29,35 @@ plt.rcParams['ytick.labelsize'] = 8.0
 plt.rcParams['axes.linewidth'] = 1
 # print(r'\includegraphics{test_2.pdf}')
 driveFolder = '/media/gauthier/Data-Gauthier/Gauthier'
-maind6OutFolder = '/media/gauthier/Samsung_T5/sand6_out/'
+maind6OutFolder = '/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/'
 paths, folders, listDictConf, listNumRun = d6py.findOutSand6Paths(
     maind6OutFolder, 4)
 
-N = 7
-# Reference
-Ref, selectedDict = d6py.whereSand6OutFromParms(listNumRun,res=[122.0, 6.0, 30.0],substeps=20,muRigid=0.18,mu=0.38, delta_mu=0, runNumber=N, dimSim=3)
-selectedRuns, selectedDict = d6py.whereSand6OutFromParms(listNumRun,res=[122.0, 6.0, 30.0],substeps=20,muRigid=0.18,mu=0.43, delta_mu=0, runNumber=N, dimSim=3)
-selectedRuns2, selectedDict = d6py.whereSand6OutFromParms(listNumRun,res=[122.0, 6.0, 30.0],substeps=20,muRigid=0.18,mu=0.48, delta_mu=0, runNumber=N, dimSim=3)
-
-
-# Ref, selectedDict = d6py.whereSand6OutFromParms(listNumRun, res=[244.0, 12.0, 30.0],substeps=40, muRigid=0.18, mu=0.38, delta_mu=0, runNumber=N, dimSim=3)
-# selectedRuns, selectedDict = d6py.whereSand6OutFromParms(listNumRun, res=[244.0, 12.0, 30.0], substeps=40, muRigid=0.18,mu=0.43, delta_mu=0, runNumber=N, dimSim=3)
-# selectedRuns2, selectedDict = d6py.whereSand6OutFromParms(listNumRun, res=[244.0, 12.0, 30.0], substeps=20, muRigid=0.18,mu=0.48, delta_mu=0, runNumber=N, dimSim=3)
-
-
-
-#%%
-# selectedRuns=[Ref[-1],selectedRuns[-1],selectedRuns2[-1]]
-selectedRuns = [Ref[1], selectedRuns[1]]
-
-
+Nrun = 8
 scale = 0.01  # 1cm
+
+mainExpFolder = driveFolder + \
+    '/TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/outputs_opyf'
+runExp1 = d6py.ExperimentalRun(Nrun, mainExpFolder, loadField=True)
+runExp1.scLength(scale)
+mu = runExp1.dictE['mu']
+
+# Reference
+dmu=-0.05
+
+
+Ref, selectedDict = d6py.whereSand6OutFromParms(listNumRun, muRigid=0.18,mu=mu-dmu, delta_mu=0., runNumber=Nrun, dimSim=3, delta_mu_start=0)
+
+selectedRuns, selectedDict = d6py.whereSand6OutFromParms(listNumRun, muRigid=0.18, mu=mu - dmu, delta_mu=0.22, runNumber=Nrun, dimSim=3, delta_mu_start=0)
+
+
+sr=selectedRuns[0]
+
+#%%#
+sys.stdout = open(os.devnull, 'w')
+# selectedRuns=[R2,R2,R2]
+selectedRuns = [Ref[0], sr]
+
 
 
 for sR in selectedRuns:
@@ -58,10 +65,7 @@ for sR in selectedRuns:
     nF = int(sR.dConfig['nFrames'])
 
 
-mainExpFolder = driveFolder + \
-    '/TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/outputs_opyf'
-runExp1 = d6py.ExperimentalRun(N, mainExpFolder, loadField=True)
-runExp1.scLength(scale)
+
 
 runExp1.loadVideo(
     '/media/gauthier/Samsung_T5/MPM_data/Collapse_experiment/Video_src', mute=True)
@@ -81,10 +85,15 @@ runExp1.video.scaleData(
     metersPerPx=runExp1.dictE['scale']/scale, framesPerSecond=runExp1.dictE['fps'], origin=OR2)
 runExp1.video.paramPlot['extentFrame']
 vec_cap_time = np.array([0, 1, 2, 4, 8, 16, 32, 64, 128])*runExp1.typicalTime
+
+sys.stdout = sys.__stdout__
+
 # %%
+
 plt.ion()
 plt.rcParams['font.family'] = 'serif'
 plt.rc('text', usetex=True)
+
 plt.close('all')
 
 cmapg = opyf.custom_cmap.make_cmap_customized(Palette='green')
@@ -105,7 +114,7 @@ w_fig = (L + runExp1.xmax *
 w_fig = 15
 N = 3
 M = 3
-fig, axs = plt.subplots(N, M, dpi=142, figsize=(w_fig * 0.39, 13 * 0.39))
+fig, axs = plt.subplots(N, M, dpi=142, figsize=(w_fig * 0.37, 13 * 0.37))
 
 # fig = plt.figure(dpi=142, figsize=(w_fig * 0.39, 11 * 0.39))
 
@@ -131,6 +140,7 @@ for i in range(N):
 # draw lines to separate experimental plots
 ax_draw = fig.add_axes([0, 0, 1, 1], zorder=-10)
 ax_draw.grid()
+ax_draw.set_axis_off()
 X_line = w_s + (w_axs + 0.01)
 [x, y, X, Y] = axs[2, 2].get_position().bounds
 Y_sep = y-0.03
@@ -199,8 +209,9 @@ draw_ax_sc(ax2, x_sc, y_sc, lx_sc, ly_sc, fmt='.0f', shift_y_txt=.5)
 from matplotlib.patches import Circle, Wedge, Polygon, Arc, Rectangle
 
 dS5=5*np.array(sR.dConfig['box'])/np.array(sR.dConfig['res'])*100
+kDim=len(dS5)-1
+rect = Rectangle([20, 10], -dS5[0], -dS5[kDim], ec="none",color='k', linewidth=0.5,zorder=1)
 
-rect = Rectangle([20, 10], -dS5[0], -dS5[2], ec="none",color='k', linewidth=0.5,zorder=1)
 ax2.add_patch(rect)
 ax2.text(20-dS5[0]/2,10.5,r'5 $\delta x$',horizontalalignment='center')
 ax2.text(20.5,8.5,r'5 $\delta z$')
@@ -242,15 +253,21 @@ plt.figtext(0.01, y+Y/2, 't=1.6 s', fontsize=7)
 # write Experiments and Model
 [x, y, X, Y] = axs[0, 0].get_position().bounds
 plt.figtext(x+X/2, y+Y+0.07, 'Experiment',
-            fontsize=10, horizontalalignment='center')
+            fontsize=9, horizontalalignment='center')
 [x, y, X, Y] = axs[0, 1].get_position().bounds
-plt.figtext(x+X+w_s2/2, y+Y+0.07, 'Simulations',
-            fontsize=10, horizontalalignment='center')
-plt.figtext(x + X / 2, y + Y + 0.03, '$\mu_1$=0.38',
-            fontsize=10, horizontalalignment='center')
+plt.figtext(x+X+w_s2/2, y+Y+0.07, '3D simulations',
+            fontsize=9, horizontalalignment='center')
+plt.figtext(x+X/2, y+Y+0.045, 'Constant $\mu$',
+            fontsize=9, horizontalalignment='center')
 [x, y, X, Y] = axs[0, 2].get_position().bounds
-plt.figtext(x+X/2, y+Y+0.03, '$\mu_1$=0.43',
-            fontsize=10, horizontalalignment='center')
+plt.figtext(x+X/2, y+Y+0.045, r'\textit{$\mu(I)$-rheology}',
+            fontsize=9, horizontalalignment='center')
+
+for j in range(1,3):
+    [x, y, X, Y] = axs[0, j].get_position().bounds
+    plt.figtext(x + X / 2-0.06, y + Y +0.015, '$\mu_1$='+ toS(selectedRuns[j-1].dConfig['mu'], 2) , fontsize=8, horizontalalignment='center')
+    plt.figtext(x + X / 2+0.06, y + Y +0.015, '$\mu_w$='+ toS(selectedRuns[j-1].dConfig['muRigid'], 2) , fontsize=8, horizontalalignment='center')
+
 
 ax_draw.set_xlim([0, 1])
 ax_draw.set_ylim([0, 1])
@@ -281,22 +298,24 @@ indContrst = 0
 ls = ['--', '-', '-.', '--']
 c = [1., 1.2, 1.1, 0.9]
 SR = selectedRuns[0:2]
-shiftExp = 5
-for ifile in [0, 3, 9]:
+if Nrun > 7:
+    shiftExp = -1
+else:
+    shiftExp=5
+for ifile in [3, 6, 12]:
 
     ax = axs[k, 0]
     h1, l1 = [], []
 
-    runExp1.video.readFrame(int(runExp1.dictE['framedeb']) - 100 + 10 * 240)
+    # runExp1.video.readFrame(int(runExp1.dictE['framedeb']) - 100 + 10 * 240)
 
-    runExp1.video.readFrame(np.max([int(runExp1.dictE['framedeb']) - 100 + ifile * (
-        100) - shiftExp*10, int(runExp1.dictE['framedeb']) - 100]))
+    runExp1.video.readFrame(np.max([int(runExp1.dictE['framedeb']) - 400 + ifile * (100) - shiftExp*10, int(runExp1.dictE['framedeb']) - 100]))
     vis = opyf.Render.CLAHEbrightness(runExp1.video.vis, 150)
     ax.imshow(vis, extent=runExp1.video.paramPlot['extentFrame'])
     runExp1.plotField(ax, np.max(
-        [ifile * 10 - shiftExp, 0]), vmin=0, vmax=1, cmap=cmap)
+        [(ifile-3) * 10 - shiftExp, 0]), vmin=0, vmax=1, cmap=cmap)
     runExp1.plotDepthProfile(ax, np.max(
-        [ifile * 10 - shiftExp, 0]), linestyle='-.', color='k', linewidth=1, label="Experience")
+        [(ifile-3) * 10 - shiftExp, 0]), linestyle='-.', color='k', linewidth=1, label="Experience")
 
     for sR, i in zip(SR, range(len(SR))):
         ax = axs[k, i + 1]
@@ -304,12 +323,12 @@ for ifile in [0, 3, 9]:
 
         sR.plotContour(ax, levels=[0.5], linewidths=c[i % 4], linestyles=ls[i % 4], colors=[
                        cmapg((NsR-i)/(NsR+indContrst))])
-        im = sR.opyfPointCloudColoredScatter(
-            ax, nvec=6000, mute=True, vmin=0, vmax=1, s=0.8, cmap=cmap, rasterized=True)
-
+        # im = sR.opyfPointCloudColoredScatter(
+        #     ax, nvec=6000, mute=True, vmin=0, vmax=1, s=0.8, cmap=cmap, rasterized=True)
+        im = sR.plotI(ax,vmin=0,vmax=0.05,interpolation='gaussian',cmap=cmap)
         sR.plotDoor(ax, alpha=0.5)
         runExp1.plotDepthProfile(ax, np.max(
-            [ifile*10-shiftExp, 0]), linestyle='-.', color='k', linewidth=1, label="Experience")
+            [(ifile-3)*10-shiftExp, 0]), linestyle='-.', color='k', linewidth=1, label="Experience")
         ax.set_yticklabels([])
         ax.set_xticklabels([])
         if ifile == nF:
@@ -331,24 +350,25 @@ for ifile in [0, 3, 9]:
 ifile = nF
 h1, l1 = [], []
 runExp1.video.readFrame(np.max([int(runExp1.dictE['framedeb']) -
-                                100 + ifile * (100) + 50, int(runExp1.dictE['framedeb']) - 100]))
-vis = opyf.Render.CLAHEbrightness(runExp1.video.vis, 140)
+                                100 + (ifile-3) * (100) + 50, int(runExp1.dictE['framedeb']) - 100]))
+vis = opyf.Render.CLAHEbrightness(runExp1.video.vis, 120)
 ax2.imshow(vis, extent=runExp1.video.paramPlot['extentFrame'])
 # runExp1.plotField(ax2, np.max([ifile * 10 - 5, 0]), vmin=0, vmax=1, cmap=cmap)
-runExp1.plotDepthProfile(ax2, np.max(
-    [ifile * 10 - 5, 0]), linestyle='-.', color='k', linewidth=1, label="Experience")
+l2d=runExp1.plotDepthProfile(ax2, np.max(
+    [(ifile-3) * 10 - 5, 0]), linestyle='-.', color='k', linewidth=1, label="Experiment")
+
+
 
 for sR, i in zip(selectedRuns, range(len(selectedRuns))):
     sR.loadVTK(int(ifile * sR.dConfig['fps'] / 15))
     sR.plotContour(ax2, levels=[0.5], linewidths=c[i % 4], linestyles=ls[i % 4], colors=[
                    cmapg((NsR-i)/(NsR+indContrst))])
-    h = sR.CS.legend_elements(str(sR.dimSim)+"D-~\mu_{RB}=" + toS(
+    h = sR.CS.legend_elements(str(sR.dimSim)+"D~-~\mu_{RB}=" + toS(
         sR.dConfig['muRigid'], 2) + " ~-~ \mu= " + toS(sR.dConfig['mu'], 2) + " - \phi")[0]
-    l = [str(sR.dimSim) + r"D-~$ ~ \mu_1$= " + toS(sR.dConfig['mu'],
-                                                   2)+r"$~-~\Delta_{\mu}$=" + toS(sR.dConfig['delta_mu'], 2)]
+    l = [str(sR.dimSim) + r"D-~$ ~ \mu_1$= " + toS(sR.dConfig['mu'],2)+r"$~-~\mu_w$=" + toS(sR.dConfig['muRigid'], 2)]
     h1, l1 = h1+h, l1+l
-ax2.legend(h1 + runExp1.l, l1 +
-           [r"Exp. - tan($\theta$)=0.43 $\pm$ 0.03"], fontsize=7, framealpha=0.5, loc=1)
+ax2.legend(h1 + l2d, l1 +
+           [r"Experiment"], fontsize=7, framealpha=0.5, loc=1)
 
 
 [x, y, X, Y] = axs[2, 2].get_position().bounds
@@ -361,10 +381,15 @@ cb.set_label('Velocity norm [m/s]', fontsize=8)
 [x, y, X, Y] = ax2.get_position().bounds
 cbaxes = ax2.set_position([x, y-0.03, X, Y])
 plt.show()
+plt.pause(0.2)
 # fig.savefig("test_savefig_pdf_5_mm.pdf", dpi=300)
-fig.savefig("/media/gauthier/Data-Gauthier/Gauthier/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular.wiki/collapses/Run_07/reference/test_Run07_DG_1_cm.svg", dpi=150)
+# fig.savefig("/media/gauthier/Data-Gauthier/Gauthier/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular.wiki/collapses/Run_07/test_Run07_wall_effect.svg", dpi=150)
+
+fig.savefig("/media/gauthier/Data-Gauthier/Gauthier/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular/doc/article/images/used_images/Run_08_mu-I.pdf", dpi=150)
 # sys.stdout = sys.__stdout__
 print(r'\includegraphics{test_savefig_pdf.pdf}')
 
 
+
 # %%
+

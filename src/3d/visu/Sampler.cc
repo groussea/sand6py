@@ -29,7 +29,7 @@
 #include <random>
 #include <iostream>
 
-#define RAD_FAC 2
+#define RAD_FAC 3
 
 namespace d6 {
 
@@ -110,7 +110,7 @@ void Sampler::move( )
 
 void Sampler::compute_absolute()
 {
-    const Scalar noise = 1.e-1 ;
+    const Scalar noise = 0.5e-1 ;
 
     const Particles& particles = m_offline.particles() ;
     const Phase& grains = m_offline.grains() ;
@@ -126,9 +126,9 @@ void Sampler::compute_absolute()
 
         const Vec p0 = particles.centers().col( pid ) ;
         const Vec p0_pred = m_predPos.col( pid ) ;
-
-        m_offsets.col( i ) = m_positions.col(i).cast<Scalar>() - p0_pred ;
-
+        
+        // m_offsets.col(i) = m_positions.col(i).cast<Scalar>() - p0_pred;
+        // std::cout << m_offsets.col(i) << std::endl;
         Mat frame ;
         tensor_view( particles.frames().col(pid) ).get( frame ) ;
         frame *= RAD_FAC ;
@@ -137,16 +137,17 @@ void Sampler::compute_absolute()
         m_offsets.col( i ) /= std::sqrt(vn)  ;
 
         const Vec pos = m_offline.meshes().primal().clamp_point(p0 + m_offsets.col(i) ) ;
-        m_offsets.col( i ) = pos - p0 ;
+        // m_offsets.col( i ) = pos - p0 ;
 
         m_positions.col(i) = pos.cast< float >() ;
 
         const auto& pos_loc = m_offline.meshes().primal().locate( pos ) ;
         Eigen::Vector3f grad_phi = grains.grad_phi( pos_loc ).cast<float>() ;
+        Scalar phi = grains.fraction( pos_loc ) ;
         const float gn = grad_phi.norm() ;
 
         if( m_mode == Normal ) {
-            if( gn > 1.e-4 ) {
+            if( phi < 1.05) {
                 grad_phi /= gn ;
                 Eigen::Quaternionf rot( Eigen::AngleAxisf( noise, m_normalNoise.col(i) ) ) ;
                 m_normals.col(i) =  - ( rot * grad_phi ).normalized() ;
@@ -169,7 +170,8 @@ void Sampler::compute_absolute()
                 // Scalar inertia = particles.inertia().col(pid).norm() * (m_offline.config().grainDiameter * std::sqrt(m_offline.config().volMass / 0.6));
                 // m_visibility(i) = std::min(inertia,0.1);
             } else {
-                m_visibility(i) = std::max( 0., std::min( 1., 1. - grains.fraction(pos_loc) ) ) ;
+                
+                 m_visibility(i) = std::max( 0., std::min( 1., 1. - grains.fraction(pos_loc) ) ) ;
             }
         }
     }
@@ -398,8 +400,9 @@ void Sampler::sampleParticles( unsigned nSamples )
                 v *= std::sqrt(RAD_FAC) ;
 
                 const Scalar vn = std::max( 1., Scalar( v.transpose() * frame.inverse() * v ) ) ;
+                
                 m_offsets.col( idx ) = v/std::sqrt(vn)  ;
-                m_positions.col( idx ) = ( particles.centers().col(i) + m_offsets.col( idx )).cast<float>() ;
+                m_positions.col(idx) = (particles.centers().col(i) + m_offsets.col(idx)).cast<float>();
 
                 sampler( v ) ;
                 m_normalNoise.col( idx ) = v.cast< float >() ;

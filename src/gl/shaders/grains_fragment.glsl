@@ -76,5 +76,5 @@ void main (void)
 	color = 0.5 * ambientMat ;
 	color += alpha * diffuse;
 
-	color.a = 0.5 ;
+	// color.a = 0.5 ;
 }

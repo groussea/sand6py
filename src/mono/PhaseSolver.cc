@@ -150,9 +150,12 @@ void PhaseSolver::addRigidBodyContrib( const Config &c, const Scalar dt, const P
 	for( Index i = 0 ; i < rb.nodes.count() ; ++i ) {
 		rbIntFraction += rb.intFraction ;
 	}
-
+// TODO a cleaner way to introduce specific friction on objects
+	if (rb.rb.mu()==-99){
 	pbData.mu.segment( rb.nodes.offset, rb.nodes.count() ).setConstant( c.muRigid ) ;
-
+	} else {
+		pbData.mu.segment(rb.nodes.offset, rb.nodes.count()).setConstant(rb.rb.mu());
+	}
 	// Two-ways coupling
 	PrimalData::InvInertiaType inv_inertia( 1, 1 ) ;
 	rb.rb.inv_inertia( inv_inertia.insertBack(0,0) ) ;
@@ -211,12 +214,12 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 
 	pbData.mu.resize( pbData.n() ) ;
 
-	// Inertia, mu(I) = \delta_mu * (1./ (1 + I0/I) ), I = dp * sqrt( rho ) * inertia, inertia = |D(U)|/sqrt(p)
+	// Inertia, mu(I) = \delta_mu * (1./ (1 + I0/I) ), I = dp * sqrt( rho_p ) * inertia, inertia = |D(U)|/sqrt(p)
 	// mu_s+delta_mu_start/(1+I00/I)+\delta_mu*I/I0
 
-	const Scalar I0_start_bar = c.I0_start / ( c.grainDiameter * std::sqrt( c.volMass )) ;
-	const Scalar I0bar = c.I0 / ( c.grainDiameter * std::sqrt( c.volMass )) ;
-	const Scalar I0_noise_bar= 0.001 / ( c.grainDiameter * std::sqrt( c.volMass )) ;
+	const Scalar I0_start_bar = c.I0_start / ( c.grainDiameter * std::sqrt( c.volMass/0.6 )) ;
+	const Scalar I0bar = c.I0 / ( c.grainDiameter * std::sqrt( c.volMass/0.6 )) ;
+	const Scalar I0_noise_bar= 0.001 / ( c.grainDiameter * std::sqrt( c.volMass/0.6 )) ;
 	const Scalar P0PowQuarter = std::pow(c.P0, 0.25) ;
 
 	// pbData.mu.segment(0,stepData.nDualNodes()).array() = c.mu -
@@ -233,31 +236,61 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 
 	// DynVec DuTU = stepData.DuT * c.units().toSI(Units::Velocity) / c.units().toSI(Units::Length);
 	// DynVec inertiaLocal = stepData.DuT/stepData.int_pressure.pow(0.5);
+	// for (unsigned k = 0; k < stepData.inertia.size(); ++k)
+	// {
+	// 	if (stepData.inertia[k]/(I0_noise_bar) < 1.0)
+	// 	{
+	// 			pbData.mu[k] = c.mu ;		
+	// 		// pbData.mu[k]= c.mu + stepData.inertia[k]/I0_start_bar*(- c.delta_mu_start + c.delta_mu / ( 1. + I0bar / I0_start_bar));
+	// 	}
+	// 				else if ((stepData.inertia[k]/(I0_start_bar) < 1.0) && (stepData.inertia[k]/(I0_noise_bar) > 1.0) )
+	// 		{
+	// 			pbData.mu[k] = c.mu - (stepData.inertia[k]/I0_start_bar)*c.delta_mu_start ;
+	// 		}
+			
+	// 	else
+	// 	{
+	// 		pbData.mu[k] = c.mu - c.delta_mu_start + c.delta_mu / (1. + I0bar / std::max(stepData.inertia[k], 1.e-12));
+	// 	};
+
+	// for (unsigned k = 0; k < stepData.inertia.size(); ++k)
+	// {
+	// 	if ((stepData.inertia[k]/(I0_start_bar) < 1.0) )
+	// 		{
+	// 			pbData.mu[k] = c.mu - (stepData.inertia[k]/I0_start_bar)*c.delta_mu_start ;
+	// 		}
+	// else
+	// 	{
+	// 		pbData.mu[k] = c.mu - c.delta_mu_start + c.delta_mu / (1. + I0bar / std::max(stepData.inertia[k], 1.e-12));
+	// 	};	}
+	
 	for (unsigned k = 0; k < stepData.inertia.size(); ++k)
 	{
-		if (stepData.inertia[k]/(I0_noise_bar) < 1.0)
-		{
-				pbData.mu[k] = c.mu ;
-
-
-		
-			// pbData.mu[k]= c.mu + stepData.inertia[k]/I0_start_bar*(- c.delta_mu_start + c.delta_mu / ( 1. + I0bar / I0_start_bar));
-		}
-					else if ((stepData.inertia[k]/(I0_start_bar) < 1.0) && (stepData.inertia[k]/(I0_noise_bar) > 1.0) )
+		if ((stepData.inertia[k]/(I0_start_bar) < 1.0) )
 			{
-				pbData.mu[k] = c.mu - (stepData.inertia[k]/I0_start_bar)*c.delta_mu_start ;
+				pbData.mu[k] = c.mu - (stepData.inertia[k]/I0_start_bar)*c.delta_mu_start  ;
+				// pbData.mu[k] = c.mu ;
+						
 			}
-			
-		else
+	else
 		{
-			pbData.mu[k] = c.mu - c.delta_mu_start + c.delta_mu / (1. + I0bar / std::max(stepData.inertia[k], 1.e-12));
+			// 0.38+0.22 / (1 + 0.3 / I)
+			pbData.mu[k] = c.mu - c.delta_mu_start + (c.delta_mu) / (1. + I0bar / std::max(stepData.inertia[k], 1.e-12));
+			// pbData.mu[k] =0.6+  (0.22) / (1. + I0bar / std::max(stepData.inertia[k], 1.e-12));
+			// 0.55 + 0.05 * np.log(I);
+			// pbData.mu[k] = 0.55 + 0.05 * std::log(std::max(stepData.inertia[k]* ( c.grainDiameter * std::sqrt( c.volMass/0.6 )), 1.e-12));
+		
 		};
-}
+	}
 
 	/// Save mu values (only for visualization purpose)
 	stepData.dualNodes.var2field( pbData.mu, phase.mu ) ;
 	
+	/// scaling of mu
 	
+	pbData.mu= 	pbData.mu*std::pow((float)(2)/(float)(WD),0.5);
+	
+
 
 	DynArr rbIntFraction( stepData.nDualNodes() ) ;
 	rbIntFraction.setZero() ;
@@ -266,14 +299,21 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	pbData.jacobians.reserve( rbData.size() ) ;
 	pbData.inv_inertia_matrices.reserve( rbData.size() ) ;
 	std::vector< unsigned > coupledRbIndices ;
+	std::map< unsigned int, PrimalData::JacobianType > exportedRbJacobians;
+
+	// specific friction for specific rigid bodies
+
+
+
 
 	for( unsigned k = 0 ; k < rbData.size() ; ++k ) {
 		const RigidBodyData& rb = rbData[k] ;
+
 		if( rb.nodes.count() == 0 )
 			continue ;
 
 		addRigidBodyContrib( c, dt, stepData, u, rb, pbData, rbIntFraction );
-
+		exportedRbJacobians[k] = pbData.jacobians.back();
 		// Do not use 2-ways coupling for bodies with very high inertias ( fixed boundaries)
 		if( pbData.inv_inertia_matrices.back().block(0).squaredNorm() < 1.e-16 ) {
 			pbData.inv_inertia_matrices.pop_back();
@@ -360,9 +400,26 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 		RigidBodyData& rb = rbData[ coupledRbIndices[k] ] ;
 		const VecS forces = pbData.jacobians[k].transpose() * x ;
 		rb.rb.integrate_forces( dt, forces );
+
 	}
 
+// TODO integrate the export feature
+	std::istringstream in( c.scenario ) ;
+	std::string line ;
 
+	in >> line ;
+	if (line=="impactlhe"){
+
+	const VecS expForces = exportedRbJacobians[0].transpose() * x;
+
+	std::cout << "[RB] Write Forces on the sphere" << std::endl;
+	std::ofstream RBout(c.base_dir + "/forces_on_sphere.csv", std::fstream::app);
+	RBout << expForces[0] * c.units().toSI(Units::Stress) * std::pow(c.units().toSI(Units::Length), 2) << ",";
+	RBout << expForces[1] * c.units().toSI(Units::Stress) * std::pow(c.units().toSI(Units::Length), 2) << ",";
+	RBout << expForces[2]* c.units().toSI( Units::Stress)*std::pow(c.units().toSI( Units::Length),2)<< "\n";
+	RBout.close();
+	
+	}
 	
 
 

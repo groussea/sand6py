@@ -34,8 +34,8 @@
 
 #include <random>
 
-#define SPLIT
-#define MERGE
+// #define SPLIT
+// #define MERGE
 
 //#define GRAD_FROM_VEL
 #define ANALYTIC_FRAME_CONVECTION
@@ -166,11 +166,14 @@ void DynParticles::update(const Config &config, const Scalar dt, const Phase &ph
 
 		// Inertia
 		{
-			const Scalar DuT = ( Du - 1./WD * Du.trace() * Mat::Identity() ).norm()  ;
+			// Scalar TypicalPressure = config.units().fromSI(Units::Stconconress);
+			Scalar TypicalMinPressure = config.grainDiameter * 4 / 3 * config.volMass * config.gravity.norm()/10;
+
+			const Scalar DuT = (Du - 1. / WD * Du.trace() * Mat::Identity()).norm();
 			// m_inertia(i) = DuT / std::sqrt( phase.fraction(d0loc) *std::max( 1.e-16, phase.stresses(d0loc)[0] ) ) ;
 			// m_geo.m_inertia[i] = DuT / std::sqrt( phase.fraction(d0loc) *std::max( 1.e-19, phase.stresses(d0loc)[0] ) ) ;
-			m_inertia(i) = DuT / std::sqrt( std::max( 1.e-16, phase.stresses(d0loc)[0] ) ) ;
-			m_geo.m_inertia[i] = DuT / std::sqrt( std::max( 1.e-19, phase.stresses(d0loc)[0] ) ) ;
+			m_inertia(i) = DuT / std::sqrt( std::max(TypicalMinPressure, phase.stresses(d0loc)[0] ) ) ;
+			m_geo.m_inertia[i] = DuT / std::sqrt( std::max(TypicalMinPressure , phase.stresses(d0loc)[0] ) ) ;
 			
 			m_pressure(i) =  std::max( 1.e-19, phase.stresses(d0loc)[0] ) ;
 			m_DuT(i) =   DuT  ;

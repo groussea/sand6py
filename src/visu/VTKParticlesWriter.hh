@@ -36,7 +36,8 @@ public:
 		Volumes,
 		Velocities,
 		Frames,
-		Orientations
+		Orientations,
+		Inertia
 	} ;
 
 	VTKParticlesWriter( const char* base_dir, const Particles& particles ) ;

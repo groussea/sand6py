@@ -102,7 +102,7 @@ private:
 	bool 	 m_drawOrientations  = false ;
     bool     m_drawAxis = true;
 
-    Eigen::Vector3f m_lightDirection = Eigen::Vector3f(0.5, 0.5, 1);
+    Eigen::Vector3f m_lightDirection = Eigen::Vector3f(0, 0., 1);
 
     Camera m_camera;
 

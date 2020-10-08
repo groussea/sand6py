@@ -67,6 +67,7 @@ void RigidBody::move_to(const Vec &pos) const
 	m_levelSet->set_origin( pos ) ;
 }
 
+
 void RigidBody::inv_inertia( MatS& Mi ) const
 {
 	m_levelSet->inv_inertia( Mi ) ;

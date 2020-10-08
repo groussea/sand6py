@@ -88,9 +88,10 @@ struct CollapseScenarLHEDoor : public Scenario
 	{
 		tauD = scalar_param(params, "taudoor", Units::Time, .06);
 		velD = scalar_param(params, "veldoor", Units::Velocity, 1.0);
-		ts = scalar_param(params, "ts", Units::None, 15);
+		ts = scalar_param(params, "ts", Units::Time, 15);
 		fracH = scalar_param(params, "frac_h", Units::None, 1.);
 		columnLength= scalar_param(params, "column_length", Units::Length, 0.);
+		zD= scalar_param(params, "zdoor", Units::Length, 0.);
 	}
 
 	void add_rigid_bodies(std::vector<RigidBody> &rbs) const override
@@ -99,7 +100,7 @@ struct CollapseScenarLHEDoor : public Scenario
 		const Scalar L = m_config->box[1] * (0.9);
 
 		LevelSet::Ptr ls = LevelSet::make_cylinder(L);
-		ls->set_origin(Vec(columnLength + m_config->typicalLength(), .1 * m_config->box[1] + L / 2 + m_config->typicalLength()));
+		ls->set_origin(Vec(columnLength + m_config->typicalLength(), .1 * m_config->box[1] + L / 2 + m_config->typicalLength()+zD));
 		ls->set_rotation(0);
 		rbs.emplace_back(ls, 1.);
 		rbs.back().set_velocity(Vec(0, 0), 0.);
@@ -111,46 +112,26 @@ struct CollapseScenarLHEDoor : public Scenario
 
 	void update(Simu &simu, Scalar time, Scalar /*dt*/) const override
 	{
-		Scalar t = time * m_config->fps;
-		Scalar tau = tauD * m_config->fps;
-
-		Scalar speedy = velD * (1 - exp(-(t - ts) / tau));
+		Scalar iF = time * m_config->fps;
+		Scalar speedy = velD * (1 - exp(-(time - ts) / tauD));
 		//         Scalar speedy = 0.1*m_config->units().fromSI( Units::Velocity)*(1-exp(-t/(0.05)));
 		Vec vel = Vec::Zero();
-		if (t > ts)
+		if (time > ts)
 		{
 			vel[1] = speedy;
 		}
-
-		for (RigidBody &rb : simu.rigidBodies())
-		{
-			rb.set_velocity(vel, 0);
-			//             std::cout << vel << std::endl;
-			// 			std::cout <<  rb.levelSet().origin() << std::endl;
-
-			std::cout << time * m_config->fps << std::endl;
-			std::cout << std::abs(t - static_cast<int>(std::round(t))) << std::endl;
-
-			if (std::abs(t - static_cast<int>(std::round(t))) < 1.e-8)
+			if (std::abs(iF - static_cast<int>(std::round(iF))) < 1.e-8)
 			{
-				std::cout << "flag" << std::endl;
-				std::ofstream RBout(m_config->base_dir + "/door.txt", std::fstream::app);
-				RBout << std::round(time * m_config->fps);
-				RBout << ",";
-				RBout << time * m_config->units().toSI(Units::Time);
-				RBout << ",";
-				RBout << time * m_config->units().toSI(Units::Time);
-				RBout << ",";
-				RBout << rb.levelSet().origin()[0] * m_config->units().toSI(Units::Length);
-				RBout << ",";
-				RBout << rb.levelSet().origin()[1] * m_config->units().toSI(Units::Length);
-				RBout << ",";
-				RBout << vel[0] * m_config->units().toSI(Units::Velocity);
-				RBout << ",";
-				RBout << vel[1] * m_config->units().toSI(Units::Velocity);
-				RBout << "\n";
-				RBout.close();
-			}
+			simu.rigidBodies()[0].set_velocity(vel, 0);
+			Vec position = simu.rigidBodies()[0].levelSet().origin();
+			std::ofstream RBout(m_config->base_dir + "/door.txt", std::fstream::app);
+			RBout << std::round(time * m_config->fps)<<",";
+			RBout << time * m_config->units().toSI(Units::Time)<<",";
+			RBout << position[0] * m_config->units().toSI(Units::Length)<<",";
+			RBout << position[1] * m_config->units().toSI(Units::Length)<<",";
+			RBout << vel[0] * m_config->units().toSI(Units::Velocity)<<",";
+			RBout << vel[1] * m_config->units().toSI(Units::Velocity)<<"\n";
+			RBout.close();
 		}
 	}
 
@@ -160,6 +141,7 @@ private:
 	Scalar ts;
 	Scalar fracH;
 	Scalar columnLength;
+	Scalar zD;
 };
 
 struct CollapseScenarLHE : public Scenario

@@ -516,10 +516,12 @@ class NumericalRun():
         if self.dConfig['scenario']=='collapselhedoor':
             if dimSim==3:
                 self.Ratio, self.Orx, self.Orz=RatioAndOrigin(self.dConfig)
-                self.Ldoor=float(self.dConfig['box'][2])*0.9
+                self.Ldoor = float(self.dConfig['box'][2]) * 0.9
+                self.slope =np.arctan(self.dConfig['gravity'][0]/self.dConfig['gravity'][2])*180/np.pi
             else:
                 self.Ratio, self.Orx, self.Orz=RatioAndOrigin(self.dConfig,dim=2)
                 self.Ldoor = float(self.dConfig['box'][1]) * 0.9
+                self.slope =np.arctan(self.dConfig['gravity'][0]/self.dConfig['gravity'][1])*180/np.pi
                         
             try:
                 self.headerDatas, self.datas = readDoorFile(d6OutFolder + '/door.txt')
@@ -635,8 +637,10 @@ class NumericalRun():
     def plotMu(self,ax,**args):
         if self.dimSim==2:
             return ax.imshow(self.muT,extent=self.extentR,**args)
-        if self.dimSim==3:
-            return ax.imshow(self.muT[:,self.nYplot,:],extent=self.extentR,**args)        
+        if self.dimSim == 3:
+            self.muF=self.muT[:,self.nYplot,:]
+            self.muF[np.where(self.phiT[:,self.nYplot,:]<0.5)]=0
+            return ax.imshow(self.muF,extent=self.extentR,**args)        
   
     
     def generateDepthProfile(self):
@@ -744,8 +748,11 @@ class NumericalRun():
                 return ax.imshow(self.IMgamma*self.dConfig['grainDiameter']/(self.P/self.dConfig['volMass']/phi_mat)**0.5,extent=self.extentR,**args)
             if self.dimSim==3:
                 self.IMgamma = np.flipud(self.gammaN[:, self.nYplot,:].T)
+                self.IMgamma[np.where(self.IMgamma==np.nan)]=0
                 self.IField=self.IMgamma*self.dConfig['grainDiameter']/(self.P[:,self.nYplot,:]/self.dConfig['volMass']/phi_mat)**0.5
-                self.IField[np.where(np.isnan(self.IField))]=0
+                self.IField[np.where(np.isnan(self.IField))] = 0
+                self.IField[np.where(self.IField == np.inf)] = 0
+                self.IField[np.where(self.phiT[:,self.nYplot,:]<0.5)]=0
                 return ax.imshow(self.IField,extent=self.extentR,**args)
             
     def plotContourI(self,ax,**args):
@@ -928,7 +935,7 @@ class ExperimentalRun():
         if Type=='velocity_norm':
             self.im=ax.imshow((self.Ux[ifile]**2+self.Uy[ifile]**2)**0.5,extent=[Xplot[0]-dxp/2,Xplot[-1]+dxp/2,Yplot[-1]-dyp/2,Yplot[0]+dyp/2],**args)
         elif Type=='shear_rate':            
-            self.im=ax.imshow(self.epsilon21,extent=[Xplot[0]+dxp/2,Xplot[-1]-dxp/2,Yplot[-1]+dyp/2,Yplot[0]-dyp/2],alpha=0.5,**args)
+            self.im=ax.imshow(self.epsilon21[ifile],extent=[Xplot[0]+dxp/2,Xplot[-1]-dxp/2,Yplot[-1]+dyp/2,Yplot[0]-dyp/2],alpha=0.5,**args)
         #        elif Type=='inertia':
 
     def loadVideo(self, vidPath,**args):
@@ -963,10 +970,10 @@ def toS(number, Ndigit,Nzero=0):
 #def determineZeroVelocityContour():
     
 
-def pltGravity(ax,x_sc,y_sc,lx_sc,ly_sc,vecgx,vecgy,lg,dxT,dyT,slopeinrad):
+def pltGravity(ax,x_sc,y_sc,lx_sc,ly_sc,vecgx,vecgy,lg,dxT,dyT,slopeinrad,width=0.008):
     from matplotlib.patches import  Arc
     ax.quiver(vecgx, vecgy, lg*np.sin(slopeinrad), -lg*np.cos(slopeinrad),
-                    width=0.008, linewidth=1, angles='xy', scale_units='xy', scale=1)
+                    width=width, linewidth=1, angles='xy', scale_units='xy', scale=1)
     ax.plot([vecgx, vecgx], [vecgy, vecgy-1.1*lg], 'k', linewidth=1)
 
     arc = Arc([vecgx, vecgy], lg*1.4, lg*1.4, theta1=270,

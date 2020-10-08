@@ -44,13 +44,15 @@ def rund6py(sdictE,**args):
     if sdictE['camType']=='Phantom':
         sdictE['L']=sdictE['L']+0.1
         sdictE['Ltot']=sdictE['Ltot']+0.1
-    L=sdictE['L']    
+    L=sdictE['L']+0.01    
     Lmod=sdictE['Ltot']
-    nFrames=int(sdictE['nFrames']/10)
-    
-    if (sdictE['camType']=='BW') & (sdictE['Slope']==15. or sdictE['Slope']==20.):
-        Lmod=sdictE['Ltot']+0.5
-
+    nFrames=args.get('nFrames',int(sdictE['nFrames']/10))
+    if (sdictE['camType']=='BW') & (sdictE['Slope']==15.):
+        Lmod = sdictE['Ltot'] + 0.5
+        
+    if (sdictE['camType']=='BW') & (sdictE['Slope']==20.):
+        Lmod = sdictE['Ltot'] + 0.8
+        
     delta_mu=args.get('delta_mu',0)
     I0=args.get('I0',0.3)
     I0_start=args.get('I0_start',0.000)
@@ -60,36 +62,37 @@ def rund6py(sdictE,**args):
     
     P0=1.
     
-    Hmod=(np.round(sdictE['H'],3)+0.002)/fracH
+    Hmod=(np.round(sdictE['H'],3))/fracH
     door=args.get('door','with')
     if door=='with':
-        ts=0
+        ts=0.2
     else:
         ts = 2 # to change with the fps
         
 
     substeps=args.get('substeps',20)
     resZ=args.get('resZ',30)
-
+    wsw=args.get('wsw',0.01)
     prop=args.get('prop','test')
-    rand = args.get('rand', 0)
-    
+    rand = args.get('rand', 1)
+    W = args.get('W', 0.08)
+
     if door=='with':
-        runName=str('Run_'+format(j,'02.0f')+'_3D_Door_mu='+str(mu)+'_muRigid='+str(muRigid)+'_H_'+format(Hmod*100,'.2f')+'cm_'+sdictE['grainType']+'_Slope='+format(sdictE['Slope'],'.0f')+'deg_delta_mu='+format(delta_mu,'.3f')+'_substeps_'+str(substeps)+'_fracH='+str(fracH)+'_I0_start='+format(I0_start,'.4f')+'_delta_mu_start='+format(delta_mu_start,'.4f')+'_P0='+format(P0,'.4f')+prop)    
+        runName=str('Run_'+format(j,'02.0f')+'_3D_Door_mu='+str(mu)+'_muRigid='+str(muRigid)+'_W_'+format(W*100,'.1f')+'cm_'+sdictE['grainType']+'_Slope='+format(sdictE['Slope'],'.0f')+'deg_delta_mu='+format(delta_mu,'.2f')+'_substeps_'+str(substeps)+'_fracH='+str(fracH)+'_I0_start='+format(I0_start,'.4f')+'_delta_mu_start='+format(delta_mu_start,'.2f')+prop)    
     else:
-        runName=str('Run_'+format(j,'02.0f')+'_3D_no_Door_start_at_0.13_s_'+sdictE['grainType']+'_Slope='+format(sdictE['Slope'],'.0f')+'deg_delta_mu='+format(delta_mu,'.3f')+'_substeps_'+str(substeps)+'_fracH='+str(fracH)+'_I0_start='+format(I0_start,'.4f')+'_delta_mu_start='+format(delta_mu_start,'.4f')+'_P0='+format(P0,'.4f')+prop)      
+        runName=str('Run_'+format(j,'02.0f')+'_3D_no_Door_start_at_0.13_s_'+sdictE['grainType']+'_Slope='+format(sdictE['Slope'],'.0f')+'deg_delta_mu='+format(delta_mu,'.3f')+'_substeps_'+str(substeps)+'_fracH='+str(fracH)+'_I0_start='+format(I0_start,'.4f')+'_delta_mu_start='+format(delta_mu_start,'.2f')+prop)      
        
      
-    d6OutFolder='/media/gauthier/Samsung_T5/sand6_out/'+runName
+    d6OutFolder='/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/'+runName
     d6py.mkdir2(d6OutFolder) 
     
     newConfigFile=d6OutFolder+'/collapse.3d_'+runName+'m.conf'
     configFilein=d6Path+'/../scenes/collapse.3d.LHE.Door.conf'
 
-    d6py.modifyConfigFile(configFilein,newConfigFile,'box',[Lmod, 0.06,Hmod])
-    d6py.modifyConfigFile(newConfigFile,newConfigFile,'fps',[15])
+    d6py.modifyConfigFile(configFilein,newConfigFile,'box',[Lmod, W,Hmod])
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'fps',[args.get('fps',15)])
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'gravity',[+9.81*np.sin(sdictE['Slope']*np.pi/180), 0,-9.81*np.cos(sdictE['Slope']*np.pi/180)])
-    d6py.modifyConfigFile(newConfigFile,newConfigFile,'nFrames',[nFrames+ts])
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'nFrames',[nFrames+ts*args.get('fps',15)])
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'randomize',[rand])
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'substeps',[substeps])
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'grainDiameter',[sdictE['grainDiameter']])
@@ -99,18 +102,18 @@ def rund6py(sdictE,**args):
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'delta_mu_start',[delta_mu_start])
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'I0_start',[I0_start])
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'P0',[P0])
-    d6py.modifyConfigFile(newConfigFile,newConfigFile,'nSamples',[2])
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'nSamples',[args.get('nSamples',2)])
     if door=='with':
         if j<=3:
-            d6py.modifyConfigFile(newConfigFile,newConfigFile,'scenario','collapselhedoor taudoor:0.06 veldoor:0.8 ts:'+format(ts,'1.0f')+' frac_h:'+format(fracH,'1.1f')+' column_length:'+str(L))
+            d6py.modifyConfigFile(newConfigFile,newConfigFile,'scenario','collapselhedoor taudoor:0.06 veldoor:0.8 ts:'+format(ts,'1.2f')+' frac_h:'+format(fracH,'1.1f')+' column_length:'+str(L)+' wsw:'+str(wsw))
         else:
-            d6py.modifyConfigFile(newConfigFile,newConfigFile,'scenario','collapselhedoor taudoor:0.13 veldoor:0.7 ts:'+format(ts,'1.0f')+' frac_h:'+format(fracH,'1.1f')+' column_length:'+str(L))
+            d6py.modifyConfigFile(newConfigFile,newConfigFile,'scenario','collapselhedoor taudoor:0.13 veldoor:0.7 ts:'+format(ts,'1.2f')+' frac_h:'+format(fracH,'1.1f')+' column_length:'+str(L)+' wsw:'+str(wsw))
     else:
-        d6py.modifyConfigFile(newConfigFile,newConfigFile,'scenario','collapselhedoor taudoor:0.0001 veldoor:100 ts:'+format(ts,'1.0f')+' frac_h:'+format(fracH,'1.1f')+' column_length:'+str(L))
+        d6py.modifyConfigFile(newConfigFile,newConfigFile,'scenario','collapselhedoor taudoor:0.0001 veldoor:100 ts:'+format(ts,'1.2f')+' frac_h:'+format(fracH,'1.1f')+' column_length:'+str(L))
 
-    
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'boundary','top:slip left:slip right:free front:slip back:slip bottom:stick')
     delta_x_and_delta_y=args.get('delta_x_and_delta_y',0.01)
-    d6py.modifyConfigFile(newConfigFile,newConfigFile,'res',[int(Lmod/delta_x_and_delta_y),int(0.06/delta_x_and_delta_y),resZ]) #pour avoir un réolution divisible par 10 selon Y
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'res',[int(Lmod/delta_x_and_delta_y),int(W/delta_x_and_delta_y),resZ]) #pour avoir un réolution divisible par 10 selon Y
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'I0',[I0]) 
       
     #load the final config file dictionnary    
@@ -141,48 +144,102 @@ lExp=np.sort(lExp)
 import time
 t=time.time()
 
-# for j in range(7,8 ):  
-#     sE=lExp[j] #Selected exeperiment
-#     sdictE=dictExp[sE]
-#     for dmu in [0]:
-#         for r,s,p in zip([0.01],[20],['res-1cm-sub-20-DG_UNSTRUCTURED']):
-#             rund6py(sdictE,delta_mu=0.,mu=np.round(sdictE['mu']+dmu,2),delta_x_and_delta_y=r,substeps=s,prop=p)
 
 
-for j in range(7,8 ):  
+# for j in range(8, 9):
+for j in [0,1,2,3]:   
     sE=lExp[j] #Selected exeperiment
     sdictE=dictExp[sE]
-    for dmu in [-0.05,0]:
-        for r,s,p in zip([0.01],[20],['res-1cm-sub-20-split-and-merge']):
-            rund6py(sdictE,delta_mu=0.,mu=np.round(sdictE['mu']+dmu,2),delta_x_and_delta_y=r,substeps=s,prop=p)
 
-# for j in range(0,9 ): 
-#     sE=lExp[j] #Selected exeperiment
-#     sdictE=dictExp[sE]
-#     for dmu in [-0.05,0]:
-#         for s,p in zip([20],['with_field_at_zero__mu_I_test']):
-#             rund6py(sdictE,delta_mu=0.22,mu=np.round(sdictE['mu']+dmu,2),rand=1,substeps=s,prop=p)
-
-# for j in range(0,9 ):  
-#     sE=lExp[j] #Selected exeperiment
-#     sdictE=dictExp[sE]
-#     for dmu in [-0.05,0]:
-#         for s,p in zip([20],['with_field_at_zero__mu_I_test']):
-#             rund6py(sdictE,delta_mu=0.,muRigid=0,mu=np.round(sdictE['mu']+dmu,2),rand=1,substeps=s,prop=p)
-
-# for j in range(0,9 ): 
-#     sE=lExp[j] #Selected exeperiment
-#     sdictE=dictExp[sE]
-#     for dmu in [-0.05,0]:
-#         for s,p in zip([20],['with_field_at_zero__mu_I_test']):
-#             rund6py(sdictE,delta_mu=0.,muRigid=0.5,mu=np.round(sdictE['mu']+dmu,2),rand=1,substeps=s,prop=p)
+#FOr rendering 
+    # for dmu,dmus in zip([0.05],[0.1]):
+    #     rund6py(sdictE, delta_mu=0.0,muRigid=0.05,mu=np.round(sdictE['mu']+dmu,2),prop='continuous_test_mu_R_render',fps=150,nFrames=int(sdictE['nFrames']),nSamples=2,I0_start=0.004,delta_mu_start=dmus,rand=1,substeps=4)
+    # for dmu,dmus in zip([0.],[0.]):
+    #     rund6py(sdictE, delta_mu=0., muRigid=0., mu=np.round(sdictE['mu'] + dmu, 2), prop='test-door', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=dmus, rand=1, substeps=40)
+    # for dmu,dmus in zip([0.],[0.]):
+    #     rund6py(sdictE, delta_mu=0., muRigid=0.18, mu=np.round(sdictE['mu'] + dmu, 2), prop='test-door', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=dmus, rand=1, substeps=40)
+    # for dmu,dmus in zip([0.0],[0.05]):
+    #     rund6py(sdictE, delta_mu=0., muRigid=0., mu=np.round(sdictE['mu'] + dmu, 2), prop='test-door', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.005, delta_mu_start=dmus, rand=1, substeps=40)
+    # for dmu,dmus in zip([0.0],[0.05]):
+    #     rund6py(sdictE, delta_mu=0., muRigid=0.11, mu=np.round(sdictE['mu'] + dmu, 2), prop='test-door', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.005, delta_mu_start=dmus, rand=1, substeps=40)
 
 
-#%%
+## runs from 4 to 8
+    # for dmu,dmus in zip([0.],[0.]):
+    #     rund6py(sdictE, delta_mu=0., muRigid=0., mu=np.round(sdictE['mu'] + dmu, 2), prop='test-door', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=dmus, rand=1, substeps=40)
 
- #%%   
-    #    
-    
+    # for dmu,dmus in zip([-0.05],[0.]):
+    #     rund6py(sdictE, delta_mu=0.22, muRigid=0.18, mu=np.round(sdictE['mu'] + dmu, 2), prop='test-scaling', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=dmus, rand=1, substeps=60)
+
+    # for dmu,dmus in zip([0.05],[0.]):
+    #     rund6py(sdictE, delta_mu=0.26, muRigid=0.18, mu=np.round(sdictE['mu'] + dmu, 2), prop='test-scaling', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=dmus, rand=1, substeps=60)
+
+# simulations with a varying flume width
+    # for muR in [0.05,10**6]:
+    #     rund6py(sdictE, delta_mu=0.26, muRigid=muR, mu=np.round(sdictE['mu'] + 0.05, 2), prop='test-scaling', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=0, rand=1, substeps=80,W=0.08)
+    for w in [0.1]:
+        rund6py(sdictE, delta_mu=0., muRigid=0., mu=np.round(sdictE['mu'] + 0.05, 2), prop='test-runout', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=0, rand=1, substeps=40,W=w,wsw=0.01)
+
+    # for dmu,dmus in zip([0.05],[0.]):
+    #     rund6py(sdictE, delta_mu=0.26, muRigid=0.18, mu=np.round(sdictE['mu'] + dmu, 2), prop='test-scaling', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=dmus, rand=1, substeps=80)
+
+    # for dmu,dmus in zip([-0.05],[0.]):
+    #     rund6py(sdictE, delta_mu=0., muRigid=0.18, mu=np.round(sdictE['mu'] + dmu, 2), prop='test-scaling', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=dmus, rand=1, substeps=40)
+
+    # for dmu,dmus in zip([0.15],[0.1]):
+    #     rund6py(sdictE, delta_mu=0., muRigid=0.18, mu=np.round(sdictE['mu'] + dmu, 2), prop='test-door', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.005, delta_mu_start=dmus, rand=1, substeps=40)
+
+    # for dmu,dmus in zip([0.2],[0.15]):
+    #     rund6py(sdictE, delta_mu=0., muRigid=0.18, mu=np.round(sdictE['mu'] + dmu, 2), prop='test-door', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.005, delta_mu_start=dmus, rand=1, substeps=40)
+    # for dmu,dmus in zip([0.2],[0.15]):
+    #     rund6py(sdictE, delta_mu=0., muRigid=0., mu=np.round(sdictE['mu'] + dmu, 2), prop='test-door', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.005, delta_mu_start=dmus, rand=1, substeps=40)
+
+
+    # for dmu,dmus in zip([0.05],[0.]):
+    #     rund6py(sdictE, delta_mu=0., muRigid=0., mu=np.round(sdictE['mu'] + dmu, 2), prop='test-scaling', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=dmus, rand=1, substeps=40)
+
+    # for dmu,dmus in zip([0.0],[0.]):
+    #     rund6py(sdictE, delta_mu=0., muRigid=0., mu=np.round(sdictE['mu'] + dmu, 2), prop='test-scaling', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=dmus, rand=1, substeps=40)
+
+    # for dmu,dmus in zip([0.15],[0.1]):
+    #     rund6py(sdictE, delta_mu=0., muRigid=0., mu=np.round(sdictE['mu'] + dmu, 2), prop='test-door', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.005, delta_mu_start=dmus, rand=1, substeps=40)
+
+    # for dmu,dmus in zip([0.1],[0.05]):
+    #     rund6py(sdictE, delta_mu=0., muRigid=0., mu=np.round(sdictE['mu'] + dmu, 2), prop='test-door', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.005, delta_mu_start=dmus, rand=1, substeps=40)
+
+    # for dmu,dmus in zip([-0.05],[0.]):
+    #     rund6py(sdictE, delta_mu=0., muRigid=0., mu=np.round(sdictE['mu'] + dmu, 2), prop='test-scaling', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=dmus, rand=1, substeps=40)
+
+
+
+
+### runs from 0 to 3 
+    # for dmu,dmus in zip([0.1],[0.]):
+    #     rund6py(sdictE, delta_mu=0., muRigid=0., mu=np.round(sdictE['mu'] + dmu, 2), prop='test-door', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=dmus, rand=1, substeps=40)
+
+    # for dmu,dmus in zip([0.],[0.]):
+    #     rund6py(sdictE, delta_mu=0., muRigid=0., mu=np.round(sdictE['mu'] + dmu, 2), prop='test-door', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=dmus, rand=1, substeps=40)
+
+    # for dmu,dmus in zip([0.15],[0.15]):
+    #     rund6py(sdictE, delta_mu=0., muRigid=0., mu=np.round(sdictE['mu'] + dmu, 2), prop='test-door', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.005, delta_mu_start=dmus, rand=1, substeps=40)
+
+    # for dmu,dmus in zip([0.0],[0.1]):
+    #     rund6py(sdictE, delta_mu=0., muRigid=0., mu=np.round(sdictE['mu'] + dmu, 2), prop='test-door', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.005, delta_mu_start=dmus, rand=1, substeps=40)
+
+#     for dmu,dmus in zip([0.],[0.]):
+#         rund6py(sdictE, delta_mu=0., muRigid=0.18, mu=np.round(sdictE['mu'] + dmu, 2), prop='test-door', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=dmus, rand=1, substeps=40)
+
+#     for dmu,dmus in zip([-0.1],[0.]):
+#         rund6py(sdictE, delta_mu=0., muRigid=0.18, mu=np.round(sdictE['mu'] + dmu, 2), prop='test-door', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=dmus, rand=1, substeps=40)
+
+#     for dmu,dmus in zip([0.05],[0.15]):
+#         rund6py(sdictE, delta_mu=0., muRigid=0.18, mu=np.round(sdictE['mu'] + dmu, 2), prop='test-door', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.005, delta_mu_start=dmus, rand=1, substeps=40)
+
+#     for dmu,dmus in zip([0.0],[0.1]):
+#         rund6py(sdictE, delta_mu=0., muRigid=0.18, mu=np.round(sdictE['mu'] + dmu, 2), prop='test-door', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.005, delta_mu_start=dmus, rand=1, substeps=40)
+# ###
+
+
 #%%
 
 

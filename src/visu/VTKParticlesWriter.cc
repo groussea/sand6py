@@ -57,7 +57,6 @@ bool VTKParticlesWriter::dump( const char *name, const Eigen::MatrixBase< Derive
 	}
 
 	writeAttribute( name, data.derived().data(), dim ) ;
-
 	return true ;
 }
 
@@ -80,7 +79,8 @@ bool VTKParticlesWriter::dump_all( )
 	        dump( Volumes ) &&
 	        dump( Velocities ) &&
 	        dump( Frames ) &&
-	        dump( Orientations ) ;
+	        dump( Orientations ) &&
+			dump (Inertia);
 
 	return true ;
 }
@@ -95,6 +95,8 @@ bool VTKParticlesWriter::dump( Quantity quantity) {
 		return dump( "frames", m_particles.frames() ) ;
 	case Orientations:
 		return dump( "orient", m_particles.orient() ) ;
+	case Inertia:
+		return dump("inertia", m_particles.inertia() );
 	}
 	return false ;
 }

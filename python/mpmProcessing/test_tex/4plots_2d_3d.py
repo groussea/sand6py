@@ -32,7 +32,7 @@ paths, folders, listDictConf, listNumRun = d6py.findOutSand6Paths(
     maind6OutFolder, 4)
 mainExpFolder = driveFolder + \
     '/TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/outputs_opyf'
-Nrun = 7
+Nrun = 0
 scale = 0.01  # 1cm
 runExp1 = d6py.ExperimentalRun(Nrun, mainExpFolder, loadField=True)
 runExp1.scLength(scale)
@@ -40,24 +40,30 @@ mu = runExp1.dictE['mu']
 
 
 
-delta_mu=0.
+delta_mu=0.22
 
-R1, selectedDict = d6py.whereSand6OutFromParms(listNumRun, delta_mu=delta_mu, mu=0.38, fps=15, nSamples=2, I0_start=0.00, delta_mu_start=0., runNumber=Nrun, dimSim=2,substeps=80,viscosity=0.0)
+R1, selectedDict = d6py.whereSand6OutFromParms(listNumRun, delta_mu=delta_mu, fps=15, nSamples=2, I0_start=0.00, mu=0.38, delta_mu_start=0., runNumber=Nrun, dimSim=2,substeps=80,viscosity=0.0)
+
 
 R2, selectedDict = d6py.whereSand6OutFromParms(listNumRun, delta_mu=delta_mu, mu=0.48, fps=15, nSamples=2, I0_start=0.00, delta_mu_start=0., runNumber=Nrun,  dimSim=2,substeps=80,viscosity=0)
 
-R3, selectedDict = d6py.whereSand6OutFromParms(listNumRun, delta_mu=delta_mu, muRigid=0.0, mu=0.48, fps=15, nSamples=2, I0_start=0.00, delta_mu_start=0., runNumber=Nrun, dimSim=3)
+R3, selectedDict = d6py.whereSand6OutFromParms(listNumRun, delta_mu=delta_mu, muRigid=0.18, mu=0.38, fps=15, nSamples=2, runNumber=Nrun, dimSim=3)
+# delta_mu=0.22
+R4, selectedDict = d6py.whereSand6OutFromParms(listNumRun, delta_mu=delta_mu, muRigid=0.18, mu=0.48, fps=15, nSamples=2, runNumber=Nrun, dimSim=3)
 
-R4, selectedDict = d6py.whereSand6OutFromParms(listNumRun, delta_mu=delta_mu, muRigid=0.0, mu=0.38, fps=15, nSamples=2, I0_start=0.00, delta_mu_start=0., runNumber=Nrun, dimSim=3)
+# delta_mu=0.22
+# R3, selectedDict = d6py.whereSand6OutFromParms(listNumRun, delta_mu=delta_mu, muRigid=0.18, mu=0.38, fps=15, nSamples=2,  runNumber=Nrun, dimSim=3)
 
+# R4, selectedDict = d6py.whereSand6OutFromParms(listNumRun, delta_mu=delta_mu, muRigid=0.18, mu=0.48, fps=15, nSamples=2, runNumber=Nrun, dimSim=3)
 
-selectedRuns=[R1[0],R2[0],R4[0],R3[0]]
+selectedRuns=[R1[0],R2[0],R3[0],R4[0]]
 # selectedRuns = [Ref[0], selectedRuns[0]]
 
 
 for sR in selectedRuns:
     sR.scLength(0.01)
     nF = int(sR.dConfig['nFrames'])
+    sR.nYplot=3
 
 #%%
 
@@ -127,10 +133,10 @@ for i in range(N):
             axs[i, j].set_xlim([-23, 20])
             axs[i, j].set_ylim([-1.5, 12])
         if i == 1:
-            axs[i, j].set_xlim([-23, 20])
+            axs[i, j].set_xlim([-23, 22])
             axs[i, j].set_ylim([-1.5, 12])
         if i == 2:
-            axs[i, j].set_xlim([-23, 50])
+            axs[i, j].set_xlim([-23, 60])
             axs[i, j].set_ylim([-1.5, 12])
         # axs[i, j].set_aspect('equal', adjustable='box')
         if j>0:
@@ -144,7 +150,8 @@ for i in range(N):
         # axs[i, j].set_xticklabels([])
 
 # draw lines to separate experimental plots
-ax_draw = fig.add_axes([0, 0, 1, 1], zorder=-10)
+ax_draw = fig.add_axes([0, 0, 1., 1.], zorder=-10)
+ax_draw.set_axis_off()
 ax_draw.grid()
 [x, y, X, Y] = axs[2, 1].get_position().bounds
 X_line = x+X+w_s2/2
@@ -156,9 +163,9 @@ ax_draw.plot([X_line, X_line], [Y_sep, 0.98], linewidth=0.5, color='k')
 # Add a big axe to draw the final state entirely
 ax2 = fig.add_axes([w_s, 0.07, x + X - w_s, Y_sep-0.2], zorder=-10)
 
-ax2.set_xlim([-L, 50])
+ax2.set_xlim([-L, 60])
 ax2.plot([-L, -L], [-10, 2 * H], '-k', linewidth=2)
-ax2.set_ylim([-1.5,12])
+ax2.set_ylim([-1.5,11])
 ax2.set_ylabel('z (cm)', fontsize=8)
 ax2.set_xlabel('x (cm)', fontsize=8)
 ax2.xaxis.set_major_formatter(major_formatter)
@@ -208,7 +215,7 @@ plt.figtext(x+X+w_s2/2, y+Y+0.07, '2D',
             fontsize=10, horizontalalignment='center')
 
 [x, y, X, Y] = axs[0, 2].get_position().bounds
-plt.figtext(x+X+w_s2/2, y+Y+0.07, '3D',
+plt.figtext(x+X+w_s2/2, y+Y+0.07, r'3D - $\mu_w=0.18$',
             fontsize=10, horizontalalignment='center')
 
 # for j in range(0,4):
@@ -228,8 +235,8 @@ plt.show()
 k = 0
 NsR = len(selectedRuns)
 indContrst = 0
-ls = ['--', '-.', '--', '-']
-c = [0.8, 1., 0.7, 0.7]
+ls = ['--', '-.', '--', '-.']
+c = [0.9, 1., 0.8, 1.2]
 SR = selectedRuns[0:4]
 if Nrun > 7:
     shiftExp = -1
@@ -265,7 +272,7 @@ for ifile in [ 6, 9 , 15]:
         ax = axs[k, i]
         sR.loadVTK(int(ifile * sR.dConfig['fps'] / 15))
         [line2D]=runExp1.plotDepthProfile(ax, np.max(
-            [(ifile-3) * 10 - 5, 0]), linestyle='-', color='purple', linewidth=0.7, label="Experience",zorder=1)
+            [(ifile-3) * 10 - 5, 0]), linestyle='-', color='purple', linewidth=0.9, label="Experience",zorder=1)
         sR.plotContour(ax, levels=[0.5], linewidths=c[i % 4], linestyles=ls[i % 4], colors=[ cmapg((NsR - i) / (NsR + indContrst))],zorder=2)
         
         V = area(sR.findContourPhi(level=0.5)[0])
@@ -273,7 +280,7 @@ for ifile in [ 6, 9 , 15]:
         lost=(Vini[i]-V)/Vini[i]*100
 
         [x, y, X, Y] = axs[k, i].get_position().bounds
-        plt.figtext(x+X*0.55, y + 1.05*Y, r'$\epsilon$='+format(lost,'1.1f') +r'\%',color=(0.33,0,0), fontsize=7)
+        # plt.figtext(x+X*0.55, y + 1.05*Y, r'$\epsilon$='+format(lost,'1.1f') +r'\%',color=(0.33,0,0), fontsize=7)
         
         im = sR.opyfPointCloudColoredScatter(
             ax, nvec=8000, mute=True, vmin=0, vmax=1, s=0.03, cmap=cmap, rasterized=True)
@@ -322,7 +329,7 @@ contrs = d6py.Tools.findContours(x, y, np.flipud(mat).T, 10)
 
 
 
-[line2D] = ax2.plot(contrs[0][:,0], contrs[0][:,1],linestyle='-', color='purple', linewidth=0.7, alpha=0.5,label="Exp.")
+[line2D] = ax2.plot(contrs[0][:,0], contrs[0][:,1],linestyle='-', color='purple', linewidth=0.9, alpha=0.5,label="Exp.")
 
 # runExp1.plotDepthProfile(ax2, np.max(
 #             [(ifile - 3)* 10 - 5, 0]), linestyle='-', color='k', linewidth=0.8, label="Exp.")
@@ -352,7 +359,7 @@ cb.set_label('Velocity norm [m/s]', fontsize=8)
 plt.show()
 plt.pause(0.2)
 # fig.savefig("test_savefig_pdf_5_mm.pdf", dpi=300)
-fig.savefig("/media/gauthier/Data-Gauthier/Gauthier/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular.wiki/collapses/Run_07/from_2D_to_3D/Run07_deltamu=0.pdf", dpi=150)
+fig.savefig("/media/gauthier/Data-Gauthier/Gauthier/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular/doc/article/images/used_images/Run_08_3D-2D.pdf", dpi=150)
 # sys.stdout = sys.__stdout__
 print(r'\includegraphics{test_savefig_pdf.pdf}')
 

@@ -121,8 +121,8 @@ private:
 	Rotation   m_frame ;
 
 	Scalar 	   m_scale ;
-};
 
+};
 
 } //d6
 

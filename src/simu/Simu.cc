@@ -59,7 +59,12 @@ Simu::~Simu()
 
 void Simu::run()
 {
-
+	std::istringstream in( m_config.scenario ) ;
+	std::string line ;
+	in >> line ;
+	if (line=="impactlhe"){
+	std::ofstream RBout(m_config.base_dir + "/forces_on_sphere.csv", std::fstream::app);
+	}
 	if( m_config.output ) {
 		dump_particles( 0 ) ;
 		dump_fields(0);
@@ -185,6 +190,7 @@ void Simu::dump_particles( unsigned frame ) const
 			const LevelSet* ptr = m_rigidBodies[i].levelSetPtr() ;
 			oa << ptr ;
 		}
+
 	}
 
 	// Log -- save at previous frame

@@ -52,7 +52,6 @@ int main( int argc, const char* argv[] )
 	d6::Config config ;
 
 	const char * base_dir = "out" ;
-
 	// Read coonfiguration from input files and CLI arguments
 	for( int i = 1 ; i < argc ; ++i )
 	{

@@ -477,10 +477,11 @@ void ShapeRenderer::draw( const LevelSet &ls, const Vec &box, const Eigen::Vecto
 		sh.bindMVP(modelView.data(), projection.data()) ;
 
 		draw_fake_ball( ls, m_ballShader, m_billboardArrays ) ;
-	} else if( dynamic_cast<const PlaneLevelSet*>(&ls)) {
-
-
 	}
+	//  else if( dynamic_cast<const BoxLevelSet*>(&ls)) {
+
+
+	// }
 	
 	else {
 		Eigen::Matrix4f mat ;
