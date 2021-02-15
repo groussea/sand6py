@@ -887,6 +887,110 @@ private:
 };
 
 
+struct CollapseScenarLHEDoorH : public Scenario
+{
+	Scalar particle_density(const Vec &x) const override
+	{
+		return ((x[0] < columnLength || x[2] < .1 * m_config->box[2]) && (x[2] < (fracH + 0.1) * m_config->box[2]) && (x[1]<(m_config->box[1]-w_sideW))&& (x[1]>w_sideW) && (x[0]>w_sideW) ) ? 1. : 0.;
+	}
+
+	virtual void init(const Params &params) override
+	{
+		tauD = scalar_param(params, "taudoor", Units::Time, .06);
+		velD = scalar_param(params, "veldoor", Units::Velocity, 1.0);
+		ts = scalar_param(params, "ts", Units::Time, 0);
+		fracH = scalar_param(params, "frac_h", Units::None, 1.);
+		columnLength = scalar_param(params, "column_length", Units::Length, 1.);
+		w_sideW = scalar_param(params, "wsw", Units::Length, 0.01);
+	}
+
+	void add_rigid_bodies(std::vector<RigidBody> &rbs) const override
+	{
+		// 		const Scalar a = 0.1 ;
+		Vec box = m_config->box;
+		const Scalar L = box[2] * (0.9);
+		const Scalar W = 2 * m_config->typicalLength();
+		Vec doorBox = Vec(W, 0.6 * box[1], 0.5 * L);
+
+		LevelSet::Ptr ls = LevelSet::make_box(doorBox);
+		ls->set_origin(Vec(columnLength + W, box[1] * 0.5, .1 * box[2] + L * 0.5));
+		rbs.emplace_back(ls, 1.e99);
+		std::ofstream RBout(m_config->base_dir + "/door.txt");
+		d6::dump(RBout, "Nframe,time,X,Y,Z,Ux,Uy,Uz");
+		RBout << "\n";
+		RBout.close();
+		// Scalar w_sideW=m_config->units().fromSI(Units::Length) * 0.01;
+		
+		if (w_sideW > 0.0) {
+		Vec wallBox = Vec(box[0], w_sideW/2, box[2]);
+		auto leftWall = LevelSet::make_box(wallBox);
+		leftWall->set_origin(Vec(box[0] * 0.5, w_sideW/2 ,box[2] * 0.5));
+		rbs.emplace_back(leftWall, 1.e99);
+		auto rightWall = LevelSet::make_box(wallBox);
+		rightWall->set_origin(Vec(box[0] * 0.5, box[1]- w_sideW/2  ,box[2] * 0.5));
+		rbs.emplace_back(rightWall, 1.e99);
+		}
+
+		Scalar back_widthWall = 0.01*m_config->units().fromSI(Units::Length);
+		Vec bWallBox = Vec(back_widthWall / 2, box[1], box[2]);
+		auto backWall = LevelSet::make_box(bWallBox);
+		backWall->set_origin(Vec(w_sideW/2 , 0.5*box[1],box[2] * 0.5));
+		rbs.emplace_back(backWall, 1.e99);
+
+		// auto rightWall = LevelSet::make_plane();
+		// rightWall->rotate(Vec(1, 0, 0), M_PI_2).set_origin(Vec(0, box[1], 0));
+		// rbs.emplace_back(rightWall, 1.e99);
+
+		// auto sideWall = LevelSet::make_plane();
+		// sideWall->rotate(Vec(0, 1, 0), M_PI_2).set_origin(Vec(0, 0, 0));
+		// rbs.emplace_back(sideWall, 1.e99);
+
+	}
+
+	void update(Simu &simu, Scalar time, Scalar /*dt*/) const override
+	{
+		Scalar iF = time * m_config->fps;
+
+		Scalar speedz = velD * (1 - exp(-(time - ts) / tauD));
+		//         Scalar speedy = 0.1*m_config->units().fromSI( Units::Velocity)*(1-exp(-t/(0.05)));
+		Vec vel = Vec::Zero();
+		if (time > ts)
+		{
+			vel[0] = speedz;
+		}
+
+			simu.rigidBodies()[0].set_velocity(vel, VecR::Zero());
+			simu.rigidBodies()[0];
+			Vec position = simu.rigidBodies()[0].levelSet().origin();
+			if (std::abs(iF - static_cast<int>(std::round(iF))) < 1.e-8)
+			{
+			std::ofstream RBout(m_config->base_dir + "/door.txt", std::fstream::app);
+			RBout << std::round(time * m_config->fps)<<",";
+			RBout << time * m_config->units().toSI(Units::Time)<<",";
+			RBout << position[0] * m_config->units().toSI(Units::Length)<<",";
+			RBout << position[1] * m_config->units().toSI(Units::Length)<<",";
+			RBout << position[2] * m_config->units().toSI(Units::Length)<<",";
+			RBout << vel[0] * m_config->units().toSI(Units::Velocity)<<",";
+			RBout << vel[1] * m_config->units().toSI(Units::Velocity)<<",";
+			RBout << vel[2] * m_config->units().toSI(Units::Velocity)<<"\n";
+			RBout.close();
+				RBout.close();
+			}
+
+
+		}
+	
+
+private:
+	Scalar tauD;
+	Scalar velD;
+	Scalar ts;
+	Scalar fracH;
+	Scalar columnLength;
+	Scalar w_sideW;
+};
+
+
 struct CollapseIonescu : public Scenario
 {
 	Scalar particle_density(const Vec &x) const override
@@ -1208,6 +1312,8 @@ std::unique_ptr<Scenario> DefaultScenarioFactory::make(const std::string &str) c
 		return std::unique_ptr<Scenario>(new RayleighScenar());
 	if (str == "collapselhedoor")
 		return std::unique_ptr<Scenario>(new CollapseScenarLHEDoor());
+	if (str == "collapselhedoorh")
+		return std::unique_ptr<Scenario>(new CollapseScenarLHEDoorH());
 	if (str == "collapseionescu")
 		return std::unique_ptr<Scenario>(new CollapseIonescu());
 	if (str == "inclinedplane")

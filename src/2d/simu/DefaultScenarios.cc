@@ -144,6 +144,75 @@ private:
 	Scalar zD;
 };
 
+
+struct CollapseScenarLHEDoorH : public Scenario
+{
+	Scalar particle_density(const Vec &x) const override
+	{
+		return ((x[0] < columnLength || x[1] < .1 * m_config->box[1]) & (x[1] < (fracH + 0.1) * m_config->box[1])) ? 1. : 0.;
+	}
+
+	virtual void init(const Params &params) override
+	{
+		tauD = scalar_param(params, "taudoor", Units::Time, .06);
+		velD = scalar_param(params, "veldoor", Units::Velocity, 1.0);
+		ts = scalar_param(params, "ts", Units::Time, 15);
+		fracH = scalar_param(params, "frac_h", Units::None, 1.);
+		columnLength= scalar_param(params, "column_length", Units::Length, 0.);
+		zD= scalar_param(params, "zdoor", Units::Length, 0.);
+	}
+
+	void add_rigid_bodies(std::vector<RigidBody> &rbs) const override
+	{
+		// 		const Scalar a = 0.1 ;
+		const Scalar L = m_config->box[1] * (0.9);
+
+		LevelSet::Ptr ls = LevelSet::make_cylinder(L);
+		ls->set_origin(Vec(columnLength + m_config->typicalLength(), .1 * m_config->box[1] + L / 2 + m_config->typicalLength()+zD));
+		ls->set_rotation(0);
+		rbs.emplace_back(ls, 1.);
+		rbs.back().set_velocity(Vec(0, 0), 0.);
+		std::ofstream RBout(m_config->base_dir + "/door.txt");
+		d6::dump(RBout, "Nframe,time,X,Y,Ux,Uy");
+		RBout << "\n";
+		RBout.close();
+	}
+
+	void update(Simu &simu, Scalar time, Scalar /*dt*/) const override
+	{
+		Scalar iF = time * m_config->fps;
+		Scalar speedx = velD * (1 - exp(-(time - ts) / tauD));
+		//         Scalar speedy = 0.1*m_config->units().fromSI( Units::Velocity)*(1-exp(-t/(0.05)));
+		Vec vel = Vec::Zero();
+		if (time > ts)
+		{
+			vel[0] = -speedx;
+		}
+			if (std::abs(iF - static_cast<int>(std::round(iF))) < 1.e-8)
+			{
+			simu.rigidBodies()[0].set_velocity(vel, 0);
+			Vec position = simu.rigidBodies()[0].levelSet().origin();
+			std::ofstream RBout(m_config->base_dir + "/door.txt", std::fstream::app);
+			RBout << std::round(time * m_config->fps)<<",";
+			RBout << time * m_config->units().toSI(Units::Time)<<",";
+			RBout << position[0] * m_config->units().toSI(Units::Length)<<",";
+			RBout << position[1] * m_config->units().toSI(Units::Length)<<",";
+			RBout << vel[0] * m_config->units().toSI(Units::Velocity)<<",";
+			RBout << vel[1] * m_config->units().toSI(Units::Velocity)<<"\n";
+			RBout.close();
+		}
+	}
+
+private:
+	Scalar tauD;
+	Scalar velD;
+	Scalar ts;
+	Scalar fracH;
+	Scalar columnLength;
+	Scalar zD;
+};
+
+
 struct CollapseScenarLHE : public Scenario
 {
 	Scalar particle_density(const Vec &x) const override
@@ -426,6 +495,8 @@ std::unique_ptr<Scenario> DefaultScenarioFactory::make(const std::string &str) c
 		return std::unique_ptr<Scenario>(new CollapseScenarLHE());
 	if (str == "collapselhedoor")
 		return std::unique_ptr<Scenario>(new CollapseScenarLHEDoor());
+	if (str == "collapselhedoorh")
+		return std::unique_ptr<Scenario>(new CollapseScenarLHEDoorH());
 	if (str == "collapsecohesion")
 		return std::unique_ptr<Scenario>(new CollapseScenarCohesion());
 	if (str == "collapse")
