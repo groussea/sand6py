@@ -147,7 +147,7 @@ t=time.time()
 
 
 # for j in range(8, 9):
-for j in [0,1,2,3]:   
+for j in [7,8]:   
     sE=lExp[j] #Selected exeperiment
     sdictE=dictExp[sE]
 
@@ -165,8 +165,8 @@ for j in [0,1,2,3]:
 
 
 ## runs from 4 to 8
-    # for dmu,dmus in zip([0.],[0.]):
-    #     rund6py(sdictE, delta_mu=0., muRigid=0., mu=np.round(sdictE['mu'] + dmu, 2), prop='test-door', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=dmus, rand=1, substeps=40)
+    for dmu,dmus in zip([0.2],[0.]):
+        rund6py(sdictE, delta_mu=0., muRigid=0.18, mu=np.round(sdictE['mu'] + dmu, 2), prop='test-door', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=dmus, rand=1, substeps=40)
 
     # for dmu,dmus in zip([-0.05],[0.]):
     #     rund6py(sdictE, delta_mu=0.22, muRigid=0.18, mu=np.round(sdictE['mu'] + dmu, 2), prop='test-scaling', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=dmus, rand=1, substeps=60)
@@ -177,8 +177,8 @@ for j in [0,1,2,3]:
 # simulations with a varying flume width
     # for muR in [0.05,10**6]:
     #     rund6py(sdictE, delta_mu=0.26, muRigid=muR, mu=np.round(sdictE['mu'] + 0.05, 2), prop='test-scaling', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=0, rand=1, substeps=80,W=0.08)
-    for w in [0.1]:
-        rund6py(sdictE, delta_mu=0., muRigid=0., mu=np.round(sdictE['mu'] + 0.05, 2), prop='test-runout', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=0, rand=1, substeps=40,W=w,wsw=0.01)
+    # for w in [0.8]:
+    #     rund6py(sdictE, delta_mu=0., muRigid=0., mu=np.round(sdictE['mu'] + 0.02, 2), prop='test-runout1', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=0, rand=1, substeps=40,W=w,wsw=0.01)
 
     # for dmu,dmus in zip([0.05],[0.]):
     #     rund6py(sdictE, delta_mu=0.26, muRigid=0.18, mu=np.round(sdictE['mu'] + dmu, 2), prop='test-scaling', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=dmus, rand=1, substeps=80)
