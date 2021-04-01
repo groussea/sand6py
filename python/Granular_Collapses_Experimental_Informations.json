@@ -288,6 +288,8 @@
         "maskTh": 0.8
     },
     "Run_08_glass-beads-0.47mm_Slope=20deg_H=0.111m_L=0.224": {
+        "camType": "BW",
+        "date": "20170725",       
         "ROI": [
             21,
             2,

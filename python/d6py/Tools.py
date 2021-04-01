@@ -840,7 +840,7 @@ class NumericalRun():
 
         elif self.dimSim == 2:
             from matplotlib.colors import Normalize       
-            if len(self.pointsLayer) < nvec:
+            if len(self.pointsp) < nvec:
                 N = len(self.pointsp)
             else:
                 N = nvec

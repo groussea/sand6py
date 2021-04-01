@@ -13,18 +13,16 @@ readconfigFile(configFile) return a disctionary with 18 firs lines of the config
 import numpy as np  
 import json
 import sys, os
-# driveFolder='/scratch/garousse/'
-driveFolder='/media/gauthier/Gauthier_Backup/'
-driveFolder='/media/gauthier/Data-Gauthier/Gauthier/'
- # the genarated dictionnary-json path
-JSONpath=driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/Video_src/dictExp.json'
 
-    # the d6 soft path
-d6Path=driveFolder+'TAF/TAF_inria/Sand6/epfl_lhe_2d_and_3d/build_fast'
-d6Path='/media/gauthier/Data-Gauthier/programs/gitLab/sand6/build-2d'
+fileDir = os.path.dirname(os.path.abspath(__file__))
 
-d6OutFolder='out'
-out_Opyf=driveFolder+'TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/outputs_opyf/'
+print(fileDir)
+
+d6Path=fileDir+'/../../build-2d'
+
+mainOutFolder=d6Path+'/out'
+
+JSONpath=fileDir+'/../Granular_Collapses_Experimental_Informations.json'
 
 
 os.chdir(d6Path)
@@ -32,6 +30,8 @@ os.chdir(d6Path)
 sys.path.append(d6Path+'/../python')
 import d6py
 from d6py.d6python2D import * # python must be reload if d6python2D was imported
+
+mainOutFolder='/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/'
 
 
 #%%
@@ -44,7 +44,7 @@ def rund6py(sdictE,**args):
         sdictE['Ltot']=sdictE['Ltot']+0.1
     L=sdictE['L']    
     Lmod=sdictE['Ltot']
-    nFrames=int(sdictE['nFrames']/10)+4
+    nFrames=int(sdictE['nFrames']/10)
     
     if (sdictE['camType']=='BW') & (sdictE['Slope']==15. or sdictE['Slope']==20.):
         Lmod=sdictE['Ltot']+0.8
@@ -67,7 +67,7 @@ def rund6py(sdictE,**args):
         
 
     substeps=args.get('substeps',40)
-    resZ=args.get('resZ',30)
+    resZ=args.get('resZ',40)
 
     prop=args.get('prop','test')
     rand = args.get('rand', 0)
@@ -97,7 +97,7 @@ def rund6py(sdictE,**args):
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'delta_mu_start',[delta_mu_start])
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'I0_start',[I0_start])
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'P0',[P0])
-    d6py.modifyConfigFile(newConfigFile,newConfigFile,'nSamples',[2])
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'nSamples',[args.get('nSamples',3)])
     if door=='with':
         if j<=3:
             d6py.modifyConfigFile(newConfigFile,newConfigFile,'scenario','collapselhedoor taudoor:0.06 veldoor:0.8 ts:'+format(ts,'1.2f')+' frac_h:'+format(fracH,'1.1f')+' column_length:'+str(L))
@@ -107,7 +107,7 @@ def rund6py(sdictE,**args):
         d6py.modifyConfigFile(newConfigFile,newConfigFile,'scenario','collapselhedoor taudoor:0.0001 veldoor:100 ts:'+format(ts,'1.2f')+' frac_h:'+format(fracH,'1.1f')+' column_length:'+str(L))
 
     
-    TypicalLength=0.01
+    TypicalLength=0.004
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'res',[int(Lmod/TypicalLength),resZ]) #pour avoir un réolution divisible par 10 selon Y
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'I0',[I0]) 
       
@@ -146,12 +146,12 @@ t=time.time()
 #         for s,p in zip([40],['fin']):
 #             rund6py(sdictE, delta_mu=0.,rand=0,mu=np.round(sdictE['mu']+dmu,2),substeps=s,prop=p,muRigid=0.,nSamples=3)
             
-for j in range(3,4 ):  
+for j in [8]:  
     sE=lExp[j] #Selected exeperiment
     sdictE=dictExp[sE]
-    for dmu in [-0.05,0.05]:
-        for s,p in zip([80],['fin']):
-            rund6py(sdictE,delta_mu=0.,rand=0,mu=np.round(sdictE['mu']+dmu,2),substeps=s,prop=p,muRigid=0.,nSamples=3,door='with')
+    for s,p in zip([120],['resZ60_bis3']):
+        rund6py(sdictE,delta_mu=0.,rand=0,mu=0.38,substeps=s,prop=p,muRigid=0.,nSamples=5,door='with')
+        # rund6py(sdictE,delta_mu=0.,rand=0,mu=0.38,substeps=s,prop=p,muRigid=0.,nSamples=3,door='with')
 
 
 # for j in range(7,8 ):  

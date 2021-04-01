@@ -6,10 +6,6 @@
 import opyf  # from opyflow library some rendering function may be employed
 sys.path.append(
     '/media/gauthier/Data-Gauthier/programs/gitLab/sand6/python/imageProcessing')
-sys.path.append(
-    '/home/gauthier/git/gitlab/sand6/python/imageProcessing/')
-sys.path.append('/home/gauthier/git/gitlab/sand6/python/')   
-        
 from Tools_collapses import mask_collapses, mask_collapses2
 import matplotlib.pyplot as plt
 from d6py.Tools import *
@@ -30,15 +26,13 @@ plt.rcParams['ytick.labelsize'] = 7.0
 plt.rcParams['ytick.labelsize'] = 8.0
 plt.rcParams['axes.linewidth'] = 0.8
 # print(r'\includegraphics{test_2.pdf}')
-
 driveFolder = '/media/gauthier/Data-Gauthier/Gauthier'
 maind6OutFolder = '/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/'
 paths, folders, listDictConf, listNumRun = d6py.findOutSand6Paths(
     maind6OutFolder, 4)
 mainExpFolder = driveFolder + \
     '/TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/outputs_opyf'
-# mainExpFolder = '/home/gauthier/Documents/TAF_ownCloud/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/outputs_opyf/'
-Nrun = 7
+Nrun = 8
 scale = 0.01  # 1cm
 runExp1 = d6py.ExperimentalRun(Nrun, mainExpFolder, loadField=True)
 runExp1.scLength(scale)
@@ -46,33 +40,32 @@ mu = runExp1.dictE['mu']
 
 
 
-delta_mu=0.0
+delta_mu=0.
 
-R1 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/2D/Run_07_2D_Door_mu=0.38_muRigid=0.0_H_14.12cm_glass-beads-0.47mm_Slope=15deg_delta_mu=0.000_substeps_120_fracH=0.8_I0_start=0.0000_delta_mu_start=0.0000resZ60/')
+# R1, selectedDict = d6py.whereSand6OutFromParms(listNumRun, delta_mu=delta_mu, fps=15, nSamples=2, I0_start=0.00, mu=0.38, delta_mu_start=0., runNumber=Nrun, dimSim=2,substeps=80,viscosity=0.0)
+R1 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/Run_08_3D_Door_mu=0.48_muRigid=0.18_W_3.0cm_glass-beads-0.47mm_Slope=20deg_delta_mu=0.26_substeps_80_fracH=0.8_I0_start=0.0000_delta_mu_start=0.00test-scaling/')
+R1=[R1]
+R2 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/Run_08_3D_Door_mu=0.48_muRigid=0.18_W_6.0cm_glass-beads-0.47mm_Slope=20deg_delta_mu=0.26_substeps_80_fracH=0.8_I0_start=0.0000_delta_mu_start=0.00test-scaling/')
+R2=[R2]
 
-R1 = [R1]
+# R2, selectedDict = d6py.whereSand6OutFromParms(listNumRun, delta_mu=delta_mu, mu=0.48, fps=15, nSamples=2, I0_start=0.00, delta_mu_start=0., runNumber=Nrun, dimSim=2, substeps=80, viscosity=0)
 
-R2 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/2D/Run_07_2D_Door_mu=0.44_muRigid=0.0_H_14.12cm_glass-beads-0.47mm_Slope=15deg_delta_mu=0.000_substeps_120_fracH=0.8_I0_start=0.0000_delta_mu_start=0.0000resZ60/')
-R2 = [R2]
 
-R3 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/Run_07_3D_Door_mu=0.38_muRigid=0.18_W_8.0cm_glass-beads-0.47mm_Slope=15deg_delta_mu=0.00_substeps_60_fracH=0.8_I0_start=0.0050_delta_mu_start=0.0038resZ60/')
-R3 = [R3]
+
+
+
+R3, selectedDict = d6py.whereSand6OutFromParms(listNumRun, delta_mu=delta_mu, muRigid=0.18, mu=0.48, fps=15, nSamples=2, runNumber=Nrun, dimSim=3)
+
+R4, selectedDict = d6py.whereSand6OutFromParms(listNumRun, delta_mu=delta_mu, fps=15, nSamples=2, I0_start=0.00, mu=0.48, delta_mu_start=0., runNumber=Nrun, dimSim=2,substeps=80,viscosity=0.0)
+
 # delta_mu=0.22
-R4 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/Run_07_3D_Door_mu=0.44_muRigid=0.18_W_8.0cm_glass-beads-0.47mm_Slope=15deg_delta_mu=0.00_substeps_80_fracH=0.8_I0_start=0.0050_delta_mu_start=0.00resZ60')
-R4 = [R4]
 
+# R4, selectedDict = d6py.whereSand6OutFromParms(listNumRun, delta_mu=delta_mu, muRigid=0.0, mu=0.48, fps=15, nSamples=2, runNumber=Nrun, dimSim=2)
 
-# R1 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/2D/Run_08_2D_Door_mu=0.38_muRigid=0.0_H_15.00cm_glass-beads-0.47mm_Slope=20deg_delta_mu=0.000_substeps_120_fracH=0.8_I0_start=0.0000_delta_mu_start=0.0000resZ60/')
-# R1 = [R1]
+# delta_mu=0.22
+# R3, selectedDict = d6py.whereSand6OutFromParms(listNumRun, delta_mu=delta_mu, muRigid=0.18, mu=0.38, fps=15, nSamples=2,  runNumber=Nrun, dimSim=3)
 
-# R2 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/2D/Run_08_2D_Door_mu=0.44_muRigid=0.0_H_15.00cm_glass-beads-0.47mm_Slope=20deg_delta_mu=0.000_substeps_120_fracH=0.8_I0_start=0.0000_delta_mu_start=0.0000resZ60/')
-# R2 = [R2]
-
-# R3 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/Run_08_3D_Door_mu=0.38_muRigid=0.18_W_8.0cm_glass-beads-0.47mm_Slope=20deg_delta_mu=0.00_substeps_60_fracH=0.8_I0_start=0.0050_delta_mu_start=0.0038resZ60/')
-# R3 = [R3]
-# # delta_mu=0.22
-# R4 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/Run_08_3D_Door_mu=0.44_muRigid=0.18_W_8.0cm_glass-beads-0.47mm_Slope=20deg_delta_mu=0.00_substeps_80_fracH=0.8_I0_start=0.0050_delta_mu_start=0.00resZ60_HRx')
-# R4 = [R4]
+# R4, selectedDict = d6py.whereSand6OutFromParms(listNumRun, delta_mu=delta_mu, muRigid=0.18, mu=0.48, fps=15, nSamples=2, runNumber=Nrun, dimSim=3)
 
 selectedRuns=[R1[0],R2[0],R3[0],R4[0]]
 # selectedRuns = [Ref[0], selectedRuns[0]]
@@ -181,7 +174,7 @@ ax_draw.plot([X_line, X_line], [Y_sep, 0.98], linewidth=0.5, color='k')
 # Add a big axe to draw the final state entirely
 ax2 = fig.add_axes([w_s, 0.07, x + X - w_s, Y_sep-0.2], zorder=-10)
 
-ax2.set_xlim([-L, 50])
+ax2.set_xlim([-L, 60])
 ax2.plot([-L, -L], [-10, 2 * H], '-k', linewidth=2)
 ax2.set_ylim([-1.5,11])
 ax2.set_ylabel('z (cm)', fontsize=8)
@@ -253,8 +246,8 @@ plt.show()
 k = 0
 NsR = len(selectedRuns)
 indContrst = 0
-ls = ['--', '-.', ':', '-']
-c = [1.2, 1., 0.8, 1.]
+ls = ['--', '-.', '--', '-.']
+c = [0.9, 1., 0.8, 1.2]
 SR = selectedRuns[0:4]
 if Nrun > 7:
     shiftExp = -1
@@ -291,17 +284,17 @@ for ifile in [ 6, 9 , 15]:
         sR.loadVTK(int(ifile * sR.dConfig['fps'] / 15))
         [line2D]=runExp1.plotDepthProfile(ax, np.max(
             [(ifile-3) * 10 - 5, 0]), linestyle='-', color='purple', linewidth=0.9, label="Experience",zorder=1)
-        sR.plotContour(ax, levels=[0.5], linewidths=c[i % 4], linestyles=ls[i % 4], colors=[ cmapg((i+2) / (NsR + indContrst))],zorder=2)
+        sR.plotContour(ax, levels=[0.5], linewidths=c[i % 4], linestyles=ls[i % 4], colors=[ cmapg((NsR - i) / (NsR + indContrst))],zorder=2)
         
         V = area(sR.findContourPhi(level=0.5)[0])
 
         lost=(Vini[i]-V)/Vini[i]*100
 
         [x, y, X, Y] = axs[k, i].get_position().bounds
-        plt.figtext(x+X*0.55, y + 1.05*Y, r'$\epsilon$='+format(lost,'1.1f') +r'\%', fontsize=7)
+        plt.figtext(x+X*0.55, y + 1.05*Y, r'$\epsilon$='+format(lost,'1.1f') +r'\%',color=(0.33,0,0), fontsize=7)
         
         im = sR.opyfPointCloudColoredScatter(
-            ax, nvec=8000, mute=False, vmin=0, vmax=1, s=0.02, cmap=cmap, rasterized=True)
+            ax, nvec=8000, mute=True, vmin=0, vmax=1, s=0.03, cmap=cmap, rasterized=True)
 
         sR.plotDoor(ax, alpha=0.5)
         if k ==0 and (i==0 or i==2):
@@ -358,12 +351,10 @@ h1, l1 = h1+[fantom], l1+['']
 for sR, i in zip(selectedRuns, range(len(selectedRuns))):
     sR.loadVTK(int(ifile * sR.dConfig['fps'] / 15))
     sR.plotContour(ax2, levels=[0.5], linewidths=c[i % 4], linestyles=ls[i % 4], colors=[
-                   cmapg((i+2)/(NsR+indContrst))])
+                   cmapg((NsR-i)/(NsR+indContrst))])
     h = sR.CS.legend_elements()[0]
-    V = area(sR.findContourPhi(level=0.5)[0])
-
-    lost=(Vini[i]-V)/Vini[i]*100
-    l = [str(sR.dimSim) + r"D~-~$\mu_1$= " + toS(sR.dConfig['mu'],2)+r'$~\epsilon$='+format(lost,'1.1f') +r'\%']
+    
+    l = [str(sR.dimSim) + r"D~-~$\mu_1$= " + toS(sR.dConfig['mu'],2)]
     h1, l1 = h1+h, l1+l
 ax2.legend(h1 , l1, fontsize=7, framealpha=0.5, loc=1,ncol=3)
 time = (ifile-3) / sR.dConfig['fps'] 

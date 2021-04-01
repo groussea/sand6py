@@ -125,7 +125,7 @@ void Sampler::compute_absolute()
         const unsigned pid = m_particleIds[i] ;
 
         const Vec p0 = particles.centers().col( pid ) ;
-        const Vec p0_pred = m_predPos.col( pid ) ;
+        // const Vec p0_pred = m_predPos.col( pid ) ;
         
         // m_offsets.col(i) = m_positions.col(i).cast<Scalar>() - p0_pred;
         // std::cout << m_offsets.col(i) << std::endl;

@@ -98,7 +98,7 @@ FrictionSolver::Options::Options()
     : algorithm( GaussSeidel ),
       maxIterations(250), maxOuterIterations( 15 ),
       projectedGradientVariant( -1  ),
-      useInfinityNorm( false ), tolerance( 1.e-6 )
+      useInfinityNorm( false ), tolerance( 1.e-8 )
 {}
 
 

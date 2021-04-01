@@ -46,11 +46,11 @@ for Nrun in range(0,4):
     D=runExp1.expD[-1]
     X = runExp1.vecXexpD
     xf = X[np.where(D < 0.001)[0][0]]
-    
     ax.plot(X, D)
     ax.plot(xf,0,'+')
     xfC.append(xf)
     H.append(runExp1.dictE['H'])
+    
 xfC = np.array(xfC)
 H=np.array(H)
 
@@ -160,3 +160,38 @@ ax.set_title(r'gravels- $\tan \theta_{start}$= 0.65 - from model to fit')
 fig.savefig(folderOut + 'gravels-fit-from-model.svg')
 #%%
 
+
+
+R1 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/Run_04_3D_Door_mu=0.38_muRigid=0.0_W_8.0cm_glass-beads-0.47mm_Slope=0deg_delta_mu=0.00_substeps_40_fracH=0.8_I0_start=0.0000_delta_mu_start=0.00talush/')
+
+#%%
+plt.close('all')
+fig, ax = plt.subplots(1, 1)
+R1.loadVTK(8)
+R1.opyfPointCloudColoredScatter(ax)
+nF = int(R1.dConfig['nFrames'])
+masks_low = []
+for i in range(5, 6):
+    R1.loadVTK(i)
+    R1.opyfPointCloudColoredScatter(ax, vmin=0, vmax=0.01)
+ax.set_aspect('equal', adjustable='box') 
+plt.show()
+#%%
+    R1.calculateNormVelocity()
+    R1.IMvel = np.flipud(R1.normV.T)
+    mask=np.zeros_like(R1.IMvel[:,4,:])
+    ax.cla()
+    ax.set_aspect('equal', adjustable='box')
+
+    mask[np.where(R1.IMvel[:,4,:]> 0.008)] = 1
+
+    masks_low.append(mask)
+mask_final  = np.zeros_like(mask)
+# fig.axes[-1].remove()
+for m in masks_low:
+    mask_final[np.where(m == 1.)] = 1
+ax.set_aspect('equal', adjustable='box')    
+ax.imshow(mask_final,cmap='hot',interpolation='gaussian',extent=R1.extentR)
+fig.show()
+
+#%%

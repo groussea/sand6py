@@ -29,8 +29,8 @@ Index Voxel::sample_uniform(const unsigned N, const Index start, Points &points,
 
 	Vec3i Nsub ;
 	for( int k = 0 ; k < 3 ; ++ k)
-		Nsub[k] = N * std::round( box[k] / min ) ;
-
+		// Nsub[k] = N * std::round( box[k] / min ) ;
+		Nsub[k] = N ;
 	const Vec subBox = box.array() / Nsub.array().cast< Scalar >() ;
 
 	Vec6 frame ;
