@@ -51,7 +51,7 @@ void Particles::generate(const ScalarExpr &expr, const unsigned nSamples,
 
 	// Uniform gen
 
-	if( nSamples > 10 )
+	if( nSamples > 100 )
 	{
 		// nSamples is to be understood globally (w.r.t dim domain)
 

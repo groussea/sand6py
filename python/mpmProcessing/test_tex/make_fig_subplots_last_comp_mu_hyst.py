@@ -35,7 +35,7 @@ maind6OutFolder = '/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/'
 paths, folders, listDictConf, listNumRun = d6py.findOutSand6Paths(
     maind6OutFolder, 4)
 %matplotlib qt5
-Nrun = 6
+Nrun = 7
 
 scale = 0.01  # 1cm
 
@@ -58,19 +58,16 @@ dmu=-0.05
 
 R1, selectedDict = d6py.whereSand6OutFromParms(listNumRun, muRigid=0.18,mu=0.44, delta_mu=0., runNumber=Nrun, dimSim=3, delta_mu_start=0)
 
-R2, selectedDict = d6py.whereSand6OutFromParms(listNumRun, muRigid=0.18, mu=0.38, delta_mu=0., runNumber=Nrun, dimSim=3, delta_mu_start=0.)
-
-
+R2, selectedDict = d6py.whereSand6OutFromParms(listNumRun, muRigid=0.18, mu=0.54, delta_mu=0., runNumber=Nrun, dimSim=3, delta_mu_start=0.1)
 
 #%%
 # selectedRuns=[Ref[-1],selectedRuns[-1],selectedRuns2[-1]]
-selectedRuns = [R1[0], R2[0]]
-
+# selectedRuns = [R1[0], R2[0]] #8
+selectedRuns = [R1[0], R2[0]] #7
 
 for sR in selectedRuns:
     sR.scLength(0.01)
     nF = int(sR.dConfig['nFrames'])
-
 
 runExp1.loadVideo(
     '/media/gauthier/Samsung_T5/MPM_data/Collapse_experiment/Video_src', mute=True)
@@ -119,7 +116,7 @@ fig, axs = plt.subplots(N, M, dpi=142, figsize=(w_fig * 0.39, 13 * 0.39))
 # fig = plt.figure(dpi=142, figsize=(w_fig * 0.39, 11 * 0.39))
 
 Y_lim = [-0.015/runExp1.scaleLength, H]
-X_lim = [-L-1, runExp1.xmax * H]
+X_lim = [-L-0.2, runExp1.xmax * H]
 w_axs = 0.28
 h_axs = 0.2
 w_s = 0.09
@@ -151,7 +148,7 @@ ax_draw.plot([0.02, 0.98], [Y_sep, Y_sep], linewidth=0.5, color='k')
 ax2 = fig.add_axes([w_s, 0.00, x + X - w_s, Y_sep-0.03], zorder=-10)
 ax2.set_yticklabels([])
 ax2.set_xticklabels([])
-ax2.set_xlim([X_lim[0], 52])
+ax2.set_xlim([X_lim[0], 49])
 ax2.plot([-L, -L], [-10, 2 * H], '-k', linewidth=2)
 ax2.set_ylim(Y_lim)
 ax2.set_aspect('equal', adjustable='box')
@@ -201,7 +198,7 @@ ax2.plot([0, 0], [-200, 200], 'k', linewidth=0.5)
 ax2.text(-0.5, 0, 'O', fontsize=8, horizontalalignment='right',
          verticalalignment='bottom', bbox=my_bbox)
 
-x_sc, y_sc = 10, 5
+x_sc, y_sc = 0, 5
 lx_sc, ly_sc = 10, 5
 draw_ax_sc(ax2, x_sc, y_sc, lx_sc, ly_sc, fmt='.0f', shift_y_txt=.5)
 
@@ -209,11 +206,12 @@ draw_ax_sc(ax2, x_sc, y_sc, lx_sc, ly_sc, fmt='.0f', shift_y_txt=.5)
 from matplotlib.patches import Circle, Wedge, Polygon, Arc, Rectangle
 
 dS5=5*np.array(sR.dConfig['box'])/np.array(sR.dConfig['res'])*100
+pos_rect=[10,10]
 
-rect = Rectangle([20, 10], -dS5[0], -dS5[2], ec="none",color='k', linewidth=0.5,zorder=1)
+rect = Rectangle(pos_rect, -dS5[0], -dS5[2], ec="none",color='k', linewidth=0.5,zorder=1)
 ax2.add_patch(rect)
-ax2.text(20-dS5[0]/2,10.5,r'5 $\delta x$',horizontalalignment='center')
-ax2.text(20.5,8.5,r'5 $\delta z$')
+ax2.text(pos_rect[0]-dS5[0]/2,10.5,r'5 $\delta x$',horizontalalignment='center')
+ax2.text(pos_rect[0]+0.5,8.5,r'5 $\delta z$')
 
 # draw gravity vector
 x_sc, y_sc = -20, 9
@@ -320,7 +318,6 @@ for ifile in [3, 6, 12]:
     ax = axs[k, 0]
     h1, l1 = [], []
 
-
     runExp1.video.readFrame(np.max([int(runExp1.dictE['framedeb']) - 100 + (ifile-3) * (
         100) - shiftExp*10, int(runExp1.dictE['framedeb']) - 100]))
     vis = opyf.Render.CLAHEbrightness(runExp1.video.vis, 150)
@@ -362,7 +359,7 @@ for ifile in [3, 6, 12]:
         ax.set_yticklabels([])
         ax.set_xticklabels([])
         if ifile == nF:
-            sR.plotContour(ax2, levels=[0.5], linewidths=c[i % 4], linestyles=ls[i % 4], colors=[
+            sR.plotContour(ax2, levels=[0.01], linewidths=c[i % 4], linestyles=ls[i % 4], colors=[
                            cmapg((NsR-i)/(NsR+indContrst))])
 
         h = sR.CS.legend_elements(str(sR.dimSim)+"D-~\mu_{RB}=" + toS(
@@ -387,7 +384,13 @@ ax2.imshow(vis, extent=runExp1.video.paramPlot['extentFrame'])
 # runExp1.plotDepthProfile(ax2, np.max(
 #     [(ifile-3) * 10 - 5, 0]), linestyle='-.', color='k', linewidth=1, label="Experience")
 
-BW=mask_collapses2(runExp1.video.vis,0.7)
+# BW=mask_collapses2(runExp1.video.vis,0.5)
+
+if Nrun==8: 
+    BW=mask_collapses2(runExp1.video.vis,0.45) #8
+else:
+    BW=mask_collapses2(runExp1.video.vis,0.5) #8
+
 
 mat = np.array(BW, dtype=np.float32)
 runExp1.video.set_gridToInterpolateOn(stepGrid=1)
@@ -413,8 +416,7 @@ for sR, i in zip(selectedRuns, range(len(selectedRuns))):
         l = [str(sR.dimSim) + r"D ~-~$\mu_0$= " + toS(sR.dConfig['mu'], 2)+"~-~$\mu_1$= " + toS(sR.dConfig['mu']-sR.dConfig['delta_mu_start'], 2)+r'$~\epsilon$='+format(lost,'1.1f') +r'\%']
     h1, l1 = h1 + h, l1 + l
         
-ax2.legend(h1 + [line2D], l1 +
-           [r"Experiment"], fontsize=7, framealpha=0.5, loc=1)
+ax2.legend(h1 + [line2D], l1 +[r"Experiment"], fontsize=7, framealpha=0.5, loc=1)
 
 
 [x, y, X, Y] = axs[2, 2].get_position().bounds
@@ -431,7 +433,7 @@ cbaxes = ax2.set_position([x, y - 0.03, X, Y])
 plt.pause(2)
 # plt.show()
 # fig.savefig("test_savefig_pdf_5_mm.pdf", dpi=300)
-fig.savefig("/media/gauthier/Data-Gauthier/Gauthier/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular/doc/article/images/used_images/Run_08_hyst.pdf", dpi=150)
+fig.savefig("/media/gauthier/Data-Gauthier/Gauthier/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular/doc/article/images/used_images/Run_07_hyst.pdf", dpi=150)
 # sys.stdout = sys.__stdout__
 print(r'\includegraphics{test_savefig_pdf.pdf}')
 

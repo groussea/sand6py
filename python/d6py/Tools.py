@@ -859,11 +859,13 @@ class NumericalRun():
             return ax.scatter(Xc[:, 0]/self.scaleLength, Xc[:, 1]/self.scaleLength, c=self.norm_vel,**args)
 
 
-    def findContourPhi(self,level=0.5):
+    def findContourPhi(self,level=0.5,nY=None):
         if self .dimSim==2:
             return findContours(self.grid_x[:, 0], self.grid_y[0,:], self.reshaped_Phi, level)
         elif self.dimSim == 3:
-            return findContours(self.grid_x[:,0, 0], self.grid_z[0,0,:], self.reshaped_Phi[:,self.nYplot,:], level)
+            if nY==None:
+                nY=self.nYplot
+            return findContours(self.grid_x[:,0, 0], self.grid_z[0,0,:], self.reshaped_Phi[:,nY,:], level)
 
         
       

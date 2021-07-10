@@ -58,37 +58,61 @@ mu = runExp1.dictE['mu']
 
 delta_mu=0.
 
-R1 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/2D/Run_07_2D_Door_mu=0.44_muRigid=0.0_H_14.12cm_glass-beads-0.47mm_Slope=15deg_delta_mu=0.000_substeps_120_fracH=0.8_I0_start=0.0000_delta_mu_start=0.0000resZ60')
+
+
+#Run 3
+
+# R1 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/Run_03_3D_Door_mu=0.65_muRigid=0.18_W_1.3cm_gravels-2.7mm_Slope=15deg_delta_mu=0.00_substeps_40_fracH=0.8_I0_start=0.0050_delta_mu_start=0.00resZ20')
+# R1 = [R1]
+
+
+# R2 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/Run_03_3D_Door_mu=0.65_muRigid=0.18_W_2.7cm_gravels-2.7mm_Slope=15deg_delta_mu=0.00_substeps_40_fracH=0.8_I0_start=0.0050_delta_mu_start=0.00resZ20')
+
+# R2=[R2]
+
+
+# R3 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/Run_03_3D_Door_mu=0.65_muRigid=0.18_W_8.0cm_gravels-2.7mm_Slope=15deg_delta_mu=0.00_substeps_40_fracH=0.8_I0_start=0.0050_delta_mu_start=0.00resZ20')
+# R3 = [R3]
+
+# R4 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/Run_03_3D_Door_mu=0.65_muRigid=0.18_W_16.0cm_gravels-2.7mm_Slope=15deg_delta_mu=0.00_substeps_40_fracH=0.8_I0_start=0.0050_delta_mu_start=0.00resZ20')
+# R4 = [R4]
+
+# Run7
+
+R1 = d6py.NumericalRun('/media/gauthier/Data-Gauthier1/Gauthier/out_sand6/Run_07_3D_Door_mu=0.44_muRigid=0.18_W_1.3cm_glass-beads-0.47mm_Slope=15deg_delta_mu=0.00_substeps_80_fracH=0.8_I0_start=0.0050_delta_mu_start=0.00resZ30')
 R1 = [R1]
 
 
-R2 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/Run_07_3D_Door_mu=0.44_muRigid=0.18_W_1.3cm_glass-beads-0.47mm_Slope=15deg_delta_mu=0.00_substeps_80_fracH=0.8_I0_start=0.0050_delta_mu_start=0.00resZ60')
+R2 = d6py.NumericalRun('/media/gauthier/Data-Gauthier1/Gauthier/out_sand6/Run_07_3D_Door_mu=0.44_muRigid=0.18_W_2.7cm_glass-beads-0.47mm_Slope=15deg_delta_mu=0.00_substeps_80_fracH=0.8_I0_start=0.0050_delta_mu_start=0.00resZ30/')
 
 R2=[R2]
 
 
-R3 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/Run_07_3D_Door_mu=0.44_muRigid=0.18_W_8.0cm_glass-beads-0.47mm_Slope=15deg_delta_mu=0.00_substeps_80_fracH=0.8_I0_start=0.0050_delta_mu_start=0.00resZ60')
+R3 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/2D/Run_07_2D_Door_mu=0.45_muRigid=0.0_H_14.12cm_glass-beads-0.47mm_Slope=15deg_delta_mu=0.000_substeps_120_fracH=0.8_I0_start=0.0000_delta_mu_start=0.0000resZ30/')
 R3 = [R3]
 
-R4 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/Run_07_3D_Door_mu=0.44_muRigid=0.18_W_2.7cm_glass-beads-0.47mm_Slope=15deg_delta_mu=0.00_substeps_80_fracH=0.8_I0_start=0.0050_delta_mu_start=0.00resZ60/')
+# R4 = d6py.NumericalRun('/media/gauthier/Data-Gauthier1/Gauthier/out_sand6/Run_07_2D_Door_mu=0.53_muRigid=0.0_H_14.12cm_glass-beads-0.47mm_Slope=15deg_delta_mu=0.000_substeps_120_fracH=0.8_I0_start=0.0000_delta_mu_start=0.0000resZ30/')
+# R4 = [R4]
+
+R4 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/2D/Run_07_2D_Door_mu=0.58_muRigid=0.0_H_14.12cm_glass-beads-0.47mm_Slope=15deg_delta_mu=0.000_substeps_120_fracH=0.8_I0_start=0.0000_delta_mu_start=0.0000resZ30/')
 R4 = [R4]
 
 
 
 
-# R1 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/2D/Run_08_2D_Door_mu=0.44_muRigid=0.0_H_15.00cm_glass-beads-0.47mm_Slope=20deg_delta_mu=0.000_substeps_120_fracH=0.8_I0_start=0.0000_delta_mu_start=0.0000resZ60_bis3/')
+# R1 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/Run_08_3D_Door_mu=0.44_muRigid=0.18_W_7.2cm_glass-beads-0.47mm_Slope=20deg_delta_mu=0.00_substeps_40_fracH=0.8_I0_start=0.0050_delta_mu_start=0.00resZ20')
 
 # R1 = [R1]
 
-# R2 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/Run_08_3D_Door_mu=0.44_muRigid=0.18_W_1.3cm_glass-beads-0.47mm_Slope=20deg_delta_mu=0.00_substeps_80_fracH=0.8_I0_start=0.0050_delta_mu_start=0.00resZ40_HRx')
+# R2 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/Run_08_3D_Door_mu=0.44_muRigid=0.18_W_3.8cm_glass-beads-0.47mm_Slope=20deg_delta_mu=0.00_substeps_40_fracH=0.8_I0_start=0.0050_delta_mu_start=0.00resZ20')
 
 # R2=[R2]
 
 
-# R3 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/Run_08_3D_Door_mu=0.44_muRigid=0.18_W_8.0cm_glass-beads-0.47mm_Slope=20deg_delta_mu=0.00_substeps_80_fracH=0.8_I0_start=0.0050_delta_mu_start=0.00resZ40_HRx/')
+# R3 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/Run_08_3D_Door_mu=0.44_muRigid=0.18_W_8.0cm_glass-beads-0.47mm_Slope=20deg_delta_mu=0.00_substeps_40_fracH=0.8_I0_start=0.0050_delta_mu_start=0.00resZ20')
 # R3 = [R3]
 
-# R4 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/Run_08_3D_Door_mu=0.44_muRigid=0.18_W_16.0cm_glass-beads-0.47mm_Slope=20deg_delta_mu=0.00_substeps_80_fracH=0.8_I0_start=0.0050_delta_mu_start=0.00resZ40_HRx')
+# R4 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/Run_08_3D_Door_mu=0.44_muRigid=0.18_W_60.0cm_glass-beads-0.47mm_Slope=20deg_delta_mu=0.00_substeps_40_fracH=0.8_I0_start=0.0050_delta_mu_start=0.00resZ20')
 # R4 = [R4]
 
 
@@ -351,11 +375,11 @@ h2, l2 = [[line2D], ["Experiment -  W = 6 cm"]]
 for sR, i in zip(selectedRuns, range(len(selectedRuns))):
     sR.loadVTK(int(ifile * sR.dConfig['fps'] / 15))
 
-    sR.plotContour(ax2, levels=[0.4], linewidths=c[i % 4], linestyles=ls[i % 4], colors=[
+    sR.plotContour(ax2, levels=[0.5], linewidths=c[i % 4], linestyles=ls[i % 4], colors=[
                    cmapg((i+2)/(NsR+indContrst))])
     V = area(sR.findContourPhi(level=0.5)[0])
 
-    lost=(Vini[i]-V)/Vini[i]*100
+    lost = (Vini[i]-V)/Vini[i]*100
     h = sR.CS.legend_elements()[0]
     if i == 0:
         # im = sR.plotPhi(ax2,vmin=0,vmax=1.3)
@@ -380,7 +404,7 @@ plt.figtext(0.02, y + 1.05*Y , '(b) - t='+format(time,'1.1f') +' s - Final state
 # plt.show()
 plt.pause(1)
 # fig.savefig("test_savefig_pdf_5_mm.pdf", dpi=300)
-fig.savefig("/media/gauthier/Data-Gauthier/Gauthier/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular/doc/article/images/used_images/Run_08_walls.pdf", dpi=150)
+fig.savefig("/media/gauthier/Data-Gauthier/Gauthier/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular/doc/article/images/used_images/Run_07_walls.pdf", dpi=150)
 # sys.stdout = sys.__stdout__
 print(r'\includegraphics{test_savefig_pdf.pdf}')
 # fig

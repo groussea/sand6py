@@ -33,12 +33,11 @@ plt.rcParams['axes.linewidth'] = 0.8
 
 driveFolder = '/media/gauthier/Data-Gauthier/Gauthier'
 maind6OutFolder = '/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/'
-paths, folders, listDictConf, listNumRun = d6py.findOutSand6Paths(
-    maind6OutFolder, 4)
+paths, folders, listDictConf, listNumRun = d6py.findOutSand6Paths( maind6OutFolder, 4)
 mainExpFolder = driveFolder + \
     '/TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/outputs_opyf'
 # mainExpFolder = '/home/gauthier/Documents/TAF_ownCloud/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/outputs_opyf/'
-Nrun = 7
+Nrun = 3
 scale = 0.01  # 1cm
 runExp1 = d6py.ExperimentalRun(Nrun, mainExpFolder, loadField=True)
 runExp1.scLength(scale)
@@ -48,31 +47,45 @@ mu = runExp1.dictE['mu']
 
 delta_mu=0.0
 
-R1 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/2D/Run_07_2D_Door_mu=0.38_muRigid=0.0_H_14.12cm_glass-beads-0.47mm_Slope=15deg_delta_mu=0.000_substeps_120_fracH=0.8_I0_start=0.0000_delta_mu_start=0.0000resZ60/')
-
-R1 = [R1]
-
-R2 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/2D/Run_07_2D_Door_mu=0.44_muRigid=0.0_H_14.12cm_glass-beads-0.47mm_Slope=15deg_delta_mu=0.000_substeps_120_fracH=0.8_I0_start=0.0000_delta_mu_start=0.0000resZ60/')
-R2 = [R2]
-
-R3 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/Run_07_3D_Door_mu=0.38_muRigid=0.18_W_8.0cm_glass-beads-0.47mm_Slope=15deg_delta_mu=0.00_substeps_60_fracH=0.8_I0_start=0.0050_delta_mu_start=0.0038resZ60/')
-R3 = [R3]
-# delta_mu=0.22
-R4 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/Run_07_3D_Door_mu=0.44_muRigid=0.18_W_8.0cm_glass-beads-0.47mm_Slope=15deg_delta_mu=0.00_substeps_80_fracH=0.8_I0_start=0.0050_delta_mu_start=0.00resZ60')
-R4 = [R4]
-
-
-# R1 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/2D/Run_08_2D_Door_mu=0.38_muRigid=0.0_H_15.00cm_glass-beads-0.47mm_Slope=20deg_delta_mu=0.000_substeps_120_fracH=0.8_I0_start=0.0000_delta_mu_start=0.0000resZ60/')
+# R1 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/2D/Run_07_2D_Door_mu=0.38_muRigid=0.0_H_14.12cm_glass-beads-0.47mm_Slope=15deg_delta_mu=0.000_substeps_100_fracH=0.8_I0_start=0.0000_delta_mu_start=0.0000resZ20b')
 # R1 = [R1]
 
-# R2 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/2D/Run_08_2D_Door_mu=0.44_muRigid=0.0_H_15.00cm_glass-beads-0.47mm_Slope=20deg_delta_mu=0.000_substeps_120_fracH=0.8_I0_start=0.0000_delta_mu_start=0.0000resZ60/')
+# R2 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/2D/Run_07_2D_Door_mu=0.44_muRigid=0.0_H_14.12cm_glass-beads-0.47mm_Slope=15deg_delta_mu=0.000_substeps_100_fracH=0.8_I0_start=0.0000_delta_mu_start=0.0000resZ20b')
 # R2 = [R2]
 
-# R3 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/Run_08_3D_Door_mu=0.38_muRigid=0.18_W_8.0cm_glass-beads-0.47mm_Slope=20deg_delta_mu=0.00_substeps_60_fracH=0.8_I0_start=0.0050_delta_mu_start=0.0038resZ60/')
+# R3 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/Run_07_3D_Door_mu=0.38_muRigid=0.18_W_8.0cm_glass-beads-0.47mm_Slope=15deg_delta_mu=0.00_substeps_80_fracH=0.8_I0_start=0.0050_delta_mu_start=0.00resZ30b')
 # R3 = [R3]
 # # delta_mu=0.22
-# R4 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/Run_08_3D_Door_mu=0.44_muRigid=0.18_W_8.0cm_glass-beads-0.47mm_Slope=20deg_delta_mu=0.00_substeps_80_fracH=0.8_I0_start=0.0050_delta_mu_start=0.00resZ60_HRx')
+# R4 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/Run_07_3D_Door_mu=0.44_muRigid=0.18_W_7.5cm_glass-beads-0.47mm_Slope=15deg_delta_mu=0.00_substeps_40_fracH=0.8_I0_start=0.0050_delta_mu_start=0.00resZ30')
 # R4 = [R4]
+
+
+R1 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/2D/Run_03_2D_Door_mu=0.59_muRigid=0.0_H_14.88cm_gravels-2.7mm_Slope=15deg_delta_mu=0.000_substeps_120_fracH=0.8_I0_start=0.0000_delta_mu_start=0.0000resZ30')
+R1 = [R1]
+
+R2 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/2D/Run_03_2D_Door_mu=0.65_muRigid=0.0_H_14.88cm_gravels-2.7mm_Slope=15deg_delta_mu=0.000_substeps_120_fracH=0.8_I0_start=0.0000_delta_mu_start=0.0000resZ30')
+R2 = [R2]
+
+
+R3 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/Run_03_3D_Door_mu=0.65_muRigid=0.3_W_8.0cm_gravels-2.7mm_Slope=15deg_delta_mu=0.00_substeps_80_fracH=0.8_I0_start=0.0050_delta_mu_start=0.00resZ30b')
+
+R3 = [R3]
+# delta_mu=0.22
+R4 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/Run_03_3D_Door_mu=0.65_muRigid=0.18_W_8.0cm_gravels-2.7mm_Slope=15deg_delta_mu=0.00_substeps_80_fracH=0.8_I0_start=0.0050_delta_mu_start=0.00resZ30b')
+R4 = [R4]
+
+# R1 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/2D/Run_08_2D_Door_mu=0.38_muRigid=0.0_H_15.00cm_glass-beads-0.47mm_Slope=20deg_delta_mu=0.000_substeps_120_fracH=0.8_I0_start=0.0000_delta_mu_start=0.0000resZ30')
+# R1 = [R1]
+
+# R2 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/2D/Run_08_2D_Door_mu=0.44_muRigid=0.0_H_15.00cm_glass-beads-0.47mm_Slope=20deg_delta_mu=0.000_substeps_120_fracH=0.8_I0_start=0.0000_delta_mu_start=0.0000resZ30')
+# R2 = [R2]
+
+# R3 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/Run_08_3D_Door_mu=0.38_muRigid=0.18_W_8.0cm_glass-beads-0.47mm_Slope=20deg_delta_mu=0.00_substeps_80_fracH=0.8_I0_start=0.0050_delta_mu_start=0.00resZ30b')
+# R3 = [R3]
+# # delta_mu=0.22
+# R4 = d6py.NumericalRun('/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/Run_08_3D_Door_mu=0.44_muRigid=0.18_W_7.5cm_glass-beads-0.47mm_Slope=20deg_delta_mu=0.00_substeps_40_fracH=0.8_I0_start=0.0050_delta_mu_start=0.00resZ30')
+# R4 = [R4]
+
 
 selectedRuns=[R1[0],R2[0],R3[0],R4[0]]
 # selectedRuns = [Ref[0], selectedRuns[0]]
@@ -183,7 +196,10 @@ ax2 = fig.add_axes([w_s, 0.07, x + X - w_s, Y_sep-0.2], zorder=-10)
 
 ax2.set_xlim([-L, 50])
 ax2.plot([-L, -L], [-10, 2 * H], '-k', linewidth=2)
-ax2.set_ylim([-1.5,11])
+if Nrun<4:  
+    ax2.set_ylim([-1.5,13])
+else: 
+     ax2.set_ylim([-1.5,10])
 ax2.set_ylabel('z (cm)', fontsize=8)
 ax2.set_xlabel('x (cm)', fontsize=8)
 ax2.xaxis.set_major_formatter(major_formatter)
@@ -263,6 +279,8 @@ else:
     
 Vini = np.zeros((len(SR)))
 
+Vini2 = np.zeros((len(SR)))
+
 
 
 # init Vini
@@ -273,6 +291,12 @@ for sR, i in zip(SR, range(len(SR))):
     contrs = sR.findContourPhi(level=0.5)
     V = area(contrs[0])
     Vini[i] = V
+    if sR.dimSim==3:
+        V2=[]
+        for nY in range(1,int(sR.dConfig['res'][1])-1):
+            V2.append(area(sR.findContourPhi(level=0.5,nY=nY)[0]))
+        Vini2[i]=np.array(V2).sum()
+        print(V2)
 
 for ifile in [ 6, 9 , 15]:
     
@@ -292,16 +316,25 @@ for ifile in [ 6, 9 , 15]:
         [line2D]=runExp1.plotDepthProfile(ax, np.max(
             [(ifile-3) * 10 - 5, 0]), linestyle='-', color='purple', linewidth=0.9, label="Experience",zorder=1)
         sR.plotContour(ax, levels=[0.5], linewidths=c[i % 4], linestyles=ls[i % 4], colors=[ cmapg((i+2) / (NsR + indContrst))],zorder=2)
-        
-        V = area(sR.findContourPhi(level=0.5)[0])
 
+        V=area(sR.findContourPhi(level=0.5)[0])
         lost=(Vini[i]-V)/Vini[i]*100
+        print(lost)
+        if sR.dimSim==3:
+            V2=[]
+            for nY in range(1,int(sR.dConfig['res'][1])-1):
+                V2.append(area(sR.findContourPhi(level=0.5,nY=nY)[0]))
+            V2=np.array(V2).sum()
+            lost2=(Vini2[i]-V2)/Vini2[i]*100
+            print(lost2)
+
+
 
         [x, y, X, Y] = axs[k, i].get_position().bounds
         plt.figtext(x+X*0.55, y + 1.05*Y, r'$\epsilon$='+format(lost,'1.1f') +r'\%', fontsize=7)
         
         im = sR.opyfPointCloudColoredScatter(
-            ax, nvec=8000, mute=False, vmin=0, vmax=1, s=0.02, cmap=cmap, rasterized=True)
+            ax, nvec=5000, mute=False, vmin=0, vmax=1, s=0.02, cmap=cmap, rasterized=True)
 
         sR.plotDoor(ax, alpha=0.5)
         if k ==0 and (i==0 or i==2):
@@ -363,6 +396,13 @@ for sR, i in zip(selectedRuns, range(len(selectedRuns))):
     V = area(sR.findContourPhi(level=0.5)[0])
 
     lost=(Vini[i]-V)/Vini[i]*100
+    if sR.dimSim==3:
+        V2=[]
+        for nY in range(1,int(sR.dConfig['res'][1])-1):
+            V2.append(area(sR.findContourPhi(level=0.5,nY=nY)[0]))
+        V2=np.array(V2).sum()
+        lost2=(Vini2[i]-V2)/Vini2[i]*100
+        print("final state : ",lost2)
     l = [str(sR.dimSim) + r"D~-~$\mu_1$= " + toS(sR.dConfig['mu'],2)+r'$~\epsilon$='+format(lost,'1.1f') +r'\%']
     h1, l1 = h1+h, l1+l
 ax2.legend(h1 , l1, fontsize=7, framealpha=0.5, loc=1,ncol=3)
@@ -379,7 +419,7 @@ cb.set_label('Velocity norm [m/s]', fontsize=8)
 plt.show()
 plt.pause(0.2)
 # fig.savefig("test_savefig_pdf_5_mm.pdf", dpi=300)
-fig.savefig("/media/gauthier/Data-Gauthier/Gauthier/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular/doc/article/images/used_images/Run_08_3D-2D.pdf", dpi=150)
+fig.savefig("/media/gauthier/Data-Gauthier/Gauthier/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular/doc/article/images/used_images/Run_03_3D-2Db.pdf", dpi=150)
 # sys.stdout = sys.__stdout__
 print(r'\includegraphics{test_savefig_pdf.pdf}')
 
