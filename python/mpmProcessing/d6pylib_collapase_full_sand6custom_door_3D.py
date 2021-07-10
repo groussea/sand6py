@@ -1,5 +1,4 @@
 
-#%%
 #!/usr/bin/env python
 """
 Created on Mon Oct 16 14:35:06 2017
@@ -41,8 +40,8 @@ from d6py.d6python3D import * # python must be reload if d6python2D was imported
 
 #% by default, mainOutPut folder is in the build folder but it is highly recommended to set your own mainOutPut folder since outputs are generally large
 # mainOutFolder=d6Path+'/out'
-mainOutFolder='/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/'
-
+# mainOutFolder='/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/'
+mainOutFolder='/home/gauthier/sorties_sand6/'
 d6py.mkdir2(mainOutFolder) 
 
 #%%
@@ -63,7 +62,7 @@ def rund6py(sdictE,**args):
         Lmod = sdictE['Ltot'] + 0.8
         
     delta_mu=args.get('delta_mu',0)
-    I0=args.get('I0',0.3)
+    I0=args.get('I0',0.279)
     I0_start=args.get('I0_start',0.000)
     delta_mu_start=args.get('delta_mu_start',0.00)
     muRigid=args.get('muRigid',0.18)
@@ -80,7 +79,7 @@ def rund6py(sdictE,**args):
         
 
     substeps=args.get('substeps',20)
-    resZ=args.get('resZ',20)
+    resZ=args.get('resZ',30)
     wsw=args.get('wsw',0.01)
     prop=args.get('prop','test')
     rand = args.get('rand', 1)
@@ -120,10 +119,11 @@ def rund6py(sdictE,**args):
     else:
         d6py.modifyConfigFile(newConfigFile,newConfigFile,'scenario','collapselhedoor taudoor:0.0001 veldoor:100 ts:'+format(ts,'1.2f')+' frac_h:'+format(fracH,'1.1f')+' column_length:'+str(L))
 
-    d6py.modifyConfigFile(newConfigFile,newConfigFile,'boundary','top:slip left:slip right:stick front:slip back:slip bottom:stick')
-    delta_x=args.get('delta_x',0.01)
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'boundary','top:slip left:slip right:free front:slip back:slip bottom:stick')
+    delta_x=args.get('delta_x',0.005)
     delta_y=args.get('delta_y',0.01)
-    d6py.modifyConfigFile(newConfigFile,newConfigFile,'res',[int(Lmod/delta_x),int(W/delta_y),resZ]) #pour avoir un réolution divisible par 10 selon Y
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'res',[int(Lmod/delta_x),int(W/delta_y),resZ])
+    #  pour avoir un réolution divisible par 10 selon Y
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'I0',[I0]) 
       
 
@@ -154,19 +154,19 @@ t=time.time()
 for j in [8]:   
     sE=lExp[j] #Selected exeperiment
     sdictE=dictExp[sE]
-    for w in [0.06]:
+    for w in [0.01,0.06,0.12]:
         # rund6py(sdictE, delta_mu=0., muRigid=0.18, mu=np.round(sdictE['mu'] + 0.01, 2), prop='test', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=0, rand=0, substeps=40,W=w,wsw=0.01)
         delta_y=w/6
-        rund6py(sdictE, delta_mu=0., muRigid=0.18, mu=0.38, prop='resZ20c', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=4, I0_start=0.005, delta_mu_start=0., rand=0, substeps=60, W=w+2*delta_y, wsw=delta_y, I0=0.0279,delta_y=delta_y)
+        rund6py(sdictE, delta_mu=0., muRigid=0.18, mu=0.44, prop='resZ40_HRx', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=3, I0_start=0.005, delta_mu_start=0., rand=0, substeps=80, W=w+2*delta_y, wsw=delta_y, I0=0.0279,delta_y=delta_y)
 
-# for j in [7]:   
-#     sE=lExp[j] #Selected exeperiment
-#     sdictE=dictExp[sE]
-#     for w in [0.06]:     
-#         delta_y=w/6   
-#         rund6py(sdictE, delta_mu=0., muRigid=0.18, mu=0.54, prop='hystResZ40', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=3, I0_start=0.005, delta_mu_start=0.1, rand=0, substeps=60, W=w+2*delta_y, wsw=delta_y, I0=0.0279,delta_y=delta_y)  
-#         rund6py(sdictE, delta_mu=0., muRigid=0.18, mu=0.38, prop='38resZ40', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=3, I0_start=0.005, delta_mu_start=0., rand=0, substeps=60, W=w+2*delta_y, wsw=delta_y, I0=0.279,delta_y=delta_y)    
-#         rund6py(sdictE, delta_mu=0.26, muRigid=0.18, mu=0.38, prop='muIresZ40', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=3, I0_start=0.005, delta_mu_start=0., rand=0, substeps=60, W=w+2*delta_y, wsw=delta_y, I0=0.279,delta_y=delta_y)       
+for j in [7]:   
+    sE=lExp[j] #Selected exeperiment
+    sdictE=dictExp[sE]
+    for w in [0.06]:     
+        delta_y=w/6   
+        rund6py(sdictE, delta_mu=0., muRigid=0.18, mu=0.54, prop='hystResZ40', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=3, I0_start=0.005, delta_mu_start=0.1, rand=0, substeps=60, W=w+2*delta_y, wsw=delta_y, I0=0.0279,delta_y=delta_y)  
+        rund6py(sdictE, delta_mu=0., muRigid=0.18, mu=0.38, prop='38resZ40', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=3, I0_start=0.005, delta_mu_start=0., rand=0, substeps=60, W=w+2*delta_y, wsw=delta_y, I0=0.279,delta_y=delta_y)    
+        rund6py(sdictE, delta_mu=0.26, muRigid=0.18, mu=0.38, prop='muIresZ40', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=3, I0_start=0.005, delta_mu_start=0., rand=0, substeps=60, W=w+2*delta_y, wsw=delta_y, I0=0.279,delta_y=delta_y)       
     # for dmu,dmus in zip([0.05],[0.]):
     #     rund6py(sdictE, delta_mu=0.26, muRigid=0.18, mu=np.round(sdictE['mu'] + dmu, 2), prop='test-scaling', fps=15, nFrames=int(sdictE['nFrames'] / 10), nSamples=2, I0_start=0.00, delta_mu_start=dmus, rand=1, substeps=80)
 

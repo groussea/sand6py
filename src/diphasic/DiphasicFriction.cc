@@ -367,7 +367,7 @@ Scalar DiphasicFrictionSolver::solveRed(const Options &options, const Scalar pen
 		typedef bogus::SparseBlockMatrix< CGType > PInvType ;
 
 		bogus::Krylov< PType > cg( P ) ;
-		cg.setTol( 1.e-8 );
+		cg.setTol( 1.e-10 );
 		cg.setMaxIters( 100 );
 
 		PInvType P_inv ;

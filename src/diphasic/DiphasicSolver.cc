@@ -233,7 +233,7 @@ void DiphasicSolver::solve(
 
 		bogus::Krylov< WPenType > krylov( WPen ) ;
 		krylov.setMaxIters(100);
-		krylov.setTol(1.e-8);
+		krylov.setTol(1.e-10);
 		auto xp = x.segment( m+r, p ) ;
 		double res = krylov.asCG().solve( b, xp ) ;
 
@@ -307,7 +307,7 @@ void DiphasicSolver::solve(
 		options.algorithm = DiphasicFrictionSolver::Options::GS ;
 //	options.algorithm = DiphasicFrictionSolver::Options::ADMM ;
 
-	options.tolerance = 1.e-8 ;
+	options.tolerance = 1.e-10 ;
 	options.useInfinityNorm = config.useInfNorm ;
 	options.maxIterations = 1000 ;
 

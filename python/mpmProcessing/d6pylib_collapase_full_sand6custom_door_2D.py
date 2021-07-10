@@ -31,8 +31,7 @@ sys.path.append(d6Path+'/../python')
 import d6py
 from d6py.d6python2D import * # python must be reload if d6python2D was imported
 
-mainOutFolder='/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/'
-
+mainOutFolder='/home/gauthier/sorties_sand6/'
 
 #%%
 def rund6py(sdictE,**args):
@@ -67,7 +66,7 @@ def rund6py(sdictE,**args):
         
 
     substeps=args.get('substeps',40)
-    resZ=args.get('resZ',40)
+    resZ=args.get('resZ',30)
 
     prop=args.get('prop','test')
     rand = args.get('rand', 0)
@@ -78,7 +77,7 @@ def rund6py(sdictE,**args):
         runName=str('Run_'+format(j,'02.0f')+'_2D_no_Door_start_at_0.13_s_'+sdictE['grainType']+'_Slope='+format(sdictE['Slope'],'.0f')+'deg_delta_mu='+format(delta_mu,'.3f')+'_substeps_'+str(substeps)+'_fracH='+str(fracH)+'_I0_start='+format(I0_start,'.4f')+'_delta_mu_start='+format(delta_mu_start,'.4f')+prop)      
        
      
-    d6OutFolder='/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/2D/'+runName
+    d6OutFolder=mainOutFolder+runName
     d6py.mkdir2(d6OutFolder) 
     
     newConfigFile=d6OutFolder+'/collapse.2d_'+runName+'m.conf'
@@ -107,7 +106,7 @@ def rund6py(sdictE,**args):
         d6py.modifyConfigFile(newConfigFile,newConfigFile,'scenario','collapselhedoor taudoor:0.0001 veldoor:100 ts:'+format(ts,'1.2f')+' frac_h:'+format(fracH,'1.1f')+' column_length:'+str(L))
 
     
-    TypicalLength=0.004
+    TypicalLength=0.008
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'res',[int(Lmod/TypicalLength),resZ]) #pour avoir un réolution divisible par 10 selon Y
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'I0',[I0]) 
       
@@ -146,12 +145,12 @@ t=time.time()
 #         for s,p in zip([40],['fin']):
 #             rund6py(sdictE, delta_mu=0.,rand=0,mu=np.round(sdictE['mu']+dmu,2),substeps=s,prop=p,muRigid=0.,nSamples=3)
             
-for j in [8]:  
+for j in [3]:  
     sE=lExp[j] #Selected exeperiment
     sdictE=dictExp[sE]
-    for s,p in zip([120],['resZ60_bis3']):
-        rund6py(sdictE,delta_mu=0.,rand=0,mu=0.38,substeps=s,prop=p,muRigid=0.,nSamples=5,door='with')
-        # rund6py(sdictE,delta_mu=0.,rand=0,mu=0.38,substeps=s,prop=p,muRigid=0.,nSamples=3,door='with')
+    for s,p in zip([120],['resZ30']):
+        rund6py(sdictE,delta_mu=0.,rand=0,mu=0.59,substeps=s,prop=p,muRigid=0.,nSamples=15,door='with')
+        rund6py(sdictE,delta_mu=0.,rand=0,mu=0.65,substeps=s,prop=p,muRigid=0.,nSamples=15,door='with')
 
 
 # for j in range(7,8 ):  
