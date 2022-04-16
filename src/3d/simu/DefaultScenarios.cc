@@ -794,6 +794,7 @@ struct CollapseScenarLHEDoor : public Scenario
 	{
 		tauD = scalar_param(params, "taudoor", Units::Time, .06);
 		velD = scalar_param(params, "veldoor", Units::Velocity, 1.0);
+		muDoor = scalar_param(params, "mud", Units::None, -99);
 		ts = scalar_param(params, "ts", Units::Time, 0);
 		fracH = scalar_param(params, "frac_h", Units::None, 1.);
 		columnLength = scalar_param(params, "column_length", Units::Length, 1.);
@@ -811,6 +812,8 @@ struct CollapseScenarLHEDoor : public Scenario
 		LevelSet::Ptr ls = LevelSet::make_box(doorBox);
 		ls->set_origin(Vec(columnLength + W, box[1] * 0.5, .1 * box[2] + L * 0.5));
 		rbs.emplace_back(ls, 1.e99);
+		rbs.back().set_mu(muDoor);
+		d6::Log::Debug() << "mu_door = " << muDoor << std::endl ;
 		std::ofstream RBout(m_config->base_dir + "/door.txt");
 		d6::dump(RBout, "Nframe,time,X,Y,Z,Ux,Uy,Uz");
 		RBout << "\n";
@@ -884,6 +887,7 @@ private:
 	Scalar fracH;
 	Scalar columnLength;
 	Scalar w_sideW;
+	Scalar muDoor;
 };
 
 
@@ -1018,6 +1022,7 @@ struct CollapseIonescu : public Scenario
 		LevelSet::Ptr ls = LevelSet::make_box(doorBox);
 		ls->set_origin(Vec(columnLength + W, box[1] * 0.5, L * 0.5));
 		rbs.emplace_back(ls, 1.e99);
+	
 		std::ofstream RBout(m_config->base_dir + "/door.txt");
 		d6::dump(RBout, "Nframe,time,X,Y,Z,Ux,Uy,Uz");
 		RBout << "\n";
@@ -1126,6 +1131,7 @@ struct InclinedPlane : public Scenario
 		ts = scalar_param(params, "ts", Units::Time, 0.5);
 		fracH = scalar_param(params, "frac_h", Units::None, 1.);
 		columnLength = scalar_param(params, "column_length", Units::Length, 1.);
+
 	}
 
 	void add_rigid_bodies(std::vector<RigidBody> &rbs) const override
@@ -1139,6 +1145,7 @@ struct InclinedPlane : public Scenario
 		LevelSet::Ptr ls = LevelSet::make_box(doorBox);
 		ls->set_origin(Vec(columnLength + W, box[1] * 0.5, L * 0.5+zD));
 		rbs.emplace_back(ls, 1.e99);
+		
 		std::ofstream RBout(m_config->base_dir + "/door.txt");
 		d6::dump(RBout, "Nframe,time,X,Y,Z,Ux,Uy,Uz");
 		RBout << "\n";

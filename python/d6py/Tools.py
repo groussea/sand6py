@@ -105,7 +105,7 @@ def readConfigFile(configFile):
         Conf.append(temp)
     #Extract the different informations 
     f.close()
-    Conf=np.array(Conf)
+    Conf=np.array(Conf,dtype=object)
       
 #Exemple of Conf file 
 # ./apps/d6 1.0-review on release [2017-10-12 14:26]
@@ -186,7 +186,7 @@ def modifyConfigFile(configFile,newConfigFile,parameter,value):
     for row in Conf:
         a=row[0].find(parameter)
         if (a!=-1) & (len(parameter)==len(row[0])):
-            if parameter=='res' or parameter=='nFrames' or parameter=='fps' or parameter=='substeps' or parameter=='nSamples':
+            if parameter=='res' or parameter=='nFrames' or parameter=='volMass' or parameter=='fps' or parameter=='substeps' or parameter=='nSamples':
                 formatstr='.0f'
             else:
                 formatstr='.6f'
@@ -454,7 +454,7 @@ def whereSand6OutFromFolder(listDictConf,folder):
         ind+=1
     return d   
 
-def whereSand6OutFromParms(listRuns,mute=False,keyWord='',**params):
+def whereSand6OutFromParms(listRuns,mute=False,keyWord='',W=None,**params):
 
     listRunsOut = listRuns.copy()
     for p in params:
@@ -466,14 +466,20 @@ def whereSand6OutFromParms(listRuns,mute=False,keyWord='',**params):
             except:
                 if mute is not True:
                     print('The parameter ['+p + '] is not in config dictionnary')
+
         listRunsOut=selectedRuns.copy()
     selectedRuns=[]
     if keyWord != '':
         for d in listRunsOut:
-            if d.dConfig['folder'].where(keyWord)!=-1:
+            if d.dConfig['folder'].find(keyWord)!=-1:
                 selectedRuns.append(d)
         listRunsOut=selectedRuns.copy()
-        
+    selectedRuns=[]    
+    if W is not None:
+        for d in listRunsOut:
+            if d.dConfig['box'][1]==W:
+                selectedRuns.append(d)
+        listRunsOut=selectedRuns.copy()
     listDictOut = []
     if mute is not True:
         print('Selected Runs are:')
@@ -484,7 +490,8 @@ def whereSand6OutFromParms(listRuns,mute=False,keyWord='',**params):
         listDictOut.append(r.dConfig)
 #        for keys,values in r.dConfig.items():
 #            print(keys,':',values)
-        
+
+
     return listRunsOut, listDictOut
 
 def whereSand6OutFromFolder2(listRuns,folder):
@@ -507,7 +514,6 @@ def whereSand6OutFromFolder2(listRuns,folder):
 
 class NumericalRun():
     def __init__(self,d6OutFolder,doorFolder=None):
-
         self.dConfig=readConfigFile(d6OutFolder+'/config')     
         dimSim=len(self.dConfig['res'])
         self.dConfig['dimSim'] = len(self.dConfig['res'])
@@ -533,9 +539,9 @@ class NumericalRun():
                     self.datas[:, 3] = self.datas[:, 3] - self.Orz            
             except:
                 print('no door file')
-            self.H = self.Ldoor
-        
+            self.H = self.Ldoor        
             self.vecxMax = np.array([2, 2.5, 3, 3, 2.5, 3, 4, 6]) * self.H
+
         elif self.dConfig['scenario']=='impactlhe':
             self.Orz = self.dConfig['h_bed']-0.004
             self.Orx = self.dConfig['box'][0]/2   
@@ -867,7 +873,12 @@ class NumericalRun():
                 nY=self.nYplot
             return findContours(self.grid_x[:,0, 0], self.grid_z[0,0,:], self.reshaped_Phi[:,nY,:], level)
 
+    def cal_violation_phi(self, ):
+        vals_phi=self.reshaped_Phi[np.where(self.reshaped_Phi>1.)]
+        self.viol=np.linalg.norm(vals_phi, 2)
+        self.viol_normalized=self.viol/self.reshaped_Phi.size
         
+    
       
 class ExperimentalRun():
 
@@ -883,7 +894,7 @@ class ExperimentalRun():
         self.dictExp = json.load(in_file) 
         in_file.close()  
         listExp=np.sort([d for d in self.dictExp ])
-        listExpFolders=np.sort([mainFolder+'/'+d for d in self.dictExp ])
+        self.listExpFolders=np.sort([mainFolder+'/'+d for d in self.dictExp ])
 
         self.dictE=self.dictExp[listExp[runNumber]]
         self.typicalTime=(self.dictE['H']/9.81)**0.5
@@ -893,10 +904,10 @@ class ExperimentalRun():
 
         self.nFrames=int(self.dictExp[listExp[runNumber]]['nFrames'])
         if loadSurfaceElevation==True:
-            [[_,self.Time],[_,self.vecXexpD]],[[_,self.expD]]=opyf.hdf5_Read(listExpFolders[runNumber]+'/Run_'+format(runNumber,'02.0f')+'_depths.hdf5')
+            [[_,self.Time],[_,self.vecXexpD]],[[_,self.expD]]=opyf.hdf5_Read(self.listExpFolders[runNumber]+'/Run_'+format(runNumber,'02.0f')+'_depths.hdf5')
             self.Time=self.Time-self.Time[0]
         if loadField==True:
-            coordinates, variables=opyf.hdf5_Read(listExpFolders[runNumber]+'/Run_'+format(runNumber,'02.0f')+'_rectilinear_velocity_fields.hdf5')        
+            coordinates, variables=opyf.hdf5_Read(self.listExpFolders[runNumber]+'/Run_'+format(runNumber,'02.0f')+'_rectilinear_velocity_fields.hdf5')        
             self.Time = coordinates[0][1]
             self.Time=self.Time-self.Time[0]
             self.X=coordinates[1][1]
@@ -917,7 +928,11 @@ class ExperimentalRun():
             self.epsilon21=np.array(self.epsilon21)
 
             self.h,self.w=self.Ux[0].shape
-            
+        
+        if loadPoints==True:
+            self.Time, self.PointsSelected, self.VelSelected=opyf.hdf5_ReadUnstructured2DTimeserie(self.listExpFolders[runNumber]+'/Run_'+format(runNumber,'02.0f')+'_unstructured_good_features_to_track_velocities.hdf5')
+
+        
         self.scaleLength=1.
 
 
@@ -945,8 +960,6 @@ class ExperimentalRun():
         self.video= opyf.videoAnalyzer(vidPath+self.dictE['videosrc'],imageROI=self.dictE['ROI'],**args)
 
     
-
-
 
 def setFigure(fig,ax,sL,unit='-'):
     ax.set_aspect('auto')
@@ -1045,3 +1058,23 @@ def area(vs):
         x0 = x1
         y0 = y1
     return np.abs(a)
+
+def init_article_dictionary(inFolder,outFolder):
+        JSONpath=inFolder+'/Granular_Collapses_Experimental_Informations.json'
+        in_file = open(JSONpath,"r")
+        dictExp = json.load(in_file) 
+        in_file.close()  
+        fignames=['G00', 'G05', 'G10', 'G15', 'B00', 'B05', 'B10', 'B15', 'B20']
+        dictTot={}
+        for d,f in zip(dictExp,fignames):
+            dictTot[f]={}
+            dictTot[f]['modelling']={}
+            dictTot[f]['experiment']=dictExp[d]
+        
+        out_file = open(outFolder + '/article_dict.json',"w")
+        json.dump(dictTot, out_file, indent=4)
+        out_file.close()
+        
+
+
+        

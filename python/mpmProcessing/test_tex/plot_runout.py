@@ -27,7 +27,7 @@ plt.rcParams['ytick.labelsize'] = 8.0
 plt.rcParams['axes.linewidth'] = 0.8
 # print(r'\includegraphics{test_2.pdf}')
 driveFolder = '/media/gauthier/Data-Gauthier/Gauthier'
-maind6OutFolder = '/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/'
+maind6OutFolder = '/media/gauthier/Samsung_T51/sand6_sorties/sand6_out/'
 paths, folders, listDictConf, listNumRun = d6py.findOutSand6Paths(
     maind6OutFolder, 4)
 mainExpFolder = driveFolder + \
@@ -145,9 +145,6 @@ H = np.array(H)
 for mu in np.linspace(0.45,0.75,10):
     angles = np.array([0, 5, 10,15])*np.pi/180
     b= 1/(mu-np.tan(angles))
-
-    
-
     ax.plot(b, xfC / H, '-+',linewidth=1.5, label='$\mu=$' + str(np.round(mu,2)))
     p, cov = np.polyfit(b, xfC/H, 1, cov=True)
     err = np.sqrt(np.diag(cov))

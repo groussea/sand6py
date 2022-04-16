@@ -31,16 +31,16 @@ plt.rcParams['ytick.labelsize'] = 8.0
 plt.rcParams['axes.linewidth'] = 1
 # print(r'\includegraphics{test_2.pdf}')
 driveFolder = '/media/gauthier/Data-Gauthier/Gauthier'
-maind6OutFolder = '/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/'
+maind6OutFolder = '/media/gauthier/Samsung_T51/sand6_sorties/sand6_out/'
 paths, folders, listDictConf, listNumRun = d6py.findOutSand6Paths(
     maind6OutFolder, 4)
 %matplotlib qt5
-Nrun = 7
+Nrun = 6
 
 scale = 0.01  # 1cm
 
 mainExpFolder = driveFolder + \
-    '/TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/outputs_opyf'
+    '/TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/granular_collapases_imaging_velocity_fields_and_free_surface_elevation/'
 runExp1 = d6py.ExperimentalRun(Nrun, mainExpFolder, loadField=True)
 runExp1.scLength(scale)
 mu = runExp1.dictE['mu']
@@ -63,14 +63,14 @@ R2, selectedDict = d6py.whereSand6OutFromParms(listNumRun, muRigid=0.18, mu=0.54
 #%%
 # selectedRuns=[Ref[-1],selectedRuns[-1],selectedRuns2[-1]]
 # selectedRuns = [R1[0], R2[0]] #8
-selectedRuns = [R1[0], R2[0]] #7
+selectedRuns = [R2[0], R2[-1]] #7
 
 for sR in selectedRuns:
     sR.scLength(0.01)
     nF = int(sR.dConfig['nFrames'])
 
 runExp1.loadVideo(
-    '/media/gauthier/Samsung_T5/MPM_data/Collapse_experiment/Video_src', mute=True)
+    '/media/gauthier/Samsung_T51/MPM_data/Collapse_experiment/Video_src', mute=True)
 plt.close('all')
 step, shift, Ntot = 8, 5, (int(runExp1.dictE['nFrames'])+20)*2
 runExp1.video.set_vecTime(starting_frame=int(
@@ -376,8 +376,8 @@ for ifile in [3, 6, 12]:
 
 ifile = nF
 h1, l1 = [], []
-runExp1.video.readFrame(np.max([int(runExp1.dictE['framedeb']) -
-                                100 + (ifile-3) * (100) + 50, int(runExp1.dictE['framedeb']) - 100]))
+runExp1.video.vec[-1]
+runExp1.video.readFrame(runExp1.video.vec[-1])
 vis = opyf.Render.CLAHEbrightness(runExp1.video.vis, 140)
 ax2.imshow(vis, extent=runExp1.video.paramPlot['extentFrame'])
 # runExp1.plotField(ax2, np.max([ifile * 10 - 5, 0]), vmin=0, vmax=1, cmap=cmap)
@@ -433,7 +433,7 @@ cbaxes = ax2.set_position([x, y - 0.03, X, Y])
 plt.pause(2)
 # plt.show()
 # fig.savefig("test_savefig_pdf_5_mm.pdf", dpi=300)
-fig.savefig("/media/gauthier/Data-Gauthier/Gauthier/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular/doc/article/images/used_images/Run_07_hyst.pdf", dpi=150)
+fig.savefig("/media/gauthier/Data-Gauthier/Gauthier/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular/doc/article/images/used_images/Run_07_hystH.pdf", dpi=150)
 # sys.stdout = sys.__stdout__
 print(r'\includegraphics{test_savefig_pdf.pdf}')
 

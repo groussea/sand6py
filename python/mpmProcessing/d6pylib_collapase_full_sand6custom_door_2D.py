@@ -145,12 +145,12 @@ t=time.time()
 #         for s,p in zip([40],['fin']):
 #             rund6py(sdictE, delta_mu=0.,rand=0,mu=np.round(sdictE['mu']+dmu,2),substeps=s,prop=p,muRigid=0.,nSamples=3)
             
-for j in [3]:  
+for j in [5]:  
     sE=lExp[j] #Selected exeperiment
     sdictE=dictExp[sE]
     for s,p in zip([120],['resZ30']):
-        rund6py(sdictE,delta_mu=0.,rand=0,mu=0.59,substeps=s,prop=p,muRigid=0.,nSamples=15,door='with')
-        rund6py(sdictE,delta_mu=0.,rand=0,mu=0.65,substeps=s,prop=p,muRigid=0.,nSamples=15,door='with')
+        rund6py(sdictE,delta_mu=0.,rand=0,mu=0.44,substeps=s,prop=p,muRigid=0.,nSamples=15,door='with')
+        # rund6py(sdictE,delta_mu=0.,rand=0,mu=0.65,substeps=s,prop=p,muRigid=0.,nSamples=15,door='with')
 
 
 # for j in range(7,8 ):  
