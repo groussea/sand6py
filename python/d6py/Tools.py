@@ -810,7 +810,7 @@ class NumericalRun():
                 X=np.array([self.datas[self.ifile,2],self.datas[self.ifile,2]])/self.scaleLength
                 Y=np.array([self.datas[self.ifile,3]+self.Ldoor/2,self.datas[self.ifile,3]-self.Ldoor/2])/self.scaleLength
   
-            ax.plot(X, Y, 'k', **args)
+            ax.plot(0, Y, 'k', **args)
             
 
 
