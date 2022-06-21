@@ -4,49 +4,28 @@
 # -*- coding: utf-8 -*-
 #  Author : Gauthier Rousseau
 import opyf  # from opyflow library some rendering function may be employed
+
+sys.path.append(
+    './..')
+sys.path.append(
+    './../..')
 import d6py
 import sys
 sys.path.append(
-    '/media/gauthier/Data-Gauthier/programs/gitLab/sand6/python/imageProcessing')
-import matplotlib.pyplot as plt
+    './../../imageProcessing')
+
 from d6py.Tools import *
 import sys
 import numpy as np
 import matplotlib
 matplotlib.use("Qt5Agg")
 # plt.ioff()
-def smooth(y, box_pts):
-    box = np.ones(box_pts)/box_pts
-    y_smooth = np.convolve(y, box, mode='valid')
-    return y_smooth
 
-# sys.path.append('/media/gauthier/Data-Gauthier/programs/gitLab/sand6/python')
-# sys.path.append('/media/gauthier/
-# Data-Gauthier/programs/gitHub/opyflow')
-
-outDictFolder=    "/media/gauthier/Data-Gauthier/Gauthier/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular/data/outputs_experiments_and_mpm/"
-
-fignames=['G00', 'G05', 'G10', 'G15', 'B00', 'B05', 'B10', 'B15', 'B20']
-
-
-JSONpath = outDictFolder + "article_dict.json"
-in_file = open(JSONpath,"r")
-dictArt= json.load(in_file) 
-in_file.close()
-
-# sys.stdout = open(os.devnull, 'w')
-# intialize font type and size
-plt.rcParams['font.size'] = 8.0
-plt.rcParams['xtick.labelsize'] = 8.0
-plt.rcParams['ytick.labelsize'] = 8.0
-plt.rcParams['ytick.labelsize'] = 8.0
-plt.rcParams['axes.linewidth'] = 1
-# print(r'\includegraphics{test_2.pdf}')
-driveFolder = '/media/gauthier/Data-Gauthier/Gauthier'
-maind6OutFolder = '/media/gauthier/Samsung_T51/sand6_sorties/sand6_out/'
-# maind6OutFolder = '/home/gauthier/sorties_sand6/'
 paths, folders, listDictConf, listNumRun = d6py.findOutSand6Paths(
     maind6OutFolder, 4)
+
+runExps=[]
+selectedRuns=[]
 runExps=[]
 selectedRuns=[]
 
@@ -96,7 +75,7 @@ h_axs = 0.18
 w_s = 0.02
 w_s2 = 0.01
 Largeur=30
-Largeurf=70
+Largeurf=75
 for i in range(N):
     L = runExps[i].dictE['L'] / runExps[i].scaleLength-1
     H = (runExps[i].dictE['H']+0.02 ) / runExps[i].scaleLength
@@ -277,7 +256,7 @@ for sR, i in zip(selectedRuns, range(len(selectedRuns))):
         sR.plotDoor(ax, alpha=0.5)
 
         h = sR.CS.legend_elements(str(sR.dimSim)+"D~-~ \mu= " + toS(sR.dConfig['mu'], 2))[0]
-        l = [str(sR.dimSim)+r"D Sim. free surface"]
+        l = [str(sR.dimSim)+r"D Sim. free surf."]
         h1, l1 = h1+h, l1+l
 
         sR.plotDoor(ax, alpha=0.5)
@@ -301,9 +280,9 @@ plt.figtext(x+X/2, y+Y+0.025, r'$t=0.6$ s',
 plt.figtext(x+X/2, y+Y+0.025, r'$t_f$',
             fontsize=9, horizontalalignment='center')
 
-fig.legend(h1+ [line2D_vel_mod]  + [line2D] + [line2D_vel] , l1+ [r"3D Sim. static-flowing trans."] + [r"Exp. free surface"] + [r"Exp. static-flowing trans."], fontsize=6,loc=3, framealpha=0.,edgecolor='w',facecolor='w',ncol=4,bbox_to_anchor=(0.05, 0.005, 0.4, 0.2))
+fig.legend(h1+ [line2D_vel_mod]  + [line2D] + [line2D_vel] , l1+ [r"3D Sim. static-flowing"] + [r"Exp. free surf."] + [r"Exp. static-flowing"], fontsize=9,loc=3, framealpha=0.,edgecolor='w',facecolor='w',ncol=4,bbox_to_anchor=(0.03, -0.005, 0.4, 0.2))
 plt.pause(0.1)
-fig.savefig("/media/gauthier/Data-Gauthier/Gauthier/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular/doc/article/images/used_images/G.pdf", dpi=150)
+fig.savefig(driveFolder+"/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular/doc/article/images/used_images/G.pdf", dpi=150)
 # sys.stdout = sys.__stdout__
 print(r'\includegraphics{test_savefig_pdf.pdf}')
 

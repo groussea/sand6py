@@ -49,10 +49,10 @@ def rund6py(sdictE,**args):
     Lmod=sdictE['Ltot']
     nFrames=args.get('nFrames',int(sdictE['nFrames']/10))
     if (sdictE['camType']=='BW') & (sdictE['Slope']==15.):
-        Lmod = sdictE['Ltot'] + 0.5
+        Lmod = sdictE['Ltot'] + 0.6
         
     if (sdictE['camType']=='BW') & (sdictE['Slope']==20.):
-        Lmod = sdictE['Ltot'] + 0.8
+        Lmod = sdictE['Ltot'] + 1.2
         
     delta_mu=args.get('delta_mu',0)
     I0=args.get('I0',0.279)
@@ -178,7 +178,7 @@ for j in [8]:
 #         rund6py(sdictE, delta_mu=0., muRigid = muR, mu=mu, prop=fignames[j]+'mu_door_high2', fps=15, nFrames=int(sdictE['nFrames']//10+5), nSamples=6, I0_start=0.005, delta_mu_start=0., rand=1, substeps=80, W=w+2*delta_y, wsw=delta_y, I0=0.279,delta_y=delta_y, mudoor= 1)   
 
 
-for j in [4,5,8]:   
+for j in [7,8]:   
     sE=lExp[j] #Selected exeperiment
     sdictE=dictExp[sE]
     for w in [0.06]:
@@ -189,7 +189,7 @@ for j in [4,5,8]:
             muR, mu = 0.18, 0.44
         
         if j==8:
-            nsamples, substeps=8, 120
+            nsamples, substeps =8, 120 
         else:
             nsamples, substeps=6, 80
         # rund6py(sdictE, delta_mu=0., muRigid = muR, mu=mu, prop=fignames[j]+'', fps=15, nFrames=int(sdictE['nFrames']//10+5), nSamples=6, I0_start=0.005, delta_mu_start=0., rand=1, substeps=80, W=w+2*delta_y, wsw=delta_y, I0=0.279,delta_y=delta_y, mudoor= muR)
@@ -200,13 +200,17 @@ for j in [4,5,8]:
 
         # rund6py(sdictE, delta_mu=0., muRigid = muR, mu=0.44, prop=fignames[j]+'visc2', fps=15, nFrames=int(sdictE['nFrames']//10+5), nSamples=6, I0_start=0.005, delta_mu_start=0.0, visc=0.1, rand=1, substeps=80, W=w+2*delta_y, wsw=delta_y, I0=0.279,delta_y=delta_y, mudoor= muR) 
 
-        rund6py(sdictE, delta_mu=0., muRigid = muR, mu=0.38, prop=fignames[j]+'mustop', fps=15, nFrames=int(sdictE['nFrames']//10+5), nSamples=nsamples, I0_start=0.005, delta_mu_start=0.0, visc=0.0, rand=1, substeps=substeps, W=w+2*delta_y, wsw=delta_y, I0=0.279,delta_y=delta_y, mudoor= muR)  
+        rund6py(sdictE, delta_mu=0., muRigid = muR, mu=0.38, prop=fignames[j]+'mustop_const_big', fps=15, nFrames=int(sdictE['nFrames']//10+5), nSamples=nsamples, I0_start=0.005, delta_mu_start=0.0, visc=0.0, rand=1, substeps=substeps, W=w+2*delta_y, wsw=delta_y, I0=0.279,delta_y=delta_y, mudoor= muR)  
 
+        rund6py(sdictE, delta_mu=0.26, muRigid = muR, mu=0.38, prop=fignames[j]+'muI_big', fps=15, nFrames=int(sdictE['nFrames']//10+5), nSamples=nsamples, I0_start=0.005, delta_mu_start=0.0, visc=0.0, rand=1, substeps=substeps, W=w+2*delta_y, wsw=delta_y, I0=0.279,delta_y=delta_y, mudoor= muR)  
         # rund6py(sdictE, delta_mu=0.26, muRigid = muR, mu=0.38, prop=fignames[j]+'mustop', fps=15, nFrames=int(sdictE['nFrames']//10+5), nSamples=nsamples, I0_start=0.005, delta_mu_start=0.0, visc=0.0, rand=1, substeps=substeps, W=w+2*delta_y, wsw=delta_y, I0=0.279,delta_y=delta_y, mudoor= muR)  
 
 
         
-        # rund6py(sdictE, delta_mu=0., muRigid = muR, mu=0.64, prop=fignames[j]+'hyst3_I0sH', fps=15, nFrames=int(sdictE['nFrames']//10+5), nSamples=6, I0_start=0.01, delta_mu_start=0.2, visc=0.1, rand=1, substeps=80, W=w+2*delta_y, wsw=delta_y, I0=0.279,delta_y=delta_y, mudoor= muR)  
+        rund6py(sdictE, delta_mu=0., muRigid = muR, mu=0.59, prop=fignames[j]+'hyst_big_hgh_dms', fps=15, nFrames=int(sdictE['nFrames']//10+5), nSamples=nsamples, I0_start=0.005, delta_mu_start=0.15, visc=0.0, rand=1, substeps=substeps, W=w+2*delta_y, wsw=delta_y, I0=0.279,delta_y=delta_y, mudoor= muR)  
+        
+        if j== 8:
+            rund6py(sdictE, delta_mu=0., muRigid = muR, mu=0.54, prop=fignames[j]+'hyst_norm', fps=15, nFrames=int(sdictE['nFrames']//10+5), nSamples=nsamples, I0_start=0.005, delta_mu_start=0.10, visc=0.0, rand=1, substeps=substeps, W=w+2*delta_y, wsw=delta_y, I0=0.279,delta_y=delta_y, mudoor= muR)    
         
             # for w in [0.06]:
     #     delta_y=w/8

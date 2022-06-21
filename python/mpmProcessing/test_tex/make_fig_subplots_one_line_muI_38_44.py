@@ -16,56 +16,13 @@ sys.path.append(
 from Tools_collapses import mask_collapses, mask_collapses2
 import matplotlib.pyplot as plt
 from d6py.Tools import *
-import argparse
-# plt.ioff()
-# intialize exteral packages
 import sys
-import os
 import numpy as np
-import matplotlib
 
 %matplotlib qt5
-# plt.ioff()
-def smooth(y, box_pts):
-    box = np.ones(box_pts)/box_pts
-    y_smooth = np.convolve(y, box, mode='valid')
-    return y_smooth
-
-# sys.path.append('/media/gauthier/Data-Gauthier/programs/gitLab/sand6/python')
-# sys.path.append('/media/gauthier/
-# Data-Gauthier/programs/gitHub/opyflow')
-
-outDictFolder=    "/media/gauthier/Data-Gauthier/Gauthier/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular/data/outputs_experiments_and_mpm/"
-outDictFolder=    "/media/gauthier/DataSSD/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular/data/outputs_experiments_and_mpm/"
-
-fignames=['G00', 'G05', 'G10', 'G15', 'B00', 'B05', 'B10', 'B15', 'B20']
-
-
-# init_article_dictionary(mainExpFolder,outDictFolder)     
-JSONpath = outDictFolder + "article_dict.json"
-in_file = open(JSONpath,"r")
-dictArt= json.load(in_file) 
-in_file.close()
-
-# sys.stdout = open(os.devnull, 'w')
-# intialize font type and size
-plt.rcParams['font.size'] = 8.0
-plt.rcParams['xtick.labelsize'] = 8.0
-plt.rcParams['ytick.labelsize'] = 8.0
-plt.rcParams['ytick.labelsize'] = 8.0
-plt.rcParams['axes.linewidth'] = 1
-# print(r'\includegraphics{test_2.pdf}')
-driveFolder = '/media/gauthier/Data-Gauthier/Gauthier'
-driveFolder = '/media/gauthier/DataSSD'
-maind6OutFolder = '/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/'
-# maind6OutFolder = '/home/gauthier/sorties_sand6/'
+  
 paths, folders, listDictConf, listNumRun = d6py.findOutSand6Paths(
     maind6OutFolder, 4)
-# %matplotlib qt5
-parser = argparse.ArgumentParser()
-parser.add_argument('--ny', help="number of elements in y direction",default=6)
-parser.add_argument('--path', help="out path", default="")
-# args = parser.parse_args()
 
 Nrun=7
 scale = 0.01  # 1cm
@@ -85,14 +42,16 @@ else:
     mu=0.44
 #%%
 
+
+
 R1, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=mu, delta_mu=0., runNumber=Nrun, dimSim=3, delta_mu_start=0, keyWord='try2')
 
-R2, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=0.38, runNumber=Nrun, dimSim=3, delta_mu_start=0, keyWord='muI')
+R2, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=0.38, runNumber=Nrun, dimSim=3, delta_mu=0.26, keyWord='big')
+
+R3, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=0.38, runNumber=Nrun, dimSim=3,delta_mu=0., delta_mu_start=0,  keyWord='big')
 
 #%%
-# selectedRuns=[Ref[-1],selectedRuns[-1],selectedRuns2[-1]]
-selectedRuns = [R1[0], R2[0]] #8
-# selectedRuns = [R1[0], R2[0]] #7
+selectedRuns = [R1[0], R2[0], R3[0]] #8
 
 for sR in selectedRuns:
     sR.scLength(0.01)
@@ -138,13 +97,10 @@ cmap.set_under(alpha=0)
 L = runExp1.dictE['L'] / runExp1.scaleLength-1
 H = (runExp1.dictE['H']+0.02 ) / runExp1.scaleLength
 
-w_fig = (L + runExp1.xmax *
-        runExp1.dictE['H'] / runExp1.scaleLength) / 83.4 * 8
 
-w_fig = 16
 N = 2  # lignes
 M = 3 # colonnes
-fig, axs = plt.subplots(N, M, dpi=142, figsize=(w_fig * 0.5, 1.3))
+fig, axs = plt.subplots(N, M, dpi=142, figsize=(7, 1.2))
 Y_lim = [-0.015/runExp1.scaleLength, H]
 X_lim = [-L-0.2, runExp1.xmax * H]
 w_axs = 0.23
@@ -176,7 +132,7 @@ ax_draw.grid()
 ax_draw.set_axis_off()
 X_line = w_s + (w_axs + 0.01)
 for i in range(N): 
-    axs[i,-1].set_xlim([X_lim[0], 50])
+    axs[i,-1].set_xlim([X_lim[0], 45])
 # draw scale and axes
 
 my_bbox = dict(fc="w", alpha=0.3)
@@ -294,10 +250,10 @@ k = 0
 NsR = len(selectedRuns)
 indContrst = 0
 ls = ['-', '-.', '-.', '--']
-ls2= ['--',':']
+ls2= ['--',':', '-.' ]
 c = [0.9, 1.1, 1., 1.2]
-col = ['black', 'blue']
-SR = selectedRuns[0:2]
+col = ['black', 'blue', 'purple']
+SR = selectedRuns[0:3]
 if Nrun > 7:
     shiftExp = -1
 else:
@@ -305,17 +261,19 @@ else:
 
 Vini = np.zeros((len(SR)))
 # init Vini
-ifile=3
+ifile=0
 for sR, i in zip(SR, range(len(SR))):
     sR.loadVTK(int(ifile * sR.dConfig['fps'] / 15))
     sR.nYplot=int(sR.resY//2)
-    contrs = sR.findContourPhi(level=0.5)
-    V = area(contrs[0])
-    Vini[i] = V
+    
+    for n_y in range(int(sR.resY)-4):
+        contrs = sR.findContourPhi(level=0.5, nY=n_y+2)
+        V = area(contrs[0])
+        Vini[i] += V
 
 if 'free_surface' not in dictArt[fignames[Nrun]]['experiment'].keys():
     dictArt[fignames[Nrun]]['experiment']['free_surface']={}
-
+final_lost=[]
 for ifile in [6, 12, nF]:
     print(ifile)
     ax = axs[0, k]
@@ -340,7 +298,7 @@ for ifile in [6, 12, nF]:
     # contrs=np.array(dictArt[fignames[Nrun]]['experiment']['free_surface'][str(ifile)])
     
     for cont in contrs:
-        dictArt[fignames[Nrun]]['experiment']['free_surface'][str(ifile)].append(cont.tolist())
+        # dictArt[fignames[Nrun]]['experiment']['free_surface'][str(ifile)].append(cont.tolist())
         contn=np.array(cont)
         [line2D] = axs[1, k].plot(smooth(contn[:, 0],10), smooth(contn[:, 1],10), linestyle='-', color='purple', linewidth=1.5, alpha=0.7, label="Exp.")
         
@@ -362,21 +320,27 @@ for ifile in [6, 12, nF]:
     for sR, i in zip(SR, range(len(SR))):
         axt = axs[1, k]
         sR.loadVTK(int(ifile * sR.dConfig['fps'] / 15))
-
-        sR.plotContour(axt, levels=[0.5], linewidths=c[i % 4], linestyles=ls[i % 4], colors=col[i % 4], alpha=0.6+i*0.4)
+        if i == 0:
+            sR.plotContour(axt, levels=[0.5], linewidths=1.2, linestyles='-.')
+        if i == 1:
+            sR.plotContour(axt, levels=[0.5],c='y',  linewidths=1., linestyles='-',)
+        if i == 2:
+            sR.plotContour(axt, levels=[0.5], linewidths=1.4, linestyles=':')           
         sR.calculateNormVelocity()
         sR.normV[np.where(sR.normV==0)]=np.nan
         contours=d6py.Tools.findContours(sR.grid_x[:,0, 0], sR.grid_z[0,0,:], sR.normV[:,sR.nYplot,:], 0.01)
-        if ifile<nF:
-            for ii in [0,1]:
-                for cont in contours:
-                    [line2D_vel_mod] = axs[ii, k].plot(smooth(cont[:, 0],5)*100, smooth(cont[:, 1],5)*100, linestyle=ls2[i % 4], color=col[i % 4], linewidth=c[i % 4], alpha=0.6+i*0.4, label="limit-mod")
-                    
-            
-        V = area(sR.findContourPhi(level=0.5)[0])
+        # if ifile<nF:
+        #     for ii in [0,1]:
+        #         for cont in contours:
+        #             [line2D_vel_mod] = axs[ii, k].plot(smooth(cont[:, 0],5)*100, smooth(cont[:, 1],5)*100, linestyle=ls2[i % 4], color=col[i % 4], linewidth=c[i % 4], alpha=0.6+i*0.2, label="limit-mod")
+        V=0
+        for n_y in range(int(sR.resY)-4):
+            contrs = sR.findContourPhi(level=0.5, nY=n_y+2)
+            V += area(contrs[0])
+        # V = area(sR.findContourPhi(level=0.5, nY=2)[0])
 
         lost = (Vini[i]-V)/Vini[i]*100
-
+        final_lost.append(lost)
         mod = 'velocity'
         # if i>0:
             # im = sR.opyfPointCloudColoredScatter( axt, nvec=6000, mute=True, vmin=0, vmax=1, s=0.8, cmap=cmap, rasterized=True, mod=mod)
@@ -393,16 +357,18 @@ for ifile in [6, 12, nF]:
         axt.set_xticklabels([])
 
         h = sR.CS.legend_elements(str(sR.dimSim)+"D~-~ \mu= " + toS(sR.dConfig['mu'], 2))[0]
-        if i<1:
+        if i ==0:
             l = [r"Sim. free surf. $\mu = 0.44$"]
-        else:
+        elif i==1:
             l = [r"Sim. free surf. $\mu_I$"]
+        elif i==2:
+            l = [r"Sim. free surf. $\mu = 0.38$"]
         h1, l1 = h1+h, l1+l
-        if i<1:
-            l = [r"Sim. static-flowing trans. $ \mu = 0.44$"]
-        else:
-            l = [r"Sim. static-flowing trans. $\mu_I$"]
-        h1, l1 = h1+ [line2D_vel_mod], l1+l
+        # if i<1:
+        #     l = [r"Sim. static-flowing trans. $ \mu = 0.44$"]
+        # else:
+        #     l = [r"Sim. static-flowing trans. $\mu_I$"]
+        # h1, l1 = h1+ [line2D_vel_mod], l1+l
 
     sR.plotDoor(ax, alpha=0.5)
     k += 1
@@ -414,7 +380,7 @@ axs[0,2].remove()
 # axs[1,-1].legend(h1+ [line2D_vel_mod]  + [line2D] + [line2D_vel] , l1+ [r"3D Sim. static-flowing trans."] +
 #            [r"Exp. free surface"] + [r"Exp. static-flowing trans."] , fontsize=7, framealpha=0.5, loc=1)
 
-fig.legend(h1 +[line2D]  , l1 +[r"Exp. free surface"] , fontsize=6,loc=3, framealpha=0.,edgecolor='w',facecolor='w',ncol=5,bbox_to_anchor=(0.03, 0.005, 0.4, 0.2))
+fig.legend(h1 +[line2D]  , l1 +[r"Exp. free surf."] , fontsize=9,loc=3, framealpha=0.,edgecolor='w',facecolor='w',ncol=5,bbox_to_anchor=(0.01, 0.005, 0.4, 0.2))
 
 [x, y, X, Y] = axs[1, 0].get_position().bounds
 # plt.figtext(x+X/2, y+Y+0.045, r'$t=0.2$ s',
@@ -429,7 +395,8 @@ fig.legend(h1 +[line2D]  , l1 +[r"Exp. free surface"] , fontsize=6,loc=3, framea
 f = open(JSONpath, "w")
 json.dump(dictArt, f, indent=4)
 f.close() 
-fig.savefig(driveFolder+"/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular/doc/article/images/used_images/"+fignames[Nrun]+"_muI.pdf", dpi=150)
+fig.savefig(driveFolder+"/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular/doc/article/images/used_images/"+fignames[Nrun]+"_muI_mu38_mu44.pdf", dpi=150)
+plt.show()
 # sys.stdout = sys.__stdout__
 print(r'\includegraphics{test_savefig_pdf.pdf}')
 

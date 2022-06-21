@@ -61,9 +61,10 @@ void Simu::run()
 {
 	std::istringstream in( m_config.scenario ) ;
 	std::string line ;
-	in >> line ;
-	if (line=="impactlhe"){
-	std::ofstream RBout(m_config.base_dir + "/forces_on_sphere.csv", std::fstream::app);
+	in >> line;
+	if (line == "impactlhe")
+	{
+		std::ofstream RBout(m_config.base_dir + "/forces_on_sphere.csv", std::fstream::app);
 	}
 	if( m_config.output ) {
 		dump_particles( 0 ) ;
@@ -73,8 +74,14 @@ void Simu::run()
 	m_particles.events().start();
 	Scalar const alpha=std::asin(m_config.gravity[0]/(9.81*m_config.units().fromSI( Units::Acceleration ))); 
 	std::cout << alpha << std::endl;
-	Scalar omega=0.03/m_config.units().fromSI( Units::Time ) ;
-	for( unsigned frame = 0 ; frame < m_config.nFrames ; ++ frame ) {
+	Scalar Omegaradps = 0.03;
+	Scalar omega =  Omegaradps / m_config.units().fromSI(Units::Time);
+	Scalar tincr = 0;
+	Scalar incrRad = 0.01;
+	Scalar stepT_in_sec_ini=3;
+	Scalar stepT_in_sec=8;
+	for (unsigned frame = 0; frame < m_config.nFrames; ++frame)
+	{
 		bogus::Timer timer ;
 		Log::Info() << "Starting frame " << (frame+1) << std::endl ;
 
@@ -96,11 +103,17 @@ void Simu::run()
 									t * m_config.units().toSI( Units::Time ) ) << std::endl ;
 			// test the change a gravity value during the simulation
 			
-			// Scalar stepT_in_sec=4;
-			// Scalar stepT= stepT_in_sec*m_config.units().fromSI( Units::Time ) ;
-			// if ((t * m_config.units().toSI( Units::Time )  > stepT_in_sec) and (t * m_config.units().toSI( Units::Time )  < stepT_in_sec + 0.04/0.03)){
-			// 	m_config.gravity=Vec(9.81*std::sin(alpha+omega*(t-stepT)),0,-9.81*std::cos(alpha+omega*(t-stepT)))*m_config.units().fromSI( Units::Acceleration ) ;
-			// }
+			
+
+			Scalar tsec = t * m_config.units().toSI(Units::Time);
+			
+
+			if (((tsec > stepT_in_sec_ini) and (tsec < stepT_in_sec_ini + incrRad / Omegaradps)) or ((tsec > stepT_in_sec_ini+stepT_in_sec + incrRad / Omegaradps) and (tsec < stepT_in_sec_ini+stepT_in_sec + 2*incrRad / Omegaradps)) or ((tsec > 2*stepT_in_sec +stepT_in_sec_ini + 2*incrRad / Omegaradps) and (tsec < 2*stepT_in_sec +stepT_in_sec_ini + 3*incrRad / Omegaradps)))
+			{
+				m_config.gravity=Vec(9.81*std::sin(alpha+omega*tincr),0,-9.81*std::cos(alpha+omega*tincr))*m_config.units().fromSI( Units::Acceleration ) ;
+				// incrément de t quand on est dans la boucle
+				tincr += m_stats.delta_t;
+			}
 			// Update external objects (moving boundaries,...)
 
 			m_scenario->update( *this, t, m_stats.delta_t ) ;

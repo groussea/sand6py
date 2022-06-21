@@ -4,6 +4,7 @@
 # -*- coding: utf-8 -*-
 #  Author : Gauthier Rousseau
 import opyf  # from opyflow library some rendering function may be employed
+
 sys.path.append(
     './..')
 sys.path.append(
@@ -13,18 +14,18 @@ import sys
 sys.path.append(
     './../../imageProcessing')
 
-from Tools_collapses import mask_collapses, mask_collapses2
-import matplotlib.pyplot as plt
 from d6py.Tools import *
 import sys
 import numpy as np
-
-%matplotlib qt5
-  
+import matplotlib
+matplotlib.use("Qt5Agg")
+# plt.ioff()
+from Tools_collapses import mask_collapses, mask_collapses2
 paths, folders, listDictConf, listNumRun = d6py.findOutSand6Paths(
     maind6OutFolder, 4)
+# %matplotlib qt5
 
-Nrun=7
+Nrun=8
 scale = 0.01  # 1cm
 mainExpFolder = driveFolder + \
     '/TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/granular_collapases_imaging_velocity_fields_and_free_surface_elevation/'
@@ -34,6 +35,7 @@ mu = runExp1.dictE['mu']
 
 
 muw=0.
+# 0.0],[0.1,0.15]
 i0=0.005
 if Nrun < 4:
     mu=0.75
@@ -43,12 +45,12 @@ else:
 
 R1, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=mu, delta_mu=0., runNumber=Nrun, dimSim=3, delta_mu_start=0, keyWord='try2')
 
-R2, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=0.38, runNumber=Nrun, dimSim=3, delta_mu_start=0, keyWord='muI')
+R2, selectedDict = d6py.whereSand6OutFromParms(listNumRun,  runNumber=Nrun, dimSim=3, delta_mu=0.0, delta_mu_start=0.15)
+
+R3, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=0.38, runNumber=Nrun, dimSim=3,delta_mu=0., delta_mu_start=0, keyWord='mustop')
 
 #%%
-# selectedRuns=[Ref[-1],selectedRuns[-1],selectedRuns2[-1]]
 selectedRuns = [R1[0], R2[0]] #8
-# selectedRuns = [R1[0], R2[0]] #7
 
 for sR in selectedRuns:
     sR.scLength(0.01)
@@ -77,9 +79,10 @@ f.close()
 # %%
 
 import importlib
-importlib.reload(plt)
+importlib.reload(d6py)
 #%%
 plt.close('all')
+plt.rcParams['font.serif'] = "CMU Serif"
 plt.rcParams['font.family'] = 'serif'
 plt.rc('text', usetex=True)
 cmapg = opyf.make_cmap_customized(Palette='green')
@@ -94,19 +97,16 @@ cmap.set_under(alpha=0)
 L = runExp1.dictE['L'] / runExp1.scaleLength-1
 H = (runExp1.dictE['H']+0.02 ) / runExp1.scaleLength
 
-w_fig = (L + runExp1.xmax *
-        runExp1.dictE['H'] / runExp1.scaleLength) / 83.4 * 8
 
-w_fig = 16
 N = 2  # lignes
 M = 3 # colonnes
-fig, axs = plt.subplots(N, M, dpi=142, figsize=(w_fig * 0.5, 1.3))
+fig, axs = plt.subplots(N, M, dpi=142, figsize=(7, 1.55))
 Y_lim = [-0.015/runExp1.scaleLength, H]
 X_lim = [-L-0.2, runExp1.xmax * H]
 w_axs = 0.23
-h_axs = 0.6
+h_axs = 0.45
 w_s = 0.02
-w_s2 = 0.01
+w_s2 = 0.005
 
 
 
@@ -117,8 +117,9 @@ for i in range(N):
         axs[i, j].set_anchor('SW')
         [x, y, X, Y] = axs[i, j].get_position().bounds
         axs[i, j].set_position(
-            [w_s+(w_axs + w_s2) * j, (h_axs+0.05 ) * (N-i-1)+0.25, w_axs*3, h_axs])
-        axs[i, j].set_xlim([X_lim[0], 7.5])
+            [w_s+(w_axs + w_s2) * j, (h_axs+0.05 ) * (N-i-1)+0.38, w_axs*3, h_axs])
+        
+        axs[i, j].set_xlim([X_lim[0], 14.5])
         axs[i, j].set_ylim(Y_lim)
         axs[i, j].set_aspect('equal')
         axs[i, j].set_yticklabels([])
@@ -132,7 +133,7 @@ ax_draw.grid()
 ax_draw.set_axis_off()
 X_line = w_s + (w_axs + 0.01)
 for i in range(N): 
-    axs[i,-1].set_xlim([X_lim[0], 50])
+    axs[i,-1].set_xlim([X_lim[0], 60])
 # draw scale and axes
 
 my_bbox = dict(fc="w", alpha=0.3)
@@ -250,15 +251,15 @@ k = 0
 NsR = len(selectedRuns)
 indContrst = 0
 ls = ['-', '-.', '-.', '--']
-ls2= ['--',':']
+ls2= ['--',':', '-.' ]
 c = [0.9, 1.1, 1., 1.2]
-col = ['black', 'blue']
-SR = selectedRuns[0:2]
+col = [ (cmapg(0.3)[:3],), (cmapg(0.7)[:3],), 'purple']
+SR = selectedRuns[0:3]
 if Nrun > 7:
     shiftExp = -1
 else:
     shiftExp=5
-
+lines=[]
 Vini = np.zeros((len(SR)))
 # init Vini
 ifile=3
@@ -275,8 +276,9 @@ if 'free_surface' not in dictArt[fignames[Nrun]]['experiment'].keys():
 for ifile in [6, 12, nF]:
     print(ifile)
     ax = axs[0, k]
-    h1, l1 = [], []
+    
     if ifile<nF:   
+        h1, l1 = [], [] 
         runExp1.video.readFrame(np.max([int(runExp1.dictE['framedeb']) - 100 + (ifile-3) * (100) - shiftExp*10, int(runExp1.dictE['framedeb']) - 100]))
     else:
         runExp1.video.readFrame(runExp1.video.vec[-1])   
@@ -302,32 +304,37 @@ for ifile in [6, 12, nF]:
         
 
     # ax.imshow(vis, extent=runExp1.video.paramPlot['extentFrame'])
-    # if ifile < nF:
+    if ifile < nF:
         # runExp1.plotField(ax, np.max(
         #     [(ifile - 3)* 10 - shiftExp, 0]), vmin=0, vmax=1, cmap=cmap)
-        # norm=(runExp1.Ux[(ifile - 3)* 10 - shiftExp]**2+runExp1.Uy[(ifile - 3)* 10 - shiftExp]**2)**0.5
+        norm=(runExp1.Ux[(ifile - 3)* 10 - shiftExp]**2+runExp1.Uy[(ifile - 3)* 10 - shiftExp]**2)**0.5
     # else: 
     #     runExp1.plotField(ax, -1, vmin=0, vmax=1, cmap=cmap)
     #     norm=(runExp1.Ux[-1]**2+runExp1.Uy[-1]**2)**0.5    
-        # contrs_vel = d6py.Tools.findContours(runExp1.X, runExp1.Y, norm.T, 0.01)
+        contrs_vel = d6py.Tools.findContours(runExp1.X, runExp1.Y, norm.T, 0.01)
 
-        # for cont in contrs_vel:
-        #     [line2D_vel]=axt.plot(smooth(cont[:, 0],10)*100, smooth(cont[:, 1],10)*100, linestyle='--', color='purple', linewidth=0.8, alpha=0.7, label="Exp.")
+        for cont in contrs_vel:
+            [line2D_vel]=axs[1, k].plot(smooth(cont[:, 0],10)*100, smooth(cont[:, 1],10)*100, linestyle='--', color='purple', linewidth=0.8, alpha=0.7, label="Exp.")
             # axs[1, k].plot(smooth(cont[:, 0],10)*100, smooth(cont[:, 1],10)*100, linestyle='--', color='purple', linewidth=0.8, alpha=0.7, label="Exp.")
 
     for sR, i in zip(SR, range(len(SR))):
         axt = axs[1, k]
         sR.loadVTK(int(ifile * sR.dConfig['fps'] / 15))
-
-        sR.plotContour(axt, levels=[0.5], linewidths=c[i % 4], linestyles=ls[i % 4], colors=col[i % 4], alpha=0.6+i*0.4)
+        if i == 0:
+            sR.plotContour(axt, colors=col[i % 4],levels=[0.5], linewidths=1., linestyles='-.')
+        if i == 1:
+            sR.plotContour(axt, levels=[0.5],colors=col[i % 4],  linewidths=1., linestyles='-.',)
+        if i == 2:
+            sR.plotContour(axt, levels=[0.5], linewidths=1.4, linestyles=':')           
         sR.calculateNormVelocity()
         sR.normV[np.where(sR.normV==0)]=np.nan
         contours=d6py.Tools.findContours(sR.grid_x[:,0, 0], sR.grid_z[0,0,:], sR.normV[:,sR.nYplot,:], 0.01)
+        import copy
         if ifile<nF:
-            for ii in [0,1]:
-                for cont in contours:
-                    [line2D_vel_mod] = axs[ii, k].plot(smooth(cont[:, 0],5)*100, smooth(cont[:, 1],5)*100, linestyle=ls2[i % 4], color=col[i % 4], linewidth=c[i % 4], alpha=0.6+i*0.4, label="limit-mod")
-                    
+            for cont in contours:
+                linesC= axs[1, k].plot(smooth(cont[:, 0],5)*100, smooth(cont[:, 1],5)*100, linestyle="--", color=col[i % 4][0], linewidth=c[i % 4], alpha=1, label="limit-mod")
+                lines.append(linesC)
+  
             
         V = area(sR.findContourPhi(level=0.5)[0])
 
@@ -336,26 +343,34 @@ for ifile in [6, 12, nF]:
         mod = 'velocity'
         # if i>0:
             # im = sR.opyfPointCloudColoredScatter( axt, nvec=6000, mute=True, vmin=0, vmax=1, s=0.8, cmap=cmap, rasterized=True, mod=mod)
-        sR.plotDoor(axt, alpha=0.5)
+        # sR.plotDoor(axt, alpha=0.5)
+        if ifile / sR.dConfig['fps'] < 0.5:
+            X=np.array([sR.datas[ifile,2],sR.datas[ifile,2]])/sR.scaleLength
+            Y=np.array([sR.datas[ifile,4]+sR.Ldoor/2,sR.datas[ifile,4]-sR.Ldoor/2])/sR.scaleLength
+            axt.plot([0, 0], Y, 'k', alpha=0.5)
         # for cont in contrs:
         #     contn=np.array(cont)
         #     [line2D] = axt.plot(contn[:, 0], contn[:, 1], linestyle='-', color='purple', linewidth=1.5, alpha=0.7, label="Exp.")
 
         axt.set_yticklabels([])
         axt.set_xticklabels([])
+        if ifile<nF:
 
-        h = sR.CS.legend_elements(str(sR.dimSim)+"D~-~ \mu= " + toS(sR.dConfig['mu'], 2))[0]
-        if i<1:
-            l = [r"Sim. free surf. $\mu = 0.44$"]
-        else:
-            l = [r"Sim. free surf. $\mu_I$"]
-        h1, l1 = h1+h, l1+l
-        if i<1:
-            l = [r"Sim. static-flowing $ \mu = 0.44$"]
-        else:
-            l = [r"Sim. static-flowing $\mu_I$"]
-        h1, l1 = h1+ [line2D_vel_mod], l1+l
-
+            h = sR.CS.legend_elements(str(sR.dimSim)+"D~-~ \mu= " + toS(sR.dConfig['mu'], 2))[0]
+            if i ==0:
+                l = [r"Sim. free surf. $\mu = 0.44$"]
+            elif i==1:
+                l = [r"Sim. free surf. $\mu_{hyst}$"]
+            elif i==2:
+                l = [r"Sim. free surf. $\mu = 0.38$"]
+            h1, l1 = h1+h, l1+l
+            if i==0:
+                l = [r"Sim. static-flowing  $\mu = 0.44$"]
+            elif i==1:
+                l = [r"Sim. static-flowing  $\mu_{hyst}$"]
+            
+            h1, l1 = h1+ linesC, l1+l  
+        # print(i)
     sR.plotDoor(ax, alpha=0.5)
     k += 1
     
@@ -366,23 +381,31 @@ axs[0,2].remove()
 # axs[1,-1].legend(h1+ [line2D_vel_mod]  + [line2D] + [line2D_vel] , l1+ [r"3D Sim. static-flowing trans."] +
 #            [r"Exp. free surface"] + [r"Exp. static-flowing trans."] , fontsize=7, framealpha=0.5, loc=1)
 
-fig.legend(h1 +[line2D]  , l1 +[r"Exp. free surf."] , fontsize=9,loc=3, framealpha=0.,edgecolor='w',facecolor='w',ncol=5,bbox_to_anchor=(0.03, 0.005, 0.4, 0.2))
+fig.legend(h1 +[line2D] +[line2D_vel]  , l1 +[r"Exp. free surf."] +[r"Exp. static-flowing"], fontsize=9,loc=3, framealpha=0.,edgecolor='w',facecolor='w',ncol=3,bbox_to_anchor=(0.03, 0.005, 0.4, 0.2))
 
-[x, y, X, Y] = axs[1, 0].get_position().bounds
-# plt.figtext(x+X/2, y+Y+0.045, r'$t=0.2$ s',
-#             fontsize=9, horizontalalignment='center')
-# [x, y, X, Y] = axs[1, 1].get_position().bounds
-# plt.figtext(x+X/2, y+Y+0.045, r'$t=0.6$ s',
-#             fontsize=9, horizontalalignment='center')
-# [x, y, X, Y] = axs[1, 2].get_position().bounds
-# plt.figtext(x+X/2, y+Y+0.045, r'$t_f$',
-#             fontsize=9, horizontalalignment='center')
 
-# f = open(JSONpath, "w")
-# json.dump(dictArt, f, indent=4)
-# f.close() 
-fig.savefig(driveFolder+"/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular/doc/article/images/used_images/"+fignames[Nrun]+"_muI.pdf", dpi=150)
+#%
+axs[1,0].set_position([0.08,0.6,0.5,0.28])
+axs[1,1].set_position([0.545,0.6,0.5,0.28])
+axs[1,2].set_position([0.08,0.2,0.84,0.28])
+fig.set_size_inches([6.,3.2])
 plt.show()
+#%
+[x, y, X, Y] = axs[1, 0].get_position().bounds
+plt.figtext(x+X/2, y+Y+0.045, r'$t=0.2$ s',
+            fontsize=9, horizontalalignment='center')
+[x, y, X, Y] = axs[1, 1].get_position().bounds
+plt.figtext(x+X/2, y+Y+0.045, r'$t=0.6$ s',
+            fontsize=9, horizontalalignment='center')
+[x, y, X, Y] = axs[1, 2].get_position().bounds
+plt.figtext(x+X/2, y+Y+0.045, r'$t_f$',
+            fontsize=9, horizontalalignment='center')
+# f = open(JSONpath, "w")
+
+# json.dump(dictArt, f, indent=4)
+# plt.show()
+# f.close() 
+fig.savefig(driveFolder+"/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular/doc/article/figures/"+fignames[Nrun]+"_mu_hyst2_mu44.pdf", dpi=150)
 # sys.stdout = sys.__stdout__
 print(r'\includegraphics{test_savefig_pdf.pdf}')
 

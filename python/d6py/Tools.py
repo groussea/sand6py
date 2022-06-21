@@ -21,6 +21,64 @@ import vtk
 #     print('d6_python_3D not imported')    
 
 from vtk.util.numpy_support import vtk_to_numpy
+import matplotlib.pyplot as plt
+
+outDictFolder=    "/media/gauthier/Data-Gauthier/Gauthier/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular/data/outputs_experiments_and_mpm/"
+outDictFolder=    "/media/gauthier/DataSSD/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular/data/outputs_experiments_and_mpm/"
+
+fignames=['G00', 'G05', 'G10', 'G15', 'B00', 'B05', 'B10', 'B15', 'B20']
+
+
+JSONpath = outDictFolder + "article_dict.json"
+in_file = open(JSONpath,"r")
+dictArt= json.load(in_file) 
+in_file.close()
+
+# sys.stdout = open(os.devnull, 'w')
+# intialize font type and size
+plt.rcParams['font.size'] = 8.0
+plt.rcParams['xtick.labelsize'] = 8.0
+plt.rcParams['ytick.labelsize'] = 8.0
+plt.rcParams['ytick.labelsize'] = 8.0
+plt.rcParams['axes.linewidth'] = 1
+# print(r'\includegraphics{test_2.pdf}')
+driveFolder = '/media/gauthier/Data-Gauthier/Gauthier'
+driveFolder = '/media/gauthier/DataSSD'
+maind6OutFolder = '/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/'
+maind6OutFolder = '/media/gauthier/DataSSD/sand6_out/'
+# maind6OutFolder = '/home/gauthier/sorties_sand6/'
+
+
+
+
+plt.rcParams['font.family'] = 'serif'
+plt.rc('text', usetex=True)
+
+import opyf
+
+cmapg = opyf.make_cmap_customized(Palette='green')
+
+colors = [(33./255, 66./255, 99./255, 0.05),
+        (1, 1, 0.3, 0.9), (0.8, 0, 0, 0.9), (0, 0, 0, 0.9)]
+position = [0, 0.1, 0.5, 1]
+cmap = opyf.make_cmap(colors, position)
+
+# cmap.set_over(color='g')
+cmap.set_under(alpha=0)
+
+
+fontsize_g=8
+leg_fontsize = 7
+
+def smooth(y, box_pts):
+    box = np.ones(box_pts)/box_pts
+    y_smooth = np.convolve(y, box, mode='valid')
+    return y_smooth
+
+
+
+
+
 
 
 
@@ -810,7 +868,7 @@ class NumericalRun():
                 X=np.array([self.datas[self.ifile,2],self.datas[self.ifile,2]])/self.scaleLength
                 Y=np.array([self.datas[self.ifile,3]+self.Ldoor/2,self.datas[self.ifile,3]-self.Ldoor/2])/self.scaleLength
   
-            ax.plot(0, Y, 'k', **args)
+            ax.plot([0, 0], Y, 'k', **args)
             
 
 
@@ -1023,6 +1081,8 @@ def draw_ax_sc(ax, x_sc, y_sc, lx_sc, ly_sc, fmt='.0f', shift_y_txt=0.5):
                     verticalalignment='bottom', horizontalalignment='center', bbox=my_bbox)
     ax.text(x_sc-lx_sc/5, y_sc+ly_sc-ly_sc/5, '$z$', verticalalignment='center',
                     horizontalalignment='right', fontsize=9, bbox=my_bbox)
+    
+    
 
 def my_formatter(x, pos):
     """Format 1 as 1, 0 as 0, and all values whose absolute values is between
@@ -1036,7 +1096,7 @@ def my_formatter(x, pos):
 
 def findContours(x,y,mat,value):
     from skimage import measure
-    contours = measure.find_contours(mat, value)
+    contours = measure.find_contours(mat, value, fully_connected="high")
     from scipy.interpolate import interp1d
     fx = interp1d(np.arange(0,x.shape[0]), x.flatten(),fill_value="extrapolate")
     fy = interp1d(np.arange(0,y.shape[0]), y.flatten(),fill_value="extrapolate")

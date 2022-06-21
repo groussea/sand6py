@@ -29,7 +29,7 @@ plt.rcParams['axes.linewidth'] = 0.8
 
 driveFolder = '/media/gauthier/Data-Gauthier/Gauthier'
 driveFolder = '/media/gauthier/DataSSD'
-maind6OutFolder = '/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/'
+# maind6OutFolder = '/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/'
 paths, folders, listDictConf, listNumRun = d6py.findOutSand6Paths(
     maind6OutFolder, 4)
 
@@ -39,12 +39,12 @@ def smooth(y, box_pts):
     return y_smooth        
 
 #%%
-Nrun=2
+Nrun=6
 run=str(Nrun)
 
 fignames=['G00', 'G05', 'G10', 'G15', 'B00', 'B05', 'B10', 'B15', 'B20']
 run=fignames[Nrun]
-R1, selectedDict = d6py.whereSand6OutFromParms(listNumRun, delta_mu=0., runNumber=Nrun, dimSim=3, delta_mu_start=0., mu=0.75, keyWord='try2')
+R1, selectedDict = d6py.whereSand6OutFromParms(listNumRun, delta_mu=0., runNumber=Nrun, dimSim=3, delta_mu_start=0., mu=0.44, keyWord='try2')
 
 
 R2, selectedDict = d6py.whereSand6OutFromParms(listNumRun, delta_mu=0., runNumber=Nrun, dimSim=3, mu=0.75, viscosity=0.0)
@@ -53,7 +53,7 @@ R2, selectedDict = d6py.whereSand6OutFromParms(listNumRun, delta_mu=0., runNumbe
 
 # allRuns, sD = d6py.whereSand6OutFromParms(listNumRun, delta_mu=0., dimSim=3, delta_mu_start=0., mu=0.75, keyWord='try2')
 
-#%%
+#%
 plt.close('all')
 Runs=[R1[0]]
 xfMss, VxfMss, tfs, maxVss = [], [], [], []
@@ -107,7 +107,7 @@ for sR in Runs[:]:
     xfMss.append(xfMs)
     VxfMss.append(VxfMs)
     maxVss.append(maxVs)
-#%%
+#%
 tfs_exp =[]
 
 for Nrun in range(Nrun,Nrun+1):
@@ -160,30 +160,30 @@ for Nrun in range(Nrun,Nrun+1):
 
     
 # VxfEs[np.where(VxfEs<0) ]=0
-#%%
+#%
 
 
 plt.close('all')
 plt.figure()
-plt.plot(times[:-2], xfMss[0][:-2],'+:',c='g',lw=0.9, label='Num. front position '+run+' norm')
+plt.plot(times[:-2], xfMss[0][:-2],'+:',c='g',lw=0.9, label='Num. front pos. '+run)
 # plt.plot(times[:-2], xfMss[1][:-2],'1--',c='y',lw=1.2, label='Num. front position '+run+' visc')
-plt.plot(timesE[8:-10], xfEs[8:-10],'--',c='k',lw=1.4, label='Exp. front position '+run+' norm')
-plt.plot(times[:-2:]+dt/2, VxfMss[0][:-1:],'+-',c='g',lw=0.9, label='Num. velocity '+run+' norm')
+plt.plot(timesE[8:-10], xfEs[8:-10],'--',c='k',lw=1.4, label='Exp. front pos. '+run)
+plt.plot(times[:-2:]+dt/2, VxfMss[0][:-1:],'+-',c='g',lw=0.9, label='Num. front vel. '+run)
 # plt.plot(times[:-2:]+dt/2, VxfMss[1][:-1:],'1-',c='y',lw=1.2, label='Num. velocity '+run+' visc')
-plt.plot(timesE[10:-21:]+dtE/2, smooth(VxfEs[10:-20:],25),'-',c='k',lw=0.7, label='Exp. velocity '+run+'')
+plt.plot(timesE[10:-21:]+dtE/2, smooth(VxfEs[10:-20:],25),'-',c='k',lw=0.7, label='Exp. front vel. '+run+'')
 plt.show()
 
-plt.legend(fontsize=8)
+plt.legend(fontsize=10)
 fig=plt.gcf()
 
-fig.set_size_inches(5,4)
+fig.set_size_inches(4.5,3)
 
 ax=plt.gca()
-ax.set_position([0.1, 0.1, 0.85, 0.85])
+ax.set_position([0.12, 0.14, 0.85, 0.84])
 ax.set_xlabel('time [s]')
 ax.set_ylabel('position [m] -- velocitiy [m/s]')
 
-fig.savefig('/media/gauthier/DataSSD/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular.wiki/20220512/'+run+'_front.png')
+fig.savefig('/media/gauthier/DataSSD/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular.wiki/20220512/'+run+'_front.pdf')
 
 #%%
 
