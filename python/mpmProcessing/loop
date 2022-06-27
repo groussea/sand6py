@@ -1,0 +1,4 @@
+#!/bin/bash
+
+python d6py_collapse_other_aspect_ratio_no_granular_bed.py 
+python d6pylib_collapase_full_sand6custom_door_3D.py

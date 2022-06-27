@@ -35,16 +35,18 @@ mainOutFolder='/media/gauthier/DataSSD/sand6_out/2d/'
 
 #%%
 def rund6py(sdictE,**args):
-
     fracH=0.8
+
+    H0 = args.get('H0', 0.12)
+    Hmod = H0/fracH  # AR1_ experimental
+    # Hmod=0.12/fracH #AR1_ experimental
+    L0 = args.get('L0', H0)
+    L = L0   # to add a wall on the left
     
-    if sdictE['camType']=='Phantom':
-        sdictE['L']=sdictE['L']+0.1
-        sdictE['Ltot']=sdictE['Ltot']+0.1
-    L=sdictE['L']    
-    Lmod=sdictE['Ltot']
-    nFrames=int(sdictE['nFrames']/10)
+    Lmod = np.round((H0/L0)*L0+3*L0,2) 
+    nFrames = 35
     
+        
     if (sdictE['camType']=='BW') & (sdictE['Slope']==15. or sdictE['Slope']==20.):
         Lmod=sdictE['Ltot']+0.8
 
@@ -57,7 +59,6 @@ def rund6py(sdictE,**args):
     
     P0=1.
     
-    Hmod=(np.round(sdictE['H'],3)+0.002)/fracH
     door=args.get('door','with')
     if door=='with':
         ts=0.2
@@ -66,15 +67,15 @@ def rund6py(sdictE,**args):
         
 
     substeps=args.get('substeps',40)
-    resZ=args.get('resZ',30)
+    resZ=args.get('resZ',60)
 
     prop=args.get('prop','test')
     rand = args.get('rand', 0)
     
     if door=='with':
-        runName=str('Run_'+format(j,'02.0f')+'_2D_Door_mu='+str(mu)+'_muRigid='+str(muRigid)+'_H_'+format(Hmod*100,'.2f')+'cm_'+sdictE['grainType']+'_Slope='+format(sdictE['Slope'],'.0f')+'deg_delta_mu='+format(delta_mu,'.3f')+'_substeps_'+str(substeps)+'_fracH='+str(fracH)+'_I0_start='+format(I0_start,'.4f')+'_delta_mu_start='+format(delta_mu_start,'.4f')+prop)    
+        runName=str('Run_'+format(j,'02.0f')+'_2D_Door_mu='+str(mu)+'_H_'+format(Hmod*100,'.0f')+'_L_'+format(L*100, '.0f')+'_cm_Slope='+format(sdictE['Slope'],'.0f')+'_fracH='+'_R_'+format(H0/L0, '.1f')+'_'+prop)    
     else:
-        runName=str('Run_'+format(j,'02.0f')+'_2D_no_Door_start_at_0.13_s_'+sdictE['grainType']+'_Slope='+format(sdictE['Slope'],'.0f')+'deg_delta_mu='+format(delta_mu,'.3f')+'_substeps_'+str(substeps)+'_fracH='+str(fracH)+'_I0_start='+format(I0_start,'.4f')+'_delta_mu_start='+format(delta_mu_start,'.4f')+prop)      
+        runName=str('Run_'+format(j,'02.0f')+'_2D_no_Door_mu='+str(mu)+'_H_'+format(Hmod*100,'.2f')+'_L_'+format(L, '.2f')+'cm_Slope='+format(sdictE['Slope'],'.0f')+'_fracH='+'_R_'+format(H0/L0, '.1f')+'_'+prop)   
        
      
     d6OutFolder=mainOutFolder+runName
@@ -100,15 +101,15 @@ def rund6py(sdictE,**args):
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'nSamples',[args.get('nSamples',3)])
     if door=='with':
         if j<=3:
-            d6py.modifyConfigFile(newConfigFile,newConfigFile,'scenario','collapselhedoor taudoor:0.06 veldoor:0.8 ts:'+format(ts,'1.2f')+' frac_h:'+format(fracH,'1.1f')+' column_length:'+str(L))
+            d6py.modifyConfigFile(newConfigFile,newConfigFile,'scenario','collapselhedoor taudoor:0.06 veldoor:0.8 ts:'+format(ts,'1.2f')+' frac_h:'+format(fracH,'1.1f')+' column_length:'+str(L) +' hbed:'+str(0.0) )
         else:
-            d6py.modifyConfigFile(newConfigFile,newConfigFile,'scenario','collapselhedoor taudoor:0.13 veldoor:0.7 ts:'+format(ts,'1.2f')+' frac_h:'+format(fracH,'1.1f')+' column_length:'+str(L))
+            d6py.modifyConfigFile(newConfigFile,newConfigFile,'scenario','collapselhedoor taudoor:0.13 veldoor:0.7 ts:'+format(ts,'1.2f')+' frac_h:'+format(fracH,'1.1f')+' column_length:'+str(L)+' hbed:'+str(0.0) )
     else:
-        d6py.modifyConfigFile(newConfigFile,newConfigFile,'scenario','collapselhedoor taudoor:0.0001 veldoor:100 ts:'+format(ts,'1.2f')+' frac_h:'+format(fracH,'1.1f')+' column_length:'+str(L))
+        d6py.modifyConfigFile(newConfigFile,newConfigFile,'scenario','collapselhedoor taudoor:0.0001 veldoor:100 ts:'+format(ts,'1.2f')+' frac_h:'+format(fracH,'1.1f')+' column_length:'+str(L)+' hbed:'+str(0.0) )
 
     
-    TypicalLength=0.008
-    d6py.modifyConfigFile(newConfigFile,newConfigFile,'res',[int(Lmod/TypicalLength),resZ]) #pour avoir un réolution divisible par 10 selon Y
+    TypicalLength=0.01
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'res',[int(Lmod/TypicalLength),int(Hmod/TypicalLength)]) #pour avoir un réolution divisible par 10 selon Y
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'I0',[I0]) 
       
     #load the final config file dictionnary    
@@ -146,11 +147,14 @@ t=time.time()
 #         for s,p in zip([40],['fin']):
 #             rund6py(sdictE, delta_mu=0.,rand=0,mu=np.round(sdictE['mu']+dmu,2),substeps=s,prop=p,muRigid=0.,nSamples=3)
             
-for j in [4]:  
+for j in [7]:  
     sE=lExp[j] #Selected exeperiment
     sdictE=dictExp[sE]
-    for m in [0.44,0.45,0.46, 0.48, 0.5, 0.52]:
-        rund6py(sdictE,delta_mu=0.,rand=0,mu=m,substeps=120,prop='var_mu',muRigid=0.,nSamples=15,door='with')
+    for m in [0.44, 0.45, 0.46, 0.48, 0.5,0.54, 0.58]:
+        # rund6py(sdictE,delta_mu=0.,rand=0,mu=m,substeps=120,prop='aspect_ratio_1',muRigid=0.,nSamples=15,door='with')
+        L0=0.12
+        for R in [1]:
+            rund6py(sdictE, delta_mu=0., mu=m, prop='hbed_0', fps=15, nFrames=25, nSamples=15, I0_start=0.005, delta_mu_start=0.0, visc=0.0, rand=0, substeps=120, I0=0.279, delta_x=0.01, H0=R*L0, L0=L0)
         # rund6py(sdictE,delta_mu=0.,rand=0,mu=0.65,substeps=s,prop=p,muRigid=0.,nSamples=15,door='with')
 
 

@@ -3,37 +3,35 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #  Author : Gauthier Rousseau
+
+#%%
+import sys
 import opyf  # from opyflow library some rendering function may be employed
 sys.path.append(
-    '/media/gauthier/Data-Gauthier/programs/gitLab/sand6/python/imageProcessing')
-from Tools_collapses import mask_collapses, mask_collapses2
-import matplotlib.pyplot as plt
-from d6py.Tools import *
+    './..')
+sys.path.append(
+    './../..')
 import d6py
-# intialize exteral packages
 import sys
-import os
-import numpy as np
+sys.path.append(
+    './../../imageProcessing')
+
+# from Tools_collapses import mask_collapses, mask_collapses2
+import matplotlib.pyplot as plt
 import matplotlib
-# sys.path.append('/media/gauthier/Data-Gauthier/programs/gitLab/sand6/python')
-# sys.path.append('/media/gauthier/Data-Gauthier/programs/gitHub/opyflow')
-%matplotlib qt5
-# sys.stdout = open(os.devnull, 'w')
-# intialize font type and size
-plt.rcParams['font.size'] = 8.0
-plt.rcParams['xtick.labelsize'] = 7.0
-plt.rcParams['ytick.labelsize'] = 7.0
-plt.rcParams['ytick.labelsize'] = 8.0
-plt.rcParams['axes.linewidth'] = 0.8
-# print(r'\includegraphics{test_2.pdf}')
-driveFolder = '/media/gauthier/Data-Gauthier/Gauthier'
-maind6OutFolder = '/media/gauthier/Samsung_T51/sand6_sorties/sand6_out/'
+matplotlib.use("Qt5Agg")
+from d6py.Tools import *
+import sys
+import numpy as np
+
 paths, folders, listDictConf, listNumRun = d6py.findOutSand6Paths(
     maind6OutFolder, 4)
+Nrun=4
+scale = 0.01  # 1cm
 mainExpFolder = driveFolder + \
-    '/TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/outputs_opyf'
-folderOut='/media/gauthier/Data-Gauthier/Gauthier/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular.wiki/collapses/fit_runout/'
-plt.rcParams['text.usetex']= True
+    '/TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/granular_collapases_imaging_velocity_fields_and_free_surface_elevation/'
+runExp1 = d6py.ExperimentalRun(Nrun, mainExpFolder, loadField=True)
+runExp1.scLength(scale)
 
 # %% load all the exp profile and detect the run out
 #%% gravels
@@ -52,7 +50,7 @@ for Nrun in range(0,4):
     H.append(runExp1.dictE['H'])
     
 xfC = np.array(xfC)
-H=np.array(H)
+H = np.array(H)
 
 plt.close('all')
 fig, ax = plt.subplots(1, 1)
@@ -70,7 +68,7 @@ ax.set_ylabel(r'$x_f/h_0$',fontsize=12)
 ax.set_xlabel(r'$\frac{1}{\mu-tan(\theta)}$',fontsize=12)
 # ax.plot(b,b)
 ax.set_title(r'gravels - $\tan \theta_{start}$= 0.65')
-fig.savefig(folderOut+'gravels-fit.svg')
+# fig.savefig(folderOut+'gravels-fit.svg')
 #%% beads
 plt.close('all')
 fig, ax = plt.subplots(1, 1)
@@ -95,9 +93,7 @@ H=np.append(H,H[-1])
 for mu in np.linspace(0.35,0.55,5):
     angles = np.array([0, 5, 10,15])*np.pi/180
     b= 1/(mu-np.tan(angles))
-
     
-
     ax.plot(b, xfC / H, '-+',linewidth=1.5, label='$\mu=$' + str(np.round(mu,2)))
     p, cov = np.polyfit(b, xfC/H, 1, cov=True)
     err = np.sqrt(np.diag(cov))

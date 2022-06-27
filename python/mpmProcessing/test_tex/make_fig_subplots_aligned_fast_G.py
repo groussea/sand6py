@@ -18,7 +18,8 @@ from d6py.Tools import *
 import sys
 import numpy as np
 import matplotlib
-matplotlib.use("Qt5Agg")
+%matplotlib qt5
+# matplotlib.use("Qt5Agg")
 # plt.ioff()
 
 paths, folders, listDictConf, listNumRun = d6py.findOutSand6Paths(
@@ -269,6 +270,10 @@ for sR, i in zip(selectedRuns, range(len(selectedRuns))):
 # axs[1,-1].legend(h1+ [line2D_vel_mod]  + [line2D] + [line2D_vel] , l1+ [r"3D Sim. static-flowing trans."] +
 #            [r"Exp. free surface"] + [r"Exp. static-flowing trans."] , fontsize=7, framealpha=0.5, loc=1)
 
+for a,s in zip(axs[:,2],fignames[:4]):
+    a.text(45,11,s,fontsize=12,horizontalalignment='center',)
+    
+
 
 [x, y, X, Y] = axs[0, 0].get_position().bounds
 plt.figtext(x+X/2, y+Y+0.025, r'$t=0.2$ s',
@@ -282,7 +287,7 @@ plt.figtext(x+X/2, y+Y+0.025, r'$t_f$',
 
 fig.legend(h1+ [line2D_vel_mod]  + [line2D] + [line2D_vel] , l1+ [r"3D Sim. static-flowing"] + [r"Exp. free surf."] + [r"Exp. static-flowing"], fontsize=9,loc=3, framealpha=0.,edgecolor='w',facecolor='w',ncol=4,bbox_to_anchor=(0.03, -0.005, 0.4, 0.2))
 plt.pause(0.1)
-fig.savefig(driveFolder+"/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular/doc/article/images/used_images/G.pdf", dpi=150)
+fig.savefig(driveFolder+"/programs/gitLab/dry-granular/doc/article/figures/G_all_cmp.pdf", dpi=150)
 # sys.stdout = sys.__stdout__
 print(r'\includegraphics{test_savefig_pdf.pdf}')
 

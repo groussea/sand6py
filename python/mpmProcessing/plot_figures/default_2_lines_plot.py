@@ -7,12 +7,13 @@ sys.path.append(
 sys.path.append(
     './../..')
 import d6py
-import sys
 sys.path.append(
     './../../imageProcessing')
 
 from Tools_collapses import mask_collapses, mask_collapses2
 import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use("Qt5Agg")
 from d6py.Tools import *
 import sys
 import numpy as np
@@ -42,9 +43,8 @@ plt.rc('text', usetex=True)
 
 #%%
 
-def figure_2lines_tamplate():
+def figure_2lines_template():
     plt.close('all')
-    plt.ion()
 
     fig, axs = plt.subplots(N, M, dpi=142, figsize=(4.88, 2.7))
     for i in range(N):
@@ -58,7 +58,7 @@ def figure_2lines_tamplate():
             axs[i, j].set_xticklabels([])
 
     for i in range(N): 
-        axs[i,-1].set_xlim([X_lim[0], 70])
+        axs[i,-1].set_xlim([X_lim[0], 69])
 
 
     for i in range(N):
@@ -99,7 +99,7 @@ def figure_2lines_tamplate():
     [x, y, X, Y] = axs[1, 2].get_position().bounds
     plt.figtext(x+X/2, y+Y+0.045, r'$t_f$',
                 fontsize=9, horizontalalignment='center')
-    plt.show()
+    # plt.show()
     
     return fig, axs
 # %%

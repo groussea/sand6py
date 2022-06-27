@@ -11,6 +11,7 @@ build/*
 /build_2d
 /build-2d
 /build-2d-py39
+/build-2d-p39
 /build-3d-py39
 /build_DG_UNSTRUCTURED
 /build-UNSTRUCTURED

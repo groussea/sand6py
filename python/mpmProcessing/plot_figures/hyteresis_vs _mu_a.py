@@ -3,9 +3,9 @@
 from default_2_lines_plot import *
 
 
-#%%
+#%
 
-Nrun=7
+Nrun=8
 scale = 0.01  # 1cm
 mainExpFolder = driveFolder + \
     '/TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/granular_collapases_imaging_velocity_fields_and_free_surface_elevation/'
@@ -21,15 +21,17 @@ else:
 paths, folders, listDictConf, listNumRun = d6py.findOutSand6Paths(
     maind6OutFolder, 4)
 
-R1, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=mu, delta_mu=0., runNumber=Nrun, dimSim=3, delta_mu_start=0, keyWord='try2')
+R1, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=mu, delta_mu=0., runNumber=Nrun, dimSim=3, delta_mu_start=0 , muRigid=0.23)
 
-R2, selectedDict = d6py.whereSand6OutFromParms(listNumRun,  runNumber=Nrun, dimSim=3, delta_mu=0.0, delta_mu_start=0.1)
+R2, selectedDict = d6py.whereSand6OutFromParms(listNumRun,  runNumber=Nrun, dimSim=3, delta_mu=0.0, delta_mu_start=0.10,muRigid=0.23)
+
+R3, selectedDict = d6py.whereSand6OutFromParms(listNumRun,  runNumber=Nrun, dimSim=3, delta_mu=0.0, delta_mu_start=0.10,muRigid=0.23)
 
 
 #%%
 
 
-selectedRuns = [R1[0], R2[0]] #8
+selectedRuns = [R1[0], R2[0], R3[-1]] #8
 
 for sR in selectedRuns:
     sR.scLength(0.01)
@@ -57,16 +59,17 @@ runExp1.video.scaleData(
 #%%
 plt.close('all')
 
-fig, axs = figure_2lines_tamplate()
+fig, axs = figure_2lines_template()
 draw_gravity_2_lines(axs, runExp1.dictE['Slope'],fontsize_g)
 
 k = 0
 NsR = len(selectedRuns)
 indContrst = 0
-ls = ['-', '-.', '-.', '--']
-ls2= ['--',':', '-.' ]
-c = [1.2, 0.6, 0.6, 1.2]
-col = [ (cmapg(0.3)[:3],), (cmapg(0.7)[:3],), 'purple']
+ls = ['-.', '-.', '-.', '--']
+ls2= [':',':',':']
+c = [1.2, 1.0, 0.8, 1.2]
+c2 = [0.9, 1. , 0.6]
+col = [ 'k','yellowgreen',  'cornflowerblue']
 SR = selectedRuns[0:3]
 if Nrun > 7:
     shiftExp = -1
@@ -111,7 +114,6 @@ for ifile in [6, 12, nF]:
         
 
     if ifile < nF:
-
         norm=(runExp1.Ux[(ifile - 3)* 10 - shiftExp]**2+runExp1.Uy[(ifile - 3)* 10 - shiftExp]**2)**0.5
   
         contrs_vel = d6py.Tools.findContours(runExp1.X, runExp1.Y, norm.T, 0.01)
@@ -123,17 +125,18 @@ for ifile in [6, 12, nF]:
         axt = axs[1, k]
         sR.loadVTK(int(ifile * sR.dConfig['fps'] / 15))
         if i == 0:
-            sR.plotContour(axt, colors=col[i % 4],levels=[0.5], linewidths=c[i % 4], linestyles='-.')
+            sR.plotContour(axt, colors=col[i % 4],levels=[0.5], linewidths=c[i % 4], linestyles=ls[i])
         if i == 1:
-            sR.plotContour(axt, levels=[0.5],colors=col[i % 4],  linewidths=c[i % 4], linestyles='-.',)
+            sR.plotContour(axt, levels=[0.5],colors=col[i % 4],  linewidths=c[i % 4], linestyles=ls[i],)
         if i == 2:
-            sR.plotContour(axt, levels=[0.5], linewidths=1.4, linestyles=':')           
+            sR.plotContour(axt, levels=[0.5], linewidths=c[i % 4], linestyles=ls[i],colors=col[i % 4])    
+        # sR.plotI(axt)       
         sR.calculateNormVelocity()
         sR.normV[np.where(sR.normV==0)]=np.nan
         contours=d6py.Tools.findContours(sR.grid_x[:,0, 0], sR.grid_z[0,0,:], sR.normV[:,sR.nYplot,:], 0.01)
         if ifile<nF:
             for cont in contours:
-                linesC= axs[1, k].plot(smooth(cont[:, 0],5)*100, smooth(cont[:, 1],5)*100, linestyle="--", color=col[i % 4][0], linewidth=c[i % 4], alpha=1, label="limit-mod")
+                linesC= axs[1, k].plot(smooth(cont[:, 0],5)*100, smooth(cont[:, 1],5)*100, linestyle=ls2[i], color=col[i % 4], linewidth=c[i % 4], alpha=1, label="limit-mod")
   
             
         V = area(sR.findContourPhi(level=0.5)[0])
@@ -146,29 +149,32 @@ for ifile in [6, 12, nF]:
             X=np.array([sR.datas[ifile,2],sR.datas[ifile,2]])/sR.scaleLength
             Y=np.array([sR.datas[ifile,4]+sR.Ldoor/2,sR.datas[ifile,4]-sR.Ldoor/2])/sR.scaleLength
             axt.plot([0, 0], Y, 'k', alpha=0.5)
-
         axt.set_yticklabels([])
         axt.set_xticklabels([])
+        
         if ifile<nF:
-
             h = sR.CS.legend_elements(str(sR.dimSim)+"D~-~ \mu= " + toS(sR.dConfig['mu'], 2))[0]
-            if i ==0:
-                l = [r"Sim. free surf. $\mu = 0.44$"]
-            elif i==1:
-                l = [r"Sim. free surf. $\mu_{hyst}$"]
-            elif i==2:
-                l = [r"Sim. free surf. $\mu = 0.38$"]
+ 
+            l = [r"Sim. free surf. $\Delta_{\mu,hyst}$=" + format(sR.dConfig['delta_mu_start'],'0.2f')]
+
             h1, l1 = h1+h, l1+l
-            if i==0:
-                l = [r"Sim. stat.-flow.  $\mu = 0.44$"]
-            elif i==1:
-                l = [r"Sim. stat.-flow.  $\mu_{hyst}$"]
-            
+            if i==1:
+                l = [r"Sim. stat.-flow. $\Delta_{\mu,hyst}$=" + format(sR.dConfig['delta_mu_start'],'0.2f') + r"$\rightarrow$ Threshold $I_0^*$=5e-3"]
+            elif i==2:
+                l = [r"Sim. stat.-flow. $\Delta_{\mu,hyst}$=" + format(sR.dConfig['delta_mu_start'],'0.2f') + r"$\rightarrow$ Linear $I_0^*$=5e-3"]
             h1, l1 = h1+ linesC, l1+l  
+            
     sR.plotDoor(ax, alpha=0.5)
     k += 1
-fig.legend(h1 +[line2D] +[line2D_vel]  , l1 +[r"Exp. free surf."] +[r"Exp. stat.-flow."], fontsize=leg_fontsize,loc=3, framealpha=0.,edgecolor='w',facecolor='w',ncol=3,bbox_to_anchor=(0.05, 0.005, 0.4, 0.2))
+    
+l_new=[l1[0],l1[2],l1[4],r"Exp. free surf.",l1[1],l1[3],l1[5], r"Exp. stat.-flow."]
+h_new=[h1[0],h1[2],h1[4],line2D,h1[1],h1[3],h1[5],line2D_vel]
 
-fig.savefig(driveFolder+"/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular/doc/article/figures/"+fignames[Nrun]+"_mu_hyst_mu44.pdf", dpi=1200)
+poss=axs[1,2].get_position().bounds
+axs[1,2].set_position([poss[0],0.3,poss[2],0.4])
+
+fig.legend(h_new  , l_new , fontsize=leg_fontsize,loc=3, framealpha=0.,edgecolor='w',facecolor='w',ncol=2,bbox_to_anchor=(0.02, 0.005, 0.4, 0.2))
+
+fig.savefig(driveFolder+"/programs/gitLab/dry-granular/doc/article/figures/"+fignames[Nrun]+"_mu_hyst_mu44.pdf", dpi=1200)
 
 # %%

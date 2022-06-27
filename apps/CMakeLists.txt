@@ -104,7 +104,13 @@ else( DIM2 )
 endif( DIM2 )
 
 if( D6_GL_LIBRARIES )
+
+if(DIM2)
+	add_executable ( d6gl_2d ${DIM_STR}/d6gl.cc ${DIM_STR}/GLViewer.cc ${DIM_STR}/GLViewer.hh )
+	target_link_libraries ( d6gl_2d d6_visu d6_gl ${D6_GL_LIBRARIES}  )
+else( DIM2 )
 	add_executable ( d6gl ${DIM_STR}/d6gl.cc ${DIM_STR}/GLViewer.cc ${DIM_STR}/GLViewer.hh )
-	target_link_libraries ( d6gl d6_visu d6_gl ${D6_GL_LIBRARIES}  )
+		target_link_libraries ( d6gl d6_visu d6_gl ${D6_GL_LIBRARIES}  )
+endif( DIM2 )	
 endif()
 

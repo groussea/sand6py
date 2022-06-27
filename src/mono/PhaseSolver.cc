@@ -268,14 +268,14 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	{
 		if ((stepData.inertia[k]/(I0_start_bar) < 1.0) )
 			{
-				pbData.mu[k] = c.mu - (stepData.inertia[k]/I0_start_bar)*c.delta_mu_start  ;
-				// pbData.mu[k] = c.mu ;
+				// pbData.mu[k] = c.mu - (stepData.inertia[k]/I0_start_bar)*c.delta_mu_start  ;
+				pbData.mu[k] = c.mu + c.delta_mu_start ;
 						
 			}
 	else
 		{
 			// 0.38+0.22 / (1 + 0.3 / I)
-			pbData.mu[k] = c.mu - c.delta_mu_start + (c.delta_mu) / (1. + I0bar / std::max(stepData.inertia[k], 1.e-12));
+			pbData.mu[k] = c.mu  + (c.delta_mu) / (1. + I0bar / std::max(stepData.inertia[k], 1.e-12));
 			// pbData.mu[k] =0.6+  (0.22) / (1. + I0bar / std::max(stepData.inertia[k], 1.e-12));
 			// 0.55 + 0.05 * np.log(I);
 			// pbData.mu[k] = 0.55 + 0.05 * std::log(std::max(stepData.inertia[k]* ( c.grainDiameter * std::sqrt( c.volMass/0.6 )), 1.e-12));
@@ -364,7 +364,7 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	if( c.useInfNorm ) {
 		// PG without infinity norm leads to creeping at end of simulation
 		options.useInfinityNorm = true ;
-		options.maxIterations = 10000 ;
+		options.maxIterations = 1000 ;
 	}
 
 	FrictionSolver::Stats stats ;

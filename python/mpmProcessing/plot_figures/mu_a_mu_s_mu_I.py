@@ -1,5 +1,5 @@
 #%%
-%matplotlib qt5
+# %matplotlib qt5
 from default_2_lines_plot import *
 
 
@@ -21,15 +21,15 @@ else:
 paths, folders, listDictConf, listNumRun = d6py.findOutSand6Paths(
     maind6OutFolder, 4)
 
-R1, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=mu, delta_mu=0., runNumber=Nrun, dimSim=3, delta_mu_start=0, keyWord='try2')
+R1, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=mu, muRigid=0.23, delta_mu=0., runNumber=Nrun, dimSim=3, delta_mu_start=0, keyWord='W_8')
 
-R2, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=0.38, runNumber=Nrun, dimSim=3, delta_mu=0.26)
+R2, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=0.38, muRigid=0.23, runNumber=Nrun, dimSim=3, delta_mu=0.26)
 
-R3, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=0.38, runNumber=Nrun, dimSim=3,delta_mu=0., delta_mu_start=0,  keyWord='mustop')
+R3, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=0.38, muRigid=0.23, runNumber=Nrun, dimSim=3,delta_mu=0., delta_mu_start=0,  keyWord='')
 
 #%%
-selectedRuns = [R1[0], R2[1], R3[1]] 
-
+selectedRuns = [R1[0], R2[0], R3[0]] 
+# selectedRuns = [R1[0], ] 
 
 
 
@@ -60,16 +60,17 @@ runExp1.video.scaleData(
 #%%
 plt.close('all')
 
-fig, axs = figure_2lines_tamplate()
+fig, axs = figure_2lines_template()
 draw_gravity_2_lines(axs, runExp1.dictE['Slope'],fontsize_g)
 
 k = 0
 NsR = len(selectedRuns)
 indContrst = 0
 ls = ['-', '-.', '-.', '--']
-ls2= ['--',':', '-.' ]
-c = [1.2, 0.8, 0.6, 1.2]
-col = ['black', 'blue', 'purple']
+ls2= [':','--','--']
+c = [1., 0.7, 0.6, 1.2]
+c2 = [0.8, 0.7 , 0.6]
+col = [ 'k', (cmapg(0.3)[:3],),(cmapg(0.6)[:3],)]
 SR = selectedRuns[0:3]
 if Nrun > 7:
     shiftExp = -1
@@ -131,7 +132,7 @@ for ifile in [6, 12, nF]:
         if i == 1:
             sR.plotContour(axt, levels=[0.5],colors=col[i % 4],  linewidths=c[i % 4], linestyles='-.',)
         if i == 2:
-            sR.plotContour(axt, levels=[0.5], linewidths=1.4, linestyles=':')           
+            sR.plotContour(axt, levels=[0.5], linewidths=0.9, linestyles='-.', colors=col[i])           
         sR.calculateNormVelocity()
         sR.normV[np.where(sR.normV==0)]=np.nan
         contours=d6py.Tools.findContours(sR.grid_x[:,0, 0], sR.grid_z[0,0,:], sR.normV[:,sR.nYplot,:], 0.01)
@@ -169,6 +170,6 @@ for ifile in [6, 12, nF]:
 fig.legend(h1 +[line2D]  , l1 +[r"Exp. free surf."] , fontsize=leg_fontsize,loc=3, framealpha=0.,edgecolor='w',facecolor='w',ncol=2,bbox_to_anchor=(0.2, 0.01, 0.4, 0.2))
 
 
-fig.savefig(driveFolder+"/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular/doc/article/figures/"+fignames[Nrun]+"_muI_mu38_mu44.pdf", dpi=1200)
+fig.savefig(driveFolder+"/programs/gitLab/dry-granular/doc/article/figures/"+fignames[Nrun]+"_muI_mu38_mu44.pdf", dpi=1200)
 
 # %%

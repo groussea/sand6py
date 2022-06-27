@@ -81,7 +81,7 @@ struct CollapseScenarLHEDoor : public Scenario
 {
 	Scalar particle_density(const Vec &x) const override
 	{
-		return ((x[0] < columnLength || x[1] < .1 * m_config->box[1]) & (x[1] < (fracH + 0.1) * m_config->box[1])) ? 1. : 0.;
+		return ((x[0] < columnLength || x[1] < Hbed * m_config->box[1]) & (x[1] < (fracH + Hbed) * m_config->box[1])) ? 1. : 0.;
 	}
 
 	virtual void init(const Params &params) override
@@ -92,15 +92,16 @@ struct CollapseScenarLHEDoor : public Scenario
 		fracH = scalar_param(params, "frac_h", Units::None, 1.);
 		columnLength= scalar_param(params, "column_length", Units::Length, 0.);
 		zD= scalar_param(params, "zdoor", Units::Length, 0.);
+		Hbed= scalar_param(params, "hbed", Units::Length, 0.1);
 	}
 
 	void add_rigid_bodies(std::vector<RigidBody> &rbs) const override
 	{
 		// 		const Scalar a = 0.1 ;
-		const Scalar L = m_config->box[1] * (0.9);
+		const Scalar L = m_config->box[1] * (1-Hbed);
 
 		LevelSet::Ptr ls = LevelSet::make_cylinder(L);
-		ls->set_origin(Vec(columnLength + m_config->typicalLength(), .1 * m_config->box[1] + L / 2 + m_config->typicalLength()+zD));
+		ls->set_origin(Vec(columnLength + m_config->typicalLength(), Hbed* m_config->box[1] + L / 2 + m_config->typicalLength()+zD));
 		ls->set_rotation(0);
 		rbs.emplace_back(ls, 1.);
 		rbs.back().set_velocity(Vec(0, 0), 0.);
@@ -142,8 +143,8 @@ private:
 	Scalar fracH;
 	Scalar columnLength;
 	Scalar zD;
+	Scalar Hbed;
 };
-
 
 struct CollapseScenarLHEDoorH : public Scenario
 {

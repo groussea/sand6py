@@ -5,20 +5,18 @@
 #  Author : Gauthier Rousseau
 import opyf  # from opyflow library some rendering function may be employed
 
-sys.path.append(
-    './..')
-sys.path.append(
-    './../..')
+sys.path.append('./..')
+sys.path.append('./../..')
 import d6py
 import sys
-sys.path.append(
-    './../../imageProcessing')
+sys.path.append('./../../imageProcessing')
 
 from d6py.Tools import *
 import sys
 import numpy as np
 import matplotlib
-matplotlib.use("Qt5Agg")
+%matplotlib qt5
+# matplotlib.use("Qt5Agg")
 # plt.ioff()
 
 paths, folders, listDictConf, listNumRun = d6py.findOutSand6Paths(
@@ -39,7 +37,7 @@ for Nrun in range(4,9): # init
     else:
         mu=0.44
         
-    R1, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=mu, delta_mu=0., runNumber=Nrun, dimSim=3, delta_mu_start=0, keyWord='try2')
+    R1, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=mu, delta_mu=0., runNumber=Nrun, dimSim=3, delta_mu_start=0,muRigid=0.23, keyWord='W_8')
 
     selectedRuns.append(R1[0])
     
@@ -262,6 +260,14 @@ for sR, i in zip(selectedRuns[:], range(len(selectedRuns[:]))):
 # axs[1,-1].legend(h1+ [line2D_vel_mod]  + [line2D] + [line2D_vel] , l1+ [r"3D Sim. static-flowing trans."] +
 #            [r"Exp. free surface"] + [r"Exp. static-flowing trans."] , fontsize=7, framealpha=0.5, loc=1)
 
+# props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+
+# place a text box in upper left in axes coords
+
+for a,s in zip(axs[:,2],fignames[4:]):
+    a.text(45,11,s,fontsize=12,horizontalalignment='center',)
+    
+    
 
 [x, y, X, Y] = axs[0, 0].get_position().bounds
 plt.figtext(x+X/2, y+Y+0.015, r'$t=0.2$ s',
@@ -276,7 +282,7 @@ plt.figtext(x+X/2, y+Y+0.015, r'$t_f$',
 
 fig.legend(h1+ [line2D_vel_mod]  + [line2D] + [line2D_vel] , l1+ [r"3D Sim. static-flowing"] + [r"Exp. free surf."] + [r"Exp. static-flowing"], fontsize=9,loc=3, framealpha=0.,edgecolor='w',facecolor='w',ncol=4,bbox_to_anchor=(0.03, 0.002, 0.4, 0.2))
 plt.pause(0.1)
-fig.savefig(driveFolder+"/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular/doc/article/images/used_images/B.pdf", dpi=150)
+fig.savefig(driveFolder+"/programs/gitLab/dry-granular/doc/article/figures/B_all_cmp.pdf", dpi=150)
 # sys.stdout = sys.__stdout__
 print(r'\includegraphics{test_savefig_pdf.pdf}')
 

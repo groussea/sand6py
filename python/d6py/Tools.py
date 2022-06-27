@@ -23,7 +23,7 @@ import vtk
 from vtk.util.numpy_support import vtk_to_numpy
 import matplotlib.pyplot as plt
 
-outDictFolder=    "/media/gauthier/Data-Gauthier/Gauthier/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular/data/outputs_experiments_and_mpm/"
+# outDictFolder=    "/media/gauthier/Data-Gauthier/Gauthier/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular/data/outputs_experiments_and_mpm/"
 outDictFolder=    "/media/gauthier/DataSSD/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular/data/outputs_experiments_and_mpm/"
 
 fignames=['G00', 'G05', 'G10', 'G15', 'B00', 'B05', 'B10', 'B15', 'B20']
@@ -46,6 +46,7 @@ driveFolder = '/media/gauthier/Data-Gauthier/Gauthier'
 driveFolder = '/media/gauthier/DataSSD'
 maind6OutFolder = '/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/'
 maind6OutFolder = '/media/gauthier/DataSSD/sand6_out/'
+# maind6OutFolder = '/media/gauthier/SSD500/'
 # maind6OutFolder = '/home/gauthier/sorties_sand6/'
 
 
@@ -271,10 +272,13 @@ def modifyConfigFile(configFile,newConfigFile,parameter,value):
     
 def RatioAndOrigin(dConfig,dim=3):
     try:
-        Ratio=(dConfig['columnLength']/(dConfig['box'][0]))
+        hBed=dConfig['hbed']
     except:
-        Ratio=(dConfig['column_length']/(dConfig['box'][0]))
-    Ory=float(dConfig['box'][dim-1])*0.1
+        hBed=0.1
+    Ratio=(dConfig['column_length']/(dConfig['box'][0]))   
+     
+    Ory=float(dConfig['box'][dim-1])*hBed
+    
     Orx=float(dConfig['box'][0])*(Ratio)   
     return Ratio, Orx, Ory
     
@@ -576,17 +580,19 @@ class NumericalRun():
         dimSim=len(self.dConfig['res'])
         self.dConfig['dimSim'] = len(self.dConfig['res'])
         self.Orx, self.Ory, self.Orz = 0, 0, 0
-        self.datas=np.zeros((100,3))
-        if self.dConfig['scenario']=='collapselhedoor':
+        self.datas=np.zeros((100,4))
+        if self.dConfig['scenario']=='collapselhedoor' or self.dConfig['scenario']=='collapseionescu':
             if dimSim==3:
                 self.Ratio, self.Orx, self.Orz=RatioAndOrigin(self.dConfig)
+                
                 self.Ldoor = float(self.dConfig['box'][2]) * 0.9
                 self.slope =np.arctan(self.dConfig['gravity'][0]/self.dConfig['gravity'][2])*180/np.pi
             else:
                 self.Ratio, self.Orx, self.Orz=RatioAndOrigin(self.dConfig,dim=2)
                 self.Ldoor = float(self.dConfig['box'][1]) * 0.9
                 self.slope =np.arctan(self.dConfig['gravity'][0]/self.dConfig['gravity'][1])*180/np.pi
-                        
+            if self.dConfig['scenario']=='collapseionescu':
+                self.Orz=0            
             try:
                 self.headerDatas, self.datas = readDoorFile(d6OutFolder + '/door.txt')
                 if dimSim==3:

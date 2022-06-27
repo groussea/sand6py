@@ -44,11 +44,11 @@ else:
 
 
 
-R1, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=mu, delta_mu=0., runNumber=Nrun, dimSim=3, delta_mu_start=0, keyWord='try2')
+R1, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=mu, delta_mu=0., runNumber=Nrun, dimSim=3, delta_mu_start=0, keyWord='W_8')
 
-R2, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=0.38, runNumber=Nrun, dimSim=3, delta_mu=0.26, keyWord='big')
+R2, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=0.38, runNumber=Nrun, dimSim=3, delta_mu=0.26,muRigid=0.23 , keyWord='')
 
-R3, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=0.38, runNumber=Nrun, dimSim=3,delta_mu=0., delta_mu_start=0,  keyWord='big')
+R3, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=0.38, runNumber=Nrun, dimSim=3,delta_mu=0., delta_mu_start=0,muRigid=0.23 ,  keyWord='')
 
 #%%
 selectedRuns = [R1[0], R2[0], R3[0]] #8
