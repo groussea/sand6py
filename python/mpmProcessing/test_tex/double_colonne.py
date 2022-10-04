@@ -14,7 +14,7 @@ sys.path.append(
 from Tools_collapses import mask_collapses, mask_collapses2
 import matplotlib.pyplot as plt
 import matplotlib
-matplotlib.use("Qt5Agg")
+%matplotlib qt5
 from d6py.Tools import *
 import sys
 import numpy as np
@@ -131,7 +131,6 @@ w_s = 0.09
 w_s2 = 0.02
 for i in range(N):
     for j in range(M):
-
         axs[i, j].plot([-L, -L], [-10, 2 * H], '-k', linewidth=2)
         [x, y, X, Y] = axs[i, j].get_position().bounds
         axs[i, j].set_position(
@@ -155,8 +154,8 @@ X_line = w_s + (w_axs + 0.01)
 [x, y, X, Y] = axs[2, -1].get_position().bounds
 
 Y_sep = y-0.03
-ax_draw.plot([X_line, X_line], [Y_sep, 0.98], linewidth=0.5, color='k')
-ax_draw.plot([0.02, 0.98], [Y_sep, Y_sep], linewidth=0.5, color='k')
+# ax_draw.plot([X_line, X_line], [Y_sep, 0.98], linewidth=0.5, color='k')
+# ax_draw.plot([0.02, 0.98], [Y_sep, Y_sep], linewidth=0.5, color='k')
 
 # Add a big axe to draw the final state entirely
 ax2 = fig.add_axes([w_s, 0.00, x + X - xa, Y_sep-0.03], zorder=-10)
@@ -213,19 +212,19 @@ ax2.plot([0, 0], [-200, 200], 'k', linewidth=0.5)
 ax2.text(-0.5, 0, 'O', fontsize=8, horizontalalignment='right',
         verticalalignment='bottom', bbox=my_bbox)
 
-x_sc, y_sc = 20, 5
+x_sc, y_sc = 2, 2
 lx_sc, ly_sc = 10, 5
-draw_ax_sc(ax2, x_sc, y_sc, lx_sc, ly_sc, fmt='.0f', shift_y_txt=.5)
+# draw_ax_sc(axs[0,1], x_sc, y_sc, lx_sc, ly_sc, fmt='.0f', shift_y_txt=.5)
 
 #Draw numerical res box
 from matplotlib.patches import Circle, Wedge, Polygon, Arc, Rectangle
 
 dS5=5*np.array(sR.dConfig['box'])/np.array(sR.dConfig['res'])*100
-pos_rect=[x_sc+10,10]
+pos_rect=[x_sc+10,7]
 rect = Rectangle(pos_rect, -dS5[0], -dS5[2], ec="none",color='k', linewidth=0.5,zorder=1)
-ax2.add_patch(rect)
-ax2.text(pos_rect[0]-dS5[0]/2,10.5,r'5 $\delta x$',horizontalalignment='center',fontsize=8)
-ax2.text(pos_rect[0]+.5,8.5,r'5 $\delta z$',fontsize=8)
+axs[0,1].add_patch(rect)
+axs[0,1].text(pos_rect[0]-dS5[0]/2,7.5,r'5 $\delta x$',horizontalalignment='center',fontsize=8)
+axs[0,1].text(pos_rect[0]+.5,5.5,r'5 $\delta z$',fontsize=8)
 
 # draw gravity vector
 x_sc, y_sc = -20, 9
@@ -251,31 +250,22 @@ for j in [1]:
 
 
 # write times
-[x, y, X, Y] = axs[0, 0].get_position().bounds
-plt.figtext(0.015, y+Y/2, '$t=$ 0 s', fontsize=9)
-[x, y, X, Y] = axs[1, 0].get_position().bounds
-plt.figtext(0.015, y + Y / 2, '$t=$ 0.2 s', fontsize=9)
-[x, y, X, Y] = axs[2, 0].get_position().bounds
-plt.figtext(0.015, y + Y / 2, '$t=$ 0.6 s', fontsize=9)
+
+# [x, y, X, Y] = axs[2, 0].get_position().bounds
+# plt.figtext(0.015, y + Y / 2, '$t=$ 0.6 s', fontsize=9)
 
 
 
 
-#  write Experiments and Model
-[x, y, X, Y] = axs[0, 0].get_position().bounds
-plt.figtext(x+X/2, y+Y+0.045, 'Experiment',
-            fontsize=9, horizontalalignment='center')
-[x, y, X, Y] = axs[0, 1].get_position().bounds
-plt.figtext(x+X/2, y+Y+0.045, '3D simulation',
-            fontsize=9, horizontalalignment='center')
+
 # plt.figtext(x+X/2, y+Y+0.045, 'Constant $\mu$',
 #             fontsize=9, horizontalalignment='center')
 
 
-for j in range(1,2):
-    [x, y, X, Y] = axs[0, j].get_position().bounds
-    plt.figtext(x + X / 2-0.06, y + Y +0.015, '$\mu$='+ toS(selectedRuns[j-1].dConfig['mu'], 2) , fontsize=8, horizontalalignment='center')
-    plt.figtext(x + X / 2+0.06, y + Y +0.015, '$\mu_w$='+ toS(selectedRuns[j-1].dConfig['muRigid'], 2) , fontsize=8, horizontalalignment='center')
+# for j in range(1,2):
+#     [x, y, X, Y] = axs[0, j].get_position().bounds
+#     plt.figtext(x + X / 2-0.06, y + Y +0.015, '$\mu$='+ toS(selectedRuns[j-1].dConfig['mu'], 2) , fontsize=8, horizontalalignment='center')
+#     plt.figtext(x + X / 2+0.06, y + Y +0.015, '$\mu_w$='+ toS(selectedRuns[j-1].dConfig['muRigid'], 2) , fontsize=8, horizontalalignment='center')
 
 ax_draw.set_xlim([0, 1])
 ax_draw.set_ylim([0, 1])
@@ -327,7 +317,7 @@ for sR, i in zip(SR, range(len(SR))):
 dictArt[fignames[Nrun]]['modelling']['violation_phi']={}
 dictArt[fignames[Nrun]]['modelling']['violation_phi_normalized']={}
 
-for ifile in [3, 6, 12]:
+for ifile in [3,12]:
     ax = axs[k, 0]
     h1, l1 = [], []
     runExp1.video.readFrame(np.max([int(runExp1.dictE['framedeb']) - 100 + (ifile-3) * (
@@ -341,7 +331,7 @@ for ifile in [3, 6, 12]:
     y=np.flipud(runExp1.video.vecY)
     contrs = d6py.Tools.findContours(x, y, np.flipud(mat).T, 10)
     for cont in contrs:
-        [line2D] = ax.plot(smooth(cont[:, 0],5), smooth(cont[:, 1],5), linestyle='-', color='purple', linewidth=1.2, alpha=0.7, label="Exp.")
+        [line2D] = ax.plot(smooth(cont[:, 0],5), smooth(cont[:, 1],5), linestyle='-', color='purple', linewidth=1.2, alpha=0.7, label="exp.")
 
     ax.imshow(vis, extent=runExp1.video.paramPlot['extentFrame'])
     runExp1.plotField(ax, np.max(
@@ -450,45 +440,73 @@ dictArt[fignames[Nrun]]['modelling']['violation_phi_normalized'][format(time,'0.
 
 h = sR.CS.legend_elements(str(sR.dimSim)+"D~-~\mu_{RB}=" + toS(
     sR.dConfig['muRigid'], 2) + " ~-~ \mu= " + toS(sR.dConfig['mu'], 2) + " - \phi")[0]
-l = [r"Num. free surf."]
+l = [r"sim. free surf."]
 
 h1, l1 = h1 + h, l1 + l
 
 
-l_new_1=[r"Exp. free surf.", r"Exp. stat.-flow."]
+l_new_1=[r"exp free surf.", r"exp. stat.-flow."]
 
 h_new_1=[line2D,line2D_vel]
 
-l_new_2=[l1[0],r"Num. stat.-flow."]
+l_new_2=[l1[0],r"sim. stat.-flow."]
 
 h_new_2=[h1[0],line2D_vel_mod]
 
         
-axs[2,0].legend(h_new_1, l_new_1, fontsize=7, framealpha=0.5, loc=1)
-axs[2,1].legend(h_new_2, l_new_2, fontsize=7, framealpha=0.5, loc=1)
+axs[1,0].legend(h_new_1, l_new_1, fontsize=7, framealpha=1, loc=1)
+axs[1,1].legend(h_new_2, l_new_2, fontsize=7, framealpha=1, loc=1)
 
 
 [x, y, X, Y] = axs[2, -1].get_position().bounds
 cbaxes = fig.add_axes([0.18, y-0.08, 0.70, 0.02])
 
 cb = fig.colorbar(im, cax=cbaxes, orientation='horizontal', extend='both')
-# cb.set_label('Velocity norm [m/s]', fontsize=8)
 cb.set_label('Velocity norm [ m/s ]', fontsize=8)
 # cb.set_label('$\mu(I)$ [ - ]', fontsize=8)
 
 [xa, y, X, Y] = axs[2, 0].get_position().bounds
 [xb, y, Xb, Y] = axs[2, -1].get_position().bounds
 [x, y, X, Y] = ax2.get_position().bounds
-cbaxes = ax2.set_position([xa, y - 0.03, xb+Xb-xa, Y])
-[x, y, X, Y] = ax2.get_position().bounds
-plt.figtext(0.015, y+Y/2, '$t_f$', fontsize=9)
+
+# plt.figtext(0.015, y+Y/2, '$t_f$', fontsize=9)
 # plt.show()
 # fig.savefig("test_savefig_pdf_5_mm.pdf", dpi=300)
 
 
+axs[2, 0].remove()
+axs[2, 1].remove()
+ax2.remove()
+
+
+fig.set_size_inches(5.5,3.)
+h_axs=0.35
+for i in range(2):
+    for j in range(2):
+        [x, y, X, Y] = axs[i, j].get_position().bounds
+        axs[i, j].set_position(
+            [w_s+(w_axs + w_s2) * j+0.05, 0.25+(h_axs - 0.05) * (1-i), w_axs, h_axs])
+
+[x, y, X, Y] = cbaxes.get_position().bounds
+cbaxes.set_position([x, 0.18, X, 0.03])
+
+[x, y, X, Y] = axs[0, 0].get_position().bounds
+plt.figtext(0.015, y+Y/2, '$t=$ 0 s', fontsize=9)
+[x, y, X, Y] = axs[1, 0].get_position().bounds
+plt.figtext(0.015, y + Y / 2, '$t=$ 0.6 s', fontsize=9)
+
 # dictArt[fignames[Nrun]]['modelling']['config']=sR.dConfig
 
-fig.savefig("/media/gauthier/DataSSD/programs/gitLab/dry-granular/doc/article/images/wahoo/"+fignames[Nrun]+"details.pdf", dpi=150)
+#  write Experiments and Model
+[x, y, X, Y] = axs[0, 0].get_position().bounds
+plt.figtext(x+X/2, y+Y+0.045, 'Experiment',
+            fontsize=9, horizontalalignment='center')
+[x, y, X, Y] = axs[0, 1].get_position().bounds
+plt.figtext(x+X/2, y+Y+0.045, '3D simulation',
+            fontsize=9, horizontalalignment='center')
+
+
+fig.savefig("/media/gauthier/DataSSD/programs/gitLab/dry-granular/doc/article/figures/figure4.pdf", dpi=150)
 # update json file
 
 f = open(JSONpath, "w")

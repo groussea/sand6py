@@ -214,19 +214,19 @@ fignames = ['G00', 'G05', 'G10', 'G15', 'B00', 'B05', 'B10', 'B15', 'B20']
 
 
 H00=0.12
-for j in [7]:
+for j in [4,7]:
     sE = lExp[j]  # Selected exeperiment
     sdictE = dictExp[sE]
     for R in [1]:
         H0=R*H00
-        HosW=np.linspace(1,30,18)
+        HosW=np.linspace(5,15,10)
         Ws=H0/HosW
         for w in Ws:
-            delta_y = w/6
-            if w >= 0.1:
-                delta_y = 0.02
-            if w <= 0.04:
-                delta_y = w/4
+            delta_y = w/4
+            # if w >= 0.1:
+            #     delta_y = 0.02
+            # if w <= 0.04:
+            #     delta_y = w/4
             if j < 4:
                 muR, mu = 0.3, 0.75
             else:
@@ -237,7 +237,7 @@ for j in [7]:
             else:
                 nsamples, substeps = 6, 100
             for muR in [0.23]:     
-                rund6py(sdictE, delta_mu=0., muRigid=muR, mu=0.44, prop=fignames[j]+'_no_bed_0.12_HR', fps=15, nFrames=25, nSamples=nsamples, I0_start=0.005, delta_mu_start=0.0, visc=0.0, rand=0, substeps=substeps, W=w+2*delta_y, wsw=delta_y, I0=0.279, delta_y=delta_y, delta_x=0.01, mudoor=muR, H0=R*H00, L0=H00)
+                rund6py(sdictE, delta_mu=0.26, muRigid=muR, mu=0.38, prop=fignames[j]+'_fric_res4', fps=15, nFrames=25, nSamples=nsamples, I0_start=0.005, delta_mu_start=0.0, visc=0.0, rand=0, substeps=substeps, W=w+2*delta_y, wsw=delta_y, I0=0.279, delta_y=delta_y, delta_x=0.01, mudoor=muR, H0=R*H00, L0=H00)
 
 
 # %%

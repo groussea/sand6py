@@ -101,22 +101,22 @@ bool Offline::load_frame(unsigned frame )
 			}
 		}
 
-		//Objects
-		{
-			m_levelSets.clear();
+		// // Objects
+		// {
+		// 	m_levelSets.clear();
 
-			std::ifstream ifs( dir.filePath("objects") );
-			boost::archive::binary_iarchive ia(ifs);
+		// 	std::ifstream ifs( dir.filePath("objects") );
+		// 	boost::archive::binary_iarchive ia(ifs);
 
-			unsigned n = 0 ;
-			ia >> n ;
-			LevelSet::register_derived(ia) ;
-			for( unsigned i = 0 ; i < n ; ++i ) {
-				LevelSet* ptr ;
-				ia >> ptr ;
-				m_levelSets.emplace_back( ptr ) ;
-			}
-		}
+		// 	unsigned n = 0 ;
+		// 	ia >> n ;
+		// 	LevelSet::register_derived(ia) ;
+		// 	for( unsigned i = 0 ; i < n ; ++i ) {
+		// 		LevelSet* ptr ;
+		// 		ia >> ptr ;
+		// 		m_levelSets.emplace_back( ptr ) ;
+		// 	}
+		// }
 
 	} catch (boost::archive::archive_exception &e) {
 		Log::Error() << "Error reading frame data: " << e.what() << std::endl ;

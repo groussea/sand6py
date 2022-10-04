@@ -13,7 +13,6 @@ get_ipython().run_line_magic('matplotlib', 'qt5')
 
 import opyf  # from opyflow library some rendering function may be employed
 
-
 sys.path.append(
     '/media/gauthier/Data-Gauthier/programs/gitLab/sand6/python/imageProcessing')
 sys.path.append(
@@ -190,7 +189,9 @@ drawPowerLaw(ax2,p1,p2,shy,sl,frmt='1.0f',)
 shy, sl, p1, p2=0.6, 0.65, 0.9, 1.1
 drawPowerLaw(ax2,p1,p2,shy,sl,frmt='1.1f')
 
-R_3d1, selectedDict = d6py.whereSand6OutFromParms(listNumRun,  runNumber=Nrun, dimSim=3, delta_mu=0.0,delta_mu_start=0,keyWord='HR_fric_serie_30', muRigid=0.23)
+# R_3d1, selectedDict = d6py.whereSand6OutFromParms(listNumRun,  runNumber=Nrun, dimSim=3, delta_mu=0.0,delta_mu_start=0,keyWord='no_fric_muI', muRigid=0.23)
+
+R_3d1, selectedDict = d6py.whereSand6OutFromParms(listNumRun,  runNumber=Nrun, dimSim=3, delta_mu=0.26,delta_mu_start=0,keyWord='no_fric_muI', muRigid=0.0)
 
 
 
@@ -338,7 +339,7 @@ ax2.legend(fontsize=7,loc=4)
 plt.show()
 
 
-fig.savefig(driveFolder+"/programs/gitLab/dry-granular/doc/article/figures/scalings_Hf_Lf_a.pdf", dpi=150)
+# fig.savefig(driveFolder+"/programs/gitLab/dry-granular/doc/article/figures/scalings_Hf_Lf_a.pdf", dpi=150)
 
 
 #%%

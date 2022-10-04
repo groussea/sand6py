@@ -1,11 +1,11 @@
 #%%
-# %matplotlib qt5
+%matplotlib qt5
 from default_2_lines_plot import *
 
 
 #%%
 
-Nrun=8
+Nrun=6
 scale = 0.01  # 1cm
 mainExpFolder = driveFolder + \
     '/TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/granular_collapases_imaging_velocity_fields_and_free_surface_elevation/'
@@ -21,7 +21,7 @@ else:
 paths, folders, listDictConf, listNumRun = d6py.findOutSand6Paths(
     maind6OutFolder, 4)
 
-R1, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=mu, muRigid=0.23, delta_mu=0., runNumber=Nrun, dimSim=3, delta_mu_start=0, keyWord='')
+R1, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=mu, muRigid=0.23, delta_mu=0., runNumber=Nrun, dimSim=3, delta_mu_start=0, keyWord='W_8')
 
 R2, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=0.38, muRigid=0.23, runNumber=Nrun, dimSim=3, delta_mu=0.26)
 

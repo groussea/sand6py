@@ -59,7 +59,7 @@ ls = ['-.', '-.', '-.', '--']
 ls2= [':',':',':',':']
 c = [1.2, 1, 0.8, 0.8]
 c2 = [0.9, 1. , 0.6]
-col = [ 'k', 'darkred', 'yellowgreen','darkblue']
+col = [  'deeppink','darkturquoise', 'yellowgreen','darkblue']
 SR = selectedRuns[0:4]
 if Nrun > 7:
     shiftExp = -1
@@ -120,9 +120,9 @@ for ifile in [3, 8, 30]:
                 co.set_dashes([(0.0, [4, 2, 1, 2, 1, 2])])
         h = sR.CS.legend_elements(str(sR.dimSim)+"D~-~ \mu= " + toS(sR.dConfig['mu'], 2))[0]
         if sR.dimSim == 2:
-            l = [r"Num. $\mu_{"+format(sR.dimSim,'1.0f')+"D }=$"+format(sR.dConfig['mu'],'0.2f')]
+            l = [r"sim. $\mu_{"+format(sR.dimSim,'1.0f')+"D }=$"+format(sR.dConfig['mu'],'0.2f')]
         if sR.dimSim == 3:
-            l = [r"Num. ($W="+format(sR.dConfig['box'][1]*100*6/8,'0.0f')+"~\mathrm{cm})$ " ]
+            l = [r"sim. $W="+format(sR.dConfig['box'][1]*100*6/8,'0.0f')+"~\mathrm{cm}$ " ]
                           
         h1, l1 = h1+ h, l1+l  
     # sR.plotDoor(ax, alpha=0.5)
@@ -135,8 +135,8 @@ folders = ["B00_H_12_W_1_R1_a",
            "B00_H_13_W_1_R1.1_a",
            "B00_H_13_W_4_R1.1_a"]
 datas = []
-cs= ['darkblue', 'blue', 'red','darkred', ]
-labels=['Exp. $W=1$ cm | A', 'Exp. $W=1$ cm | B', 'Exp. $W=4$ cm | A', 'Exp. $W=4$ cm | B', 'W_1cm_R_1.1_a', 'W_4cm_R_1.1_a']
+cs= [ 'lightblue','darkblue', 'lightcoral','darkred', ]
+labels=['exp. $W=1$ cm | A', 'exp. $W=1$ cm | B', 'exp. $W=4$ cm | A', 'exp. $W=4$ cm | B', 'W_1cm_R_1.1_a', 'W_4cm_R_1.1_a']
 
 scale=30
 i =0
@@ -151,21 +151,22 @@ outF='/media/gauthier/DataSSD/programs/gitLab/dry-granular/data/walls/experiment
 
 
 h2, l2 = [],[]
-for f in folders[:]:
+for f in folders[:4]:
     H, data = opyf.read_csv(mainF+'/'+f+'/final_profile/final_profile.csv')
     xf=(data[:-3,5]-200-12*30)/scale
     hf=(-data[:-3,6]+495)/scale
-    fileN=outF+'final_profile_'+f+'.csv'
-    variables =[['xf [m]',xf/100],['hf [m]',hf/100]]
-    opyf.write_csvScalar(fileN,variables)
+    # fileN=outF+'final_profile_'+f+'.csv'
+    # variables =[['xf [m]',xf/100],['hf [m]',hf/100]]
+    # opyf.write_csvScalar(fileN,variables)
     line=axt.plot(xf,hf,'-o',c=cs[i], label=labels[i], lw=0.5, ms=0.5,zorder=-1)
     datas.append(data)
     h2, l2 = h2 +line  , l2+  [labels[i]]
     i+=1  
     
   
-fig.legend(h1  , l1 , fontsize=leg_fontsize-1,loc=3, framealpha=0.5,edgecolor='w',facecolor='w',ncol=1,bbox_to_anchor=(0.5, 0.72, 0.85, 0.2))
-fig.legend(h2  , l2 , fontsize=leg_fontsize-1,loc=3, framealpha=0.,edgecolor='w',facecolor='w',ncol=2,bbox_to_anchor=(0.05, 0.01, 0.4, 0.2))
+fig.legend([h2[0], h2[1], h1[1], h2[2], h2[3], h1[0]]  ,[l2[0], l2[1], l1[1], l2[2], l2[3], l1[0]] , fontsize=leg_fontsize-1,loc=3, framealpha=0.5,edgecolor='w',facecolor='w',ncol=2,bbox_to_anchor=(0.05, 0.01, 0.85, 0.2))
+
+# fig.legend(h2  , l2 , fontsize=leg_fontsize-1,loc=3, framealpha=0.,edgecolor='w',facecolor='w',ncol=2,bbox_to_anchor=(0.05, 0.05, 0.85, 0.2))
 
 axt.plot([-12, 0.0,0.0,40],[12,12,0,0],'-',color='seagreen',zorder=-1,lw=1.5)
 
@@ -176,7 +177,7 @@ for ax in axs[1, :]:
 
 axs[1, 0].remove()
 axs[1,1].remove()
-axt.set_position([0.05,0.2,0.9,0.8])    
+axt.set_position([0.05,0.25,0.9,0.75])    
 fig.set_size_inches(3.,1.8)
 ax.set_xlim(-11.6,25)
 for t in fig.texts:

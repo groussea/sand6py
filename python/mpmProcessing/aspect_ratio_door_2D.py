@@ -107,9 +107,13 @@ def rund6py(sdictE,**args):
     else:
         d6py.modifyConfigFile(newConfigFile,newConfigFile,'scenario','collapselhedoor taudoor:0.0001 veldoor:100 ts:'+format(ts,'1.2f')+' frac_h:'+format(fracH,'1.1f')+' column_length:'+str(L)+' hbed:'+str(0.0) )
 
-    
-    TypicalLength=0.01
-    d6py.modifyConfigFile(newConfigFile,newConfigFile,'res',[int(Lmod/TypicalLength),int(Hmod/TypicalLength)]) #pour avoir un réolution divisible par 10 selon Y
+
+    delta_x = args.get('delta_x', 0.01)
+    delta_z = args.get('delta_z', 0.005)
+    d6py.modifyConfigFile(newConfigFile, newConfigFile, 'res', [
+                          int(Lmod/delta_x), int(Hmod/delta_z)])
+    # TypicalLength=0.01
+    # d6py.modifyConfigFile(newConfigFile,newConfigFile,'res',[int(Lmod/TypicalLength),int(Hmod/TypicalLength)]) #pour avoir un réolution divisible par 10 selon Y
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'I0',[I0]) 
       
     #load the final config file dictionnary    
@@ -147,14 +151,14 @@ t=time.time()
 #         for s,p in zip([40],['fin']):
 #             rund6py(sdictE, delta_mu=0.,rand=0,mu=np.round(sdictE['mu']+dmu,2),substeps=s,prop=p,muRigid=0.,nSamples=3)
             
-for j in [7]:  
+for j in [4,7]:  
     sE=lExp[j] #Selected exeperiment
     sdictE=dictExp[sE]
     for m in [0.44, 0.45, 0.46, 0.48, 0.5,0.54, 0.58]:
         # rund6py(sdictE,delta_mu=0.,rand=0,mu=m,substeps=120,prop='aspect_ratio_1',muRigid=0.,nSamples=15,door='with')
         L0=0.12
         for R in [1]:
-            rund6py(sdictE, delta_mu=0., mu=m, prop='hbed_0', fps=15, nFrames=25, nSamples=15, I0_start=0.005, delta_mu_start=0.0, visc=0.0, rand=0, substeps=120, I0=0.279, delta_x=0.01, H0=R*L0, L0=L0)
+            rund6py(sdictE, delta_mu=0., mu=m, prop='hbed_0_good_res', fps=15, nFrames=25, nSamples=15, I0_start=0.005, delta_mu_start=0.0, visc=0.0, rand=0, substeps=120, I0=0.279, delta_x=0.01, H0=R*L0, L0=L0)
         # rund6py(sdictE,delta_mu=0.,rand=0,mu=0.65,substeps=s,prop=p,muRigid=0.,nSamples=15,door='with')
 
 

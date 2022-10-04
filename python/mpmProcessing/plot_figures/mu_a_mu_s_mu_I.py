@@ -1,7 +1,7 @@
 #%%
-# %matplotlib qt5
+%matplotlib qt5
 from default_2_lines_plot import *
-
+# from template_runout import *
 
 #%%
 
@@ -32,13 +32,23 @@ selectedRuns = [R1[0], R2[0], R3[0]]
 # selectedRuns = [R1[0], ] 
 
 
-
-
+xfMs = []
+Hfs = []
+hth=0.02
 for sR in selectedRuns:
     sR.scLength(0.01)
     nF = int(sR.dConfig['nFrames'])
-    
-    
+    # xfM, t_f = extractRunOut_time(sR,int(sR.dConfig['nFrames']),iframe_deb=3,th=hth)
+    # Hfs.append()
+    # xfMs.append(xfM)
+
+# (xfMs[0]-xfMs[1])/xfMs[1]
+
+runExp1 = d6py.ExperimentalRun(Nrun, mainExpFolder, loadField=True)
+# xfEs, timesE, maxVsE, VxfEs, tf_exp,timesE, dtE = loadRunOutExp(runExp1,hth=hth,vth=0.01)
+
+
+
 vidFolder='/media/gauthier/DataSSD/temp/Video_src/'
 runExp1.loadVideo(vidFolder, mute=True)
 plt.close('all')
@@ -140,7 +150,7 @@ for ifile in [6, 12, nF]:
         #     for cont in contours:
         #         linesC= axs[1, k].plot(smooth(cont[:, 0],5)*100, smooth(cont[:, 1],5)*100, linestyle="--", color=col[i % 4][0], linewidth=c[i % 4], alpha=1, label="limit-mod")
   
-            
+         
         V = area(sR.findContourPhi(level=0.5)[0])
 
         lost = (Vini[i]-V)/Vini[i]*100

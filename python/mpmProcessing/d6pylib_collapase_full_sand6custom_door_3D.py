@@ -169,7 +169,8 @@ for j in [8]:
 #     sdictE=dictExp[sE]
 #     for w in [0.06]:
 #         delta_y=w/6
-#         rund6py(sdictE, delta_mu=0., muRigid = 0.3, mu=0.75, prop=fignames[j], fps=15, nFrames=int(sdictE['nFrames']//10+5), nSamples=6, I0_start=0.005, delta_mu_start=0., rand=1, substeps=80, W=w+2*delta_y, wsw=delta_y, I0=0.279,delta_y=delta_y)
+#         rund6py(sdictE, delta_mu=0., muRigid = 0.3, mu=0.65, prop=fignames[j], fps=15, nFrames=int(sdictE['nFrames']//10+5), nSamples=6, I0_start=0.005, delta_mu_start=0., rand=1, substeps=80, W=w+2*delta_y, wsw=delta_y, I0=0.279,delta_y=delta_y)
+        
 # for j in [7]:   
 #     sE=lExp[j] #Selected exeperiment
 #     sdictE=dictExp[sE]
@@ -200,26 +201,26 @@ for j in [8]:
 #             nsamples, substeps = 6, 80
 #         rund6py(sdictE, delta_mu=0., muRigid = muR, mu=mu, prop=fignames[j]+'', fps=15, nFrames=int(sdictE['nFrames']//10+5), nSamples=nsamples, I0_start=0.005, delta_mu_start=0., rand=1, substeps=substeps, W=w+2*delta_y, wsw=delta_y, I0=0.279,delta_y=delta_y, mudoor= muR)
 
-# for j in [7,8]:
-#     sE=lExp[j] #Selected exeperiment
-#     sdictE=dictExp[sE]    
-#     for w in [0.06]:
-#         delta_y=w/6
-#         if w>=0.1:
-#             delta_y=0.01
-#         if j<4:
-#             muR, mu = 0.3, 0.75
-#         else:
-#             muR, mu = 0.23, 0.44
-        
-#         if j==8:
-#             nsamples, substeps = 8, 120 
-#         else:
-#             nsamples, substeps = 6, 80
+for j in [5,6]:
+    sE=lExp[j] #Selected exeperiment
+    sdictE=dictExp[sE]    
+    for w in [0.06]:
+        delta_y=w/6
+        if w>=0.1:
+            delta_y=0.01
+        if j<4:
+            muR, mu = 0.3, 0.75
+        else:
+            muR, mu = 0.23, 0.44
+    
+        if j==8:
+            nsamples, substeps = 8, 120 
+        else:
+            nsamples, substeps = 6, 80
             
-#         rund6py(sdictE, delta_mu=0., muRigid = muR, mu=0.38, prop=fignames[j]+'mus', fps=15, nFrames=int(sdictE['nFrames']//10+5), nSamples=nsamples, I0_start=0.005, delta_mu_start=0., rand=1, substeps=substeps, W=w+2*delta_y, wsw=delta_y, I0=0.279,delta_y=delta_y, mudoor= muR)
+        rund6py(sdictE, delta_mu=0., muRigid = muR, mu=0.38, prop=fignames[j]+'mus', fps=15, nFrames=int(sdictE['nFrames']//10+5), nSamples=nsamples, I0_start=0.005, delta_mu_start=0., rand=1, substeps=substeps, W=w+2*delta_y, wsw=delta_y, I0=0.279,delta_y=delta_y, mudoor= muR)
         
-#         rund6py(sdictE, delta_mu=0.26, muRigid = muR, mu=0.38, prop=fignames[j]+'muI', fps=15, nFrames=int(sdictE['nFrames']//10+5), nSamples=nsamples, I0_start=0.005, delta_mu_start=0., rand=1, substeps=substeps, W=w+2*delta_y, wsw=delta_y, I0=0.279,delta_y=delta_y, mudoor= muR)
+        rund6py(sdictE, delta_mu=0.26, muRigid = muR, mu=0.38, prop=fignames[j]+'muI', fps=15, nFrames=int(sdictE['nFrames']//10+5), nSamples=nsamples, I0_start=0.005, delta_mu_start=0., rand=1, substeps=substeps, W=w+2*delta_y, wsw=delta_y, I0=0.279,delta_y=delta_y, mudoor= muR)
         
 #         rund6py(sdictE, delta_mu=0.0, muRigid = muR, mu=mu, prop=fignames[j]+'hyst_th', fps=15, nFrames=int(sdictE['nFrames']//10+5), nSamples=nsamples, I0_start=0.005, delta_mu_start=0.10, rand=1, substeps=substeps, W=w+2*delta_y, wsw=delta_y, I0=0.279,delta_y=delta_y, mudoor= muR)
 
@@ -227,18 +228,18 @@ for j in [8]:
 
 #         rund6py(sdictE, delta_mu=0.0, muRigid = muR, mu=mu, prop=fignames[j]+'hyst_th', fps=15, nFrames=int(sdictE['nFrames']//10+5), nSamples=nsamples, I0_start=0.005, delta_mu_start=0.2, rand=1, substeps=substeps, W=w+2*delta_y, wsw=delta_y, I0=0.279,delta_y=delta_y, mudoor= muR) 
            
-j=7
-sE=lExp[j] #Selected exeperiment
-sdictE=dictExp[sE]
-for w in [ 0.01, 0.02, 0.04, 0.1, 0.15, 0.2]:
-    delta_y=w/4
-    if w>=0.1:
-        delta_y=0.02
-    if w<=0.02:
-        delta_y=w/4  
-    muR, mu = 0.23, 0.44  
-    nsamples, substeps = 6, 80
-    rund6py(sdictE, delta_mu=0.0, muRigid = muR, mu=mu, prop=fignames[j]+'width_var', fps=15, nFrames=int(sdictE['nFrames']//10+5), nSamples=nsamples, I0_start=0.005, delta_mu_start=0.00, rand=1, substeps=substeps, W=w+2*delta_y, wsw=delta_y, I0=0.279,delta_y=delta_y, mudoor= muR) 
+# j=7
+# sE=lExp[j] #Selected exeperiment
+# sdictE=dictExp[sE]
+# for w in [ 0.01, 0.02, 0.04, 0.1, 0.15, 0.2]:
+#     delta_y=w/4
+#     if w>=0.1:
+#         delta_y=0.02
+#     if w<=0.02:
+#         delta_y=w/4  
+#     muR, mu = 0.23, 0.44  
+#     nsamples, substeps = 6, 80
+#     rund6py(sdictE, delta_mu=0.0, muRigid = muR, mu=mu, prop=fignames[j]+'width_var', fps=15, nFrames=int(sdictE['nFrames']//10+5), nSamples=nsamples, I0_start=0.005, delta_mu_start=0.00, rand=1, substeps=substeps, W=w+2*delta_y, wsw=delta_y, I0=0.279,delta_y=delta_y, mudoor= muR) 
     
 
 

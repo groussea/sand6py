@@ -62,51 +62,92 @@ mu = runExp1.dictE['mu']
 #%%
 # RunAR2
 AR=1
-R_2d, selectedDict = d6py.whereSand6OutFromParms(listNumRun,  runNumber=Nrun, dimSim=2, delta_mu=0.0,delta_mu_start=0,keyWord='fracH=_R_'+str(AR)+'.0_hbed_0')
+R_2d, selectedDict = d6py.whereSand6OutFromParms(listNumRun,  runNumber=Nrun, dimSim=2, delta_mu=0.0,delta_mu_start=0,keyWord='fracH=_R_'+str(AR)+'.0_hbed_0_good_res')
 
 # R_2d, selectedDict = d6py.whereSand6OutFromParms(listNumRun,  runNumber=Nrun, dimSim=2, delta_mu=0.0,delta_mu_start=0,keyWord='aspect_ratio_1')
 
-
-R_3di, selectedDict = d6py.whereSand6OutFromParms(listNumRun,  runNumber=Nrun, dimSim=3, delta_mu=0.0, muRigid=0.23, delta_mu_start=0,keyWord='R_'+str(AR)+'.0_B00_no_bed_0.12_HR')
-
+R_3di, selectedDict = d6py.whereSand6OutFromParms(listNumRun,  runNumber=Nrun, dimSim=3, delta_mu=0.0, muRigid=0.23, delta_mu_start=0,keyWord='R_'+str(AR)+'.0_'+fignames[Nrun]+'_no_bed_0.12_HR')
+# R_3di, selectedDict = d6py.whereSand6OutFromParms(listNumRun,  runNumber=Nrun, dimSim=3,  muRigid=0.23, delta_mu_start=0,keyWord='R_'+str(AR)+'.0_'+fignames[Nrun]+'_fric_res4')
 
 indx=np.argsort([sR.dConfig['box'][1] for sR in  R_3di])
 
-R_3d=[R_3di[i] for i in indx]
+R_3dp=[R_3di[i] for i in indx]
 
 
-# del R_2d[1]
-#
-#%%
+#%
 # init Vini
 ifile=0
-Vini = np.zeros((len(R_3d)))
-for sR, i in zip(R_3d, range(len(R_3d))):
+for sR, i in zip(R_3dp, range(len(R_3dp))):
     sR.loadVTK(int(ifile * sR.dConfig['fps'] / 15))
     sR.nYplot=3
-    contrs = sR.findContourPhi(level=0.1)
+    contrs = sR.findContourPhi(level=0.5)
     V = area(contrs[0])
-    Vini[i] = V
-    
-# %% init andload all final sates
+    sR.Vini = V
+ #%%   
+# % init andload all final sates
 plt.close('all')
 fig, ax = plt.subplots(1,1)
 cmap=plt.get_cmap('inferno')
 i=0
 h, l=[], []
-for sR in R_3d:
+selectGood=[]
+indxgd=[]
+for sR in R_3dp:
+    sR.w=sR.dConfig['box'][1]-2*sR.dConfig['wsw']
     sR.scLength(0.01)
-    nF = int(sR.dConfig['nFrames'])
-    sR.loadVTK(int(nF* sR.dConfig['fps'] / 15))
-    sR.plotContour(ax,levels=[0.1],colors=[cmap(i/8)])
+    sR.loadVTK(3)
+    sR.plotContour(ax,levels=[0.5],colors=[cmap(i/16)])
     h.append( sR.CS.legend_elements()[0][0])
     l.append(str(sR.dConfig['box'][1]))
-    V = area(sR.findContourPhi(level=0.1)[0])
-    lost = (V-Vini[i])/Vini[i]*100
+    V = area(sR.findContourPhi(level=0.5)[0])
+    lost = (V-sR.Vini)/sR.Vini*100
     print(lost)
-    
+    nF = int(sR.dConfig['nFrames'])
+    sR.loadVTK(nF)
+    if np.absolute(lost)<1:
+        selectGood.append(sR)
+        indxgd.append(i)
+    else:
+        print(sR.d6OutFolder)
     i+=1
+    
 fig.legend(h , l)
+R_3d=selectGood
+#%%
+plt.close('all')
+fig, ax = plt.subplots(1,1)
+h, l=[], []
+selectGood=[]
+for sR in R_3d:
+# for sR in R_3d:    
+    print(sR.d6OutFolder)
+    print('res:',sR.dConfig['res'])
+    print('box:',sR.dConfig['box'])
+    print('w:',sR.dConfig['box'][1]-2*sR.dConfig['wsw'])
+    nF = int(sR.dConfig['nFrames'])
+
+    sR.nYplot=3
+    # sR.loadVTK(10)
+    Vi = area(sR.findContourPhi(level=0.5)[0])
+    sR.loadVTK(nF)
+    sR.plotContour(ax,levels=[0.5],colors=[cmap(i/16)])
+    h.append( sR.CS.legend_elements()[0][0])
+    l.append(str(sR.dConfig['box'][1]))
+    V = area(sR.findContourPhi(level=0.5)[0])
+    lost = (V-sR.Vini)/sR.Vini*100
+    print(lost)
+    sR.cal_violation_phi()
+    print('viol:',sR.viol)
+    print('norm_viol',sR.viol_normalized)
+    print('')
+    max1mphi=np.max(sR.reshaped_Phi[np.where(sR.reshaped_Phi>1.)])-1
+    print('max phi:',np.max(sR.reshaped_Phi[np.where(sR.reshaped_Phi>1.)])-1)
+    print('')
+    if max1mphi < 0.5:
+        selectGood.append(sR)
+    
+R_3d=selectGood
+#%%
 
 
 for sR in R_2d:
@@ -118,20 +159,22 @@ for sR in R_2d:
 
 #%%
 plt.close('all')
-fig, [ax, ax2] = plt.subplots(2,1)
+fig, ax = plt.subplots(1,1)
 mus=[]
 hs=[]
 xf=[]
 for sR in R_2d:
     hmax=[]
-    for k in range(3,6):
+    for k in range(2,10):
         hmax.append(np.mean(sR.grid_y[0,np.where(sR.reshaped_Phi[k,:]>0.5)[0][-1]]))
-    sR.hmax=np.mean(hmax)
-    sR.hmax=np.max(np.max(sR.pointsp[:,1]))
+    # sR.hmax=np.mean(hmax)
+    sorted_index_array = np.argsort(sR.pointsp[:,1])
+    sR.hmax=np.mean(sR.pointsp[sorted_index_array[-20:],1])
+    # sR.hmax=np.max(np.max(sR.pointsp[:,1]))
     sR.xf=np.max(np.max(sR.pointsp[:,0]))
-    print(sR.xf)
+    print(sR.hmax)
     ax.plot(sR.hmax,sR.dConfig['mu'],'k+')
-    ax2.plot(sR.xf,sR.dConfig['mu'],'k+')
+    # ax2.plot(sR.xf,sR.dConfig['mu'],'k+')
     mus.append(sR.dConfig['mu'])
     hs.append(sR.hmax)
     xf.append(sR.xf)
@@ -145,21 +188,35 @@ ax.set_xlabel(r'$h_{max}$')
 from scipy import optimize
 def moinslogvraisemblance(x):
     logvr=[]
-    # mus=np.array([0.44, 0.45, 0.46, 0.48, 0.53, 0.58])
-    # hs=np.array([0.05885417, 0.061679173, 0.0635625, 0.0678, 0.079100005, 0.08851667])
     for k in range(len(hs)):
         logvr.append(1/2*(np.log(np.sqrt(2*np.pi))+np.log(1)+(((mus[k]-(x[0]+x[1]*hs[k]**x[2]))/(1))**2)))
     lvrai=np.nansum(logvr)
     return lvrai
 
+def moinslogvraisemblance_xf(x):
+    logvr=[]
+    for k in range(len(hs)):
+        logvr.append(1/2*(np.log(np.sqrt(2*np.pi))+np.log(1)+(((mus[k]-(x[0]+x[1]*xf[k]**x[2]))/(1))**2)))
+    lvrai=np.nansum(logvr)
+    return lvrai
+
+
 
 # xopt = optimize.fmin(func=moinslogvraisemblance, x0=[1,1])
 xopt = optimize.minimize(moinslogvraisemblance, [1,1,1],method='Nelder-Mead')
+xopt_xf = optimize.minimize(moinslogvraisemblance_xf, [1,1,1],method='Nelder-Mead')
 print(xopt)
 hs=np.array(hs)
-ax.plot(hs,xopt.x[0]+xopt.x[1]*hs**xopt.x[2])
+xf=np.array(xf)
 
-plt.show()
+hlin= np.linspace(0.08,0.11,100)
+
+ax.plot(hlin,xopt.x[0]+xopt.x[1]*hlin**xopt.x[2])
+ax.set_xlabel(r"$H_{f,2d}$")
+ax.set_ylabel(r"$\mu_{2d}$")
+
+# ax2.plot(xf,xopt_xf.x[0]+xopt_xf.x[1]*xf**xopt_xf.x[2])
+fig.show()
 
 
 
@@ -169,52 +226,53 @@ plt.rcParams["text.usetex"]=True
 plt.close('all')
 fig, ax = plt.subplots(1,1,figsize=(4,3))
 H0=AR*0.12
-if AR >1:
-    HosW=np.linspace(2,30,6)
-else:
-    HosW=np.linspace(1,30,6)
-    
-Ws=np.flip(H0/HosW*100)
-[sR.dConfig['box'][1]*4/6*100 for sR in  R_3d]
-[sR.dConfig['box'][1]*100 for sR in  R_3d]
-if AR==2:
-    Ws=np.delete(Ws,[2,3]) # for AR=2
-elif AR==4:
-    Ws=np.delete(Ws,[2]) 
-elif AR==1:
-    Ws =[0.4, 0.4958666666666667, 0.6522, 1.0,  1.7647333333333335, 4.0, 12.666666666666668,]
-    
 
 
 mu_eqs=[]
 hmaxs=[]
-i=0
-for sR,w in zip(R_3d,Ws):
+Ws=[]
+i=1
+for sR in R_3d:
+    print('boxY: ',sR.dConfig['box'][1]*100)
     H0=sR.dConfig['box'][2]*0.8
     hmax=[]
-    for k in range(2,3):
+    sR.w=sR.dConfig['box'][1]-2*sR.dConfig['wsw']
+    for k in range(2,10):
         hmax.append(sR.grid_z[0,0,np.where(sR.reshaped_Phi[k,2,:]>0.5)[0][-1]])
-    sR.hmax=np.mean(hmax)
+    # sR.hmax=np.mean(hmax)
     # sR.hmax=np.max(np.max(sR.pointsp[:,2]))
-    # print(sR.hmax)
+    sorted_index_array = np.argsort(sR.pointsp[:,2])
+    sR.hmax=np.mean(sR.pointsp[sorted_index_array[-20*int(sR.dConfig['res'][1]*sR.dConfig['nSamples']):],2])
+    # sR.xf=np.max(np.max(sR.pointsp[:,0]))
+    # print(sR.xf)
+    print(sR.hmax)
     mu_eq=xopt.x[0]+xopt.x[1]*sR.hmax**xopt.x[2]
+    # mu_eq=xopt_xf.x[0]+xopt_xf.x[1]*sR.xf**xopt_xf.x[2]
     # print(sR.hmax)
-    mu_eqs.append(mu_eq)
+    print('H0sw:',H0/sR.w)
+    
     # ax.plot(w,sR.hmax,'k+')
     #evaluate the lost
+    cont=sR.findContourPhi(level=0.5)[0]
+    cont=np.append(cont,[-H0,0])
     V = area(sR.findContourPhi(level=0.5)[0])
-    hmaxs.append(sR.hmax)
-    lost = (V-Vini[i])/Vini[i]*100
-    print(lost)
+    ax.plot(H0/sR.w,mu_eq,'p', color=cmap(np.random.rand()),ms=i+1,label=sR.d6OutFolder+str(sR.dConfig['res'][1])+'_'+str(sR.viol_normalized))
+    print('max phi:',np.max(sR.reshaped_Phi[np.where(sR.reshaped_Phi>1.)]))
+    lost = (V-sR.Vini)/sR.Vini*100
+    if sR.hmax<0.115:
+        hmaxs.append(sR.hmax)
+        Ws.append(sR.w*100)
+        mu_eqs.append(mu_eq)
+    # print(lost)
     i+=1
 
 Ws=np.array(Ws)
 
 mu_eq_err=xopt.x[1]*(sR.hmax+0.004)**xopt.x[2]-(xopt.x[1]*(sR.hmax-0.004)**xopt.x[2])
 
-ax.plot((Ws*0.01/H0)**(-1),mu_eqs,'p', color='darkblue',label=r'3d simulation  $\mu=0.44$',ms=4)
+# ax.plot((Ws*0.01/H0)**(-1),mu_eqs,'p', color='darkblue',label=r'3d simulation  $\mu=0.44$',ms=4)
 
-ax.errorbar((Ws*0.01/H0)**(-1),mu_eqs, yerr=mu_eq_err, color='k',fmt='none', markersize=8,markeredgewidth=1, capsize=2, )
+# ax.errorbar((Ws*0.01/H0)**(-1),mu_eqs, yerr=mu_eq_err, color='k',fmt='none', markersize=8,markeredgewidth=1, capsize=2, )
 
 ax.set_ylabel(r'$\mu_{2D,eq}$')
 ax.set_xlabel(r'$H_0/W$ ')
@@ -223,13 +281,20 @@ ws_Ls=np.linspace(0.03,0.30,100)
 muIonescu = 0.38 + 0.18 * 0.05 / ws_Ls
 ax.plot((ws_Ls/H0)**(-1),muIonescu,'--',c='darkred',label=' Ionescu et al. (2015) Correction',lw=1.4)
 
-
-
 ax.set_position([0.15,0.15,0.8,0.8])
 ax.legend()
 plt.show()
 
-fig.savefig(driveFolder+"/programs/gitLab/dry-granular/doc/article/figures/AR2_mu2Deq_W.pdf", dpi=150)
+# fig.savefig(driveFolder+"/programs/gitLab/dry-granular/doc/article/figures/AR2_mu2Deq_W.pdf", dpi=150)
+
+#%%
+import csv 
+slope= np.absolute(sR.slope)
+filename = "/media/gauthier/DataSSD/programs/gitLab/dry-granular/data/walls/AR"+str(AR)+"_"+format(slope,'1.0f')+"deg/AR"+str(AR)+"_"+format(slope,'1.0f')+"deg_3D.csv"
+
+variables = [['Ws',Ws],['H0',np.ones(len(mu_eqs))*H0],['slope',np.ones(len(mu_eqs))*slope],['Hf',hmaxs],['mu_2D_eq',mu_eqs]]
+opyf.write_csvScalar(filename, variables)
+
 
 #%% find mu_2d eq pour les expériences
 
@@ -253,12 +318,6 @@ for f in files:
 
 
 # Save data in csv
-#%%
-import csv 
-filename = "/media/gauthier/DataSSD/programs/gitLab/dry-granular/data/walls/AR"+str(AR)+"_0deg/AR"+str(AR)+"_0deg_3Db.csv"
-slope= np.absolute(sR.slope)
-variables = [['Ws',Ws],['H0',np.ones(len(mu_eqs))*H0],['slope',np.ones(len(mu_eqs))*slope],['Hf',hmaxs],['mu_2D_eq',mu_eqs]]
-opyf.write_csvScalar(filename, variables)
 
 
 #%%

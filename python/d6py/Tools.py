@@ -939,7 +939,7 @@ class NumericalRun():
 
     def cal_violation_phi(self, ):
         vals_phi=self.reshaped_Phi[np.where(self.reshaped_Phi>1.)]
-        self.viol=np.linalg.norm(vals_phi, 2)
+        self.viol=np.linalg.norm(vals_phi-1, 2)
         self.viol_normalized=self.viol/self.reshaped_Phi.size
         
     
