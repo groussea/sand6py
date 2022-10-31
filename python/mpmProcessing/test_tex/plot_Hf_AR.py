@@ -6,6 +6,7 @@ from ctypes import alignment
 import matplotlib
 import sys, os
 sys.path.append('/media/gauthier/DataSSD/programs/gitLab/sand6/python/mpmProcessing/plot_figures')
+sys.path.append('/media/gauthier/DataSSD/programs/gitHub/opyflow/')
 from template_runout import *
 fileDir = os.path.dirname(os.path.abspath(os.__file__))
 
@@ -165,8 +166,14 @@ fitW2 = np.polynomial.polynomial.polyfit(np.log(ARs[inds1]), np.log(xfMs[inds1]/
 
 # fit_fn = np.polynomial.Polynomial(fit)
 ARs_fit = np.logspace(0, 1.3, 10)
-[line3]=ax.plot(ARs_fit,np.exp(fitW[0])*ARs_fit**fitW[1], ':k',
+ar_sup=7
+ARs_fit1 = np.logspace(0, np.log10(ar_sup), 10)
+[line3]=ax.plot(ARs_fit1,np.exp(fitW[0])*ARs_fit1**fitW[1], ':k',
         label=r"fit wide ($a < 7$): "+ format(np.exp(fitW[0]),'.1f') +r" $a^{"+ format(fitW[1],'.2f') +r"}$",lw=1)
+
+ax.plot(ar_sup,np.exp(fitW[0])*ar_sup**fitW[1],'ko',ms=3)  
+
+
 # ax.plot(ARs_fit,np.exp(fit[0])*ARs_fit**0.6, '--r',lw=1)
 [line4]=ax2.plot(ARs_fit[0:5],np.exp(fitW2[0])*ARs_fit[0:5]**fitW2[1], '--k',
         label=r"fit wide ($a < 7$): "+ format(np.exp(fitW2[0]),'.1f') +r" $a^{"+ format(fitW2[1],'.1f') +r"}$",lw=1)
@@ -189,9 +196,9 @@ drawPowerLaw(ax2,p1,p2,shy,sl,frmt='1.0f',)
 shy, sl, p1, p2=0.6, 0.65, 0.9, 1.1
 drawPowerLaw(ax2,p1,p2,shy,sl,frmt='1.1f')
 
-# R_3d1, selectedDict = d6py.whereSand6OutFromParms(listNumRun,  runNumber=Nrun, dimSim=3, delta_mu=0.0,delta_mu_start=0,keyWord='no_fric_muI', muRigid=0.23)
+R_3d1, selectedDict = d6py.whereSand6OutFromParms(listNumRun,  runNumber=Nrun, dimSim=3, delta_mu=0.0,delta_mu_start=0,keyWord='_serie_30', muRigid=0.23)
 
-R_3d1, selectedDict = d6py.whereSand6OutFromParms(listNumRun,  runNumber=Nrun, dimSim=3, delta_mu=0.26,delta_mu_start=0,keyWord='no_fric_muI', muRigid=0.0)
+# R_3d1, selectedDict = d6py.whereSand6OutFromParms(listNumRun,  runNumber=Nrun, dimSim=3, delta_mu=0.26,delta_mu_start=0,keyWord='no_fric_muI', muRigid=0.0)
 
 
 
@@ -261,21 +268,25 @@ inds1=np.where(ARs>1)
 
 fit = np.polynomial.polynomial.polyfit(np.log(ARs[inds1]), np.log(H0s[inds1]/hmaxs[inds1]), [0, 1])
 
-inds1=np.where(ARs>3)
+ar_inf=2
+inds1=np.where(ARs>ar_inf)
 
 fit2 = np.polynomial.polynomial.polyfit(np.log(ARs[inds1]), np.log(xfMs[inds1]/(H0s[inds1]/ARs[inds1])), [0, 1])
 
 print(fit)
 
 fit_fn = np.polynomial.Polynomial(fit)
+
 ARs_fit = np.logspace(0, 1.5, 10)
 
 [line1]=ax.plot(ARs_fit,np.exp(fit[0])*ARs_fit**fit[1], '-k',
         label=r"fit narrow: "+ format(np.exp(fit[0]),'.1f') +r" $a^{"+ format(fit[1],'.1f') +r"}$",lw=1)
 
-[line2]=ax2.plot(ARs_fit,np.exp(fit2[0])*ARs_fit**fit2[1], '-k',
-        label=r"fit narrow ($a>3$): "+ format(np.exp(fit2[0]),'.1f') +r" $a^{"+ format(fit2[1],'.1f') +r"}$",lw=1)
-  
+ARs_fit1 = np.logspace(np.log10(ar_inf), 1.5, 10)
+
+[line2]=ax2.plot(ARs_fit1,np.exp(fit2[0])*ARs_fit1**fit2[1], '-k',
+        label=r"fit narrow ($a>2$): "+ format(np.exp(fit2[0]),'.1f') +r" $a^{"+ format(fit2[1],'.1f') +r"}$",lw=1)
+ax2.plot(ar_inf,np.exp(fit2[0])*ar_inf**fit2[1],'ko',ms=3)  
 shy, sl, p1, p2= 0.02, 0.5, 0.4, 0.6
 
 drawPowerLaw(ax,p1,p2,shy,sl,inv=1,frmt='1.1f')
@@ -300,13 +311,13 @@ plt.show()
 
 
 ax.set_xlabel('$a$')
-ax.set_ylabel('$H_0/H_{\infty}$')
+ax.set_ylabel('$H_0/H_{f}$')
 ax.set_position([0.6,0.13,0.38,0.85])
 ax.set_ylim(0.9,20)
 ax.set_xlim(0.9,20)
 
 ax2.set_xlabel('$a$')
-ax2.set_ylabel('$(L_{\infty}-L_0)/L_0$')
+ax2.set_ylabel('$(L_{f}-L_0)/L_0$')
 ax2.set_ylim(0.9,30)
 ax2.set_xlim(0.9,20)
 
@@ -339,7 +350,7 @@ ax2.legend(fontsize=7,loc=4)
 plt.show()
 
 
-# fig.savefig(driveFolder+"/programs/gitLab/dry-granular/doc/article/figures/scalings_Hf_Lf_a.pdf", dpi=150)
+fig.savefig(driveFolder+"/programs/gitLab/dry-granular/doc/article/figures/scalings_Hf_Lf_a.pdf", dpi=150)
 
 
 #%%

@@ -2,7 +2,6 @@
 %matplotlib qt5
 from default_2_lines_plot import *
 
-
 #%
 
 Nrun=4
@@ -18,8 +17,7 @@ if Nrun < 4:
 else:
     mu=0.44
 
-paths, folders, listDictConf, listNumRun = d6py.findOutSand6Paths(
-    maind6OutFolder, 4)
+paths, folders, listDictConf, listNumRun = d6py.findOutSand6Paths(maind6OutFolder, 4)
 
 # R1_2d, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=0.58, delta_mu=0., runNumber=Nrun, dimSim=2, delta_mu_start=0)
 
@@ -37,10 +35,10 @@ R2, selectedDict = d6py.whereSand6OutFromParms(listNumRun,  runNumber=Nrun, dimS
 
 # selectedRuns = [R_ref[0],R2[1], R1_2d[-1], R2_2d[-1]] #8
 # selectedRuns = [R1_2d[-1], R2_2d[-1]] #8
-selectedRuns = [R_ref[1],R2[-1]] #8
+selectedRuns = [R_ref[0],R2[-1]] #8
 for sR in selectedRuns:
     sR.scLength(0.01)
-    nF = int(sR.dConfig['nFrames'])
+    sR.nF = int(sR.dConfig['nFrames'])
     
     
 
@@ -78,7 +76,7 @@ for sR, i in zip(SR, range(len(SR))):
     Vini[i] = V
 
 
-for ifile in [3, 8, 30]:
+for ifile in [3, 8, 22]:
 # for ifile in [6, 12, 3]:
     print(ifile)
     ax = axs[0, k]
@@ -95,7 +93,7 @@ for ifile in [3, 8, 30]:
             contours=d6py.Tools.findContours(sR.grid_x[:,0, 0], sR.grid_z[0,0,:], sR.normV[:,sR.nYplot,:], 0.01)
         else: 
             contours=d6py.Tools.findContours(sR.grid_x[:,0], sR.grid_y[0, :], sR.normV, 0.01)
-        if ifile<=nF:
+        if ifile<=sR.nF:
             for cont in contours:
                 linesC= axs[1, k].plot(smooth(cont[:, 0],5)*100, smooth(cont[:, 1],5)*100, linestyle=ls2[i], color=col[i % 4], linewidth=c[i % 4], alpha=1, label="limit-mod")
         # if i==2:
@@ -154,7 +152,7 @@ h2, l2 = [],[]
 for f in folders[:4]:
     H, data = opyf.read_csv(mainF+'/'+f+'/final_profile/final_profile.csv')
     xf=(data[:-3,5]-200-12*30)/scale
-    hf=(-data[:-3,6]+495)/scale
+    hf=(-data[:-3,6]+490)/scale
     # fileN=outF+'final_profile_'+f+'.csv'
     # variables =[['xf [m]',xf/100],['hf [m]',hf/100]]
     # opyf.write_csvScalar(fileN,variables)

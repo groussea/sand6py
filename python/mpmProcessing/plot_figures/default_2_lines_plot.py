@@ -13,7 +13,7 @@ sys.path.append(
 from Tools_collapses import mask_collapses, mask_collapses2
 import matplotlib.pyplot as plt
 import matplotlib
-matplotlib.use("Qt5Agg")
+# matplotlib.use("Qt5Agg")
 from d6py.Tools import *
 import sys
 import numpy as np
@@ -43,10 +43,10 @@ plt.rc('text', usetex=True)
 
 #%%
 
-def figure_2lines_template():
+def figure_2lines_template( times =True):
     plt.close('all')
 
-    fig, axs = plt.subplots(N, M, dpi=142, figsize=(4.88, 2.7))
+    fig, axs = plt.subplots(N, M, dpi=142, figsize=(4.88, 2.7),)
     for i in range(N):
         for j in range(M):
             axs[i, j].plot([-L, -L], [-10, 2 * H], '-k', linewidth=2)
@@ -90,18 +90,80 @@ def figure_2lines_template():
     [x1, y1, X1, Y1] = axs[1, 1].get_position().bounds
     plt.pause(0.01)
     axs[1,1].set_position([x2+X2-X1,y1,X1,Y1])
-    [x, y, X, Y] = axs[1, 0].get_position().bounds
-    plt.figtext(x+X/2, y+Y+0.045, r'$t=0.2$ s',
-                fontsize=9, horizontalalignment='center')
-    [x, y, X, Y] = axs[1, 1].get_position().bounds
-    plt.figtext(x+X/2, y+Y+0.045, r'$t=0.6$ s',
-                fontsize=9, horizontalalignment='center')
-    [x, y, X, Y] = axs[1, 2].get_position().bounds
-    plt.figtext(x+X/2, y+Y+0.045, r'$t_f$',
-                fontsize=9, horizontalalignment='center')
+    if times==True:
+        [x, y, X, Y] = axs[1, 0].get_position().bounds
+        plt.figtext(x+X/2, y+Y+0.045, r'$t=0.2$ s',
+                    fontsize=9, horizontalalignment='center')
+        [x, y, X, Y] = axs[1, 1].get_position().bounds
+        plt.figtext(x+X/2, y+Y+0.045, r'$t=0.6$ s',
+                    fontsize=9, horizontalalignment='center')
+        [x, y, X, Y] = axs[1, 2].get_position().bounds
+        plt.figtext(x+X/2, y+Y+0.045, r'$t_f$',
+                    fontsize=9, horizontalalignment='center')
     # plt.show()
     
     return fig, axs
+
+def figure_one_line_template( times =True):
+    plt.close('all')
+
+    fig, axs = plt.subplots(N, M, dpi=142, figsize=(4.88, 2.7),)
+    for i in range(N):
+        for j in range(M):
+            axs[i, j].plot([-L, -L], [-10, 2 * H], '-k', linewidth=2)
+            axs[i, j].set_anchor('SW')
+            axs[i, j].set_xlim([X_lim[0], 14.5])
+            axs[i, j].set_ylim(Y_lim)
+            axs[i, j].set_aspect('equal')
+            axs[i, j].set_yticklabels([])
+            axs[i, j].set_xticklabels([])
+
+    for i in range(N): 
+        axs[i,-1].set_xlim([X_lim[0], 69])
+
+
+    for i in range(N):
+        for j in range(M):
+            axs[i, j].plot([-200, 200], [0, 0], 'k', linewidth=0.5)
+            axs[i, j].plot([0, 0], [-200, 200], 'k', linewidth=0.5)
+            axs[i, j].text(-0.5, 0, 'O', fontsize=10, horizontalalignment='right',
+                        verticalalignment='bottom', bbox=dict(boxstyle="round", fc="w", alpha=0.2))
+            draw_sc = 0
+            if i == 0 and j == 0:
+                x_sc, y_sc = -15, 0
+                lx_sc, ly_sc = 5, 5
+                draw_ax_sc(axs[i, j],x_sc, y_sc, lx_sc, ly_sc)
+
+    axs[0,0].remove()
+    axs[0,1].remove()
+    axs[0,2].remove()
+    axs[1,0].set_xlim([X_lim[0], 5])
+    axs[1,1].set_xlim([X_lim[0], 40])
+    e1=0.04 # ecart entre les axes
+    l2 = 0.9 #longeur de lâxe du dessous
+    i1 = (l2-e1)/2 #longueur de la figure du dessus
+    pl = (1-l2)/2 #position left
+
+    # [x2, y2, X2, Y2] = axs[1, 2].get_position().bounds
+    # [x1, y1, X1, Y1] = axs[1, 1].get_position().bounds
+    plt.pause(0.01)
+    # axs[1,1].set_position([x2+X2-X1,y1,X1,Y1])
+    if times==True:
+        [x, y, X, Y] = axs[1, 0].get_position().bounds
+        plt.figtext(x+X/2, y+Y+0.045, r'$t=0.2$ s',
+                    fontsize=9, horizontalalignment='center')
+        [x, y, X, Y] = axs[1, 1].get_position().bounds
+        plt.figtext(x+X/2, y+Y+0.045, r'$t=0.6$ s',
+                    fontsize=9, horizontalalignment='center')
+        [x, y, X, Y] = axs[1, 2].get_position().bounds
+        plt.figtext(x+X/2, y+Y+0.045, r'$t_f$',
+                    fontsize=9, horizontalalignment='center')
+    # plt.show()
+    
+    return fig, axs
+
+
+
 # %%
 
 def draw_gravity_2_lines(axs,slope,fontsize_g):

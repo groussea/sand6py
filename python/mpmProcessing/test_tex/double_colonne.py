@@ -34,7 +34,7 @@ fignames=['G00', 'G05', 'G10', 'G15', 'B00', 'B05', 'B10', 'B15', 'B20']
 
 #%%
 # for Nrun in range(3,4):
-Nrun=6
+Nrun=5
 plt.close('all')
 scale = 0.01  # 1cm
 
@@ -52,15 +52,15 @@ runExp1.scLength(scale)
 mu = runExp1.dictE['mu']
 
 if Nrun < 4:
-    mu=0.75
+    mu,  muR= 0.75, 0.3
 else:
-    mu=0.44
+    mu, muR=0.44,0.23
 muw=0.
 # 0.0],[0.1,0.15]
 i0=0.005
 dmu=-0.05
 
-R1, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=mu, muRigid=0.23, delta_mu=0., runNumber=Nrun, dimSim=3, delta_mu_start=0, keyWord='W_8')
+R1, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=mu, muRigid=muR, delta_mu=0., runNumber=Nrun, dimSim=3, delta_mu_start=0, keyWord='W_8',fps=15)
 
 
 
@@ -116,13 +116,12 @@ H = (runExp1.dictE['H']+0.02 ) / runExp1.scaleLength
 w_fig = (L + runExp1.xmax *
         runExp1.dictE['H'] / runExp1.scaleLength) / 83.4 * 8
 
-w_fig = 15
+w_fig = 14
 N = 3
 M = 2
-fig, axs = plt.subplots(N, M, dpi=142, figsize=(w_fig * 0.39, 13 * 0.39))
+fig, axs = plt.subplots(N, M, dpi=142, figsize=(w_fig * 0.39, 14 * 0.39))
 
 # fig = plt.figure(dpi=142, figsize=(w_fig * 0.39, 11 * 0.39))
-
 Y_lim = [-0.015/runExp1.scaleLength, H]
 X_lim = [-L-0.2, runExp1.xmax * H]
 w_axs = 0.4
@@ -134,7 +133,7 @@ for i in range(N):
         axs[i, j].plot([-L, -L], [-10, 2 * H], '-k', linewidth=2)
         [x, y, X, Y] = axs[i, j].get_position().bounds
         axs[i, j].set_position(
-            [w_s+(w_axs + w_s2) * j, 0.2+(h_axs + 0.03) * (N-i), w_axs, h_axs])
+            [w_s+(w_axs + w_s2) * j, 0.2+(h_axs + 0.1) * (N-i), w_axs, h_axs])
         axs[i, j].set_xlim([X_lim[0], 17.5])
         axs[i, j].set_ylim(Y_lim)
         axs[i, j].set_aspect('equal', adjustable='box')
@@ -212,13 +211,14 @@ ax2.plot([0, 0], [-200, 200], 'k', linewidth=0.5)
 ax2.text(-0.5, 0, 'O', fontsize=8, horizontalalignment='right',
         verticalalignment='bottom', bbox=my_bbox)
 
-x_sc, y_sc = 2, 2
+x_sc, y_sc = 30, 5
 lx_sc, ly_sc = 10, 5
-# draw_ax_sc(axs[0,1], x_sc, y_sc, lx_sc, ly_sc, fmt='.0f', shift_y_txt=.5)
+draw_ax_sc(ax2, x_sc, y_sc, lx_sc, ly_sc, fmt='.0f', shift_y_txt=.5)
 
 #Draw numerical res box
 from matplotlib.patches import Circle, Wedge, Polygon, Arc, Rectangle
-
+x_sc, y_sc = 2, 2
+lx_sc, ly_sc = 10, 5
 dS5=5*np.array(sR.dConfig['box'])/np.array(sR.dConfig['res'])*100
 pos_rect=[x_sc+10,7]
 rect = Rectangle(pos_rect, -dS5[0], -dS5[2], ec="none",color='k', linewidth=0.5,zorder=1)
@@ -363,8 +363,8 @@ for ifile in [3,12]:
             ax, nvec=4000, mute=True, vmin=0, vmax=1, s=0.8, cmap=cmap, rasterized=True, mod=mod)
         # im = sR.plotMu(ax,cmap='viridis',interpolation='gaussian',vmin=0.1, vmax=0.5)
         sR.plotDoor(ax, alpha=0.5)
-        for cont in contrs:
-            [line2D] = ax.plot(smooth(cont[:, 0],5), smooth(cont[:, 1],5), linestyle='-', color='purple', linewidth=1.2, alpha=0.7, label="Exp.")
+        # for cont in contrs:
+        #     [line2D] = ax.plot(smooth(cont[:, 0],5), smooth(cont[:, 1],5), linestyle='-', color='purple', linewidth=1.2, alpha=0.7, label="Exp.")
         
         # estimate the norm of the violation
         sR.cal_violation_phi()
@@ -380,8 +380,8 @@ for ifile in [3,12]:
             for cont in contours:
                 [line2D_vel_mod] = ax.plot(smooth(cont[:, 0],5)*100, smooth(cont[:, 1],5)*100,  linestyle=':', color='k', linewidth=0.9, alpha=1, label="limit-mod")
 
-            for cont in contrs_vel_exp:
-                [line2D_vel]=ax.plot(smooth(cont[:, 0],10)*100, smooth(cont[:, 1],10)*100, linestyle='--', color='purple', linewidth=0.8, alpha=0.7, label="Exp.")
+            # for cont in contrs_vel_exp:
+            #     [line2D_vel]=ax.plot(smooth(cont[:, 0],10)*100, smooth(cont[:, 1],10)*100, linestyle='--', color='purple', linewidth=0.8, alpha=0.7, label="Exp.")
         
         ax.set_yticklabels([])
         ax.set_xticklabels([])
@@ -446,11 +446,7 @@ h1, l1 = h1 + h, l1 + l
 
 
 l_new_1=[r"exp free surf.", r"exp. stat.-flow."]
-
-h_new_1=[line2D,line2D_vel]
-
-l_new_2=[l1[0],r"sim. stat.-flow."]
-
+12
 h_new_2=[h1[0],line2D_vel_mod]
 
         
@@ -476,25 +472,28 @@ cb.set_label('Velocity norm [ m/s ]', fontsize=8)
 
 axs[2, 0].remove()
 axs[2, 1].remove()
-ax2.remove()
+# ax2.remove()
 
 
-fig.set_size_inches(5.5,3.)
-h_axs=0.35
+fig.set_size_inches(5.5,4.)
+h_axs=0.25
 for i in range(2):
     for j in range(2):
         [x, y, X, Y] = axs[i, j].get_position().bounds
         axs[i, j].set_position(
-            [w_s+(w_axs + w_s2) * j+0.05, 0.25+(h_axs - 0.05) * (1-i), w_axs, h_axs])
-
+            [w_s+(w_axs + w_s2) * j+0.05, 0.45+(h_axs - 0.0) * (1-i), w_axs, h_axs])
+        
+[x, y, X, Y] =ax2.get_position().bounds        
+ax2.set_position([w_s+0.05,0.05,X, h_axs])
 [x, y, X, Y] = cbaxes.get_position().bounds
-cbaxes.set_position([x, 0.18, X, 0.03])
+cbaxes.set_position([x, 0.4, X, 0.03])
 
 [x, y, X, Y] = axs[0, 0].get_position().bounds
-plt.figtext(0.015, y+Y/2, '$t=$ 0 s', fontsize=9)
+plt.figtext(0.07, y+Y/2, '$t=$ 0 s', fontsize=9, horizontalalignment='center')
 [x, y, X, Y] = axs[1, 0].get_position().bounds
-plt.figtext(0.015, y + Y / 2, '$t=$ 0.6 s', fontsize=9)
-
+plt.figtext(0.07, y + Y / 2, '$0<t<t_f$ ', fontsize=9, horizontalalignment='center')
+[x, y, X, Y] = ax2.get_position().bounds
+plt.figtext(0.07, y + Y / 2, '$t_f$', fontsize=9, horizontalalignment='center')
 # dictArt[fignames[Nrun]]['modelling']['config']=sR.dConfig
 
 #  write Experiments and Model

@@ -111,6 +111,7 @@ def rund6py(sdictE,**args):
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'delta_mu',[delta_mu])
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'delta_mu_start',[delta_mu_start])
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'I0_start',[I0_start])
+    d6py.modifyConfigFile(newConfigFile,newConfigFile,'useInfNorm',[1])
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'P0',[P0])
     d6py.modifyConfigFile(newConfigFile,newConfigFile,'nSamples',[args.get('nSamples',3)])
     if door=='with':
@@ -200,8 +201,8 @@ for j in [8]:
 #         else:
 #             nsamples, substeps = 6, 80
 #         rund6py(sdictE, delta_mu=0., muRigid = muR, mu=mu, prop=fignames[j]+'', fps=15, nFrames=int(sdictE['nFrames']//10+5), nSamples=nsamples, I0_start=0.005, delta_mu_start=0., rand=1, substeps=substeps, W=w+2*delta_y, wsw=delta_y, I0=0.279,delta_y=delta_y, mudoor= muR)
-
-for j in [5,6]:
+fps=150
+for j in [3]:
     sE=lExp[j] #Selected exeperiment
     sdictE=dictExp[sE]    
     for w in [0.06]:
@@ -218,9 +219,9 @@ for j in [5,6]:
         else:
             nsamples, substeps = 6, 80
             
-        rund6py(sdictE, delta_mu=0., muRigid = muR, mu=0.38, prop=fignames[j]+'mus', fps=15, nFrames=int(sdictE['nFrames']//10+5), nSamples=nsamples, I0_start=0.005, delta_mu_start=0., rand=1, substeps=substeps, W=w+2*delta_y, wsw=delta_y, I0=0.279,delta_y=delta_y, mudoor= muR)
+        rund6py(sdictE, delta_mu=0., muRigid = muR, mu=mu, prop=fignames[j]+'infNorm_fps150', fps=fps, nFrames=int(sdictE['nFrames']//(fps/150)+5*(fps/15)), nSamples=nsamples, I0_start=0.005, delta_mu_start=0.0, rand=1, substeps=int(substeps/(fps/15)), W=w+2*delta_y, wsw=delta_y, I0=0.279,delta_y=delta_y, mudoor= muR)
         
-        rund6py(sdictE, delta_mu=0.26, muRigid = muR, mu=0.38, prop=fignames[j]+'muI', fps=15, nFrames=int(sdictE['nFrames']//10+5), nSamples=nsamples, I0_start=0.005, delta_mu_start=0., rand=1, substeps=substeps, W=w+2*delta_y, wsw=delta_y, I0=0.279,delta_y=delta_y, mudoor= muR)
+        # rund6py(sdictE, delta_mu=0.26, muRigid = muR, mu=0.38, prop=fignames[j]+'muI', fps=15, nFrames=int(sdictE['nFrames']//10+5), nSamples=nsamples, I0_start=0.005, delta_mu_start=0., rand=1, substeps=substeps, W=w+2*delta_y, wsw=delta_y, I0=0.279,delta_y=delta_y, mudoor= muR)
         
 #         rund6py(sdictE, delta_mu=0.0, muRigid = muR, mu=mu, prop=fignames[j]+'hyst_th', fps=15, nFrames=int(sdictE['nFrames']//10+5), nSamples=nsamples, I0_start=0.005, delta_mu_start=0.10, rand=1, substeps=substeps, W=w+2*delta_y, wsw=delta_y, I0=0.279,delta_y=delta_y, mudoor= muR)
 

@@ -37,9 +37,10 @@ for Nrun in range(4,9): # init
     else:
         mu=0.44
         
-    R1, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=mu, delta_mu=0., runNumber=Nrun, dimSim=3, delta_mu_start=0,muRigid=0.23, keyWord='W_8')
+    R1, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=mu, delta_mu=0., runNumber=Nrun, dimSim=3, delta_mu_start=0,muRigid=0.23, keyWord='W_8',fps=15)
 
     selectedRuns.append(R1[0])
+
     
 for sR in selectedRuns:
     sR.scLength(0.01)
@@ -140,9 +141,6 @@ lx_sc, ly_sc = 10, 5
 # draw_ax_sc(ax2, x_sc, y_sc, lx_sc, ly_sc, fmt='.0f', shift_y_txt=.5)
 
 
-
-
-
 #Draw numerical res box
 from matplotlib.patches import Circle, Wedge, Polygon, Arc, Rectangle
 
@@ -201,7 +199,7 @@ for sR, i in zip(selectedRuns[:], range(len(selectedRuns[:]))):
     sR.nYplot=int(sR.resY//2)
     contrs = sR.findContourPhi(level=0.5)
     V = area(contrs[0])
-    Vini[i] = V
+    sR.Vini = V
 
     k = 0
     for ifile in [6, 12, nF]:
@@ -239,7 +237,7 @@ for sR, i in zip(selectedRuns[:], range(len(selectedRuns[:]))):
             
         V = area(sR.findContourPhi(level=0.5)[0])
 
-        lost = (Vini[i]-V)/Vini[i]*100
+        sR.lost = (V-sR.Vini)/sR.Vini*100
 
         mod = 'velocity'
         im = sR.opyfPointCloudColoredScatter(
@@ -254,8 +252,32 @@ for sR, i in zip(selectedRuns[:], range(len(selectedRuns[:]))):
 
         k += 1
         
-    plt.pause(0.1)        
+    plt.pause(0.1)      
 
+R1, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=mu, delta_mu=0., runNumber=Nrun, dimSim=3, delta_mu_start=0,muRigid=0.23, keyWord='W_8')
+
+# phi_th=0.5
+# i=0
+# selectedRuns=R1[0:2]
+# plt.close('all')
+# for sR in selectedRuns[:]:
+#     sR.loadVTK(3)
+#     sR.Vini = area(sR.findContourPhi(level=phi_th)[0])
+#     # plt.plot(sR.findContourPhi(level=phi_th)[0][:,0],sR.findContourPhi(level=phi_th)[0][:,1])
+#     sR.loadVTK(int(sR.dConfig['nFrames']))
+#     V = area(sR.findContourPhi(level=phi_th)[0])
+#     # plt.plot(sR.findContourPhi(level=phi_th)[0][:,0],sR.findContourPhi(level=phi_th)[0][:,1])
+#     sR.lost=(V-sR.Vini)/sR.Vini*100
+#     print('-------------')
+#     print('run:',fignames[i+4])
+#     print('lost:',sR.lost)
+#     sR.cal_violation_phi()
+#     print('viol:',sR.viol)
+#     print('violNorm:',sR.viol_normalized)
+#     max=np.max(sR.reshaped_Phi[np.where(sR.reshaped_Phi>1.)]-1)
+#     plt.plot(sR.reshaped_Phi[np.where(sR.reshaped_Phi>1.)]-1)
+#     print('normInf:',max)
+#     i+=1
 
 # axs[1,-1].legend(h1+ [line2D_vel_mod]  + [line2D] + [line2D_vel] , l1+ [r"3D Sim. static-flowing trans."] +
 #            [r"Exp. free surface"] + [r"Exp. static-flowing trans."] , fontsize=7, framealpha=0.5, loc=1)
@@ -282,9 +304,9 @@ plt.figtext(x+X/2, y+Y+0.015, r'$t_f$',
 
 fig.legend(h1+ [line2D_vel_mod]  + [line2D] + [line2D_vel] , l1+ [r"3D Sim. static-flowing"] + [r"Exp. free surf."] + [r"Exp. static-flowing"], fontsize=9,loc=3, framealpha=0.,edgecolor='w',facecolor='w',ncol=4,bbox_to_anchor=(0.03, 0.002, 0.4, 0.2))
 plt.pause(0.1)
-fig.savefig(driveFolder+"/programs/gitLab/dry-granular/doc/article/figures/B_all_cmp.pdf", dpi=150)
+fig.savefig(driveFolder+"/programs/gitLab/dry-granular/doc/article/figures/figure8.pdf", dpi=150)
 # sys.stdout = sys.__stdout__
-print(r'\includegraphics{test_savefig_pdf.pdf}')
+# print(r'\includegraphics{test_savefig_pdf.pdf}')
 
 
 # %%

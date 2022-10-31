@@ -52,11 +52,12 @@ def rund6py(sdictE, **args):
     H0 = args.get('H0', 0.12)
     Hmod = H0/fracH  # AR1_ experimental
     # Hmod=0.12/fracH #AR1_ experimental
-    L0 = args.get('L0', 0)
+    L0 = args.get('L0', 0.12)
     L = L0+0.01   # to add a wall on the left
     
-    Lmod = np.round(6.5*((H0/L0)*L0)+L,2) +0.1
-    nFrames = 32
+    Lmod = np.round(2.5*((H0/L0)*L0)+L,2)+ 0.5*sdictE['Slope']/15 +0.1
+    tf=1.3 + sdictE['Slope']/15*0.7
+    nFrames =int(tf*args.get('fps', 15))
 
     delta_mu = args.get('delta_mu', 0)
     I0 = args.get('I0', 0.279)
@@ -137,7 +138,7 @@ def rund6py(sdictE, **args):
 
     d6py.modifyConfigFile(newConfigFile, newConfigFile, 'boundary',
                           'top:slip left:slip right:stick front:slip back:slip bottom:stick')
-    delta_x = args.get('delta_x', 0.01)
+    delta_x = args.get('delta_x', 0.005)
     delta_y = args.get('delta_y', 0.005)
     delta_z = args.get('delta_z', 0.005)
     d6py.modifyConfigFile(newConfigFile, newConfigFile, 'res', [
@@ -214,14 +215,15 @@ fignames = ['G00', 'G05', 'G10', 'G15', 'B00', 'B05', 'B10', 'B15', 'B20']
 
 
 H00=0.12
-for j in [4,7]:
+for j in [4]:
     sE = lExp[j]  # Selected exeperiment
     sdictE = dictExp[sE]
     for R in [1]:
         H0=R*H00
-        HosW=np.linspace(5,15,10)
+        HosW=np.linspace(1,15,20)
         Ws=H0/HosW
-        for w in Ws:
+        # for w in Ws:
+        for w in [0.01,0.04]:
             delta_y = w/4
             # if w >= 0.1:
             #     delta_y = 0.02
@@ -237,7 +239,7 @@ for j in [4,7]:
             else:
                 nsamples, substeps = 6, 100
             for muR in [0.23]:     
-                rund6py(sdictE, delta_mu=0.26, muRigid=muR, mu=0.38, prop=fignames[j]+'_fric_res4', fps=15, nFrames=25, nSamples=nsamples, I0_start=0.005, delta_mu_start=0.0, visc=0.0, rand=0, substeps=substeps, W=w+2*delta_y, wsw=delta_y, I0=0.279, delta_y=delta_y, delta_x=0.01, mudoor=muR, H0=R*H00, L0=H00)
+                rund6py(sdictE, delta_mu=0.0, muRigid=muR, mu=0.44, prop=fignames[j]+'_fric_highresx_exp', fps=15, nFrames=25, nSamples=nsamples, I0_start=0.005, delta_mu_start=0.0, visc=0.0, rand=0, substeps=substeps, W=w+2*delta_y, wsw=delta_y, I0=0.279, delta_y=delta_y, delta_x=0.005, mudoor=muR, H0=R*H00, L0=H00)
 
 
 # %%

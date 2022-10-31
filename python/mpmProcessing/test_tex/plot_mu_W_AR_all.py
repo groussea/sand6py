@@ -66,8 +66,25 @@ R_2d, selectedDict = d6py.whereSand6OutFromParms(listNumRun,  runNumber=Nrun, di
 
 # R_2d, selectedDict = d6py.whereSand6OutFromParms(listNumRun,  runNumber=Nrun, dimSim=2, delta_mu=0.0,delta_mu_start=0,keyWord='aspect_ratio_1')
 
-R_3di, selectedDict = d6py.whereSand6OutFromParms(listNumRun,  runNumber=Nrun, dimSim=3, delta_mu=0.0, muRigid=0.23, delta_mu_start=0,keyWord='R_'+str(AR)+'.0_'+fignames[Nrun]+'_no_bed_0.12_HR')
-# R_3di, selectedDict = d6py.whereSand6OutFromParms(listNumRun,  runNumber=Nrun, dimSim=3,  muRigid=0.23, delta_mu_start=0,keyWord='R_'+str(AR)+'.0_'+fignames[Nrun]+'_fric_res4')
+R_3di, selectedDict = d6py.whereSand6OutFromParms(listNumRun,  runNumber=Nrun, dimSim=3,  muRigid=0.23, delta_mu_start=0,keyWord='R_'+str(AR)+'.0_'+fignames[Nrun]+'_no_bed_0.12_HR')
+
+######
+R_3dib, selectedDict = d6py.whereSand6OutFromParms(listNumRun,  runNumber=Nrun, dimSim=3, delta_mu=0.0, muRigid=0.23, delta_mu_start=0,keyWord='R_'+str(AR)+'.0_'+fignames[Nrun]+'_fric_highresx')
+
+
+if Nrun ==4:
+    R_exp4, selectedDict = d6py.whereSand6OutFromParms(listNumRun,  runNumber=Nrun, dimSim=3, delta_mu=0.0,delta_mu_start=0,muRigid=0.23, keyWord='W_6.0_R_1.0')
+
+    for r in  R_exp4[0:1]:
+        r.t='exp_4cm'
+
+    R_exp1, selectedDict = d6py.whereSand6OutFromParms(listNumRun,  runNumber=Nrun, dimSim=3, delta_mu=0.0,delta_mu_start=0,muRigid=0.23, keyWord='W_1.5_R_1.0')
+    for r in R_exp1[1:2]:
+        r.t='exp_1cm'
+
+    R_3di = R_3di + R_3dib + R_exp1[1:2] + R_exp4[0:1]
+######
+
 
 indx=np.argsort([sR.dConfig['box'][1] for sR in  R_3di])
 
@@ -104,7 +121,7 @@ for sR in R_3dp:
     print(lost)
     nF = int(sR.dConfig['nFrames'])
     sR.loadVTK(nF)
-    if np.absolute(lost)<1:
+    if np.absolute(lost)<2:
         selectGood.append(sR)
         indxgd.append(i)
     else:
@@ -126,7 +143,7 @@ for sR in R_3d:
     print('w:',sR.dConfig['box'][1]-2*sR.dConfig['wsw'])
     nF = int(sR.dConfig['nFrames'])
 
-    sR.nYplot=3
+    sR.nYplot=4
     # sR.loadVTK(10)
     Vi = area(sR.findContourPhi(level=0.5)[0])
     sR.loadVTK(nF)
@@ -143,7 +160,7 @@ for sR in R_3d:
     max1mphi=np.max(sR.reshaped_Phi[np.where(sR.reshaped_Phi>1.)])-1
     print('max phi:',np.max(sR.reshaped_Phi[np.where(sR.reshaped_Phi>1.)])-1)
     print('')
-    if max1mphi < 0.5:
+    if max1mphi < 1:
         selectGood.append(sR)
     
 R_3d=selectGood
@@ -227,11 +244,12 @@ plt.close('all')
 fig, ax = plt.subplots(1,1,figsize=(4,3))
 H0=AR*0.12
 
-
 mu_eqs=[]
 hmaxs=[]
 Ws=[]
+type=[]
 i=1
+
 for sR in R_3d:
     print('boxY: ',sR.dConfig['box'][1]*100)
     H0=sR.dConfig['box'][2]*0.8
@@ -240,10 +258,10 @@ for sR in R_3d:
     for k in range(2,10):
         hmax.append(sR.grid_z[0,0,np.where(sR.reshaped_Phi[k,2,:]>0.5)[0][-1]])
     # sR.hmax=np.mean(hmax)
-    # sR.hmax=np.max(np.max(sR.pointsp[:,2]))
-    sorted_index_array = np.argsort(sR.pointsp[:,2])
-    sR.hmax=np.mean(sR.pointsp[sorted_index_array[-20*int(sR.dConfig['res'][1]*sR.dConfig['nSamples']):],2])
-    # sR.xf=np.max(np.max(sR.pointsp[:,0]))
+    sR.hmax=np.max(np.max(sR.pointsp[:,2]))
+    # sorted_index_array = np.argsort(sR.pointsp[:,2])
+    # sR.hmax=np.mean(sR.pointsp[sorted_index_array[-20*int(sR.dConfig['res'][1]*sR.dConfig['nSamples']**2*2):],2])
+    sR.xf=np.max(np.max(sR.pointsp[:,0]))
     # print(sR.xf)
     print(sR.hmax)
     mu_eq=xopt.x[0]+xopt.x[1]*sR.hmax**xopt.x[2]
@@ -263,7 +281,8 @@ for sR in R_3d:
         hmaxs.append(sR.hmax)
         Ws.append(sR.w*100)
         mu_eqs.append(mu_eq)
-    # print(lost)
+        type.append(sR.t)
+    print(lost)
     i+=1
 
 Ws=np.array(Ws)
@@ -292,7 +311,7 @@ import csv
 slope= np.absolute(sR.slope)
 filename = "/media/gauthier/DataSSD/programs/gitLab/dry-granular/data/walls/AR"+str(AR)+"_"+format(slope,'1.0f')+"deg/AR"+str(AR)+"_"+format(slope,'1.0f')+"deg_3D.csv"
 
-variables = [['Ws',Ws],['H0',np.ones(len(mu_eqs))*H0],['slope',np.ones(len(mu_eqs))*slope],['Hf',hmaxs],['mu_2D_eq',mu_eqs]]
+variables = [['Ws',Ws],['H0',np.ones(len(mu_eqs))*H0],['slope',np.ones(len(mu_eqs))*slope],['Hf',hmaxs],['mu_2D_eq',mu_eqs],['type',type]]
 opyf.write_csvScalar(filename, variables)
 
 

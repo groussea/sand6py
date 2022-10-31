@@ -5,7 +5,7 @@ from default_2_lines_plot import *
 
 #%%
 
-Nrun=6
+Nrun=8
 scale = 0.01  # 1cm
 mainExpFolder = driveFolder + \
     '/TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/granular_collapases_imaging_velocity_fields_and_free_surface_elevation/'
@@ -58,7 +58,7 @@ runExp1.video.scaleData(
 #%%
 plt.close('all')
 
-fig, axs = figure_2lines_template()
+fig, axs = figure_2lines_template(times=False)
 draw_gravity_2_lines(axs, runExp1.dictE['Slope'],fontsize_g)
 
 k = 0
@@ -172,10 +172,28 @@ for ifile in [6, 12, nF]:
     sR.plotDoor(ax, alpha=0.5)
     k += 1
     
-fig.legend(h1 +[line2D] +[line2D_vel]  ,  l1 +[r"Exp. free surf."] +[r"Exp. stat.-flow."] , fontsize=leg_fontsize,loc=3, framealpha=0.,edgecolor='w',facecolor='w',ncol=3,bbox_to_anchor=(0.04, 0.01, 0.4, 0.2))
+# fig.legend(h1 +[line2D] +[line2D_vel]  ,  l1 +[r"Exp. free surf."] +[r"Exp. stat.-flow."] , fontsize=leg_fontsize,loc=3, framealpha=0.,edgecolor='w',facecolor='w',ncol=3,bbox_to_anchor=(0.04, 0.01, 0.4, 0.2))
 
+    
+fig.legend(h1 +[line2D] +[line2D_vel]  ,  l1 +[r"Exp. free surf."] +[r"Exp. stat.-flow."] , fontsize=leg_fontsize,loc=3, framealpha=0.,edgecolor='w',facecolor='w',ncol=3,bbox_to_anchor=(0.15, 0.01, 0.4, 0.2))
 
+fig.set_size_inches([6,1.1])
 
-fig.savefig(driveFolder+"/programs/gitLab/dry-granular/doc/article/figures/"+fignames[Nrun]+"_muI.pdf", dpi=150)
+axs[1,0].set_position([0.04,0.34,0.13,0.6])
+axs[1,1].set_position([0.2,0.34,0.3,0.6])
+axs[1,2].set_position([0.54,0.34,0.45,0.6])
+
+[x, y, X, Y] = axs[1, 0].get_position().bounds
+plt.figtext(x+X/2, y+Y+0.045, r'$t=0.2$ s',
+            fontsize=9, horizontalalignment='center')
+[x, y, X, Y] = axs[1, 1].get_position().bounds
+plt.figtext(x+X/2, y+Y+0.045, r'$t=0.6$ s',
+            fontsize=9, horizontalalignment='center')
+[x, y, X, Y] = axs[1, 2].get_position().bounds
+plt.figtext(x+X/2, y+Y+0.045, r'$t_f$',
+            fontsize=9, horizontalalignment='center')
+
+# fig.savefig(driveFolder+"/programs/gitLab/dry-granular/doc/article/figures/"+fignames[Nrun]+"_muI.pdf", dpi=150)
+fig.savefig(driveFolder+"/programs/gitLab/dry-granular/doc/article/figures/"+fignames[Nrun]+"_muI_line.pdf", dpi=150)
 plt.show()
 # %%

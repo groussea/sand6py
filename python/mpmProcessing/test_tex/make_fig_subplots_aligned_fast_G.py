@@ -44,7 +44,7 @@ for Nrun in range(4): # init
         
     # R1, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=mu, delta_mu=0., runNumber=Nrun, dimSim=3, delta_mu_start=0, keyWord='try2')
 
-    R1, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=0.65, delta_mu=0., runNumber=Nrun, dimSim=3, delta_mu_start=0, muRigid=0.3)
+    R1, selectedDict = d6py.whereSand6OutFromParms(listNumRun, mu=0.75, delta_mu=0., runNumber=Nrun, dimSim=3, delta_mu_start=0, muRigid=0.3)
 
     selectedRuns.append(R1[0])
     
@@ -289,7 +289,7 @@ plt.figtext(x+X/2, y+Y+0.025, r'$t_f$',
 
 fig.legend(h1+ [line2D_vel_mod]  + [line2D] + [line2D_vel] , l1+ [r"3D Sim. static-flowing"] + [r"Exp. free surf."] + [r"Exp. static-flowing"], fontsize=9,loc=3, framealpha=0.,edgecolor='w',facecolor='w',ncol=4,bbox_to_anchor=(0.03, -0.005, 0.4, 0.2))
 plt.pause(0.1)
-fig.savefig(driveFolder+"/programs/gitLab/dry-granular/doc/article/figures/G_all_cmp_0.65.pdf", dpi=150)
+fig.savefig(driveFolder+"/programs/gitLab/dry-granular/doc/article/figures/figure10.pdf", dpi=150)
 # sys.stdout = sys.__stdout__
 print(r'\includegraphics{test_savefig_pdf.pdf}')
 

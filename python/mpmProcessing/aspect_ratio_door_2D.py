@@ -108,7 +108,7 @@ def rund6py(sdictE,**args):
         d6py.modifyConfigFile(newConfigFile,newConfigFile,'scenario','collapselhedoor taudoor:0.0001 veldoor:100 ts:'+format(ts,'1.2f')+' frac_h:'+format(fracH,'1.1f')+' column_length:'+str(L)+' hbed:'+str(0.0) )
 
 
-    delta_x = args.get('delta_x', 0.01)
+    delta_x = args.get('delta_x', 0.005)
     delta_z = args.get('delta_z', 0.005)
     d6py.modifyConfigFile(newConfigFile, newConfigFile, 'res', [
                           int(Lmod/delta_x), int(Hmod/delta_z)])
@@ -158,7 +158,7 @@ for j in [4,7]:
         # rund6py(sdictE,delta_mu=0.,rand=0,mu=m,substeps=120,prop='aspect_ratio_1',muRigid=0.,nSamples=15,door='with')
         L0=0.12
         for R in [1]:
-            rund6py(sdictE, delta_mu=0., mu=m, prop='hbed_0_good_res', fps=15, nFrames=25, nSamples=15, I0_start=0.005, delta_mu_start=0.0, visc=0.0, rand=0, substeps=120, I0=0.279, delta_x=0.01, H0=R*L0, L0=L0)
+            rund6py(sdictE, delta_mu=0., mu=m, prop='hbed_0_high_res_x', fps=15, nFrames=25, nSamples=15, I0_start=0.005, delta_mu_start=0.0, visc=0.0, rand=0, substeps=120, I0=0.279, delta_x=0.005, H0=R*L0, L0=L0)
         # rund6py(sdictE,delta_mu=0.,rand=0,mu=0.65,substeps=s,prop=p,muRigid=0.,nSamples=15,door='with')
 
 

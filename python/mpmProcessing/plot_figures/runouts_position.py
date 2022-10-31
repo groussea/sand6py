@@ -35,13 +35,13 @@ mainExpFolder = driveFolder + \
         '/TAF/TAF_inria/MPM-data/Collapse_Experiment/Sand6Out/granular_collapases_imaging_velocity_fields_and_free_surface_elevation/'
 cmap=plt.get_cmap('inferno')
 ic=0
-npl=1
+npl=4
 hth,vth=0.007, 0.001 # Threshold on runout height in (m) and on final time en m/s
 tfsM,tfsE=[],[]
 outf='/media/gauthier/DataSSD/programs/gitLab/dry-granular/data/transient_runouts_B_runs/'
 for Nrun in range(4,4+npl):
     run=fignames[Nrun]
-    R1, selectedDict = d6py.whereSand6OutFromParms(listNumRun, delta_mu=0, runNumber=Nrun, dimSim=3, delta_mu_start=0.0, muRigid=0.23, mu=0.44,keyWord='W_8')
+    R1, selectedDict = d6py.whereSand6OutFromParms(listNumRun, delta_mu=0, runNumber=Nrun, dimSim=3, delta_mu_start=0.0, muRigid=0.23, mu=0.44,keyWord='W_8',fps=15)
     xfMss, VxfMss, tfs, maxVss, times, dt= loadRunOutMod(R1[0],hth=hth,vth=vth)
     tfsM.append(tfs[0])
     VxfMssP=np.insert(VxfMss[0][:-1:],0,0)
@@ -79,8 +79,8 @@ ax2.legend(fontsize=leg_fontsize,loc=5, framealpha=1,edgecolor='w',facecolor='w'
 ax.set_ylabel('d$L_t$/d$t$ [m/s]')
 ax2.set_ylabel('$L_t-L_0$ [m]')
 
-fig.text(0.03,0.94,'(a)',fontsize=9)
-fig2.text(0.03,0.94,'(b)',fontsize=9)
+fig.text(0.03,0.94,'(b)',fontsize=9)
+fig2.text(0.03,0.94,'(a)',fontsize=9)
 
 ax.set_xlim([0, 1.2])
 fig.show()
@@ -121,7 +121,7 @@ for Nrun in range(0,9):
         muR, mu = 0.3, 0.75
     else:
         muR, mu = 0.23, 0.44
-    R1, selectedDict = d6py.whereSand6OutFromParms(listNumRun, delta_mu=0, runNumber=Nrun, dimSim=3, delta_mu_start=0.0, muRigid=muR, mu=mu,keyWord='W_8')
+    R1, selectedDict = d6py.whereSand6OutFromParms(listNumRun, delta_mu=0, runNumber=Nrun, dimSim=3, delta_mu_start=0.0, muRigid=muR, mu=mu,keyWord='W_8',fps=15)
     xfMss, VxfMss, tfs, maxVss, times, dt= loadRunOutMod(R1[0],hth=hth,vth=vth)
     sR=R1[0]
     nF = int(sR.dConfig['nFrames'])

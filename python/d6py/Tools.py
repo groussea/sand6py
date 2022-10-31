@@ -49,8 +49,8 @@ maind6OutFolder = '/media/gauthier/DataSSD/sand6_out/'
 # maind6OutFolder = '/media/gauthier/SSD500/'
 # maind6OutFolder = '/home/gauthier/sorties_sand6/'
 
-
-
+plt.rc('text.latex', preamble=r'\usepackage{amsmath} ')
+plt.rc_context({"text.latex.preview": True})
 
 plt.rcParams['font.family'] = 'serif'
 plt.rc('text', usetex=True)
@@ -576,6 +576,7 @@ def whereSand6OutFromFolder2(listRuns,folder):
 
 class NumericalRun():
     def __init__(self,d6OutFolder,doorFolder=None):
+        self.t='num'
         self.dConfig=readConfigFile(d6OutFolder+'/config')     
         dimSim=len(self.dConfig['res'])
         self.dConfig['dimSim'] = len(self.dConfig['res'])
@@ -627,6 +628,8 @@ class NumericalRun():
         self.pressureCalculated=False
         self.velocityCalculated=False
         self.pointsLayer=[]
+        self.nF = int(self.dConfig['nFrames'])
+        self.fps = int(self.dConfig['fps'])
         
     def loadVTK(self, ifile):
         self.ifile=ifile
@@ -750,7 +753,7 @@ class NumericalRun():
                     self.J[i,j,k]=np.array([[vxdx[i,j,k], vxdy[i,j,k], vxdz[i,j,k]],[vydx[i,j,k], vydy[i,j,k], vydz[i,j,k]],[vzdx[i,j,k], vzdy[i,j,k], vzdz[i,j,k]]])
                     self.sym[i,j,k]=0.5*(self.J[i,j,k]+self.J[i,j,k].T)
                     self.gammaN[i,j,k]=np.linalg.norm(self.sym[i,j,k]-1/3*(self.sym[i,j,k][0,0]+self.sym[i,j,k][1,1]+self.sym[i,j,k][2,2]))
-                    self.normV=np.linalg.norm([self.velx,self.vely])
+                    # self.normV=np.linalg.norm([self.velx,self.vely])
         self.strainRateCalculated=True
         
     def calculateNormVelocity(self):
@@ -800,8 +803,8 @@ class NumericalRun():
                 return ax.imshow(self.P,extent=self.extentR,**args)
             if self.dimSim==3:
                 return ax.imshow(self.P[:,self.nYplot,:],extent=self.extentR,**args)
-            
-    def plotI(self,ax,**args):
+    
+    def calc_I(self):
         if self.pressureCalculated==False:
             if self.np_stresses_reshaped is not None:
                 self.calculatePressure() 
@@ -811,22 +814,29 @@ class NumericalRun():
             self.calculateStrainRate()
             
         if hasattr(self, 'P') and hasattr(self, 'gammaN'):
-            phi_mat = 0.6
+            self.phi_mat = 0.6
             # TODO with any phi_mat ! introduced to fit with the definition of I
             if self.dimSim==2:
                 self.IMgamma = np.flipud(self.gammaN[:,:].T)
-                return ax.imshow(self.IMgamma*self.dConfig['grainDiameter']/(self.P/self.dConfig['volMass']/phi_mat)**0.5,extent=self.extentR,**args)
+                self.IField=self.IMgamma*self.dConfig['grainDiameter']/(self.P/self.dConfig['volMass']/self.phi_mat)**0.5
             if self.dimSim==3:
                 self.IMgamma = np.flipud(self.gammaN[:, self.nYplot,:].T)
                 self.IMgamma[np.where(self.IMgamma==np.nan)]=0
-                self.IField=self.IMgamma*self.dConfig['grainDiameter']/(self.P[:,self.nYplot,:]/self.dConfig['volMass']/phi_mat)**0.5
+                self.IField=self.IMgamma*self.dConfig['grainDiameter']/(self.P[:,self.nYplot,:]/self.dConfig['volMass']/self.phi_mat)**0.5
                 self.IField[np.where(np.isnan(self.IField))] = 0
                 self.IField[np.where(self.IField == np.inf)] = 0
                 self.IField[np.where(self.phiT[:,self.nYplot,:]<0.5)]=0
-                return ax.imshow(self.IField,extent=self.extentR,**args)
-            
-    def plotContourI(self,ax,**args):
+        self.ICalculated = True
         
+            
+    def plotI(self,ax,**args):
+        if hasattr(self, 'IField'):
+            if self.dimSim==2:
+                return ax.imshow(self.IField, extent=self.extentR, **args)
+            if self.dimSim==3:
+                return ax.imshow( self.IField, extent=self.extentR, **args)   
+                
+    def plotContourI(self,ax,**args):
         if self.pressureCalculated==False:
             if self.np_stresses_reshaped is not None:
                 self.calculatePressure() 
@@ -880,9 +890,9 @@ class NumericalRun():
 
 
 
-    def opyfPointCloudColoredScatter(self,ax,mod='velocity',nvec=3000,mute=False,**args):
+    def opyfPointCloudColoredScatter(self,ax,mod='velocity',nvec=3000,mute=False,ind=[],calPointsLayer=True,**args):
         if self.dimSim==3:      
-            if len(self.pointsLayer)==0:
+            if len(self.pointsLayer)==0 and calPointsLayer:
                 self.calculatePointsLayer() 
             from matplotlib.colors import Normalize
             selectedVel = self.vel[self.selectedInd, :]
@@ -894,8 +904,8 @@ class NumericalRun():
                 if mute is not True:
                     print('only '+str(N)+'vectors plotted because length(X) >' + str(nvec))
 
-
-            ind = np.random.choice(np.arange(len(self.pointsLayer)), N, replace=False)
+            if len(ind) <1:
+                ind = np.random.choice(np.arange(len(self.pointsLayer)), N, replace=False)
             Xc = self.pointsLayer[ind, :]
             Vc = selectedVel[ind,:]
             Ic=selectedI[ind]
@@ -938,8 +948,8 @@ class NumericalRun():
             return findContours(self.grid_x[:,0, 0], self.grid_z[0,0,:], self.reshaped_Phi[:,nY,:], level)
 
     def cal_violation_phi(self, ):
-        vals_phi=self.reshaped_Phi[np.where(self.reshaped_Phi>1.)]
-        self.viol=np.linalg.norm(vals_phi-1, 2)
+        self.vals_phi=self.reshaped_Phi[np.where(self.reshaped_Phi>1.)]
+        self.viol=np.linalg.norm(self.vals_phi-1, 2)
         self.viol_normalized=self.viol/self.reshaped_Phi.size
         
     

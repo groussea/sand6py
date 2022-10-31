@@ -59,8 +59,30 @@ runExp1.video.scaleData(
 #%%
 plt.close('all')
 
-fig, axs = figure_2lines_template()
+fig, axs = figure_2lines_template(times=False)
 draw_gravity_2_lines(axs, runExp1.dictE['Slope'],fontsize_g)
+sh_y=0.05
+
+[x1, y1, X1, Y1] = axs[1, 0].get_position().bounds
+axs[1, 0].set_position([x1, y1+sh_y, X1, Y1] )
+[x1, y1, X1, Y1] = axs[1, 1].get_position().bounds
+axs[1, 1].set_position([x1, y1+sh_y, X1, Y1] )
+[x2, y2, X2, Y2] = axs[1, 2].get_position().bounds
+axs[1, 2].set_position([x2, y2+sh_y+0.02, X2, Y2] )
+[x1, y1, X1, Y1] = axs[1, 1].get_position().bounds
+
+fig.set_size_inches(4.88, 3.0)
+
+axs[1,1].set_position([x2+X2-X1,y1,X1,Y1])
+
+[x, y, X, Y] = axs[1, 0].get_position().bounds
+plt.figtext(x+X/2, y+Y+0.045, r'$t=0.2$ s', fontsize=9, horizontalalignment='center')
+[x, y, X, Y] = axs[1, 1].get_position().bounds
+plt.figtext(x+X/2, y+Y+0.045, r'$t=0.6$ s', fontsize=9, horizontalalignment='center')
+[x, y, X, Y] = axs[1, 2].get_position().bounds
+plt.figtext(x+X/2, y+Y+0.045, r'$t_f$', fontsize=9, horizontalalignment='center')
+
+#%
 
 k = 0
 NsR = len(selectedRuns)
@@ -155,26 +177,38 @@ for ifile in [6, 12, nF]:
         if ifile<nF:
             h = sR.CS.legend_elements(str(sR.dimSim)+"D~-~ \mu= " + toS(sR.dConfig['mu'], 2))[0]
  
-            l = [r"Sim. free surf. $\Delta_{\mu,hyst}$=" + format(sR.dConfig['delta_mu_start'],'0.0f')]
+            l = [r"sim. free surf. "]
 
             h1, l1 = h1+h, l1+l
-            if i==1:
-                l = [r"Sim. stat.-flow. $\Delta_{\mu,hyst}$=" + format(sR.dConfig['delta_mu_start'],'0.1f') + r" | $I_*=5 \times 10^{-3}$"]
+            if i==1 or i==0:
+                l = [r"sim. stat.-flow. $\Delta_{\mu_{hyst}}=" + format(sR.dConfig['delta_mu_start'],'0.1f') + r"$ | $I_*=5 \times 10^{-3}$"]
             elif i==2:
-                l = [r"Sim. stat.-flow. $\Delta_{\mu,hyst}$=" + format(sR.dConfig['delta_mu_start'],'0.1f') + r" | $I_*=5 \times 10^{-3}$"]
+                l = [r"sim. stat.-flow. $\Delta_{\mu_{hyst}}=" + format(sR.dConfig['delta_mu_start'],'0.1f') + r"$ | $I_*=5 \times 10^{-3}$"]
             h1, l1 = h1+ linesC, l1+l  
             
     sR.plotDoor(ax, alpha=0.5)
     k += 1
-    
-l_new=[l1[0],l1[2],l1[4],r"Exp. free surf.",l1[1],l1[3],l1[5], r"Exp. stat.-flow."]
+l_new=[l1[0],l1[2],l1[4],r"exp. free surf.",l1[1],l1[3],l1[5], r"exp. stat.-flow."]
 h_new=[h1[0],h1[2],h1[4],line2D,h1[1],h1[3],h1[5],line2D_vel]
 
+l_new=[l1[0],l1[1],l1[2],l1[3],l1[4],l1[5],r"exp. free surf.", r"exp. stat.-flow."]
+
+h_new=[h1[0],h1[1],h1[2],h1[3],h1[4],h1[5],line2D,line2D_vel]
+
+
+
 poss=axs[1,2].get_position().bounds
-axs[1,2].set_position([poss[0],0.3,poss[2],0.4])
+# axs[1,2].set_position([poss[0],0.3,poss[2],0.4])
 
-fig.legend(h_new  , l_new , fontsize=leg_fontsize,loc=3, framealpha=0.,edgecolor='w',facecolor='w',ncol=2,bbox_to_anchor=(0.02, 0.005, 0.4, 0.2))
-
+dy=0.05
+ly=0.15
+legend=fig.legend(h_new[0:2]  , l_new[0:2] , fontsize=leg_fontsize,loc=3, framealpha=0.,edgecolor='w',facecolor='w',ncol=2,bbox_to_anchor=(0.12,ly, 0.5, 0.3))
+legend=fig.legend(h_new[2:4]  , l_new[2:4] , fontsize=leg_fontsize,loc=3, framealpha=0.,edgecolor='w',facecolor='w',ncol=2,bbox_to_anchor=(0.12, ly-dy, 0.5, 0.3))
+legend=fig.legend(h_new[4:6]  , l_new[4:6] , fontsize=leg_fontsize,loc=3, framealpha=0.,edgecolor='w',facecolor='w',ncol=2,bbox_to_anchor=(0.12, ly-2*dy, 0.5, 0.3))
+legend=fig.legend(h_new[6:8]  , l_new[6:8] , fontsize=leg_fontsize,loc=3, framealpha=0.,edgecolor='w',facecolor='w',ncol=2,bbox_to_anchor=(0.12, ly-2.6*dy, 0.5, 0.3))
+# legend.legendHandles[1].set_position((0, -10))
+# legend.texts[1].set_position((0, -10))
+# legend.texts[1].set_position((0, -10))
 fig.savefig(driveFolder+"/programs/gitLab/dry-granular/doc/article/figures/"+fignames[Nrun]+"_mu_hyst_mu44.pdf", dpi=1200)
 
 # %%
