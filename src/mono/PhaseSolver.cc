@@ -162,7 +162,7 @@ void PhaseSolver::addRigidBodyContrib( const Config &c, const Scalar dt, const P
 	inv_inertia.finalize();
 
 	pbData.inv_inertia_matrices.emplace_back( inv_inertia * dt ) ;
-	pbData.jacobians.emplace_back( J * rb.projection.transpose() );
+	pbData.jacobians.emplace_back( J * rb.projection.transpose());
 }
 
 void PhaseSolver::getCohesiveStress(
@@ -214,72 +214,24 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 
 	pbData.mu.resize( pbData.n() ) ;
 
-	// Inertia, mu(I) = \delta_mu * (1./ (1 + I0/I) ), I = dp * sqrt( rho_p ) * inertia, inertia = |D(U)|/sqrt(p)
-	// mu_s+delta_mu_start/(1+I00/I)+\delta_mu*I/I0
+
 
 	const Scalar I0_start_bar = c.I0_start / ( c.grainDiameter * std::sqrt( c.volMass/0.6 )) ;
 	const Scalar I0bar = c.I0 / ( c.grainDiameter * std::sqrt( c.volMass/0.6 )) ;
 	const Scalar I0_noise_bar= 0.001 / ( c.grainDiameter * std::sqrt( c.volMass/0.6 )) ;
-	const Scalar P0PowQuarter = std::pow(c.P0, 0.25) ;
 
-	// pbData.mu.segment(0,stepData.nDualNodes()).array() = c.mu -
-	//         c.delta_mu_start / ( 1. + I0_start_bar / stepData.inertia.max(1.e-12) ) + c.delta_mu / ( 1. + I0bar / stepData.inertia.max(1.e-12) );
-
-	// pbData.mu.segment(0,stepData.nDualNodes()).array() = c.mu -
-	//         c.delta_mu_start / ( 1. + ((I0_start_bar / stepData.inertia.max(1.e-12))*stepData.pressurePowQuarter.max(1.e-12)/P0PowQuarter)) + c.delta_mu / ( 1. + I0bar / stepData.inertia.max(1.e-12) );
-
-
-	// pbData.mu.segment(0,stepData.nDualNodes()).array() = c.mu -
-	//         c.delta_mu_start / ( 1. + ((I0_start_bar / stepData.inertia.max(1.e-12)))) + c.delta_mu / ( 1. + I0bar / stepData.inertia.max(1.e-12) );
-
-// with a ramp
-
-	// DynVec DuTU = stepData.DuT * c.units().toSI(Units::Velocity) / c.units().toSI(Units::Length);
-	// DynVec inertiaLocal = stepData.DuT/stepData.int_pressure.pow(0.5);
-	// for (unsigned k = 0; k < stepData.inertia.size(); ++k)
-	// {
-	// 	if (stepData.inertia[k]/(I0_noise_bar) < 1.0)
-	// 	{
-	// 			pbData.mu[k] = c.mu ;		
-	// 		// pbData.mu[k]= c.mu + stepData.inertia[k]/I0_start_bar*(- c.delta_mu_start + c.delta_mu / ( 1. + I0bar / I0_start_bar));
-	// 	}
-	// 				else if ((stepData.inertia[k]/(I0_start_bar) < 1.0) && (stepData.inertia[k]/(I0_noise_bar) > 1.0) )
-	// 		{
-	// 			pbData.mu[k] = c.mu - (stepData.inertia[k]/I0_start_bar)*c.delta_mu_start ;
-	// 		}
-			
-	// 	else
-	// 	{
-	// 		pbData.mu[k] = c.mu - c.delta_mu_start + c.delta_mu / (1. + I0bar / std::max(stepData.inertia[k], 1.e-12));
-	// 	};
-
-	// for (unsigned k = 0; k < stepData.inertia.size(); ++k)
-	// {
-	// 	if ((stepData.inertia[k]/(I0_start_bar) < 1.0) )
-	// 		{
-	// 			pbData.mu[k] = c.mu - (stepData.inertia[k]/I0_start_bar)*c.delta_mu_start ;
-	// 		}
-	// else
-	// 	{
-	// 		pbData.mu[k] = c.mu - c.delta_mu_start + c.delta_mu / (1. + I0bar / std::max(stepData.inertia[k], 1.e-12));
-	// 	};	}
 	
 	for (unsigned k = 0; k < stepData.inertia.size(); ++k)
 	{
 		if ((stepData.inertia[k]/(I0_start_bar) < 1.0) )
 			{
-				// pbData.mu[k] = c.mu - (stepData.inertia[k]/I0_start_bar)*c.delta_mu_start  ;
 				pbData.mu[k] = c.mu + c.delta_mu_start ;
 						
 			}
 	else
 		{
-			// 0.38+0.22 / (1 + 0.3 / I)
 			pbData.mu[k] = c.mu  + (c.delta_mu) / (1. + I0bar / std::max(stepData.inertia[k], 1.e-12));
-			// pbData.mu[k] =0.6+  (0.22) / (1. + I0bar / std::max(stepData.inertia[k], 1.e-12));
-			// 0.55 + 0.05 * np.log(I);
-			// pbData.mu[k] = 0.55 + 0.05 * std::log(std::max(stepData.inertia[k]* ( c.grainDiameter * std::sqrt( c.volMass/0.6 )), 1.e-12));
-		
+
 		};
 	}
 
@@ -302,8 +254,6 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 	std::map< unsigned int, PrimalData::JacobianType > exportedRbJacobians;
 
 	// specific friction for specific rigid bodies
-
-
 
 
 	for( unsigned k = 0 ; k < rbData.size() ; ++k ) {
@@ -406,23 +356,16 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 // TODO integrate the export feature
 	std::istringstream in( c.scenario ) ;
 	std::string line ;
-
 	in >> line ;
 	if (line=="impactlhe"){
-
 	const VecS expForces = exportedRbJacobians[0].transpose() * x;
-
 	std::cout << "[RB] Write Forces on the sphere" << std::endl;
 	std::ofstream RBout(c.base_dir + "/forces_on_sphere.csv", std::fstream::app);
 	RBout << expForces[0] * c.units().toSI(Units::Stress) * std::pow(c.units().toSI(Units::Length), 2) << ",";
 	RBout << expForces[1] * c.units().toSI(Units::Stress) * std::pow(c.units().toSI(Units::Length), 2) << ",";
 	RBout << expForces[2]* c.units().toSI( Units::Stress)*std::pow(c.units().toSI( Units::Length),2)<< "\n";
 	RBout.close();
-	
 	}
-	
-
-
 }
 
 

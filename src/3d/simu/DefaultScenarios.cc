@@ -55,7 +55,6 @@ struct CollapseScenar : public Scenario
 	{
 		return (x[0] < 0.5 * m_config->box[0] || x[2] < 1. * m_config->box[2]) ? 1. : 0.;
 	}
-
 };
 
 struct BridsonScenar : public Scenario
@@ -503,9 +502,7 @@ struct BunnyScenar : public Scenario
 
 	void init(const Params &params) override
 	{
-		std::cout<<"init"<<std::endl;
-		const std::string &meshname = string_param(params, "mesh", "../scenes/bunny.obj");
-		// const std::string &meshname = string_param(params, "mesh", "../scenes/testVall.obj");
+		const std::string &meshname = string_param(params, "mesh", "../scenes/testvall_tri.obj");
 		bunny_ls = LevelSet::from_mesh(meshname.c_str());
 
 
@@ -527,7 +524,6 @@ struct BunnyScenar : public Scenario
 			.rotate(Vec(1, 0, 0), M_PI / 4)
 			.set_origin(S * Vec(.5, .25, -.5));
 		bunny_ls2->compute();
-
 
 	}
 
@@ -553,13 +549,14 @@ struct BunnyScenar : public Scenario
 		// 	}
 		// }
 
-		for (RigidBody &rb : simu.rigidBodies())
-		{
-			rb.set_velocity(vel, Vec::Zero());
-		}
+		// for (RigidBody &rb : simu.rigidBodies())
+		// {
+		// 	rb.set_velocity(vel, Vec::Zero());
+		// }
 	}
-
+	private:
 	mutable LevelSet::Ptr bunny_ls;
+	mutable LevelSet::Ptr bunny_ls2;
 };
 
 struct WritingScenar : public Scenario

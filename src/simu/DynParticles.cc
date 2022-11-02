@@ -284,7 +284,7 @@ void DynParticles::integratePrimal( std::vector< bool > &activeCells,
 
 void DynParticles::integrateDual(
                                   DualScalarField &phi,      DualScalarField &phiInertia,
-								  DualScalarField &phiPressurePowQuarter,
+								  DualScalarField &phiPressure,DualScalarField &phiDuT,
                                   DualTensorField &phiOrient,DualScalarField &phiCohesion
                                   ) const
 {
@@ -293,7 +293,8 @@ void DynParticles::integrateDual(
 
 	phi.set_zero();
 	phiInertia .set_zero();
-	phiPressurePowQuarter.set_zero();
+	phiPressure.set_zero();
+	phiDuT.set_zero();
 	phiCohesion.set_zero();
 	phiOrient  .set_zero();
 
@@ -310,7 +311,8 @@ void DynParticles::integrateDual(
 
 		phi.add_at( itp, m );
 		phiInertia .add_at( itp, m * m_inertia[i] );
-		phiPressurePowQuarter.add_at(itp, m * m_pressurePowerFouth[i]);
+		phiPressure.add_at(itp, m * m_pressure[i]);
+		phiDuT.add_at(itp, m * m_DuT[i]);
 		phiCohesion.add_at(itp, m * m_cohesion[i]);
 		phiOrient  .add_at( itp, m * m_geo.orient().col(i) );
 	}
@@ -376,7 +378,8 @@ void DynParticles::splitMerge( const MeshType & mesh )
 					m_geo.m_orient.col(j) = m_geo.m_orient.col(i) ;
 					m_affine.col(j) = m_affine.col(i) ;
 					m_inertia(j) = m_inertia(i) ;
-					m_pressurePowerFouth(j) = m_pressurePowerFouth(i) ;
+					m_pressure(j) = m_pressure(i) ;
+					m_DuT(j) = m_DuT(i) ;
 					m_cohesion(j) = m_cohesion(i) ;
 
 					clamp_particle( i, mesh );
@@ -534,7 +537,8 @@ void DynParticles::remove(size_t j)
 		m_geo.m_frames.col(j) = m_geo.m_frames.col(src) ;
 
 		m_inertia.col(j) = m_inertia.col(src) ;
-		m_pressurePowerFouth.col(j) = m_pressurePowerFouth.col(src) ;
+		m_pressure.col(j) = m_pressure.col(src) ;
+		m_DuT.col(j) = m_DuT.col(src) ;
 		m_cohesion.col(j) = m_cohesion.col(src) ;
 		m_affine.col(j) = m_affine.col(src) ;
 	}

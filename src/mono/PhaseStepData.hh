@@ -75,7 +75,7 @@ struct PhaseStepData {
 	struct Projectors {
 		typename FormMat<WD,WD>::SymType vel ;
 		typename FormMat<SD,SD>::SymType stress ;
-		typename FormMat<1,SD> ::Type    pressure ;
+		typename FormMat<1,SD> ::Type    pressure;
 	} proj ;
 
 

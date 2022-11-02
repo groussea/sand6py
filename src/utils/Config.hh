@@ -78,6 +78,9 @@ namespace d6 {
 	CONFIG_FIELD( compressibility	, Scalar		,	Units::None			) \
 	CONFIG_FIELD( volumeCorrection	, Scalar		,	Units::None			) \
 	CONFIG_FIELD( base_dir			, std::string	,	Units::None			) \
+	CONFIG_FIELD( delta_mu_start    , Scalar 		,   Units::None         ) \
+	CONFIG_FIELD( I0_start    		, Scalar 		,   Units::None         ) \
+	CONFIG_FIELD( P0				, Scalar		,	Units::Stress		)
 
 struct Config
 {

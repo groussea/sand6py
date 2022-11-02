@@ -62,7 +62,8 @@ public:
 	}
 
 	const Particles::Data< 1 >::Type&  inertia() const { return m_inertia ; }
-	const Particles::Data< 1 >::Type&  pressure() const { return m_pressurePowerFouth ; }
+	const Particles::Data< 1 >::Type&  pressure() const { return m_pressure ; }
+	const Particles::Data< 1 >::Type&  DuT() const { return m_DuT ; }
 	const Particles::Data< 1 >::Type& cohesion() const { return m_cohesion ; }
 
 private:
@@ -79,7 +80,8 @@ private:
 
 	Particles::Data< WD*WD >::Type m_affine ;
 	Particles::Data< 1 >::Type m_inertia ;
-	Particles::Data< 1 >::Type m_pressurePowerFouth;
+	Particles::Data< 1 >::Type m_pressure;
+	Particles::Data< 1 >::Type m_DuT ;
 	Particles::Data< 1 >::Type m_cohesion ;
 
 };

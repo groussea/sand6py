@@ -53,11 +53,11 @@ Config::Config() : fps(240), substeps(1), nFrames(1),
 				   enforceMaxFrac(false), weakStressBC(false),
 				   usePG(false), useInfNorm(true),
 				   boundary("cuve"),
-				   output(true), exportAllFields(bool(3 - D6_DIM)), dumpPrimalData(0),
+				   output(true), exportAllFields(1), dumpPrimalData(0),
 				   fluidVolMass(1), stokesFactor(18), RZExponent(0),
 				   windSpeed(Vec::Zero()),
 				   newtonian(false), compressibility(0), volumeCorrection(0),
-				   base_dir("out")
+				   base_dir("out"),delta_mu_start(0.0), I0_start(0.001), P0(10.)
 {
 	gravity[WD - 1] = -9.81;
 }
