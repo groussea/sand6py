@@ -1,10 +1,13 @@
 
-# About
+# About sand6py
 
-This repository stores a fork of sand6 code [1] with new features (collapses scenarios, hysteresis,
-python binding with pybind11).
+This repository is a fork of [sand6 code][1] including [diphasic developments][2] and other new features (collapses scenarios with a frictional door, hysteresis, python binding with [pybind11][4],...).
 
-These developments have been made during a research project for comparing experimental granular flows with simualtions [2]. 
+This code has been developed and used for modelling experimental granular collapses for the article entitled: "*Nonsmooth simulations of 3D Drucker-Prager granular flows and validation against experimental column collapses*" by Gauthier Rousseau, Thibaut Métivet, Hugo Rousseau, Gilles Daviet, and Florence Bertails-Descoubes, 2022.
+
+Python usage is explained after *sand6* description in the [python binding section](#python-binding).
+
+A maintained version of sand6 is available on the [gitlab Inria](https://gitlab.inria.fr/elan-public-code/sand6).
 
 ## About sand6
 
@@ -13,7 +16,7 @@ This software contains a C++ implementation of the algorithms described in the d
 
 ## Contents
 
-This archive is organized as follow:
+This archive is organized as follows:
 
 - `src`    Source code of the shared library
   - `utils`  Generic utilities (String and file manipulation, etc)
@@ -29,14 +32,14 @@ This archive is organized as follow:
 - `tests`  Unit tests
 - `cmake`  CMake modules
 - `vendor` (tarballs only) Copies of external header-only libraries [So-bogus][3]
-- `python` python developments and [pybind11][4] librairie
-- 
+- `python` python scripts, d6py package and [pybind11][4] libraries
+
 ## Relevant files
 
 At this stage, the documentation is still very scarce; however, sections
 that are the most relevant to the article have been more thoroughly annotated.
 
-The reader interested in the implementation of the main simulation loop should start with the method `Simulation::step()` defined in the file `src/simu/Simu.cc`, and the specialization of he corresponding virtual methods in `mono/MonoSimu.cc`.
+The reader interested in the implementation of the main simulation loop should start with the method `Simulation::step()` defined in the file `src/simu/Simu.cc`, and the specialization of the corresponding virtual methods in `mono/MonoSimu.cc`.
 Methods for reading data from particles, splitting, merging and moving them can be found in `simu/DynParticles.cc`.
 The code for computing the end-of-step velocities and stresses lies mostly inside
 the `PhaseSolver::solve()` function from the file `mono/PhaseSolver.cc`.
@@ -68,11 +71,13 @@ Other dependencies are:
 The standard compilation procedure consists in typing the following
 commands from the archive's root directory
 
- > mkdir build
- > cd build
- > cmake ..
- > make
- > make install (optional for installing python binding)
+```shell
+mkdir build
+cd build
+cmake ..
+make
+make install (optional for installing python binding)
+```
 
 ### Configuration options
 
@@ -99,14 +104,8 @@ Usage information for these applications can be obtained with the `-?` flag.
 
 In a typical workflow, the simulator would be run by typing e.g.
 
- > ./apps/d6 -i ../scenes/collapse.conf
-
-
-Using python binding it is also possible to run a scenario if `make install` has been run with:
-
-```python
-import d6py
-
+```shell
+./apps/d6 -i ../scenes/collapse.conf
 ```
 
 ## Configuration fields
@@ -150,18 +149,30 @@ Here is a list of the various configuration options that can be passed to the `d
 - `useInfNorm`=*false*  Use the infinity-norm to evaluate the DCFP residual
 - `output`=*true*       Output simulation states (field and particle data)
 - `dumpPrimalData`=*0*  If non-zero, dump every *n*th primal problems
-  
-# License
+
+## Python binding
+
+Provinding `make install` has lauchned, a 
+
+```python
+import d6py
+from d6py.d6python3D import * # python must be reload if d6python2D was imported
+# from d6py.d6python2D import * # if 2D
+d6run(d6OutFolder,configFile)
+```
+
+See [run_and_analyse_collapse_example.py](python/run_and_analyse_collapse_example.py) file for a simple example.
+
+## License
 
 This software is distributed under the terms of the [GNU General Public License Version 3][7].
 
 
-  [1]: Modeling and simulating complex materials subject to frictional contact: Application to fibrous and granular media. Diss. Ph. D. Dissertation. Université Grenoble Alpes. tel.archives-ouvertes.fr/tel-01684673, 201
-  [2]: "Nonsmooth simulations of 3D Drucker-Prager granular flows and validation against experimental column collapses" by Gauthier Rousseau, Thibaut Métivet, Hugo Rousseau, Gilles Daviet, and Florence Bertails-Descoubes 
-  [3]: http://gdaviet.fr/code/bogus   "So-bogus, Coulomb friction solver"
-  [4]: https://pybind11.readthedocs.io/en/stable/index.html  "Seamless operability between C++11 and Python"
-  [4]: http://eigen.tuxfamily.org     "Eigen, template library for linear algebra"
-  [5]: http://www.boost.org/doc/libs/release/libs/serialization/ "Boost serialization library"
-  [6]: http://libqglviewer.com        "Qt-base OpenGL viewer framework"
-  [7]: http://www.gnu.org/licenses/gpl-3.0.en.html "GNU General Public License Version 3"
 
+[1]: http://gdaviet.fr/code/sand6/ "Modeling and simulating complex materials subject to frictional contact: Application to fibrous and granular media. Diss. Ph. D. Dissertation. Université Grenoble Alpes. tel.archives-ouvertes.fr/tel-01684673, 201"
+[2]: https://hal.inria.fr/hal-01458951 "Simulation of Drucker–Prager granular flows inside Newtonian fluids"
+[3]: http://gdaviet.fr/code/bogus   "So-bogus, Coulomb friction solver"
+[4]: https://pybind11.readthedocs.io/en/stable/index.html  "Seamless operability between C++11 and Python"
+[5]: http://www.boost.org/doc/libs/release/libs/serialization/ "Boost serialization library"
+[6]: http://libqglviewer.com        "Qt-base OpenGL viewer framework"
+[7]: http://www.gnu.org/licenses/gpl-3.0.en.html "GNU General Public License Version 3"

@@ -23,16 +23,7 @@ import vtk
 from vtk.util.numpy_support import vtk_to_numpy
 import matplotlib.pyplot as plt
 
-# outDictFolder=    "/media/gauthier/Data-Gauthier/Gauthier/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular/data/outputs_experiments_and_mpm/"
-outDictFolder=    "/media/gauthier/DataSSD/TAF/TAF_inria/INRIA_current_work/GitLab/dry-granular-all/dry-granular/data/outputs_experiments_and_mpm/"
-
 fignames=['G00', 'G05', 'G10', 'G15', 'B00', 'B05', 'B10', 'B15', 'B20']
-
-
-JSONpath = outDictFolder + "article_dict.json"
-in_file = open(JSONpath,"r")
-dictArt= json.load(in_file) 
-in_file.close()
 
 # sys.stdout = open(os.devnull, 'w')
 # intialize font type and size
@@ -42,34 +33,12 @@ plt.rcParams['ytick.labelsize'] = 8.0
 plt.rcParams['ytick.labelsize'] = 8.0
 plt.rcParams['axes.linewidth'] = 1
 # print(r'\includegraphics{test_2.pdf}')
-driveFolder = '/media/gauthier/Data-Gauthier/Gauthier'
-driveFolder = '/media/gauthier/DataSSD'
-maind6OutFolder = '/media/gauthier/Samsung_T5/sand6_sorties/sand6_out/'
-maind6OutFolder = '/media/gauthier/DataSSD/sand6_out/'
-# maind6OutFolder = '/media/gauthier/SSD500/'
-# maind6OutFolder = '/home/gauthier/sorties_sand6/'
 
-plt.rc('text.latex', preamble=r'\usepackage{amsmath} ')
-plt.rc_context({"text.latex.preview": True})
-
-plt.rcParams['font.family'] = 'serif'
-plt.rc('text', usetex=True)
-
-
-
-fontsize_g=8
-leg_fontsize = 7
 
 def smooth(y, box_pts):
     box = np.ones(box_pts)/box_pts
     y_smooth = np.convolve(y, box, mode='valid')
     return y_smooth
-
-
-
-
-
-
 
 
 #%%
