@@ -1,6 +1,13 @@
 
 # About
 
+This repository stores a fork of sand6 code [1] with new features (collapses scenarios, hysteresis,
+python binding with pybind11).
+
+These developments have been made during a research project for comparing experimental granular flows with simualtions [2]. 
+
+## About sand6
+
 This software contains a C++ implementation of the algorithms described in the document
 *A Semi-Implicit Material Point Method for the Continuum Simulation of Granular Materials*.
 
@@ -21,8 +28,9 @@ This archive is organized as follow:
 - `scenes` Sample configuration files
 - `tests`  Unit tests
 - `cmake`  CMake modules
-- `vendor` (tarballs only) Copies of external header-only libraries [So-bogus] [1]
-
+- `vendor` (tarballs only) Copies of external header-only libraries [So-bogus] [3]
+- `python` python developements using pybind11 
+- 
 ## Relevant files
 
 At this stage, the documentation is still very scarce; however, sections
@@ -51,9 +59,9 @@ only be tested on GNU/Linux with recent versions of `g++` and `clang++`.
 
 Other dependencies are:
 
-- [Eigen][2] and [So-bogus][1] (which might already be included in distributed archives)
-- [boost\_serialization][3]
-- [libQGLViewer][4] (optional, required for the compilation of the OpenGL viewer)
+- [Eigen][4] and [So-bogus][3] (which might already be included in distributed archives)
+- [boost\_serialization][5]
+- [libQGLViewer][6] (optional, required for the compilation of the OpenGL viewer)
 
 ### Compiling
 
@@ -64,7 +72,7 @@ commands from the archive's root directory
  > cd build
  > cmake ..
  > make
- > ./tests/testd6
+ > make install (optional for installing python binding)
 
 ### Configuration options
 
@@ -146,10 +154,16 @@ Here is a list of the various configuration options that can be passed to the `d
   
 # License
 
-This software is distributed under the terms of the [GNU General Public License Version 3][5].
+This software is distributed under the terms of the [GNU General Public License Version 3][7].
 
-  [1]: http://gdaviet.fr/code/bogus   "So-bogus, Coulomb friction solver"
-  [2]: http://eigen.tuxfamily.org     "Eigen, template library for linear algebra"
-  [3]: http://www.boost.org/doc/libs/release/libs/serialization/ "Boost serialization library"
-  [4]: http://libqglviewer.com        "Qt-base OpenGL viewer framework"
-  [5]: http://www.gnu.org/licenses/gpl-3.0.en.html "GNU General Public License Version 3"
+
+  [1]: Modeling and simulating complex materials subject to frictional contact: Application to fibrous and granular media. Diss.
+Ph. D. Dissertation. Université Grenoble Alpes. tel.archives-ouvertes.fr/tel-01684673, 201
+  [4]: "Nonsmooth simulations of 3D Drucker-Prager
+granular flows and validation against experimental column collapses" by Gauthier Rousseau, Thibaut Métivet, Hugo
+Rousseau, Gilles Daviet, and Florence Bertails-Descoubes 
+  [3]: http://gdaviet.fr/code/bogus   "So-bogus, Coulomb friction solver"
+  [4]: http://eigen.tuxfamily.org     "Eigen, template library for linear algebra"
+  [5]: http://www.boost.org/doc/libs/release/libs/serialization/ "Boost serialization library"
+  [6]: http://libqglviewer.com        "Qt-base OpenGL viewer framework"
+  [7]: http://www.gnu.org/licenses/gpl-3.0.en.html "GNU General Public License Version 3"
