@@ -28,8 +28,8 @@ This archive is organized as follow:
 - `scenes` Sample configuration files
 - `tests`  Unit tests
 - `cmake`  CMake modules
-- `vendor` (tarballs only) Copies of external header-only libraries [So-bogus] [3]
-- `python` python developements using pybind11 
+- `vendor` (tarballs only) Copies of external header-only libraries [So-bogus][3]
+- `python` python developments and [pybind11][4] librairie
 - 
 ## Relevant files
 
@@ -59,9 +59,9 @@ only be tested on GNU/Linux with recent versions of `g++` and `clang++`.
 
 Other dependencies are:
 
-- [Eigen][4] and [So-bogus][3] (which might already be included in distributed archives)
-- [boost\_serialization][5]
-- [libQGLViewer][6] (optional, required for the compilation of the OpenGL viewer)
+- [So-bogus][3], [pybind11][4] and [Eigen][5]
+- [boost\_serialization][6]
+- [libQGLViewer][7] (optional, required for the compilation of the OpenGL viewer)
 
 ### Compiling
 
@@ -101,14 +101,13 @@ In a typical workflow, the simulator would be run by typing e.g.
 
  > ./apps/d6 -i ../scenes/collapse.conf
 
-This creates an 'out' directory, with one subdirectory per simulation frame.
-If the `d6gl` application was compiled, it can be used to visualize the results:
 
- > ./apps/d6gl
- > ./apps/d6gl -s 16 -g .2    #Render grain samples instead of particules
+Using python binding it is also possible to run a scenario if `make install` has been run with:
 
-Pressing 'H' inside the viewer triggers an help window listing libQGLViewer mouse and keyboard commands.
-A useful yet unintuitive shortcut is the 'double-middle-click' which centers the scene.
+```python
+import d6py
+
+```
 
 ## Configuration fields
 
@@ -157,13 +156,12 @@ Here is a list of the various configuration options that can be passed to the `d
 This software is distributed under the terms of the [GNU General Public License Version 3][7].
 
 
-  [1]: Modeling and simulating complex materials subject to frictional contact: Application to fibrous and granular media. Diss.
-Ph. D. Dissertation. Université Grenoble Alpes. tel.archives-ouvertes.fr/tel-01684673, 201
-  [4]: "Nonsmooth simulations of 3D Drucker-Prager
-granular flows and validation against experimental column collapses" by Gauthier Rousseau, Thibaut Métivet, Hugo
-Rousseau, Gilles Daviet, and Florence Bertails-Descoubes 
+  [1]: Modeling and simulating complex materials subject to frictional contact: Application to fibrous and granular media. Diss. Ph. D. Dissertation. Université Grenoble Alpes. tel.archives-ouvertes.fr/tel-01684673, 201
+  [2]: "Nonsmooth simulations of 3D Drucker-Prager granular flows and validation against experimental column collapses" by Gauthier Rousseau, Thibaut Métivet, Hugo Rousseau, Gilles Daviet, and Florence Bertails-Descoubes 
   [3]: http://gdaviet.fr/code/bogus   "So-bogus, Coulomb friction solver"
+  [4]: https://pybind11.readthedocs.io/en/stable/index.html  "Seamless operability between C++11 and Python"
   [4]: http://eigen.tuxfamily.org     "Eigen, template library for linear algebra"
   [5]: http://www.boost.org/doc/libs/release/libs/serialization/ "Boost serialization library"
   [6]: http://libqglviewer.com        "Qt-base OpenGL viewer framework"
   [7]: http://www.gnu.org/licenses/gpl-3.0.en.html "GNU General Public License Version 3"
+

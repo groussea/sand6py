@@ -55,17 +55,6 @@ plt.rc_context({"text.latex.preview": True})
 plt.rcParams['font.family'] = 'serif'
 plt.rc('text', usetex=True)
 
-import opyf
-
-cmapg = opyf.make_cmap_customized(Palette='green')
-
-colors = [(33./255, 66./255, 99./255, 0.05),
-        (1, 1, 0.3, 0.9), (0.8, 0, 0, 0.9), (0, 0, 0, 0.9)]
-position = [0, 0.1, 0.5, 1]
-cmap = opyf.make_cmap(colors, position)
-
-# cmap.set_over(color='g')
-cmap.set_under(alpha=0)
 
 
 fontsize_g=8
@@ -281,6 +270,13 @@ def RatioAndOrigin(dConfig,dim=3):
     
     Orx=float(dConfig['box'][0])*(Ratio)   
     return Ratio, Orx, Ory
+
+def modifyMultipleConf(configFile,**args):
+    for a in args:
+        modifyConfigFile(configFile,configFile,a,args[a])
+    
+
+
     
 def fromVTKtoscaledDataParticles3D(VTKfilename,dConfig):
     
