@@ -16,6 +16,5 @@ build/*
 /build_DG_UNSTRUCTURED
 /build-UNSTRUCTURED
 *.so
-/vendor
 /build-tetgrid
 /build-split-and-merge
