@@ -218,7 +218,7 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 
 	const Scalar I0_start_bar = c.I0_start / ( c.grainDiameter * std::sqrt( c.volMass/0.6 )) ;
 	const Scalar I0bar = c.I0 / ( c.grainDiameter * std::sqrt( c.volMass/0.6 )) ;
-	const Scalar I0_noise_bar= 0.001 / ( c.grainDiameter * std::sqrt( c.volMass/0.6 )) ;
+	// const Scalar I0_noise_bar= 0.001 / ( c.grainDiameter * std::sqrt( c.volMass/0.6 )) ;
 
 	
 	for (unsigned k = 0; k < stepData.inertia.size(); ++k)
@@ -353,19 +353,8 @@ void PhaseSolver::solveComplementarity(const Config &c, const Scalar dt, const P
 
 	}
 
-// TODO integrate the export feature
-	std::istringstream in( c.scenario ) ;
-	std::string line ;
-	in >> line ;
-	if (line=="impactlhe"){
-	const VecS expForces = exportedRbJacobians[0].transpose() * x;
-	std::cout << "[RB] Write Forces on the sphere" << std::endl;
-	std::ofstream RBout(c.base_dir + "/forces_on_sphere.csv", std::fstream::app);
-	RBout << expForces[0] * c.units().toSI(Units::Stress) * std::pow(c.units().toSI(Units::Length), 2) << ",";
-	RBout << expForces[1] * c.units().toSI(Units::Stress) * std::pow(c.units().toSI(Units::Length), 2) << ",";
-	RBout << expForces[2]* c.units().toSI( Units::Stress)*std::pow(c.units().toSI( Units::Length),2)<< "\n";
-	RBout.close();
-	}
+
+
 }
 
 

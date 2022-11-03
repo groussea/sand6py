@@ -195,94 +195,7 @@ Eigen::Matrix<Scalar, 2, Eigen::Dynamic> bezier;
 
 };
 
-struct ImpactScenarlhe : public Scenario
-{
-	virtual void init(const Params &params)
-	{
-		volMass = scalar_param(params, "vm", Units::VolumicMass, 1.5 * m_config->units().R);
-		d = scalar_param(params, "d", Units::Length, 0.25);
-		hBall = scalar_param(params, "h_ball", Units::Length, 1. / 3);
-		hBed = scalar_param(params, "h_bed", Units::Length, 1. / 3);
-	}
 
-	Scalar particle_density(const Vec &x) const override
-	{
-		Scalar w_sideW=m_config->units().fromSI(Units::Length) * 0.01;
-		return (x[2] < hBed && (x[1]<(m_config->box[1]-w_sideW))&& (x[1]>w_sideW) && (x[0]<(m_config->box[0]-w_sideW)) && (x[0]>w_sideW)) ? 1. : 0.;
-	}
-
-	void add_rigid_bodies(std::vector<RigidBody> &rbs) const override
-	{
-		Vec box = m_config->box;
-		Scalar w_sideW=m_config->units().fromSI(Units::Length) * 0.01;
-		LevelSet::Ptr ls = LevelSet::make_sphere();
-		ls->scale(radius()).set_origin(Vec(0.5 * m_config->box[0], 0.5 * m_config->box[1], 1.5*m_config->box[2]));
-		// ls->scale(radius()).set_origin(Vec(0.5 * m_config->box[0], 0.5 * m_config->box[1], hBall+hBed));
-		// determine the fall velocity when the ball enters in the domain
-		rbs.emplace_back(ls, volMass);
-		rbs.back().set_velocity(Vec(0, 0, -std::sqrt(-2 * m_config->gravity[2] * (hBall - (1.5*m_config->box[2] - hBed)))), Vec(0, 0, 0));
-		// rbs.back().set_velocity(Vec(0, 0,0), Vec(0, 0, 0));
-		
-		std::ofstream RBout(m_config->base_dir + "/RBinfo.txt");
-		d6::dump(RBout, "Nframe,time,X,Y,Z,Ux,Uy,Uz\n");
-		// introduce walls
-
-		Vec wallBox = Vec(box[0], w_sideW/2, box[2]);
-		auto leftWall = LevelSet::make_box(wallBox);
-		leftWall->set_origin(Vec(box[0] * 0.5, w_sideW/2 ,box[2] * 0.5));
-		rbs.emplace_back(leftWall, 1.e99);
-		auto rightWall = LevelSet::make_box(wallBox);
-		rightWall->set_origin(Vec(box[0] * 0.5, box[1]- w_sideW/2  ,box[2] * 0.5));
-		rbs.emplace_back(rightWall, 1.e99);
-
-		Vec bWallBox = Vec( w_sideW/2, box[1],box[2]);
-
-		auto backWall = LevelSet::make_box(bWallBox);
-		backWall->set_origin(Vec(w_sideW/2 , 0.5*box[1],box[2] * 0.5));
-		rbs.emplace_back(backWall, 1.e99);
-
-		auto frontWall = LevelSet::make_box(bWallBox);
-		frontWall->set_origin(Vec(box[0]- w_sideW/2 , 0.5*box[1],box[2] * 0.5));
-		rbs.emplace_back(frontWall, 1.e99);
-
-
-	}
-
-	void update(Simu &simu, Scalar time, Scalar dt) const override
-	{
-		int n =0 ;
-		for (RigidBody &rb : simu.rigidBodies())
-		{
-			if (n==0){
-			rb.integrate_gravity(dt, m_config->gravity);
-			Vec vel = rb.velocity();
-			rb.set_velocity(vel, rb.angularVelocity());
-			std::ofstream RBout(m_config->base_dir + "/RBinfo.txt", std::fstream::app);
-			RBout << std::round(time * m_config->fps)<<",";
-			RBout << time * m_config->units().toSI(Units::Time)<<",";
-			RBout << rb.levelSet().origin()[0] * m_config->units().toSI(Units::Length)<<",";
-			RBout << rb.levelSet().origin()[1] * m_config->units().toSI(Units::Length)<<",";
-			RBout << rb.levelSet().origin()[2] * m_config->units().toSI(Units::Length)<<",";
-			RBout << vel[0] * m_config->units().toSI(Units::Velocity)<<",";
-			RBout << vel[1] * m_config->units().toSI(Units::Velocity)<<",";
-			RBout << vel[2] * m_config->units().toSI(Units::Velocity)<<"\n";
-			RBout.close();
-			n = n+1;}
-		}
-	}
-
-	Scalar radius() const
-	{
-		return d / 2;
-	}
-
-
-private:
-	Scalar volMass;
-	Scalar d;
-	Scalar hBed;
-	Scalar hBall;
-};
 
 struct ImpactScenar : public Scenario
 {
@@ -450,10 +363,6 @@ struct HourglassScenar : public Scenario
 				x[2] < 0.3 * m_config->box[2] && x[0])
 				   ? 1
 				   : 0;
-	// 		return (
-	// 		x[2] > .5 * m_config->box[2] && x[2] < .8 * m_config->box[2])
-	// 			? 1
-	// 			: 0;
 	}
 
 	void init(const Params &params) override
@@ -535,24 +444,6 @@ struct BunnyScenar : public Scenario
 
 	void update(Simu &simu, Scalar time, Scalar /*dt*/) const override
 	{
-		// const Scalar speed = m_config->units().toSI(Units::Time);
-
-		// const Scalar tw = time * speed;
-		// Vec vel = Vec::Zero();
-
-		// if (tw > .5)
-		// {
-		// 	const Scalar t = tw - .5;
-		// 	if (t < 1)
-		// 	{
-		// 		vel = Vec(0, 0, 6 * (t - t * t)) * speed * (.3 * m_config->box[0]);
-		// 	}
-		// }
-
-		// for (RigidBody &rb : simu.rigidBodies())
-		// {
-		// 	rb.set_velocity(vel, Vec::Zero());
-		// }
 	}
 	private:
 	mutable LevelSet::Ptr bunny_ls;
@@ -840,7 +731,6 @@ struct CollapseScenarLHEDoor : public Scenario
 		Scalar iF = time * m_config->fps;
 
 		Scalar speedz = velD * (1 - exp(-(time - ts) / tauD));
-		//         Scalar speedy = 0.1*m_config->units().fromSI( Units::Velocity)*(1-exp(-t/(0.05)));
 		Vec vel = Vec::Zero();
 		if (time > ts)
 		{
@@ -880,218 +770,6 @@ private:
 	Scalar muDoor;
 };
 
-
-
-struct CollapseIonescu : public Scenario
-{
-	Scalar particle_density(const Vec &x) const override
-	{
-		return ((x[0] < columnLength || x[2] < 0.0) && (x[2] < (fracH ) * m_config->box[2]) && (x[1]<(m_config->box[1]-w_sideW))&& (x[1]>w_sideW) && (x[0]>w_backW) ) ? 1. : 0.;
-	}
-
-	virtual void init(const Params &params) override
-	{
-		tauD = scalar_param(params, "taudoor", Units::Time, .06);
-		velD = scalar_param(params, "veldoor", Units::Velocity, 1.0);
-		muDoor = scalar_param(params, "mud", Units::None, -99);
-		ts = scalar_param(params, "ts", Units::Time, 0);
-		fracH = scalar_param(params, "frac_h", Units::None, 1.);
-		columnLength = scalar_param(params, "column_length", Units::Length, 1.);
-		w_sideW = scalar_param(params, "wsw", Units::Length, 0.01);
-		w_backW=m_config->units().fromSI(Units::Length) * 0.01;
-	}
-
-	void add_rigid_bodies(std::vector<RigidBody> &rbs) const override
-	{
-		// 		const Scalar a = 0.1 ;
-		Vec box = m_config->box;
-		const Scalar L = box[2] * (1.0);
-		const Scalar W =  1.0*box[0]/m_config->res[0];
-		Vec doorBox = Vec(W, 0.5 * box[1], 0.5 * L);
-
-		LevelSet::Ptr ls = LevelSet::make_box(doorBox);
-		ls->set_origin(Vec(columnLength + W, box[1] * 0.5, L * 0.5));
-		rbs.emplace_back(ls, 1.e99);
-		rbs.back().set_mu(muDoor);
-		d6::Log::Debug() << "mu_door = " << muDoor << std::endl ;
-		std::ofstream RBout(m_config->base_dir + "/door.txt");
-		d6::dump(RBout, "Nframe,time,X,Y,Z,Ux,Uy,Uz");
-		RBout << "\n";
-		RBout.close();
-		// Scalar w_sideW=m_config->units().fromSI(Units::Length) * 0.01;
-		
-		if (w_sideW > 0.0) {
-		Vec wallBox = Vec(box[0]/2, w_sideW/2, box[2]/2);
-		auto leftWall = LevelSet::make_box(wallBox);
-		leftWall->set_origin(Vec(box[0] * 0.5, w_sideW/2 ,box[2] * 0.5));
-		rbs.emplace_back(leftWall, 1.e99);
-		auto rightWall = LevelSet::make_box(wallBox);
-		rightWall->set_origin(Vec(box[0] * 0.5, box[1]- w_sideW/2  ,box[2] * 0.5));
-		rbs.emplace_back(rightWall, 1.e99);
-		}
-
-		Vec bWallBox = Vec(w_backW / 2, box[1]/2, box[2]/2);
-		auto backWall = LevelSet::make_box(bWallBox);
-		backWall->set_origin(Vec(w_backW/2 , 0.5*box[1],box[2] * 0.5));
-		rbs.emplace_back(backWall, 1.e99);
-
-	}
-
-	void update(Simu &simu, Scalar time, Scalar /*dt*/) const override
-	{
-		Scalar iF = time * m_config->fps;
-
-		Scalar speedz = velD * (1 - exp(-(time - ts) / tauD));
-		//         Scalar speedy = 0.1*m_config->units().fromSI( Units::Velocity)*(1-exp(-t/(0.05)));
-		Vec vel = Vec::Zero();
-		if (time > ts)
-		{
-			vel[2] = speedz;
-		}
-
-			simu.rigidBodies()[0].set_velocity(vel, VecR::Zero());
-			simu.rigidBodies()[0];
-			Vec position = simu.rigidBodies()[0].levelSet().origin();
-			if (std::abs(iF - static_cast<int>(std::round(iF))) < 1.e-8)
-			{
-			std::ofstream RBout(m_config->base_dir + "/door.txt", std::fstream::app);
-			RBout << std::round(time * m_config->fps)<<",";
-			RBout << time * m_config->units().toSI(Units::Time)<<",";
-			RBout << position[0] * m_config->units().toSI(Units::Length)<<",";
-			RBout << position[1] * m_config->units().toSI(Units::Length)<<",";
-			RBout << position[2] * m_config->units().toSI(Units::Length)<<",";
-			RBout << vel[0] * m_config->units().toSI(Units::Velocity)<<",";
-			RBout << vel[1] * m_config->units().toSI(Units::Velocity)<<",";
-			RBout << vel[2] * m_config->units().toSI(Units::Velocity)<<"\n";
-			RBout.close();
-				RBout.close();
-			}
-
-
-		}
-	
-
-private:
-	Scalar tauD;
-	Scalar velD;
-	Scalar ts;
-	Scalar fracH;
-	Scalar columnLength;
-	Scalar w_sideW;
-	Scalar w_backW;
-	Scalar muDoor;
-};
-
-
-struct InclinedPlane : public Scenario
-{
-	Scalar particle_density(const Vec &x) const override
-	{	
-
-		return ((x[0] < columnLength || x[2] < zD*0.0)  && (x[2] < (fracH) * m_config->box[2]) ) ? 1. : 0.;
-	}
-
-	virtual void init(const Params &params) override
-	{
-		tauD = scalar_param(params, "taudoor", Units::Time, .06);
-		velD = scalar_param(params, "veldoor", Units::Velocity, 0.0);
-		zD = scalar_param(params, "zdoor", Units::Length, 0);
-		ts = scalar_param(params, "ts", Units::Time, 0.5);
-		fracH = scalar_param(params, "frac_h", Units::None, 1.);
-		columnLength = scalar_param(params, "column_length", Units::Length, 1.);
-
-	}
-
-	void add_rigid_bodies(std::vector<RigidBody> &rbs) const override
-	{
-		// 		const Scalar a = 0.1 ;
-		Vec box = m_config->box;
-		const Scalar L = box[2] * (0.9);
-		const Scalar W = 2 * m_config->typicalLength();
-		Vec doorBox = Vec(W, 0.6 * box[1], 0.5 * L);
-
-		LevelSet::Ptr ls = LevelSet::make_box(doorBox);
-		ls->set_origin(Vec(columnLength + W, box[1] * 0.5, L * 0.5+zD));
-		rbs.emplace_back(ls, 1.e99);
-		
-		std::ofstream RBout(m_config->base_dir + "/door.txt");
-		d6::dump(RBout, "Nframe,time,X,Y,Z,Ux,Uy,Uz");
-		RBout << "\n";
-		RBout.close();
-
-
-
-		// auto bottom = LevelSet::make_box(Vec( box[0], box[1],0.05*box[2]));
-		// bottom->set_origin(Vec(0.5*box[0] , 0.5*box[1],box[2] * 0.0));
-		// rbs.emplace_back(bottom, 1.e99);
-		// rbs.back().set_mu(1);
-		// auto rightWall = LevelSet::make_plane();
-		// rightWall->rotate(Vec(1, 0, 0), M_PI_2).set_origin(Vec(0, box[1], 0));
-		// rbs.emplace_back(rightWall, 1.e99);
-
-		// auto sideWall = LevelSet::make_plane();
-		// sideWall->rotate(Vec(0, 1, 0), M_PI_2).set_origin(Vec(0, 0, 0));
-		// rbs.emplace_back(sideWall, 1.e99);
-
-	}
-
-	void update(Simu &simu, Scalar time, Scalar /*dt*/) const override
-	{
-		Scalar t = time * m_config->fps;
-		Scalar tau = tauD * m_config->fps;
-
-		Scalar speedz = m_config->units().fromSI( Units::Velocity)*(0.0);
-		//         Scalar speedy = 0.1*m_config->units().fromSI( Units::Velocity)*(1-exp(-t/(0.05)));
-		Vec vel = Vec::Zero();
-		if (time > ts)
-		{
-			vel[2] = speedz;
-		}
-		int n =0 ;
-		for (RigidBody &rb : simu.rigidBodies())
-		{
-			if(n == 0){
-			rb.set_velocity(vel, VecR::Zero());
-
-			std::cout << time * m_config->fps << std::endl;
-			std::cout << std::abs(t - static_cast<int>(std::round(t))) << std::endl;
-
-			if (std::abs(t - static_cast<int>(std::round(t))) < 1.e-8)
-			{
-				std::ofstream RBout(m_config->base_dir + "/door.txt", std::fstream::app);
-				RBout << std::round(time * m_config->fps);
-				RBout << ",";
-				RBout << time * m_config->units().toSI(Units::Time);
-				RBout << ",";
-				RBout << rb.levelSet().origin()[0] * m_config->units().toSI(Units::Length);
-				RBout << ",";
-				RBout << rb.levelSet().origin()[1] * m_config->units().toSI(Units::Length);
-				RBout << ",";
-				RBout << rb.levelSet().origin()[2] * m_config->units().toSI(Units::Length);
-				RBout << ",";
-				RBout << vel[0] * m_config->units().toSI(Units::Velocity);
-				RBout << ",";
-				RBout << vel[1] * m_config->units().toSI(Units::Velocity);
-				RBout << ",";
-				RBout << vel[2] * m_config->units().toSI(Units::Velocity);
-				RBout << "\n";
-				RBout.close();
-			}
-			n = n + 1;
-			}
-
-			break;
-		}
-	}
-
-private:
-	Scalar tauD;
-	Scalar velD;
-	Scalar ts;
-	Scalar fracH;
-	Scalar columnLength;
-	Scalar zD;
-};
 
 struct CollapseScenarDoor : public Scenario
 {
@@ -1111,7 +789,6 @@ struct CollapseScenarDoor : public Scenario
 
 	void add_rigid_bodies(std::vector<RigidBody> &rbs) const override
 	{
-		// 		const Scalar a = 0.1 ;
 		Vec box = m_config->box;
 		const Scalar L = box[2] * (0.9);
 		const Scalar W = 2 * m_config->typicalLength();
@@ -1132,7 +809,6 @@ struct CollapseScenarDoor : public Scenario
 		Scalar tau = tauD * m_config->fps;
 
 		Scalar speedy = velD * (1 - exp(-(t - ts) / tau));
-		//         Scalar speedy = 0.1*m_config->units().fromSI( Units::Velocity)*(1-exp(-t/(0.05)));
 		Vec vel = Vec::Zero();
 		if (t > ts)
 		{
@@ -1142,8 +818,6 @@ struct CollapseScenarDoor : public Scenario
 		for (RigidBody &rb : simu.rigidBodies())
 		{
 			rb.set_velocity(vel, VecR::Zero());
-			//             std::cout << vel << std::endl;
-			// 			std::cout <<  rb.levelSet().origin() << std::endl;
 
 			std::cout << time * m_config->fps << std::endl;
 			std::cout << std::abs(t - static_cast<int>(std::round(t))) << std::endl;
@@ -1187,10 +861,6 @@ std::unique_ptr<Scenario> DefaultScenarioFactory::make(const std::string &str) c
 		return std::unique_ptr<Scenario>(new RayleighScenar());
 	if (str == "collapselhedoor")
 		return std::unique_ptr<Scenario>(new CollapseScenarLHEDoor());
-	if (str == "collapseionescu")
-		return std::unique_ptr<Scenario>(new CollapseIonescu());
-	if (str == "inclinedplane")
-		return std::unique_ptr<Scenario>(new InclinedPlane());
 	if (str == "collapsedoor")
 		return std::unique_ptr<Scenario>(new CollapseScenarDoor());
 	if (str == "collapse")
@@ -1203,8 +873,6 @@ std::unique_ptr<Scenario> DefaultScenarioFactory::make(const std::string &str) c
 		return std::unique_ptr<Scenario>(new RbPlaneTestScenar());
 	if (str == "impact")
 		return std::unique_ptr<Scenario>(new ImpactScenar());
-	if (str == "impactlhe")
-		return std::unique_ptr<Scenario>(new ImpactScenarlhe());
 	if (str == "silo")
 		return std::unique_ptr<Scenario>(new SiloScenar());
 	if (str == "bunny")
