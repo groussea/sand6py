@@ -142,6 +142,22 @@ Here is a list of the various configuration options that can be passed to the `d
 - `brownian`=*0*          Tendency of particles to return to isotropic orientation
 - `initialOri`=*(1/3,1/3,1/3)* Initial eigenvalues of orientation tensor in grid-aligned basis
 
+### Hysteresis parameters
+
+- `I0_start`=*5e-3*     Start Inertial number for the hysteresis rheology 
+- `delta_mu_start`=*0.0*  Satic friction coefficient increase mu+delta_mu_start is the friciton coefficient at I=0
+
+### Collapse parameters
+
+A typical example of collapse scenario line is given by:
+
+scenario	collapselhedoor	`taudoor`: 0.13	`veldoor`: 0.7	`ts`: 0.20	`frac_h`: 0.8	`column_length`: 0.234	`wsw`: 0.01	`mud`: 0.23
+
+- `taudoor` is the decay time and `veldoor` is the door velocity a $`t \rightarrow \infty`$ such that the door velocity as a function of time is $`U_d (t)=\text{veldoor}(1-\exp(-t/\text{taudoor}))`$
+- `frac_h` is the height occupied by meterials over the box height
+- `mud` is the door friction
+- `wsw` are the side wall width
+
 ### Miscellaneous
 
 - `enforceMaxFrac`=*false*  Perform geometric volume correction projection
