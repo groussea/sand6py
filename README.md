@@ -154,7 +154,7 @@ A typical example of collapse scenario line is given by:
 scenario	collapselhedoor	`taudoor`: 0.13	`veldoor`: 0.7	`ts`: 0.20	`frac_h`: 0.8	`column_length`: 0.234	`wsw`: 0.01	`mud`: 0.23
 
 - `taudoor` is the decay time and `veldoor` is the door velocity a $`t \rightarrow \infty`$ such that the door velocity as a function of time is $`U_d (t)=\text{veldoor}(1-\exp(-t/\text{taudoor}))`$
-- `frac_h` is the height occupied by meterials over the box height
+- `frac_h` is the initial height occupied by the material over the box height
 - `mud` is the door friction
 - `wsw` are the side wall width
 
@@ -168,7 +168,7 @@ scenario	collapselhedoor	`taudoor`: 0.13	`veldoor`: 0.7	`ts`: 0.20	`frac_h`: 0.8
 
 ## Python binding
 
-Provinding `make install` has lauchned, a 
+Providing `make install` has been launched, a typical python script to run a scenario is performed as following:
 
 ```python
 import d6py
@@ -182,7 +182,6 @@ See [run_and_analyse_collapse_example.py](python/run_and_analyse_collapse_exampl
 ## License
 
 This software is distributed under the terms of the [GNU General Public License Version 3][7].
-
 
 
 [1]: http://gdaviet.fr/code/sand6/ "Modeling and simulating complex materials subject to frictional contact: Application to fibrous and granular media. Diss. Ph. D. Dissertation. Université Grenoble Alpes. tel.archives-ouvertes.fr/tel-01684673, 201"
