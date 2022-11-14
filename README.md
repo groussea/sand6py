@@ -3,7 +3,11 @@
 
 This repository is a fork of [sand6 code][1] including [diphasic developments][2] and other new features (collapses scenarios with a frictional door, hysteresis, python binding with [pybind11][4],...).
 
-This code has been developed and used for modelling experimental granular collapses for the article entitled: "*Nonsmooth simulations of 3D Drucker-Prager granular flows and validation against experimental column collapses*" by Gauthier Rousseau, Thibaut Métivet, Hugo Rousseau, Gilles Daviet, and Florence Bertails-Descoubes, 2022.
+[]()<img src="media/graphicalAbstract_s1.jpg" width=300>
+
+This code has been developed and used for modelling experimental granular collapses for the article entitled: "[*Nonsmooth simulations of 3D Drucker-Prager granular flows and validation against experimental column collapses*][8]" by Gauthier Rousseau, Thibaut Métivet, Hugo Rousseau, Gilles Daviet, and Florence Bertails-Descoubes, 2022.
+
+[]()<img src="media/collapse.gif" width=300>
 
 Python usage is explained after *sand6* description in the [python binding section](#python-binding).
 
@@ -191,3 +195,4 @@ This software is distributed under the terms of the [GNU General Public License 
 [5]: http://www.boost.org/doc/libs/release/libs/serialization/ "Boost serialization library"
 [6]: http://libqglviewer.com        "Qt-base OpenGL viewer framework"
 [7]: http://www.gnu.org/licenses/gpl-3.0.en.html "GNU General Public License Version 3"
+[8]: https://arxiv.org/pdf/2211.04865.pdf "Nonsmooth simulations of 3D Drucker-Prager granular flows and validation against experimental column collapses"
